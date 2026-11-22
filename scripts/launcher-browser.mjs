@@ -3,6 +3,7 @@
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {mkdir} from 'node:fs/promises';
+import {modes} from '../public/game-config.js';
 
 const base = process.env.SITE || 'http://127.0.0.1:32000';
 const browser = await chromium.launch({
@@ -54,7 +55,7 @@ try {
 
     if(width===1366) {
       await page.locator('[data-action="mode-page"][data-direction="1"]').click();
-      assert.equal(await page.locator('.game-tile').count(),4,'Second page should contain remaining four modes');
+      assert.equal(await page.locator('.game-tile').count(),modes.length-8,'Second page should contain the remaining game modes');
       await page.locator('.game-tile[data-mode="quizrace"]').click();
       assert.equal(await page.locator('#game-preview').isVisible(),true,'Expanded preview missing');
       assert.equal(await page.locator('#mode-list').isVisible(),false,'Grid should hide while preview is expanded');

@@ -12,6 +12,9 @@ on:
       - 'scripts/same-page-browser.mjs'
       - 'scripts/tv-all-modes.mjs'
       - 'scripts/spotlight-browser.mjs'
+      - 'scripts/brain-ladder-browser.mjs'
+      - 'public/brain-ladder*'
+      - 'brain-ladder.js'
       - 'public/spotlight*'
       - 'public/same-page*'
       - 'public/tv-broadcast.css'
@@ -61,6 +64,7 @@ jobs:
           node scripts/fork-browser.mjs
           node scripts/same-page-browser.mjs
           node scripts/spotlight-browser.mjs
+          node scripts/brain-ladder-browser.mjs
           node scripts/tv-all-modes.mjs
       - name: Upload screen captures on success or failure
         if: always()

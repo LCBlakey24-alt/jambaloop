@@ -99,7 +99,7 @@ app.post('/api/rooms', async (req, res) => {
   // Hosts can switch adapters from the lobby if the recommended one is unreachable.
   // Do not use x-forwarded-host/proto when generating invite links.
   room.joinOptions = inviteOriginOptions({
-    publicUrl: process.env.PUBLIC_URL, host: req.get('host'), protocol: req.protocol,
+    publicUrl: process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL, host: req.get('host'), protocol: req.protocol,
     port: server.address().port, interfaces: networkInterfaces()
   });
   room.joinUrl = qrJoinUrl(room.joinOptions[0].origin, code);

@@ -3,7 +3,7 @@ import { deskAwards } from './awards.js';
 import { answerValue, boardSpeedValues, bonusValues, canSetScore, defaultScoring, doubleSchedules, pointValues, roundMultiplier } from './public/scoring.js';
 import { playlistLimit, queuedSettings } from './public/game-night.js';
 import { isConnected, responseTarget, touchPlayer, trackConnection } from './room-presence.js';
-import { boardLengths, boardRoute } from './public/board-route.js';
+import { boardLengths, boardRoute, boardPath, boardPathChoices, boardFork, boardFinish, boardMappedPosition, boardRequiresChoice } from './public/board-route.js';
 import { partyModes, startParty, advanceParty, advancePartyWhenReady, expireParty, submitParty, publicParty } from './party-games.js';
 import express from 'express';
 import QRCode from 'qrcode';
@@ -174,6 +174,7 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
     includeChristmas: room.includeChristmas, autoReveal: room.autoReveal, theme: room.theme, format: room.format, motion: room.motion, activeTeam,
     teams: hiddenScores ? room.teams.map(team => ({ ...team, score: room.lastScoreBreak.get(team.id)?.row.score ?? 0, roundPoints: undefined })) : room.teams,
     lastTurn: revealed && finalTurn(room), teamWinners: phase === 'finished' && room.teams.length ? winningTeams(room) : undefined, teamCount: room.teamCount, boardLength: room.boardLength,
+    boardFork: room.mode === 'board' ? boardFork(room.boardLength) : undefined,
     players: leaderboard, playerCount: players.size, player: player ? { ...publicPlayer(player), score: scoresPublished ? player.score : playerScore } : undefined,
     review: !waiting && phase === 'finished' ? (room.privateQuestions ? room.privateReview.get(key) ?? [] : room.roundReview).map((review, i) => ({
       ...review,
@@ -193,7 +194,8 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
 }
 
 const comparePlayers = (a, b) => (b.lives ?? 0) - (a.lives ?? 0) || b.score - a.score;
-const compareTeams = mode => (a, b) => (mode === 'board' ? b.position - a.position : 0) || b.score - a.score;
+const compareTeams = (mode, spaces) => (a, b) => (mode === 'board'
+  ? boardMappedPosition(spaces, b.position, b.pathChoice) - boardMappedPosition(spaces, a.position, a.pathChoice) : 0) || b.score - a.score;
 
 function rankings(room) {
   return room.mode === 'quizrace' && room.race ? racePlacings(room.race).map(r => [...room.players.values()].find(p => p.id === r.id)) : [...room.players.values()].sort(comparePlayers);
@@ -330,14 +332,14 @@ app.post('/api/rooms/:code/party', (req, res) => {
 });
 
 function winningTeams(room) {
-  const compare = compareTeams(room.mode);
+  const compare = compareTeams(room.mode,room.boardLength);
   const ordered = [...room.teams].sort(compare);
   return ordered.filter(team => compare(team, ordered[0]) === 0).map(team => team.id);
 }
 
 function finalTurn(room) {
   return room.index + 1 >= room.count
-    || (room.mode === 'knockout' && room.remaining <= (room.players.size > 1 ? 1 : 0)) || (room.mode === 'board' && room.teams.some(team => team.position >= room.boardLength));
+    || (room.mode === 'knockout' && room.remaining <= (room.players.size > 1 ? 1 : 0)) || (room.mode === 'board' && room.teams.some(team => team.position >= boardFinish(room.boardLength,team.pathChoice)));
 }
 
 function scoreCheckpointDue(room) {
@@ -346,7 +348,7 @@ function scoreCheckpointDue(room) {
 
 function openScoreBreak(room) {
   const board = room.mode === 'board';
-  const compare = room.teams.length ? compareTeams(room.mode) : comparePlayers;
+  const compare = room.teams.length ? compareTeams(room.mode,room.boardLength) : comparePlayers;
   const rows = room.teams.length ? room.teams : [...room.players.values()];
   const initialOrder = new Map(rows.map(({ id }, index) => [id, index]));
   const previous = room.lastScoreBreak;
@@ -390,6 +392,12 @@ function reveal(room) {
     if (!won) continue;
     answer.won = true;
     const player = room.players.get(key);
+    // Only the active team's correct answers earn the Power Lane multiplier.
+    // Other teams still answer the shared question at its normal value.
+    if (room.mode === 'board' && room.motion?.pathMultiplier === 2 &&
+        player.team === room.index % room.teams.length) {
+      answer.points = Math.round(answer.points * 2 * 100) / 100;
+    }
     player.score += answer.points;
     if (room.mode === 'board') player.score = Math.round(player.score * 100) / 100;
     if (room.teams.length) tallies[player.team] += answer.points;
@@ -511,7 +519,7 @@ function startGame(room) {
   }
   if (['board', 'showdown'].includes(room.mode)) {
     const size = Math.min(room.teamCount, room.players.size);
-    room.teams = teams.slice(0, size).map(([name, color], id) => ({ id, name, color, size: 0, position: 0, score: 0 }));
+    room.teams = teams.slice(0, size).map(([name, color], id) => ({ id, name, color, size: 0, position: 0, score: 0, ...(room.mode === 'board' ? {pathChoice:null} : {}) }));
     let index = 0;
     for (const player of room.players.values()) {
       player.team = index++ % size;
@@ -522,6 +530,28 @@ function startGame(room) {
   readyTurn(room);
 }
 
+// Host or the active team chooses the branch before their roll can cross the fork.
+app.post('/api/rooms/:code/board-path', (req, res) => {
+  const {room,key} = res.locals;
+  if (room.mode !== 'board') return res.status(400).json({error:'Path choices are for Board Race.'});
+  const team = room.teams[room.index % room.teams.length];
+  if (!team || !(key === room.host || room.players.get(key)?.team === team.id)) {
+    return res.status(403).json({error:'Only the active team or TV host can choose the path.'});
+  }
+  if (room.phase !== 'ready' || req.body?.game !== room.game || req.body?.index !== room.index) {
+    return res.status(409).json({error:'Choose a path during your team’s turn.'});
+  }
+  if (!boardPathChoices.some(option => option.id === req.body?.path)) {
+    return res.status(400).json({error:'Choose Power Lane or Question Trail.'});
+  }
+  if (team.position > boardFork(room.boardLength).start) {
+    return res.status(409).json({error:'Your team has already passed the fork.'});
+  }
+  team.pathChoice = req.body.path;
+  publish(room);
+  res.sendStatus(204);
+});
+
 app.post('/api/rooms/:code/roll', (req, res) => {
   const { room, key } = res.locals;
   const activeTeam = room.teams[room.index % room.teams.length];
@@ -531,6 +561,10 @@ app.post('/api/rooms/:code/roll', (req, res) => {
     return res.status(403).json({ error: 'Wait for your team’s turn to roll.' });
   }
   if (room.phase !== 'ready' || req.body?.game !== room.game || req.body?.index !== room.index) return res.sendStatus(204);
+  if (room.mode === 'board' && activeTeam &&
+      boardRequiresChoice(room.boardLength, activeTeam.position, activeTeam.pathChoice)) {
+    return res.status(409).json({error:'Choose the Power Lane or Question Trail before rolling.'});
+  }
   if (room.mode === 'dice') {
     const dice = [randomInt(1, 7), randomInt(1, 7)];
     const sum = dice[0] + dice[1];
@@ -538,9 +572,14 @@ app.post('/api/rooms/:code/roll', (req, res) => {
   } else if (activeTeam) {
     const die = randomInt(1, 7);
     const from = activeTeam.position;
-    const to = Math.min(room.boardLength, from + die);
+    const path = boardPath(room.boardLength, room.includeChristmas, activeTeam.pathChoice || 'power');
+    const to = Math.min(path.length - 1, from + die);
     activeTeam.position = to;
-    room.motion = { die, from, to, points: die, difficulty: die, category: room.route[to].category };
+    const landed = path[to];
+    room.motion = { die, from, to, points: die, difficulty: die,
+      category: landed.category, pathChoice: activeTeam.pathChoice || 'power',
+      pathMultiplier: landed.lane === 'power' ? 2 : 1,
+      pathName: boardPathChoices.find(option => option.id === activeTeam.pathChoice)?.name ?? 'Board Race' };
   } else {
     if (!room.wheelRemaining.length) room.wheelRemaining = wheelCategories(room.includeChristmas).map(([id]) => id);
     const [category] = room.wheelRemaining.splice(randomInt(room.wheelRemaining.length), 1);

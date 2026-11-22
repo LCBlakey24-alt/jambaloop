@@ -3,7 +3,7 @@ export const raceLengths = Object.freeze({ short: 70, medium: 120, long: 190 });
 export const raceTracks = Object.freeze(['neon', 'desert', 'snow', 'jungle', 'space']);
 export const raceDifficulties = Object.freeze(['easy', 'medium', 'hard', 'mixed']);
 export const raceQuestionWindow = 12000;
-export const raceColors = ['#1dd9be', '#ffbd43', '#ff6b71', '#8954ff', '#65aaff', '#f998d2', '#bbef7d', '#ff9a4d'];
+export const raceColors = ['#1dd9be', '#ffbd43', '#ff6b71', '#8954ff', '#65aaff', '#f998d2', '#bbef7d', '#ff9a4d', '#6fd3eb', '#f1a9ff', '#d4e87a', '#efb18c'];
 const wait = 700;
 const between = (v, a, b) => Math.max(a, Math.min(b, v));
 
@@ -39,7 +39,7 @@ export function raceMovement(racer, fromMs, toMs) {
 
 export function createQuizRace(entries, questionPool, { length = 'medium', track = 'neon', difficulty = 'mixed' } = {}, now = 0) {
   if (!raceLengths[length] || !raceTracks.includes(track) || !raceDifficulties.includes(difficulty)) throw new Error('Invalid race setup');
-  if (entries.length < 2 || entries.length > 8) throw new Error('Quiz Race needs 2 to 8 racers');
+  if (entries.length < 2 || entries.length > 12) throw new Error('Quiz Race needs 2 to 12 racers');
   if (!Array.isArray(questionPool) || !questionPool.length || questionPool.some(q => q.type !== 'choice' || !Array.isArray(q.options) || !Number.isInteger(q.correct))) {
     throw new Error('A valid multiple-choice question pool is required');
   }

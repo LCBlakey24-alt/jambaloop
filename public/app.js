@@ -10,7 +10,8 @@ import { modeVariables, sceneBackdrop } from './mode-style.js';
 import { launcherTile, launcherPreview, launcherModes, launcherSetupArtwork, LAUNCHER_PAGE_SIZE } from './home-launcher.js';
 import { stopNarration, toggleNarration } from './narrator.js';
 import { playCue, playTowerImpact } from './sound-cues.js';
-import { boardLengths, boardRoute, boardDuration, durationLabel, suggestedTurnCap } from './board-route.js';
+import { boardLengths, boardRoute, boardDuration, durationLabel, suggestedTurnCap, boardRequiresChoice, boardPathChoices } from './board-route.js';
+import {teamPlayModes, defaultPlayStyle} from './team-play.js';
 import { avatarView, partyView } from './party-views.js';
 import { openLibrary, savedQuizzes } from './quiz-editor.js';
 import { answerGuide, helpTypes, closestStep, createDraft, formatNumber, orderedItems, specialAnswer } from './answer-controls.js';
@@ -283,14 +284,23 @@ function openDialog(mode, value, gameMode, quizId) {
       <label>Max speed bonus<select name="speedPoints">${selected(bonusValues.map(value => [value, value ? '+' + value + ' points' : 'Off']), scoring.bonus)}</select></label>
       <label>Double points<select name="doublePoints">${selected(doubleSchedules, scoring.doubles)}</select></label></div>
       <small>Double points apply to correct answers and their speed bonus. Dice Rally also applies its dice multiplier.</small></fieldset>
+    <fieldset class="team-play-setup" id="team-play-setup"><legend>How are you playing?</legend>
+      <div class="play-style-options" role="group" aria-label="Play style">
+        <label><input type="radio" name="playStyle" value="individual" ${(configured ? state.playStyle : defaultPlayStyle(selectedMode)) === 'individual' ? 'checked' : ''}><span><b>Individual</b><small>Everyone plays for themselves</small></span></label>
+        <label><input type="radio" name="playStyle" value="teams" ${(configured ? state.playStyle : defaultPlayStyle(selectedMode)) === 'teams' ? 'checked' : ''}><span><b>Teams</b><small>Balanced groups compete together</small></span></label>
+      </div>
+      <p id="team-play-help" class="team-play-help" aria-live="polite">Players will be assigned automatically when the game starts.</p>
+    </fieldset>
     <label class="switch-row" id="private-field"><input type="checkbox" name="privateQuestions" ${!configured || state.privateQuestions || state.mode !== 'showdown' ? 'checked' : ''}>
       <span><strong>Private questions</strong><small>Deal a different question to each phone. The TV shows team scores.</small></span></label>
-    <label id="team-count-field"><span id="team-count-label">Number of teams</span><select name="teamCount" aria-labelledby="team-count-label">${selected([[2, '2 teams'], [3, '3 teams'], [4, '4 teams']], configured ? state.teamCount : 4)}</select></label>
+    <label id="team-count-field"><span id="team-count-label">Number of teams</span><select name="teamCount" aria-labelledby="team-count-label">${selected([[2, '2 teams'], [3, '3 teams'], [4, '4 teams']], configured ? state.teamCount : 2)}</select></label>
     <fieldset class="board-planner" id="board-planner" hidden><legend>Board &amp; timing</legend>
       <div class="form-row"><label>Board spaces<select name="boardLength">${selected(boardLengths.map(length => [length, length + ' spaces']), configured ? state.boardLength : 16)}</select></label>
       <label>Expected players<input name="plannedPlayers" type="number" min="1" max="300" value="${configured ? state.playerCount || state.teamCount : 4}"></label></div>
       <label id="board-speed-field">Max speed bonus<select name="boardSpeed">${selected(boardSpeedValues.map(value => [value, value ? '+' + value + '% of the die roll' : 'Off']), speed)}</select></label>
-      <div class="route-preview" aria-hidden="true"></div><output class="duration-preview" aria-live="polite"></output>
+      <div class="route-preview" aria-hidden="true"></div>
+      <p class="board-path-setup-note"><strong>Two paths at the fork:</strong> Power Lane = fewer spaces and ×2 points for the active team on its special tiles; Question Trail = four extra spaces and more turns to earn points.</p>
+      <output class="duration-preview" aria-live="polite"></output>
       <small>Estimates use dice odds, question time and time between turns.</small>
     </fieldset>
     <label>Phone display<select name="phoneView">${selected([['full', 'Show question and answers'], ['answers', 'Answer controls only · read the TV']], configured ? state.phoneView : 'full')}</select></label>
@@ -307,6 +317,10 @@ function openDialog(mode, value, gameMode, quizId) {
       const game = form.elements.mode.value;
       if (explained !== game) {
         form.querySelector('.explainer-slot').innerHTML = setupPreview(game, true);
+        if (event?.target?.name === 'mode') {
+          const preferred = defaultPlayStyle(game);
+          form.querySelector('[name="playStyle"][value="' + preferred + '"]').checked = true;
+        }
         explained = game;
       }
       const party = partyModes.includes(game);
@@ -333,9 +347,32 @@ function openDialog(mode, value, gameMode, quizId) {
       }
       const categoryField = form.querySelector('#category-field');
       const supportsCustom = fixedQuestionModes.includes(game) && !privateQuiz;
-      form.querySelector('#team-count-field').hidden = !board && game !== 'showdown';
-      form.querySelector('#team-count-label').textContent = board ? 'Board pieces' : 'Number of teams';
-      for (const option of form.elements.teamCount.options) option.textContent = option.value + (board ? ' pieces' : ' teams');
+      const trolley = game === 'tracks';
+      const allowsTeams = teamPlayModes.includes(game);
+      const teamOption = form.querySelector('input[name="playStyle"][value="teams"]');
+      const soloOption = form.querySelector('input[name="playStyle"][value="individual"]');
+      soloOption.disabled = trolley;
+      teamOption.disabled = !allowsTeams;
+      if (trolley) {
+        teamOption.checked = true;
+        form.elements.teamCount.value = '2';
+      }
+      for (const option of form.elements.teamCount.options) {
+        option.disabled = trolley && option.value !== '2';
+      }
+      if (!allowsTeams && teamOption.checked) {
+        form.querySelector('input[name="playStyle"][value="individual"]').checked = true;
+      }
+      const style = form.querySelector('input[name="playStyle"]:checked').value;
+      form.querySelector('#team-count-field').hidden = style !== 'teams';
+      form.querySelector('#team-count-label').textContent = trolley ? 'Exactly two teams' : 'Number of teams';
+      const help = form.querySelector('#team-play-help');
+      help.textContent = trolley ? 'Exactly two teams. Each team votes for three cards while the TV host acts as judge and chooses which track is hit.'
+        : !allowsTeams ? 'This game has a shared vote or one-holder outcome, so it currently plays individually.'
+        : style === 'teams' ? 'Choose 2–4 teams. Everyone who joins is assigned evenly when play starts; team scores use the average member score so a larger team has no advantage.'
+        : board ? 'Every person races their own board piece, up to four racers.'
+        : race ? 'Each person races independently for first place.' : 'Every player competes individually.';
+      for (const option of form.elements.teamCount.options) option.textContent = option.value + ' teams';
       form.querySelector('#board-planner').hidden = !board;
       if (board && event?.target === form.elements.count) boardCapEdited = true;
       form.querySelector('#quiz-source').hidden = !supportsCustom;
@@ -346,7 +383,7 @@ function openDialog(mode, value, gameMode, quizId) {
       const curated = !form.elements.difficulty.disabled && form.elements.difficulty.value !== 'standard';
       categoryField.hidden = (!supportsCustom && !race) || custom || curated;
       form.elements.format.closest('label').hidden = custom || party || privateQuiz || curated || race;
-      form.elements.count.closest('label').hidden = custom || party || race;
+      form.elements.count.closest('label').hidden = custom || (party && !trolley) || race;
       form.elements.seconds.closest('label').hidden = party || race;
       form.elements.autoReveal.closest('label').hidden = party || race;
       form.elements.phoneView.closest('label').hidden = party || privateQuiz || race;
@@ -357,11 +394,11 @@ function openDialog(mode, value, gameMode, quizId) {
       const christmasField = form.querySelector('#christmas-field');
       christmasField.hidden = (party && game !== 'potato') || custom || curated || (!categoryField.hidden && form.elements.category.value !== 'mixed');
       form.elements.includeChristmas.disabled = christmasField.hidden;
-      form.querySelector('#count-label').textContent = board ? 'Maximum turns' : 'Questions';
+      form.querySelector('#count-label').textContent = board ? 'Maximum turns' : trolley ? 'Trolley rounds' : 'Questions';
       const counts = questionCounts(game, privateQuiz || curated ? 'choice' : form.elements.format.value, privateQuiz || curated ? 'mixed' : form.elements.category.value);
       const previous = Number(form.elements.count.value) || (configured ? state.total : 0);
       const spaces = Number(form.elements.boardLength.value);
-      const pieces = Number(form.elements.teamCount.value);
+      const pieces = style === 'individual' ? Math.min(4,Math.max(1,Number(form.elements.plannedPlayers.value)||1)) : Number(form.elements.teamCount.value);
       const players = Math.min(300, Math.max(1, Number(form.elements.plannedPlayers.value) || pieces));
       const preferred = board && !boardCapEdited ? suggestedTurnCap(spaces, Math.min(pieces, players)) : previous;
       form.elements.count.innerHTML = selected(counts.map(count => [count, count]), counts.includes(preferred) ? preferred : counts[1] ?? counts[0]);
@@ -380,11 +417,11 @@ function openDialog(mode, value, gameMode, quizId) {
         : form.elements.seconds.value === '0' ? 'No speed bonus.'
         : format === 'mixed' ? 'Timed correct answers can earn a speed bonus. Closest guesses receive equal base points.'
         : 'Faster correct answers earn more.';
-      form.querySelector('#scoring-note').textContent = race ? 'You steer your speed with answers. Correct boosts you, Pass and wrong answers slow you down. First to finish wins.' : party ? (game === 'bluff' ? 'Three or more players. Write a reply, then vote for the bluff.' : game === 'potato' ? 'Two or more players. The potato has one shared two-minute timer.' : 'Three rounds. Players use their phones to enter or vote.')
+      form.querySelector('#scoring-note').textContent = race ? 'You steer your speed with answers. Correct boosts you, Pass and wrong answers slow you down. First to finish wins.' : party ? (trolley ? 'Two teams place a good card, a sabotage card on the opposing track, then a final good card. The host judges each round. Choose 3, 5 or 7 rounds.' : game === 'bluff' ? 'Three or more players. Write a reply, then vote for the bluff.' : game === 'potato' ? 'Two or more players. The potato has one shared two-minute timer.' : 'Three rounds. Players use their phones to enter or vote.')
         : privateQuiz ? 'Each player gets a unique multiple-choice or True or False question in each round.'
         : custom ? 'Uses every question in the saved quiz in its authored order.'
         : curated ? 'A curated mixed-topic pack with multiple-choice questions.' : board
-        ? 'The roll sets the move, the base points and the question level. The landing space picks the genre.'
+        ? 'Choose Power Lane for double points on its special tiles, or Question Trail for four extra question spaces. The dice set movement and question level.'
         : game === 'wheel' ? 'The wheel picks a different category until it has used them all. ' + scoringNote
         : game === 'dice' ? 'Two dice set the points multiplier for each question. ' + scoringNote
         : game === 'knockout' ? 'Wrong or missed answers cost a life. The last player standing wins.'
@@ -556,12 +593,12 @@ document.addEventListener('submit', async event => {
   event.preventDefault();
   const button = form.querySelector('button:not([type="button"])');
   button.disabled = true;
-  const { mode, theme, format, category, count, seconds, code, name, autoReveal, includeChristmas, phoneView, quiz, teamCount, boardLength, privateQuestions, difficulty, basePoints, speedPoints, doublePoints, boardSpeed, scoreInterval, raceLength, raceTrack, raceDifficulty } = Object.fromEntries(new FormData(form));
+  const { mode, theme, format, category, count, seconds, code, name, autoReveal, includeChristmas, phoneView, quiz, teamCount, boardLength, playStyle, privateQuestions, difficulty, basePoints, speedPoints, doublePoints, boardSpeed, scoreInterval, raceLength, raceTrack, raceDifficulty } = Object.fromEntries(new FormData(form));
   try {
     const customQuiz = quiz && quiz !== 'current' ? savedQuizzes().find(entry => entry.id === quiz) : undefined;
     const curated = difficulty && difficulty !== 'standard';
     const scoring = basePoints ? { base: Number(basePoints), bonus: Number(speedPoints), doubles: doublePoints } : undefined;
-    const settings = { mode, theme, difficulty, raceLength, raceTrack, raceDifficulty, scoring, scoreInterval: scoreInterval === undefined ? undefined : Number(scoreInterval), boardSpeed: boardSpeed === undefined ? undefined : Number(boardSpeed), format: curated ? 'choice' : format, category: curated ? 'mixed' : category, phoneView, teamCount: Number(teamCount), boardLength: Number(boardLength), customQuiz, useRoomQuiz: quiz === 'current', count: Number(count), privateQuestions: privateQuestions === 'on', seconds: Number(seconds), autoReveal: autoReveal === 'on', includeChristmas: includeChristmas === 'on' };
+    const settings = { mode, playStyle, theme, difficulty, raceLength, raceTrack, raceDifficulty, scoring, scoreInterval: scoreInterval === undefined ? undefined : Number(scoreInterval), boardSpeed: boardSpeed === undefined ? undefined : Number(boardSpeed), format: curated ? 'choice' : format, category: curated ? 'mixed' : category, phoneView, teamCount: Number(teamCount), boardLength: Number(boardLength), customQuiz, useRoomQuiz: quiz === 'current', count: Number(count), privateQuestions: privateQuestions === 'on', seconds: Number(seconds), autoReveal: autoReveal === 'on', includeChristmas: includeChristmas === 'on' };
     if (form.id === 'rematch-form' || form.id === 'configure-form') {
       const action = form.id === 'rematch-form' ? 'rematch' : 'configure';
       await api('/' + session.code + '/' + action, { ...settings, game: state.game });
@@ -634,14 +671,14 @@ function tvRoundHud(s, timer, progress, host) {
   if (!host) return '';
   const revealed = s.phase === 'reveal';
   const leaders = revealed && showsScoresEachQuestion(s) && !s.teams.length ? s.players.slice(0, 3) : [];
-  const showdown = showsScoresEachQuestion(s) && s.mode === 'showdown';
+  const groupPlay = showsScoresEachQuestion(s) && s.teams.length && s.mode !== 'board';
   return `<aside class="tv-round-hud">
     <section class="game-panel tv-status">
       <div class="eyebrow">${revealed ? 'ROUND COMPLETE' : 'LIVE ROUND'}</div>
       ${timer || `<strong class="tv-status-title">${revealed ? 'Answer revealed' : 'No timer'}</strong>`}
       <p class="status" id="host-answer-count" role="status">${answerCount(s)}</p>${progress}
     </section>
-    ${showdown ? `<section class="game-panel tv-leaders"><div class="eyebrow">TEAM SCORES</div>${teamScoreboard(s.teams)}</section>` : ''}
+    ${groupPlay ? `<section class="game-panel tv-leaders"><div class="eyebrow">TEAM SCORES</div>${teamScoreboard(s.teams)}</section>` : ''}
     ${leaders.length ? `<section class="game-panel tv-leaders"><div class="eyebrow">TOP SCORES</div>${leaderboard(leaders)}</section>` : ''}
   </aside>`;
 }
@@ -656,6 +693,8 @@ function phaseCaption(s) {
     question: 'Question live',
     reveal: 'Answer revealed',
     'score-break': 'Leaderboard checkpoint',
+    'party-build': 'Build your track',
+    'party-judge': 'Judge chooses track',
     'party-write': s.mode === 'cards' ? 'Choose a card' : 'Write a reply',
     'party-vote': 'Voting open',
     'party-reveal': 'Votes revealed',
@@ -713,10 +752,11 @@ function render(s) {
   } else if (s.phase === 'ready' || s.phase === 'rolling') {
     const rolling = s.phase === 'rolling';
     const canRoll = board ? host || ownTeam?.id === team.id : canControl;
+    const needsPath = board && !rolling && boardRequiresChoice(s.boardLength,team.position,team.pathChoice);
     const action = board || rally ? 'Roll the dice' : 'Spin the wheel';
-    const title = board ? `${team.name}’s turn` : rally ? (rolling ? 'Dice in motion' : 'Roll for points') : rolling ? 'Spinning the wheel' : 'Spin for a category';
+    const title = board ? `${escape(team.name)}’s turn` : rally ? (rolling ? 'Dice in motion' : 'Roll for points') : rolling ? 'Spinning the wheel' : 'Spin for a category';
     const status = rolling ? (board ? 'Watch the die drop through the tower.' : rally ? 'Rolling the dice…' : 'Choosing a category…')
-      : board ? 'The die sets the move, base points, and question level. Every team answers the landing square’s genre.' : rally ? 'The dice set the multiplier for everyone’s correct answers.' : 'The wheel picks the next topic.';
+      : board ? needsPath ? 'Your team has reached a fork. Choose a path before rolling.' : 'The die sets the move, base points, and question level. Every team answers the landing square’s genre.' : rally ? 'The dice set the multiplier for everyone’s correct answers.' : 'The wheel picks the next topic.';
     body = `<div class="game-panel turn-panel ${board || rally ? 'board-turn' : 'wheel-turn'}">
       ${host ? board ? boardView(s) : rally ? diceView(s) : wheelView(s) : ''}
       <div class="turn-copy"><div class="eyebrow">${board ? 'TURN' : 'QUESTION'} ${s.index + 1} OF ${s.total}</div>
@@ -725,20 +765,26 @@ function render(s) {
         <p role="status">${status}</p>
         ${board ? teamList(rolling ? { ...s, teams: s.teams.map(entry => entry.id === s.activeTeam ? { ...entry, position: s.motion.from } : entry) } : s, ownTeam?.id) : ''}
         ${rally ? '<div class="dice-rules"><span>2–6 <b>×1</b></span><span>7–10 <b>×2</b></span><span>11–12 <b>×3</b></span></div>' : ''}
-        ${!rolling && canRoll ? `<button class="button primary" data-action="roll">${icons(board ? 'dice-5' : rally ? 'dices' : 'disc-3')} ${action}</button>` : ''}
+        ${needsPath ? `<div class="board-path-picker"><h2>Choose your route</h2><p>Both lanes rejoin before the finish. Which will you take?</p>
+          <div class="board-path-options">${boardPathChoices.map(option => `<button class="board-path-option ${option.id}" type="button" data-action="board-path" data-path="${option.id}"
+          ${!canRoll ? 'disabled' : ''}><b>${option.name}</b><small>${option.detail}</small></button>`).join('')}</div></div>` : ''}
+        ${board && team.pathChoice && !rolling ? `<p class="board-route-selected">Route chosen: <strong>${team.pathChoice === 'power' ? 'Power Lane · ×2 points' : 'Question Trail · +4 spaces'}</strong></p>` : ''}
+        ${!rolling && canRoll && !needsPath ? `<button class="button primary" data-action="roll">${icons(board ? 'dice-5' : rally ? 'dices' : 'disc-3')} ${action}</button>` : ''}
         ${board ? boardPrediction(s, host) : ''}
-        ${!rolling && !canRoll ? `<p class="turn-wait">${board ? 'Waiting for Team ' + team.name + ' to roll.' : rally ? 'Waiting for the captain to roll.' : 'Waiting for the captain to spin.'}</p>` : ''}
+        ${!rolling && !canRoll ? `<p class="turn-wait">${board ? 'Waiting for ' + (s.playStyle === 'individual' ? '' : 'Team ') + escape(team.name) + ' to roll.' : rally ? 'Waiting for the captain to roll.' : 'Waiting for the captain to spin.'}</p>` : ''}
       </div></div>`;
   } else if (s.phase === 'score-break') {
     body = scoreBreakView(s, { host, canControl, escape, icons });
   } else if (s.phase === 'finished') {
     const winners = s.players.filter(player => sameRank(player, s.players[0]));
     const winningTeams = s.teams.length ? s.teams.filter(team => s.teamWinners.includes(team.id)) : [];
-    const title = board ? winningTeams.length === 1 ? `Team ${winningTeams[0].name} wins the race!` : 'The race ends in a tie!'
-      : showdown ? winningTeams.length === 1 ? `Team ${winningTeams[0].name} wins!` : 'The teams are tied!'
+    const title = board ? winningTeams.length === 1
+        ? (s.playStyle === 'individual' ? escape(winningTeams[0].name) : 'Team ' + escape(winningTeams[0].name)) + ' wins the race!'
+        : 'The race ends in a tie!'
+      : s.playStyle === 'teams' ? winningTeams.length === 1 ? 'Team ' + escape(winningTeams[0].name) + ' wins!' : 'The teams are tied!'
       : winners.length === 1 ? escape(winners[0].name) + ' takes the crown!' : 'It’s a tie!';
     body = `<div class="game-panel results"><div class="eyebrow">FINAL RESULTS</div><h1>${title}</h1>
-      ${board ? teamList(s, ownTeam?.id, true) : showdown ? teamScoreboard(s.teams, ownTeam?.id) : ''}
+      ${board ? teamList(s, ownTeam?.id, true) : s.teams.length ? teamScoreboard(s.teams, ownTeam?.id) : ''}
       ${s.teams.length ? '<h2>Individual scores</h2>' : ''}
       ${host ? `<div class="podium">${standings(s.players)}</div>` : `<p>You placed <strong>#${s.rank} of ${s.playerCount}</strong> with <strong>${s.player.score.toLocaleString()} points</strong>.</p>`}
       ${!host ? `<dl class="personal-scorecard"><div><dt>Rounds won</dt><dd>${s.player.wins} / ${s.index + 1}</dd></div><div><dt>Best streak</dt><dd>${s.player.bestStreak}</dd></div><div><dt>Final rank</dt><dd>#${s.rank}</dd></div></dl>` : ''}
@@ -788,7 +834,7 @@ function render(s) {
       <div class="eyebrow round-kicker"><span>${board ? 'TURN' : 'QUESTION'} ${s.index + 1} OF ${s.total}</span>
         <span>${escape(s.quizTitle || categoryName(question.category))}</span><span>${answerGuide(question.type)[0]}</span></div>
       ${board || rally ? rollRecap(s) : ''}${board ? boardPrediction(s, host) : ''}${scoringLine}${lifeInfo}
-      ${showdown && ownTeam ? `<p class="your-team" style="--team:${ownTeam.color}">Team ${ownTeam.name}${showLiveScores ? ' · ' + ownTeam.score.toLocaleString() + ' pts' : ''}</p>` : ''}
+      ${ownTeam && s.playStyle === 'teams' ? `<p class="your-team" style="--team:${ownTeam.color}">Team ${escape(ownTeam.name)}${showLiveScores ? ' · ' + ownTeam.score.toLocaleString() + ' pts' : ''}</p>` : ''}
       <h2>${controllerOnly ? (revealed ? 'Answer revealed' : 'Look at the TV') : escape(s.question.prompt)}</h2>
       ${timer && !host ? '<div class="time-track" aria-hidden="true"><div id="time-fill"></div></div>' : ''}
       ${promptHelp}
@@ -800,7 +846,7 @@ function render(s) {
       ${pauseButton}
       ${canControl ? `<button class="button primary captain-next" data-action="advance">${nextQuestionLabel(s)} ${icons('arrow-right')}</button>` : ''}</div>
       </div>${tvRoundHud(s, timer, response, host)}${host ? '</div>' : ''}${revealed && board && showLiveScores ? `<div class="game-panel round-leaders"><h2>Race standings</h2>${teamList(s, ownTeam?.id, true)}</div>` : ''}
-      ${host && revealed && showLiveScores && !board && !showdown ? `<div class="game-panel round-leaders"><h2>Leaderboard</h2>${fullLeaderboard(s.players, 'View full leaderboard')}</div>` : ''}`;
+      ${host && revealed && showLiveScores && !board && !s.teams.length ? `<div class="game-panel round-leaders"><h2>Leaderboard</h2>${fullLeaderboard(s.players, 'View full leaderboard')}</div>` : ''}`;
   }
   if (s.phase === 'finished') {
     const nextUp = gameNightView(s, { canControl, escape, icons });
@@ -814,7 +860,7 @@ function render(s) {
       body = (s.night.queue.length ? nextUp : '') + body + awardView(s.awards, escape, icons) + (s.night.queue.length ? '' : nextUp);
     }
   } else if (['lobby', 'waiting'].includes(s.phase)) body += gameNightView(s, { canControl, escape, icons });
-  const phaseKey = `${s.code}/${s.game}/${s.index}/${s.phase}${s.pausedAt ? '/paused' : ''}${s.party?.holding ? '/' + s.party.step : ''}`;
+  const phaseKey = `${s.code}/${s.game}/${s.index}/${s.phase}${s.pausedAt ? '/paused' : ''}${s.party?.holding || s.party?.type === 'fork' ? '/' + s.party.step : ''}`;
   const enter = renderedPhase !== phaseKey;
   const animateRoll = Boolean(boardDisplay && s.phase === 'rolling' && renderedPhase === `${s.code}/${s.game}/${s.index}/ready`);
   renderedPhase = phaseKey;
@@ -825,7 +871,7 @@ function render(s) {
   const captainSelect = !enter && focused?.matches('#captain-form select') ? focused.value : undefined;
   const writing = !enter && focused?.matches('#bluff-form textarea')
     ? [focused.selectionStart, focused.selectionEnd] : undefined;
-  const showProgress = ['ready', 'rolling', 'question', 'reveal', 'score-break', 'party-write', 'party-vote', 'party-reveal'].includes(s.phase) && s.total > 1;
+  const showProgress = ['ready', 'rolling', 'question', 'reveal', 'score-break', 'party-build', 'party-judge', 'party-write', 'party-vote', 'party-reveal'].includes(s.phase) && s.total > 1;
   const caption = phaseCaption(s);
   const boost = s.boost > 1 && ['ready', 'rolling', 'question', 'reveal'].includes(s.phase)
     ? `<span class="score-boost">${icons('zap')} Double points</span>` : '';
@@ -1300,6 +1346,8 @@ document.addEventListener('click', async event => {
     finally {raceSending=false;controls.forEach(control=>control.disabled=false);if(state?.race){signature=undefined;render(state);}} 
     return;
   }
+  if (action === 'fork-card') return sendParty({ action: 'card', step: Number(button.dataset.forkStep), option: Number(button.dataset.option) }, button);
+  if (action === 'fork-judge') return sendParty({ action: 'judge', track: Number(button.dataset.track) }, button);
   if (action === 'social-card') return sendParty({ action: 'card', option: Number(button.dataset.option) }, button);
   if (action === 'bluff-vote') return sendParty({ action: 'vote', id: button.dataset.id }, button);
   if (action === 'potato-skip' || action === 'potato-answer') {
@@ -1425,6 +1473,9 @@ document.addEventListener('click', async event => {
       await refresh();
     } else if (action === 'predict') {
       await api('/' + current.code + '/predict', { game: state.game, index: state.index, guess: button.dataset.guess });
+      await refresh();
+    } else if (action === 'board-path') {
+      await api('/' + current.code + '/board-path', { index: state.index, game: state.game, path: button.dataset.path });
       await refresh();
     } else if (action === 'roll') {
       await api('/' + current.code + '/roll', { index: state.index, game: state.game });

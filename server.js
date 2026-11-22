@@ -3,7 +3,8 @@ import { deskAwards } from './awards.js';
 import { answerValue, boardSpeedValues, bonusValues, canSetScore, defaultScoring, doubleSchedules, pointValues, roundMultiplier } from './public/scoring.js';
 import { playlistLimit, queuedSettings } from './public/game-night.js';
 import { isConnected, responseTarget, touchPlayer, trackConnection } from './room-presence.js';
-import { boardLengths, boardRoute } from './public/board-route.js';
+import { boardLengths, boardRoute, boardPath, boardPathChoices, boardFork, boardFinish, boardMappedPosition, boardRequiresChoice } from './public/board-route.js';
+import { teamPlayModes, defaultPlayStyle, validPlayStyle, requiredPlayers, teamAssignments } from './public/team-play.js';
 import { partyModes, startParty, advanceParty, advancePartyWhenReady, expireParty, submitParty, publicParty } from './party-games.js';
 import express from 'express';
 import QRCode from 'qrcode';
@@ -34,8 +35,8 @@ app.use('/api', (_req, res, next) => {
 });
 
 function readSettings(body = {}) {
-  const { mode = 'classic', theme = defaultTheme, format = 'choice', category, count, seconds, autoReveal = false, includeChristmas = false, teamCount = 4, boardLength = 16, privateQuestions = false, phoneView = 'full', difficulty = 'standard', scoring, boardSpeed = 50, scoreInterval = 1, customQuiz = null, raceLength = 'medium', raceTrack = 'neon', raceDifficulty = 'mixed' } = body ?? {};
-  if (typeof privateQuestions !== 'boolean') return;
+  const { mode = 'classic', theme = defaultTheme, format = 'choice', category, count, seconds, autoReveal = false, includeChristmas = false, teamCount = mode === 'tracks' ? 2 : 4, boardLength = 16, playStyle = defaultPlayStyle(mode), privateQuestions = false, phoneView = 'full', difficulty = 'standard', scoring, boardSpeed = 50, scoreInterval = 1, customQuiz = null, raceLength = 'medium', raceTrack = 'neon', raceDifficulty = 'mixed' } = body ?? {};
+  if (typeof privateQuestions !== 'boolean' || !validPlayStyle(mode,playStyle) || (mode === 'tracks' && teamCount !== 2)) return;
   if (mode === 'quizrace' && (!raceLengths[raceLength] || !raceTracks.includes(raceTrack) || !raceDifficulties.includes(raceDifficulty) || format !== 'choice' || customQuiz !== null)) return;
   const privateTeam = mode === 'showdown' && privateQuestions;
   if (privateTeam && customQuiz !== null) return;
@@ -57,9 +58,9 @@ function readSettings(body = {}) {
   const scores = canSetScore(mode) ? (scoring
     ? { base: scoring.base, bonus: seconds ? scoring.bonus : 0, doubles: scoring.doubles }
     : defaultScoring(seconds)) : undefined;
-  return { mode, theme, difficulty, raceLength, raceTrack, raceDifficulty, scoring: scores, boardSpeed: seconds ? boardSpeed : 0, legacyScoring: scoring === undefined, format: privateTeam ? 'choice' : format, category: fixedQuestionModes.includes(mode) && !privateTeam ? category : 'mixed', count: socialModes.includes(mode) ? 3 : partyModes.includes(mode) ? 1 : quiz?.questions.length ?? count,
+  return { mode, theme, difficulty, raceLength, raceTrack, raceDifficulty, scoring: scores, boardSpeed: seconds ? boardSpeed : 0, legacyScoring: scoring === undefined, format: privateTeam ? 'choice' : format, category: fixedQuestionModes.includes(mode) && !privateTeam ? category : 'mixed', count: mode === 'tracks' ? count : socialModes.includes(mode) ? 3 : partyModes.includes(mode) ? 1 : quiz?.questions.length ?? count,
     seconds, autoReveal, includeChristmas, phoneView: privateTeam ? 'full' : phoneView, privateQuestions: privateTeam,
-    teamCount, boardLength, scoreInterval: supportsScoreCheckpoints(mode) ? scoreInterval : 1, customQuiz: quiz };
+    teamCount, boardLength, playStyle, scoreInterval: supportsScoreCheckpoints(mode) ? scoreInterval : 1, customQuiz: quiz };
 }
 
 function resetPlayer(player) {
@@ -150,7 +151,7 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
   const revealed = phase === 'reveal';
   const answer = answers.get(key);
   const { correct, ...publicQuestion } = question ?? {};
-  const activeTeam = room.teams.length ? index % room.teams.length : undefined;
+  const activeTeam = room.mode === 'board' && room.teams.length ? index % room.teams.length : undefined;
   const scoreBreak = phase === 'score-break' && !waiting ? room.scoreBreak : undefined;
   const ownCheckpoint = scoreBreak && player ? room.lastScoreBreak.get(room.teams.length ? player.team : player.id)?.row : undefined;
   const scoresPublished = room.scoreInterval === 1 || phase === 'finished';
@@ -169,11 +170,22 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
     } : undefined,
     ceremony: isHost && phase === 'finished' ? room.ceremony : undefined,
     awards: !waiting && phase === 'finished' ? room.awards : undefined,
-    mode: room.mode, privateQuestions: room.privateQuestions, party: waiting ? undefined : publicParty(room, key), race: room.mode === 'quizrace' && room.race ? publicRaceState(room.race, key, isHost) : undefined, raceLength: room.raceLength, raceTrack: room.raceTrack, raceDifficulty: room.raceDifficulty, phoneView: room.phoneView, isCaptain: key === room.captain, captainId: captain?.id, captainName: captain?.name,
+    mode: room.mode, playStyle: room.playStyle, privateQuestions: room.privateQuestions, party: waiting ? undefined : publicParty(room, key), race: room.mode === 'quizrace' && room.race ? publicRaceState(room.race, key, isHost) : undefined, raceLength: room.raceLength, raceTrack: room.raceTrack, raceDifficulty: room.raceDifficulty, phoneView: room.phoneView, isCaptain: key === room.captain, captainId: captain?.id, captainName: captain?.name,
     quizTitle: room.customQuiz?.title, quizTypes: room.quizTypes,
     includeChristmas: room.includeChristmas, autoReveal: room.autoReveal, theme: room.theme, format: room.format, motion: room.motion, activeTeam,
     teams: hiddenScores ? room.teams.map(team => ({ ...team, score: room.lastScoreBreak.get(team.id)?.row.score ?? 0, roundPoints: undefined })) : room.teams,
     lastTurn: revealed && finalTurn(room), teamWinners: phase === 'finished' && room.teams.length ? winningTeams(room) : undefined, teamCount: room.teamCount, boardLength: room.boardLength,
+    teamPreview: phase === 'lobby' && room.players.size &&
+      (room.playStyle === 'teams' || (room.mode === 'board' && room.players.size <= 4)) ?
+      teamAssignments(room.players,room.mode,room.playStyle,room.teamCount,{allowUnfilled:true}).groups : undefined,
+    raceTeams: room.mode === 'quizrace' && room.teams.length && room.race ?
+      room.teams.map(team => {
+        const racers = [...room.race.racers.values()].filter(racer => team.members.some(member => member.id === racer.id));
+        return {id:team.id,name:team.name,color:team.color,size:team.size,
+          distance:Math.max(0,...racers.map(racer => racer.distance)),
+          finishedAt:Math.min(Infinity,...racers.map(racer => racer.finishedAt ?? Infinity))};
+      }).sort((a,b)=>a.finishedAt-b.finishedAt || b.distance-a.distance) : undefined,
+    boardFork: room.mode === 'board' ? boardFork(room.boardLength) : undefined,
     players: leaderboard, playerCount: players.size, player: player ? { ...publicPlayer(player), score: scoresPublished ? player.score : playerScore } : undefined,
     review: !waiting && phase === 'finished' ? (room.privateQuestions ? room.privateReview.get(key) ?? [] : room.roundReview).map((review, i) => ({
       ...review,
@@ -193,7 +205,8 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
 }
 
 const comparePlayers = (a, b) => (b.lives ?? 0) - (a.lives ?? 0) || b.score - a.score;
-const compareTeams = mode => (a, b) => (mode === 'board' ? b.position - a.position : 0) || b.score - a.score;
+const compareTeams = (mode, spaces) => (a, b) => (mode === 'board'
+  ? boardMappedPosition(spaces, b.position, b.pathChoice) - boardMappedPosition(spaces, a.position, a.pathChoice) : 0) || b.score - a.score;
 
 function rankings(room) {
   return room.mode === 'quizrace' && room.race ? racePlacings(room.race).map(r => [...room.players.values()].find(p => p.id === r.id)) : [...room.players.values()].sort(comparePlayers);
@@ -330,14 +343,26 @@ app.post('/api/rooms/:code/party', (req, res) => {
 });
 
 function winningTeams(room) {
-  const compare = compareTeams(room.mode);
+  if (room.mode === 'quizrace' && room.race) {
+    const winner = racePlacings(room.race)[0]?.id;
+    return room.teams.filter(team => team.members.some(member => member.id === winner)).map(team => team.id);
+  }
+  if (room.mode === 'knockout') {
+    const living = team => team.members.filter(member =>
+      [...room.players.values()].some(player => player.id === member.id && player.lives > 0)).length;
+    const count = Math.max(...room.teams.map(living));
+    if (count > 0) return room.teams.filter(team => living(team) === count).map(team => team.id);
+  }
+  const compare = compareTeams(room.mode,room.boardLength);
   const ordered = [...room.teams].sort(compare);
   return ordered.filter(team => compare(team, ordered[0]) === 0).map(team => team.id);
 }
 
 function finalTurn(room) {
   return room.index + 1 >= room.count
-    || (room.mode === 'knockout' && room.remaining <= (room.players.size > 1 ? 1 : 0)) || (room.mode === 'board' && room.teams.some(team => team.position >= room.boardLength));
+    || (room.mode === 'knockout' && (room.teams.length
+      ? new Set([...room.players.values()].filter(player=>player.lives>0).map(player=>player.team)).size <= 1
+      : room.remaining <= (room.players.size > 1 ? 1 : 0))) || (room.mode === 'board' && room.teams.some(team => team.position >= boardFinish(room.boardLength,team.pathChoice)));
 }
 
 function scoreCheckpointDue(room) {
@@ -346,7 +371,7 @@ function scoreCheckpointDue(room) {
 
 function openScoreBreak(room) {
   const board = room.mode === 'board';
-  const compare = room.teams.length ? compareTeams(room.mode) : comparePlayers;
+  const compare = room.teams.length ? compareTeams(room.mode,room.boardLength) : comparePlayers;
   const rows = room.teams.length ? room.teams : [...room.players.values()];
   const initialOrder = new Map(rows.map(({ id }, index) => [id, index]));
   const previous = room.lastScoreBreak;
@@ -390,6 +415,12 @@ function reveal(room) {
     if (!won) continue;
     answer.won = true;
     const player = room.players.get(key);
+    // Only the active team's correct answers earn the Power Lane multiplier.
+    // Other teams still answer the shared question at its normal value.
+    if (room.mode === 'board' && room.motion?.pathMultiplier === 2 &&
+        player.team === room.index % room.teams.length) {
+      answer.points = Math.round(answer.points * 2 * 100) / 100;
+    }
     player.score += answer.points;
     if (room.mode === 'board') player.score = Math.round(player.score * 100) / 100;
     if (room.teams.length) tallies[player.team] += answer.points;
@@ -502,6 +533,12 @@ function startRace(room) {
 }
 
 function startGame(room) {
+  const allocation = teamAssignments(room.players,room.mode,room.playStyle,room.teamCount);
+  room.teams = allocation.groups;
+  for(const [key,player] of room.players) {
+    if (allocation.ids.has(key)) player.team = allocation.ids.get(key);
+    else delete player.team;
+  }
   if (room.mode === 'quizrace') return startRace(room);
   if (partyModes.includes(room.mode)) return startParty(room, publish);
   if (room.privateQuestions) for (const key of room.players.keys()) room.privateReview.set(key, []);
@@ -509,28 +546,45 @@ function startGame(room) {
     room.remaining = room.players.size;
     for (const player of room.players.values()) player.lives = 3;
   }
-  if (['board', 'showdown'].includes(room.mode)) {
-    const size = Math.min(room.teamCount, room.players.size);
-    room.teams = teams.slice(0, size).map(([name, color], id) => ({ id, name, color, size: 0, position: 0, score: 0 }));
-    let index = 0;
-    for (const player of room.players.values()) {
-      player.team = index++ % size;
-      room.teams[player.team].size++;
-    }
-  }
   if (fixedQuestionModes.includes(room.mode) && room.mode !== 'dice') return openQuestion(room);
   readyTurn(room);
 }
 
+// Host or the active team chooses the branch before their roll can cross the fork.
+app.post('/api/rooms/:code/board-path', (req, res) => {
+  const {room,key} = res.locals;
+  if (room.mode !== 'board') return res.status(400).json({error:'Path choices are for Board Race.'});
+  const team = room.teams[room.index % room.teams.length];
+  if (!team || !(key === room.host || room.players.get(key)?.team === team.id)) {
+    return res.status(403).json({error:'Only the active team or TV host can choose the path.'});
+  }
+  if (room.phase !== 'ready' || req.body?.game !== room.game || req.body?.index !== room.index) {
+    return res.status(409).json({error:'Choose a path during your team’s turn.'});
+  }
+  if (!boardPathChoices.some(option => option.id === req.body?.path)) {
+    return res.status(400).json({error:'Choose Power Lane or Question Trail.'});
+  }
+  if (team.position > boardFork(room.boardLength).start) {
+    return res.status(409).json({error:'Your team has already passed the fork.'});
+  }
+  team.pathChoice = req.body.path;
+  publish(room);
+  res.sendStatus(204);
+});
+
 app.post('/api/rooms/:code/roll', (req, res) => {
   const { room, key } = res.locals;
-  const activeTeam = room.teams[room.index % room.teams.length];
+  const activeTeam = room.mode === 'board' ? room.teams[room.index % room.teams.length] : undefined;
   const allowed = room.mode === 'board' ? key === room.host || (activeTeam && room.players.get(key)?.team === activeTeam.id)
     : controlsRoom(room, key);
   if (!allowed) {
     return res.status(403).json({ error: 'Wait for your team’s turn to roll.' });
   }
   if (room.phase !== 'ready' || req.body?.game !== room.game || req.body?.index !== room.index) return res.sendStatus(204);
+  if (room.mode === 'board' && activeTeam &&
+      boardRequiresChoice(room.boardLength, activeTeam.position, activeTeam.pathChoice)) {
+    return res.status(409).json({error:'Choose the Power Lane or Question Trail before rolling.'});
+  }
   if (room.mode === 'dice') {
     const dice = [randomInt(1, 7), randomInt(1, 7)];
     const sum = dice[0] + dice[1];
@@ -538,9 +592,14 @@ app.post('/api/rooms/:code/roll', (req, res) => {
   } else if (activeTeam) {
     const die = randomInt(1, 7);
     const from = activeTeam.position;
-    const to = Math.min(room.boardLength, from + die);
+    const path = boardPath(room.boardLength, room.includeChristmas, activeTeam.pathChoice || 'power');
+    const to = Math.min(path.length - 1, from + die);
     activeTeam.position = to;
-    room.motion = { die, from, to, points: die, difficulty: die, category: room.route[to].category };
+    const landed = path[to];
+    room.motion = { die, from, to, points: die, difficulty: die,
+      category: landed.category, pathChoice: activeTeam.pathChoice || 'power',
+      pathMultiplier: landed.lane === 'power' ? 2 : 1,
+      pathName: boardPathChoices.find(option => option.id === activeTeam.pathChoice)?.name ?? 'Board Race' };
   } else {
     if (!room.wheelRemaining.length) room.wheelRemaining = wheelCategories(room.includeChristmas).map(([id]) => id);
     const [category] = room.wheelRemaining.splice(randomInt(room.wheelRemaining.length), 1);
@@ -596,11 +655,16 @@ app.post('/api/rooms/:code/pause', (req, res) => {
 app.post('/api/rooms/:code/advance', (req, res) => {
   const { room, key } = res.locals;
   if (!controlsRoom(room, key)) return res.status(403).json({ error: 'Only the captain or TV host can advance the game.' });
+  if (room.mode === 'tracks' && room.phase !== 'lobby' && key !== room.host)
+    return res.status(403).json({error:'Only the host judge can advance the trolley round.'});
   if (req.body?.game !== room.game || req.body?.phase !== room.phase || req.body?.index !== room.index) return res.sendStatus(204);
   if (room.pausedAt) return res.status(409).json({ error: 'Resume the timer before advancing.' });
   if (room.phase === 'lobby') {
-    const minimum = minimumPlayers(room.mode);
+    const minimum = requiredPlayers(room.mode,room.playStyle,room.teamCount,minimumPlayers(room.mode));
     if (liveCounts(room).connected < minimum) return res.status(409).json({ error: `You need at least ${minimum} connected ${minimum === 1 ? 'player' : 'players'} to start.` });
+    if (room.mode === 'board' && room.playStyle === 'individual' && room.players.size > 4) {
+      return res.status(409).json({error:'Individual Board Race supports up to four racers. Choose Teams for larger groups.'});
+    }
     if (room.mode === 'quizrace' && room.players.size > 8) return res.status(409).json({error:'Quiz Race supports up to eight racers. Please choose another mode or a smaller group.'});
     startGame(room);
   } else if (partyModes.includes(room.mode)) {

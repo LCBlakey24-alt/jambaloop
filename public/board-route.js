@@ -19,6 +19,57 @@ export function boardRoute(length, includeChristmas) {
   });
 }
 
+// Board Race branches along the right-hand side of the physical game board.
+// Power Lane is the shorter original route; Question Trail has four extra tiles.
+// A landing on a Power Lane-only tile doubles *that team's* earned answer points.
+export const boardPathChoices = [
+  {id:'power', name:'Power Lane', detail:'Short route · ×2 points for your team on Power Lane tiles'},
+  {id:'questions', name:'Question Trail', detail:'Four extra spaces · more rolls and question opportunities'},
+];
+
+export function boardFork(spaces) {
+  return {start:spaces / 4, rejoin:spaces / 2, extra:4};
+}
+
+export function boardPath(spaces, includeChristmas, choice = 'power') {
+  const base = boardRoute(spaces, includeChristmas);
+  const {start,rejoin,extra} = boardFork(spaces);
+  if (choice !== 'questions') return base.map(tile => ({
+    ...tile, lane: tile.index > start && tile.index < rejoin ? 'power' : undefined,
+    baseIndex:tile.index
+  }));
+  const edge = spaces / 8;
+  const edges = rejoin - start + extra;
+  const interior = Array.from({length:edges-1}, (_,offset) => {
+    const t=(offset+1)/edges;
+    const baseIndex = Math.max(start+1,Math.min(rejoin-1,Math.round(start+(rejoin-start)*t)));
+    const source=base[baseIndex];
+    return {x:edge-.66,z:edge-2*edge*t,category:source.category,label:source.label,baseIndex,
+      lane:'questions',finish:false};
+  });
+  return [...base.slice(0,start+1),...interior,...base.slice(rejoin)].map((tile,index,array) => ({
+    ...tile,index,finish:index===array.length-1
+  }));
+}
+
+export function boardFinish(spaces, choice) {
+  return spaces + (choice === 'questions' ? boardFork(spaces).extra : 0);
+}
+
+// Compare teams by actual geographic progress, not their raw tile counts.
+// Both lanes meet at the same square and continue together.
+export function boardMappedPosition(spaces, position, choice) {
+  const {start,rejoin,extra}=boardFork(spaces);
+  if (choice !== 'questions' || position <= start) return position;
+  const branchEnd = rejoin + extra;
+  if (position >= branchEnd) return position - extra;
+  return start+(position-start)*(rejoin-start)/(branchEnd-start);
+}
+
+export function boardRequiresChoice(spaces, position, choice) {
+  return !choice && position + 6 > boardFork(spaces).start;
+}
+
 export function suggestedTurnCap(spaces, pieces) {
   return boardTurnCaps.find(cap => cap >= Math.ceil(spaces / 3.5) * pieces) ?? boardTurnCaps.at(-1);
 }

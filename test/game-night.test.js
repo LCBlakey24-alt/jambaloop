@@ -290,6 +290,7 @@ test('Board Race records off-turn predictions and resolves them after the 3D rol
   const offTurn = players.find(([, team]) => team !== activeTeam)[0];
   await request(room.path + '/predict', active, { game, index, guess: 'high' }, 403);
   await request(room.path + '/predict', offTurn, { game, index, guess: 'high' }, 204);
+  await request(room.path + '/board-path', active, { game, index, path: 'power' }, 204);
   await request(room.path + '/roll', active, { game, index }, 204);
   const rolling = await room.state();
   assert.equal(rolling.prediction.result, undefined);

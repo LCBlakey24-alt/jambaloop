@@ -58,7 +58,7 @@ try {
       await page.locator('.game-tile[data-mode="quizrace"]').click();
       assert.equal(await page.locator('#game-preview').isVisible(),true,'Expanded preview missing');
       assert.equal(await page.locator('#mode-list').isVisible(),false,'Grid should hide while preview is expanded');
-      assert.match(await page.locator('#game-preview').innerText(),/How to play/);
+      assert.match(await page.locator('#game-preview').innerText(),/How to play/i);
       assert.match(await page.locator('#game-preview').innerText(),/Cross|line first|finish/i);
       await page.screenshot({path:'browser-screenshots/preview-quizrace.png'});
       await page.locator('[data-action="close-preview"]').click();

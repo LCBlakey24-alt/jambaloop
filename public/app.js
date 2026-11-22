@@ -7,6 +7,8 @@ import { boardSpeedValues, bonusValues, canSetScore, defaultScoring, doubleSched
 import { gameNightPresets, gameNightView, playlistEditor, playlistLimit, replayButtons } from './game-night.js';
 import { forgetPlayer, parseRoomCode, recentRooms, rememberPlayer, rememberedPlayer } from './room-session.js';
 import { modeVariables, sceneBackdrop } from './mode-style.js';
+import { launcherTile, launcherPreview, launcherModes, launcherSetupArtwork, LAUNCHER_PAGE_SIZE } from './home-launcher.js';
+import { stopNarration, toggleNarration } from './narrator.js';
 import { playCue, playTowerImpact } from './sound-cues.js';
 import { boardLengths, boardRoute, boardDuration, durationLabel, suggestedTurnCap } from './board-route.js';
 import { avatarView, partyView } from './party-views.js';
@@ -50,6 +52,10 @@ let boardDisplay;
 let boardModule;
 let renderedPhase;
 let categoryGroup = 0;
+let homeFilter = 'all';
+let homePage = 0;
+let homeSelected;
+let homeTab = 'games';
 let tvFocus = false;
 let partyReply = '';
 let joinAvatar;
@@ -131,6 +137,7 @@ function updateQuizRaceVisuals() {
 }
 
 function renderHome() {
+  stopNarration();
   boardDisplay?.dispose();
   boardDisplay = undefined;
   raceTrackView?.dispose(); raceTrackView = undefined;
@@ -141,7 +148,13 @@ function renderHome() {
   announcement.textContent = '';
   partyReply = '';
   footer.hidden = false;
-  app.querySelector('[data-action="recent-rooms"]').hidden = recentRooms().length === 0;
+  const recent = app.querySelector('[data-action="recent-rooms"]');
+  if (recent) recent.hidden = recentRooms().length === 0;
+  homeFilter = 'all';
+  homePage = 0;
+  homeSelected = undefined;
+  homeTab = 'games';
+  showHomeTab('games');
   renderModeCards('all');
   categoryGroup = 0;
   document.querySelector('#category-filters').innerHTML = categoryGroups.map(([name], index) => `
@@ -149,24 +162,61 @@ function renderHome() {
   renderCategories();
 }
 
-function renderModeCards(group) {
-  const list = document.querySelector('#mode-list');
-  list.dataset.filter = group;
-  list.innerHTML = modes.filter(([id]) =>
-    group === 'all' || partyModes.includes(id) === (group === 'party'))
-    .map(([id, name, description, icon], index) => {
-      const minimum = minimumPlayers(id);
-      return `<button class="mode-card mode-with-art" data-action="host" data-mode="${id}" style="--entry:${Math.min(index, 7)};${modeVariables(id)}">
-        <img class="mode-cover" src="/mode-${id}.${id==='quizrace'?'svg':'webp'}" alt="" loading="lazy" decoding="async">
-        <span class="mode-icon" style="--icon:url('/icons/${icon}.svg')"><i></i></span>
-        <span class="mode-description"><strong>${name}</strong><small>${description}</small><small class="mode-minimum">${minimum}+${minimum === 1 ? ' player' : ' players'}</small></span>
-        ${icons('arrow-up-right', 'arrow')}</button>`;
-    }).join('');
+function showHomeTab(tab) {
+  if (!['games','topics'].includes(tab)) return;
+  stopNarration();
+  homeTab = tab;
+  app.querySelectorAll('[data-home-panel]').forEach(panel => {
+    panel.hidden = panel.dataset.homePanel !== tab;
+  });
+  document.querySelectorAll('[data-action="home-tab"]').forEach(button => {
+    button.setAttribute('aria-pressed', String(button.dataset.tab === tab));
+  });
+  const heading = app.querySelector(tab === 'games' ? '#mode-heading' : '#category-heading');
+  if (heading && tab === 'topics') heading.setAttribute('tabindex','-1');
+}
+
+function homePageSize() {
+  if (matchMedia('(max-width: 760px)').matches) return 4;
+  if (matchMedia('(max-width: 900px)').matches) return 6;
+  return LAUNCHER_PAGE_SIZE;
+}
+
+function renderModeCards(group = homeFilter) {
+  stopNarration();
+  const list = app.querySelector('#mode-list');
+  if (!list) return;
+  homeFilter = group;
+  const matches = launcherModes(homeFilter);
+  const size = homePageSize();
+  const pages = Math.max(1, Math.ceil(matches.length / size));
+  homePage = Math.max(0, Math.min(homePage, pages - 1));
+  list.innerHTML = matches.slice(homePage * size, (homePage + 1) * size).map(launcherTile).join('');
+  const preview = app.querySelector('#game-preview');
+  if (homeSelected && matches.some(([id]) => id === homeSelected)) {
+    preview.innerHTML = launcherPreview(homeSelected);
+    preview.hidden = false;
+    list.hidden = true;
+  } else {
+    homeSelected = undefined;
+    preview.innerHTML = '';
+    preview.hidden = true;
+    list.hidden = false;
+  }
+  const pager = app.querySelector('#mode-pager');
+  pager.hidden = Boolean(homeSelected);
+  const previous = pager.querySelector('[data-direction="-1"]');
+  const next = pager.querySelector('[data-direction="1"]');
+  previous.disabled = homePage === 0;
+  next.disabled = homePage >= pages - 1;
+  pager.querySelector('#mode-page-output').textContent = `Page ${homePage + 1} of ${pages} · ${matches.length} games`;
+  const count = app.querySelector('#mode-count');
+  if (count) count.textContent = homeSelected ? 'How to play and game setup' : 'Select a tile to see how it works';
 }
 
 function setupPreview(mode, play = false) {
   return `<div class="setup-look" style="${modeVariables(mode)}">
-    <img class="setup-mode-still" src="/mode-${mode}.${mode==='quizrace'?'svg':'webp'}" alt="" decoding="async">
+    ${launcherSetupArtwork(mode)}
     ${explainer(mode, play)}</div>`;
 }
 
@@ -184,6 +234,7 @@ function renderCategories() {
 }
 
 function openDialog(mode, value, gameMode, quizId) {
+  stopNarration();
   practice = undefined;
   dialog.classList.toggle('setup-dialog', ['host', 'configure', 'rematch', 'practice', 'library', 'night'].includes(mode));
   if (['host', 'configure', 'rematch'].includes(mode)) {
@@ -1192,6 +1243,10 @@ document.addEventListener('click', async event => {
   const button = event.target.closest('[data-action]');
   if (!button) return;
   const action = button.dataset.action;
+  if (action === 'narrator-toggle') {
+    toggleNarration(button.dataset.mode);
+    return;
+  }
   if (action === 'clear-selfie') {
     joinAvatar = undefined;
     const preview = content.querySelector('#selfie-preview');
@@ -1200,10 +1255,36 @@ document.addEventListener('click', async event => {
     button.hidden = true;
     return;
   }
+  if (action === 'home-tab') {
+    if (!session) showHomeTab(button.dataset.tab);
+    return;
+  }
   if (action === 'filter-modes') {
     document.querySelectorAll('.mode-filters button').forEach(filter =>
       filter.setAttribute('aria-pressed', String(filter === button)));
+    homePage = 0;
+    homeSelected = undefined;
     renderModeCards(button.dataset.group);
+    return;
+  }
+  if (action === 'mode-page') {
+    homePage += Number(button.dataset.direction);
+    renderModeCards(homeFilter);
+    return;
+  }
+  if (action === 'preview-mode') {
+    const id = button.dataset.mode;
+    if (!modes.some(([mode]) => mode === id)) return;
+    homeSelected = id;
+    renderModeCards(homeFilter);
+    app.querySelector('[data-action="close-preview"]')?.focus({preventScroll:true});
+    return;
+  }
+  if (action === 'close-preview') {
+    const id = homeSelected;
+    homeSelected = undefined;
+    renderModeCards(homeFilter);
+    app.querySelector(`[data-action="preview-mode"][data-mode="${id}"]`)?.focus({preventScroll:true});
     return;
   }
   if (action === 'race-answer' || action === 'race-pass') {
@@ -1226,7 +1307,7 @@ document.addEventListener('click', async event => {
   }
   if (action === 'filter-topics') {
     categoryGroup = Number(button.dataset.group);
-    document.querySelectorAll('.topic-filter').forEach(filter =>
+    document.querySelectorAll('#category-filters .topic-filter').forEach(filter =>
       filter.setAttribute('aria-pressed', String(filter === button)));
     renderCategories();
     return;
@@ -1380,6 +1461,25 @@ document.addEventListener('click', async event => {
 });
 
 dialog.addEventListener('close', () => content.querySelector('video')?.pause());
+document.addEventListener('keydown', event => {
+  if (event.key !== 'Escape' || dialog.open || session || !homeSelected) return;
+  const id = homeSelected;
+  homeSelected = undefined;
+  renderModeCards(homeFilter);
+  app.querySelector(`[data-action="preview-mode"][data-mode="${id}"]`)?.focus({preventScroll:true});
+});
+matchMedia('(max-width: 900px)').addEventListener('change', () => {
+  if (session || !app.querySelector('[data-home-shell]')) return;
+  homePage = 0;
+  homeSelected = undefined;
+  renderModeCards(homeFilter);
+});
+matchMedia('(max-width: 760px)').addEventListener('change', () => {
+  if (session || !app.querySelector('[data-home-shell]')) return;
+  homePage = 0;
+  homeSelected = undefined;
+  renderModeCards(homeFilter);
+});
 
 renderHome();
 mobileDeck(app, dialog, content);

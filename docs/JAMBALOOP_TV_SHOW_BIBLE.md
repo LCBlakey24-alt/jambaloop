@@ -37,7 +37,7 @@ The TV is a *broadcast stage*, never a second phone controller. Phone buttons ar
 ## New original formats — next to implement or extend
 **Brain Ladder:** implemented as the next draft game. Original programmatically checked reasoning deck, 5/7/10 levels, two-life elimination, vertical TV ladder and private phone controls. Benchmark difficulty through playtesting; never invent population percentages.
 
-**Rare Find:** players try to give an obscure *valid* answer to a topic. Do not present fabricated poll percentages or label arbitrary scores as real survey findings. Source a genuinely permissioned survey dataset or explicitly score uniqueness among current room answers. Stage: dramatic falling score columns and an evidence/status ribbon. Phones: typed answer, then review/dispute where required.
+**Rare Find:** implemented in draft with 34 finite, inspectable question catalogues and accepted aliases. Points are tied to actual room response counts (unique +200, one matching partner +100, 3+ matches +50, invalid 0); there is no outside sample or fabricated data. A host-only review stage can reject an unknown answer, accept it as a new answer or map it to an existing canonical answer, with an audit record. TV: emerald/gold response stage, review and reveal boards. Phone: private typed entry. See `docs/RARE_FIND_GAME_RULES.md`.
 
 **Top Answers:** implemented in a draft original **live-room poll + prediction** version. Players vote among four original options, predict the room favourite, then the TV reveals the *actual* collected counts and percentages, including ties. No fabricated sample; optional future team/steal variant needs a separate build. An externally surveyed question pack would require documented sample/source/date and rights metadata.
 

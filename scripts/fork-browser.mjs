@@ -60,6 +60,15 @@ try {
         assert.equal(response.status(),204,await response.text());
       }
       if(step<2){
+        const stageResponse=await context.request.get(site+'/api/rooms/'+code,{headers:{'x-game-key':hostKey}});
+        const stageData=await stageResponse.json();
+        console.log('Trolley after placement '+(step+1),{
+          serverPhase:stageData.phase,serverStep:stageData.party?.step,serverVotes:stageData.party?.submissions,
+          hostText:(await host.locator('.fork-intro .eyebrow').textContent().catch(()=>'')),
+          phoneText:(await phone.locator('.fork-intro .eyebrow').textContent().catch(()=>'')),
+        });
+        assert.equal(stageData.phase,'party-build','Server did not advance to the next placement');
+        assert.equal(stageData.party.step,step+1,'Server did not advance to expected card stage');
         await host.waitForFunction((expected)=>document.querySelector('.fork-game')?.dataset.forkPhase==='party-build' &&
           document.querySelector('.fork-intro .eyebrow')?.textContent?.includes('PLACEMENT '+expected+'/3'),step+2,{timeout:15000});
         await phone.locator('.fork-card-pick').first().waitFor({timeout:15000});

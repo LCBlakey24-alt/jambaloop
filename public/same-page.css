@@ -1,0 +1,98 @@
+/* Same Page: premium mint/lilac broadcast. TV is presentation; phone is the controller. */
+.samepage-game {
+  --same-mint:#77efdc;--same-lilac:#c9b6ff;
+  color:#effcff;
+  min-width:0;min-height:0;
+  padding:clamp(14px,2vw,28px);
+  background:radial-gradient(circle at 8% 2%,#76f7dd23,transparent 30%),
+    radial-gradient(circle at 98% 100%,#be9aff1a,transparent 36%),#14223a;
+  border:1px solid #6bdbd16c;
+  box-shadow:inset 0 0 55px #0b132955,0 14px 40px #0c0e283b;
+  border-radius:18px;
+  display:flex; flex-direction:column; gap:clamp(10px,1.4dvh,18px);
+  overflow:hidden;
+}
+.samepage-intro {display:flex;align-items:center;gap:12px;border-bottom:1px solid #ffffff2a;padding-bottom:clamp(7px,1dvh,11px);}
+.samepage-logo {font:900 clamp(18px,2.9dvh,30px)/1 'Club Classic','House Sans',sans-serif;letter-spacing:-.02em;color:#fff;}
+.samepage-logo span {color:var(--same-mint);}
+.samepage-round {font:900 clamp(11px,1.5dvh,14px)/1.2 'House Sans',sans-serif;color:#a6b6cd;letter-spacing:.12em;margin-left:auto;}
+.samepage-live {font:800 clamp(9px,1.4dvh,12px)/1.2 'House Sans',sans-serif;border:1px solid #77efdca8;border-radius:999px;color:var(--same-mint);padding:6px 9px;white-space:nowrap;}
+.samepage-step {font:900 clamp(11px,1.6dvh,15px)/1.3 'House Sans',sans-serif;color:var(--same-mint);letter-spacing:.2em;}
+.samepage-prompt {text-align:center;max-width:1000px;margin:0 auto;}
+.samepage-prompt h1,.samepage-reveal-head h1,.samepage-finale h1 {font:900 clamp(24px,5.7dvh,64px)/1.1 'Club Classic','House Sans',sans-serif;margin:8px 0 10px;letter-spacing:-.04em;}
+.samepage-prompt p,.samepage-reveal-head p {font-size:clamp(13px,1.9dvh,20px);color:#c3d5e8;line-height:1.5;margin:0;}
+.samepage-host-wait {display:grid;place-items:center;gap:3px;flex:1;text-align:center;}
+.samepage-host-wait p {font:600 clamp(12px,1.6dvh,15px)/1.4 'House Sans',sans-serif;color:#9eafc9;margin:0;}
+.samepage-submissions strong {font:900 clamp(38px,7dvh,72px)/1 'Club Classic',sans-serif;color:var(--same-mint);}
+.samepage-submissions span {font:850 clamp(12px,2dvh,20px)/1.2 'House Sans',sans-serif;color:#dae4ff;}
+.samepage-orbits {height:clamp(55px,15dvh,160px);width:clamp(90px,16vw,180px);position:relative;display:grid;place-items:center;}
+.samepage-orbits i {position:absolute;width:72%;height:72%;border:2px solid var(--same-mint);opacity:.4;border-radius:50%;}
+.samepage-orbits i:nth-child(2) {width:100%;height:100%;border-color:var(--same-lilac);}
+.samepage-orbits i:nth-child(3) {width:44%;height:44%;background:var(--same-mint);opacity:.12;}
+.samepage-orbits b {font:900 clamp(24px,4dvh,50px)/1 'Club Classic',sans-serif;color:var(--same-mint);}
+.samepage-host-advance {align-self:center;}
+.samepage-answer-form {display:flex;flex-direction:column;gap:10px;margin:auto 0;}
+.samepage-answer-form label {font-weight:850;font-size:15px;color:var(--same-mint);}
+.samepage-answer-form textarea {width:100%;min-height:100px;background:#1b314b;border:2px solid #6de5d0;border-radius:12px;color:#fff;font:700 20px/1.4 'House Sans',sans-serif;padding:14px;resize:vertical;}
+.samepage-answer-form .button {min-height:54px;}
+.samepage-answer-form small {color:#becde3;line-height:1.4;}
+.samepage-locked {margin:auto 0;display:grid;place-items:center;gap:12px;text-align:center;border:1px dashed #78edd1;padding:24px;border-radius:18px;}
+.samepage-locked strong {color:var(--same-mint);text-transform:uppercase;letter-spacing:.12em;}
+.samepage-locked span {font:850 clamp(25px,4vw,42px)/1.1 'Club Classic',sans-serif;}
+.samepage-locked p {color:#bdc7d7;margin:0;}
+.samepage-reveal-head {text-align:center;}
+.samepage-reveal-head h1 {font-size:clamp(23px,4.3dvh,47px);}
+.samepage-reveal-stats {display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:9px;}
+.samepage-reveal-stats span {background:#79ead31f;border:1px solid #a3fbe34a;border-radius:8px;padding:5px 12px;font-weight:750;color:var(--same-mint);font-size:12px;}
+.samepage-matches {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;min-height:0;overflow:auto;align-content:start;}
+.samepage-group {min-width:0;display:grid;grid-template-columns:clamp(55px,6vw,84px) minmax(0,1fr) auto;align-items:center;gap:12px;border:1px solid #b9a8ff53;border-radius:13px;padding:clamp(9px,1.5dvh,15px);background:linear-gradient(125deg,#283452ee,#152540ee);}
+.samepage-group.matched {border-color:#84eed8c1;background:linear-gradient(125deg,#214b55f5,#152c4bed);box-shadow:inset 4px 0 0 #70ecd3;}
+.samepage-group-count {display:flex;flex-direction:column;align-items:center;gap:2px;color:#bdc9dc;font:900 10px/1 'House Sans',sans-serif;letter-spacing:.04em;}
+.samepage-group-count strong {font:900 clamp(24px,3.7dvh,43px)/1 'Club Classic',sans-serif;color:var(--same-mint);}
+.samepage-group-main {min-width:0;display:flex;flex-direction:column;gap:5px;}
+.samepage-group-main>strong {font:900 clamp(15px,2.7dvh,28px)/1.17 'Club Classic',sans-serif;overflow-wrap:anywhere;}
+.samepage-names {color:#c9d5e7;font:650 clamp(11px,1.6dvh,14px)/1.4 'House Sans',sans-serif;overflow-wrap:anywhere;}
+.samepage-group-points {font:900 clamp(18px,3dvh,33px)/1 'Club Classic',sans-serif;color:var(--same-mint);text-align:right;white-space:nowrap;}
+.samepage-group-points small {display:block;font:800 9px/1.5 'House Sans',sans-serif;letter-spacing:.09em;color:#b0c4dc;}
+.samepage-your-score {margin:0;text-align:center;color:#dbe5f4;font-size:13px;}
+.samepage-your-score b {color:var(--same-mint);}
+.samepage-host-next {display:flex;justify-content:center;margin-top:auto;}
+.samepage-finale {display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;min-height:0;}
+.samepage-victory-mark {font-size:clamp(30px,5dvh,58px);color:var(--same-mint);}
+.samepage-finale h1 {font-size:clamp(25px,5dvh,50px);margin:0;}
+.samepage-finale p {color:#c5d4e7;margin:0;}
+.samepage-final-board {width:min(100%,720px);display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:5px 0;padding:0;list-style:none;min-height:0;overflow:auto;}
+.samepage-final-board li {display:flex;justify-content:space-between;gap:12px;padding:8px 12px;background:#b9e5ff16;border:1px solid #9ac9eb58;border-radius:9px;font-weight:750;}
+.samepage-final-board li b {color:var(--same-mint);margin-right:7px;}
+.samepage-final-board li span {overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.samepage-final-board li strong {white-space:nowrap;}
+/* Mobile is a portrait controller, not a miniature television. */
+.player-only .samepage-game {overflow:auto;gap:15px;}
+.player-only .samepage-prompt h1 {font-size:clamp(23px,7vw,35px);}
+.player-only .samepage-matches {grid-template-columns:1fr;overflow:visible;}
+.player-only .samepage-final-board {grid-template-columns:1fr;overflow:visible;}
+.player-only .samepage-group {grid-template-columns:48px minmax(0,1fr) 62px;gap:7px;padding:10px 7px;}
+.player-only .samepage-group-points {font-size:18px;}
+.player-only .samepage-group-main strong {font-size:16px;}
+.player-only .samepage-reveal-head h1 {font-size:25px;}
+.player-only .samepage-reveal-stats span {font-size:10px;}
+@media(max-width:760px) {
+  .samepage-intro {flex-wrap:wrap;gap:6px;}
+  .samepage-logo {font-size:20px;}
+  .samepage-live {font-size:9px;}
+  .samepage-game {padding:12px;}
+  .samepage-matches {grid-template-columns:1fr;}
+}
+@media(max-height:680px) and (min-width:761px) {
+ .host-screen .samepage-game {padding:10px;gap:6px;}
+ .host-screen .samepage-prompt h1 {font-size:clamp(23px,5dvh,36px);}
+ .host-screen .samepage-orbits {height:65px;}
+ .host-screen .samepage-group {padding:6px;}
+}
+@media(prefers-reduced-motion:no-preference) {
+  .host-screen.phase-enter[data-phase="party-reveal"] .samepage-group {animation:samepage-card .44s cubic-bezier(.2,.7,.2,1) both;}
+  .host-screen.phase-enter[data-phase="party-reveal"] .samepage-group:nth-child(2n) {animation-delay:.11s;}
+  .samepage-orbits i:first-child {animation:samepage-pulse 2.5s ease-in-out infinite;}
+}
+@keyframes samepage-card {from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes samepage-pulse {50%{transform:scale(.86);opacity:.85}}

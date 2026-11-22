@@ -13,6 +13,7 @@ export const narration = {
   potato: "Things are heating up in Hot Potato! Answer quickly to pass the pressure to someone else. Don't get caught holding it when time runs out. Good luck!",
   quizrace: "Welcome to Quiz Race! Think fast, answer correctly, and put your foot down! Every second counts as you race your friends to the finish line. Ready? Let's race!",
   showdown: "It's Team Showdown! Bring your team together, share your knowledge and pile up the points. Only one side can take the victory — let the showdown begin!",
+  samepage: "Welcome to Same Page! Read the prompt, write your first thought, and hope your friends think exactly like you. Every matching mind earns you points!",
 };
 // Three professional ElevenLabs recordings were successfully generated on 22 November 2026.
 // Remaining modes use offline-capable, no-cost browser-native speech synthesis until recordings exist.

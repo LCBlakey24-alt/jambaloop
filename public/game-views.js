@@ -98,6 +98,11 @@ export function lobbyView(state, { host, escape, icons, modeName }) {
     ${boardPlan ? `<small>${state.boardLength} spaces · ${boardPlan.teams} ${boardPlan.teams === 1 ? 'piece' : 'pieces'} · About ${durationLabel(boardPlan)}${state.playerCount ? '' : ' with ' + state.teamCount + ' players'}</small>` : ''}
     ${state.connected < minimum && party ? `<small>Needs at least ${minimum} players</small>` : ''}${state.mode === 'showdown' ? `<small>Up to ${state.teamCount} balanced teams${state.playerCount < 2 ? ' · needs at least two players' : ''}</small>` : ''}</div></div>`;
 
+  const joinOrigin = host ? new URL(state.joinUrl).origin : '';
+  const joinOptions = host ? (state.joinOptions || []) : [];
+  const localOnly = /^https?:\/\/(localhost|127\.0\.0\.1)(:|\/)/i.test(state.joinUrl || '');
+  const joinSelector = joinOptions.length > 1 ? '<label class="join-address-label">Phone connection address<select data-join-origin aria-label="Choose the network address used in the QR code">' +
+    joinOptions.map(option => '<option value="' + escape(option.origin) + '" ' + (option.origin === joinOrigin ? 'selected' : '') + '>' + escape(option.label) + '</option>').join('') + '</select></label>' : '';
   const readyCount = state.readyCount ?? 0;
   const readyText = `${readyCount} of ${state.connected} ready`;
   if (!host) return `<div class="game-panel phone-lobby">
@@ -114,8 +119,12 @@ export function lobbyView(state, { host, escape, icons, modeName }) {
     `<option value="${player.id}" ${player.id === state.captainId ? 'selected' : ''}>${escape(player.name)}</option>`).join('')}</select></label>
     <button class="button outline small" type="submit">Assign</button></form>` : '';
   return `<h1>${state.game > 1 ? 'Rematch lobby' : 'Party lobby'}<span class="brand-dot">.</span></h1><div class="lobby">
-    <div class="game-panel join-panel"><div><div class="eyebrow">JOIN ON YOUR PHONE</div><div class="room-code">${state.code}</div>
-      <p>Scan the QR code or open <strong>${escape(new URL(state.joinUrl).host)}</strong> on your phone.</p>
+    <div class="game-panel join-panel"><div class="join-network"><div class="eyebrow">JOIN ON YOUR PHONE</div><div class="room-code">${state.code}</div>
+      <p class="join-help">Scan using a phone on the <strong>same Wi-Fi</strong> as this laptop.</p>
+      <p class="join-url" aria-label="Phone join link">${escape(state.joinUrl)}</p>
+      ${joinSelector}
+      ${localOnly ? '<p class="join-warning" role="alert">This address works only on the laptop. Connect to Wi-Fi and restart the server to find a phone address.</p>' : ''}
+      <p class="join-help">If scanning fails, try another address or allow Node.js through Windows Firewall.</p>
       <button class="button outline" data-action="copy">${icons('link')} Copy join link</button></div>
       <div class="join-qr-frame"><img class="qr" src="${state.qr}" alt="QR code to join room ${state.code}"></div></div>
     <div class="game-panel roster-panel"><div class="eyebrow">IN THE ROOM</div>

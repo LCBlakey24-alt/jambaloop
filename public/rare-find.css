@@ -38,7 +38,9 @@
 .rare-review-row>div:first-child{min-width:0;display:grid;gap:3px;}
 .rare-review-row strong{font:850 clamp(13px,1.9dvh,19px) 'House Sans',sans-serif;overflow-wrap:anywhere;}
 .rare-review-row small{font:700 clamp(10px,1.25dvh,12px) 'House Sans',sans-serif;color:#c4e6dc;}
-.rare-review-buttons{display:flex;gap:5px;flex-shrink:0;}
+.rare-review-buttons{display:flex;gap:5px;flex-shrink:0;align-items:center;}
+.rare-review-buttons select{max-width:min(22vw,235px);min-height:36px;padding:5px 7px;background:#e8f9f4;color:#16392f;border:1px solid #a3efcb;border-radius:7px;font:750 clamp(10px,1.4dvh,14px) 'House Sans',sans-serif;}
+.rare-review-buttons select:focus-visible{outline:2px solid var(--rare-gold);outline-offset:2px;}
 .rare-review-buttons button{min-height:38px;padding:5px 10px;font-weight:850;}
 .rare-review-buttons button[aria-pressed="true"]{background:#b4f9d0;color:#112f28;border-color:#b4f9d0;}
 .rare-review-footnote{color:var(--rare-gold)!important;font-weight:850!important;}
@@ -72,6 +74,7 @@
 .rare-final-leaders li strong{color:var(--rare-green);white-space:nowrap;}
 .lobby-rare-art{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:112px;min-height:83px;padding:9px;background:linear-gradient(135deg,#12574e,#174962,#113d46);border-radius:12px;border:1px solid #98f0c5a3;font:950 23px/1 'Club Classic',sans-serif;color:#fff;}
 .lobby-rare-art b{color:var(--rare-green);}
+@media(max-width:980px){.rare-review-row{flex-wrap:wrap}.rare-review-buttons{width:100%;flex-wrap:wrap}.rare-review-buttons select{flex:1;max-width:none;min-width:130px;}}
 .player-only .rare-game{gap:10px;overflow:auto;padding:12px;}
 .player-only .rare-stage{flex:0 0 auto;overflow:visible;min-height:max-content;justify-content:flex-start;}
 .player-only .rare-head{flex-wrap:wrap;gap:5px;}

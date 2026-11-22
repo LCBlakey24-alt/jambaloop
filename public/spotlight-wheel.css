@@ -104,6 +104,10 @@ button.spotlight-choice:hover,button.spotlight-choice:focus-visible {background:
 .player-only .spotlight-focus {min-height:max-content;flex-shrink:0;justify-content:flex-start;}
 .player-only .spotlight-question-stage {min-height:max-content;flex-shrink:0;justify-content:flex-start;}
 .player-only .spotlight-wheel-wrap {width:115px;min-width:115px;}
+/* During the phone's decision, the real question and tap targets matter more than the decorative wheel. */
+.player-only .spotlight-game:not([data-spotlight-phase="spotlight-ready"]) .spotlight-wheel-wrap {display:none;}
+.player-only .spotlight-game:not([data-spotlight-phase="spotlight-ready"]) .spotlight-cast {grid-template-columns:repeat(2,minmax(0,1fr));width:100%;}
+.player-only .spotlight-game:not([data-spotlight-phase="spotlight-ready"]) .spotlight-wheel-side {width:100%;}
 .player-only .spotlight-wheel {border-width:4px;}
 .player-only .spotlight-wheel-label {display:none;}
 .player-only .spotlight-wheel-core {inset:28%;box-shadow:0 0 0 3px #f7ce9a;}

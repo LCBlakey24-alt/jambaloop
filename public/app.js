@@ -741,7 +741,7 @@ function render(s) {
     const canRoll = board ? host || ownTeam?.id === team.id : canControl;
     const needsPath = board && !rolling && boardRequiresChoice(s.boardLength,team.position,team.pathChoice);
     const action = board || rally ? 'Roll the dice' : 'Spin the wheel';
-    const title = board ? `${team.name}’s turn` : rally ? (rolling ? 'Dice in motion' : 'Roll for points') : rolling ? 'Spinning the wheel' : 'Spin for a category';
+    const title = board ? `${escape(team.name)}’s turn` : rally ? (rolling ? 'Dice in motion' : 'Roll for points') : rolling ? 'Spinning the wheel' : 'Spin for a category';
     const status = rolling ? (board ? 'Watch the die drop through the tower.' : rally ? 'Rolling the dice…' : 'Choosing a category…')
       : board ? needsPath ? 'Your team has reached a fork. Choose a path before rolling.' : 'The die sets the move, base points, and question level. Every team answers the landing square’s genre.' : rally ? 'The dice set the multiplier for everyone’s correct answers.' : 'The wheel picks the next topic.';
     body = `<div class="game-panel turn-panel ${board || rally ? 'board-turn' : 'wheel-turn'}">
@@ -758,7 +758,7 @@ function render(s) {
         ${board && team.pathChoice && !rolling ? `<p class="board-route-selected">Route chosen: <strong>${team.pathChoice === 'power' ? 'Power Lane · ×2 points' : 'Question Trail · +4 spaces'}</strong></p>` : ''}
         ${!rolling && canRoll && !needsPath ? `<button class="button primary" data-action="roll">${icons(board ? 'dice-5' : rally ? 'dices' : 'disc-3')} ${action}</button>` : ''}
         ${board ? boardPrediction(s, host) : ''}
-        ${!rolling && !canRoll ? `<p class="turn-wait">${board ? 'Waiting for Team ' + team.name + ' to roll.' : rally ? 'Waiting for the captain to roll.' : 'Waiting for the captain to spin.'}</p>` : ''}
+        ${!rolling && !canRoll ? `<p class="turn-wait">${board ? 'Waiting for ' + (s.playStyle === 'individual' ? '' : 'Team ') + escape(team.name) + ' to roll.' : rally ? 'Waiting for the captain to roll.' : 'Waiting for the captain to spin.'}</p>` : ''}
       </div></div>`;
   } else if (s.phase === 'score-break') {
     body = scoreBreakView(s, { host, canControl, escape, icons });

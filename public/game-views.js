@@ -1,4 +1,4 @@
-import { boardRoute, boardDuration, durationLabel } from './board-route.js';
+import { boardRoute, boardPath, boardPathChoices, boardFinish, boardFork, boardMappedPosition, boardDuration, durationLabel } from './board-route.js';
 import { avatarView } from './party-views.js';
 import { categories, categoryName, partyModes, minimumPlayers, wheelCategories } from './game-config.js';
 
@@ -33,7 +33,7 @@ export function rollRecap(state, forStage = false) {
   const team = state.teams[state.activeTeam];
   const dice = board ? [motion.die] : motion.dice;
   const summary = board ? `Team ${team.name} rolled ${motion.die} · ${categoryName(motion.category)}` : `Rolled ${dice.join(' + ')} = ${motion.sum}`;
-  const outcome = board ? `Space ${motion.to} of ${state.boardLength} · Level ${motion.difficulty}/6${forStage ? ' · ' + motion.points + ' base pts' : ''}`
+  const outcome = board ? `Space ${motion.to} of ${boardFinish(state.boardLength,motion.pathChoice)} · Level ${motion.difficulty}/6${motion.pathMultiplier === 2 ? ' · POWER ×2 for active team' : motion.pathChoice === 'questions' ? ' · QUESTION TRAIL' : ''}${forStage ? ' · ' + motion.points + ' base pts' : ''}`
     : `×${motion.multiplier} points`;
   return `<div class="roll-recap ${forStage ? 'stage-score' : board ? 'turn-info' : 'roll-result'}"${team ? ` style="--roll-accent:${team.color}"` : ''}>
     <div class="roll-faces">${dice.map(dieBadge).join('')}</div><div><strong>${summary}</strong><small>${outcome}</small></div></div>`;
@@ -43,7 +43,7 @@ export function teamList(state, personalTeam, compact = false) {
   const showScores = state.phase === 'finished' || (state.scoreInterval ?? 1) === 1;
   return `<div class="board-teams ${compact ? 'compact-teams' : ''}">${state.teams.map(team => `<div class="board-team ${team.id === state.activeTeam ? 'active-team' : ''}" style="--team:${team.color}">
     <span class="team-mark" aria-hidden="true">${pawnMarks[team.id]}</span><span><strong>${team.name}${team.id === personalTeam ? ' · your team' : ''}</strong>
-    <small>${team.position === state.boardLength ? 'Finished' : team.position + ' / ' + state.boardLength + ' spaces'}${showScores ? ' · ' + team.score.toLocaleString() + ' pts' : ''}</small></span>
+    <small>${team.position >= boardFinish(state.boardLength,team.pathChoice) ? 'Finished' : Math.round(boardMappedPosition(state.boardLength,team.position,team.pathChoice)*10)/10 + ' / ' + state.boardLength + ' towards finish'}${team.pathChoice ? ' · ' + (team.pathChoice === 'power' ? 'Power Lane' : 'Question Trail') : ''}${showScores ? ' · ' + team.score.toLocaleString() + ' pts' : ''}</small></span>
     ${showScores && state.phase === 'reveal' && team.roundPoints ? `<span class="team-bonus">+${team.roundPoints} pts</span>` : ''}</div>`).join('')}</div>`;
 }
 
@@ -52,7 +52,7 @@ export function boardView(state) {
   const edge = state.boardLength / 8;
   const tiles = route.map(({ x, z, index, category, label, finish }) => {
     const entry = categories.find(([id]) => id === category);
-    const tokens = state.teams.filter(team => team.position === index);
+    const tokens = state.teams.filter(team => Math.round(boardMappedPosition(state.boardLength,team.position,team.pathChoice)) === index);
     return `<div class="fallback-tile" data-landing="${index === state.motion?.to}" style="grid-area:${z + edge + 1}/${x + edge + 1};--tile:${entry?.[4] ?? '#fff0d4'}" title="${label}">
       <strong>${finish ? '⚑' : index || '✦'}</strong><small>${entry?.[5] ?? label}</small>
       <span>${tokens.map(team => `<i style="--pawn:${team.color}">${pawnMarks[team.id]}</i>`).join('')}</span></div>`;
@@ -61,8 +61,9 @@ export function boardView(state) {
     : `Race board with ${state.boardLength} spaces and a dice tower`;
   return `<div class="board-stage race-stage" id="board-stage" role="img" aria-label="${label}">
     <div class="board-fallback" style="--board-grid:${edge * 2 + 1};--center-end:${edge * 2 + 1}" aria-hidden="true">${tiles}
-    <div class="fallback-center"><strong>Board Race</strong><span>${state.boardLength} spaces</span>
+    <div class="fallback-center"><strong>Board Race</strong><span>${state.boardLength} spaces · Fork ahead</span><small>POWER ×2 · QUIZ +4 tiles</small>
     ${state.motion ? dieBadge(state.motion.die) : ''}</div></div>
+    <div class="board-fork-key" aria-hidden="true"><span class="power">Power ×2</span><span class="questions">Question Trail +4</span></div>
     <div class="stage-beat" aria-hidden="true"><span data-during="rolling">In the tower</span><span data-during="landing">Bouncing onto the board</span><span data-during="moving">Pawn advancing</span></div>
     ${rollRecap(state, true)}
   </div>`;

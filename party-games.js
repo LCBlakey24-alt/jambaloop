@@ -9,6 +9,7 @@ import {startForkRound, advanceFork, submitFork, publicFork, advanceForkWhenRead
 import {startSamePageRound, advanceSamePage, submitSamePage, publicSamePage, advanceSamePageWhenReady} from './same-page.js';
 import {startSpotlightGame,advanceSpotlight,submitSpotlight,publicSpotlight} from './spotlight-wheel.js';
 import {startBrainGame,advanceBrain,submitBrain,publicBrain} from './brain-ladder.js';
+import {startTopAnswersRound,advanceTopAnswers,submitTopAnswers,publicTopAnswers} from './top-answers.js';
 export { partyModes };
 const prompts = [
   'Name something you might find under a sofa.',
@@ -35,6 +36,7 @@ function potatoQuestion(room) {
 }
 
 export function startParty(room, publish) {
+  if (room.mode === 'topanswers') return startTopAnswersRound(room,publish);
   if (room.mode === 'brain') return startBrainGame(room,publish);
   if (room.mode === 'spotlight') return startSpotlightGame(room,publish);
   if (room.mode === 'samepage') return startSamePageRound(room, publish);
@@ -67,6 +69,7 @@ export function expireParty(room, publish) {
 }
 
 export function advanceParty(room, publish) {
+  if (room.mode === 'topanswers') return advanceTopAnswers(room,publish);
   if (room.mode === 'brain') return advanceBrain(room,publish);
   if (room.mode === 'spotlight') return advanceSpotlight(room,publish);
   if (room.mode === 'samepage') return advanceSamePage(room, publish);
@@ -93,6 +96,7 @@ export function submitParty(room, key, data, publish) {
   }
   if (!room.players.has(key)) return [403, 'Join as a player to take a turn.'];
   if (data?.game !== room.game) return [409, 'This game has moved on.'];
+  if (room.mode === 'topanswers') return submitTopAnswers(room,key,data,publish);
   if (room.mode === 'brain') return submitBrain(room,key,data,publish);
   if (room.mode === 'spotlight') return submitSpotlight(room,key,data,publish);
   if (room.mode === 'samepage') return submitSamePage(room, key, data, publish);
@@ -136,6 +140,7 @@ export function submitParty(room, key, data, publish) {
 }
 
 export function publicParty(room, key) {
+  if (room.mode === 'topanswers') return publicTopAnswers(room,key);
   if (room.mode === 'brain') return publicBrain(room,key);
   if (room.mode === 'spotlight') return publicSpotlight(room,key);
   if (room.mode === 'samepage') return publicSamePage(room, key);

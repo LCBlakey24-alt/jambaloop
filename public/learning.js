@@ -17,11 +17,12 @@ const summaries = {
   brain: 'Start with two lives, solve fresh logic puzzles, and climb five, seven or ten increasingly difficult levels. Every wrong or missed answer costs a life. Correct answers are worth more points on higher levels.',
   samepage: 'Everyone privately types an answer to a prompt. Matching answers earn points when revealed together.',
   spotlight: 'The wheel chooses a topic and a player expert. The expert suggests an answer privately, then the contestant makes the final choice. Everyone takes a turn.',
+  topanswers: 'First choose the option you truly prefer. Your room anonymously votes to create real popularity data. Then secretly predict the top choice. Earn 20 points per real vote for that answer, plus 100 for choosing an option tied for most votes.',
 };
 
 export function explainer(mode, play) {
   const title = modes.find(([id]) => id === mode)[1];
-  if(['quizrace','brain','samepage','spotlight'].includes(mode))return `<details class="mode-explainer" ${play?'open':''}><summary>How to play ${title}</summary><p>${summaries[mode]}</p></details>`;
+  if(['quizrace','brain','samepage','spotlight','topanswers'].includes(mode))return `<details class="mode-explainer" ${play?'open':''}><summary>How to play ${title}</summary><p>${summaries[mode]}</p></details>`;
   return `<details class="mode-explainer" ${play ? 'open' : ''}><summary>Watch how to play ${title}</summary>
     <video aria-label="How to play ${title}" controls playsinline muted preload="none" poster="/videos/${mode}.jpg"
       ${play && !matchMedia('(prefers-reduced-motion: reduce)').matches ? 'autoplay' : ''}>

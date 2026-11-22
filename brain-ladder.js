@@ -15,62 +15,62 @@ function makePuzzle(level,v) {
   if (level===1) {
     const start=2+2*v,delta=2+v%4;
     return numberPuzzle(level,v,
-      \`What number comes next? \${[0,1,2,3].map(i=>start+i*delta).join(', ')}, ?\`,
-      start+4*delta,\`Each number increases by \${delta}.\`,delta);
+      `What number comes next? ${[0,1,2,3].map(i=>start+i*delta).join(', ')}, ?`,
+      start+4*delta,`Each number increases by ${delta}.`,delta);
   }
   if (level===2) {
     const start=1+v,mult=2+v%2;
     return numberPuzzle(level,v,
-      \`What number comes next? \${[0,1,2].map(i=>start*mult**i).join(', ')}, ?\`,
-      start*mult**3,\`Multiply each number by \${mult}.\`,mult);
+      `What number comes next? ${[0,1,2].map(i=>start*mult**i).join(', ')}, ?`,
+      start*mult**3,`Multiply each number by ${mult}.`,mult);
   }
   if (level===3) {
     const day=v%7,offset=8+v,target=(day+offset)%7;
-    return {level,variant:v,prompt:\`Today is \${days[day]}. What day of the week will it be in \${offset} days?\`,
+    return {level,variant:v,prompt:`Today is ${days[day]}. What day of the week will it be in ${offset} days?`,
       answer:days[target],options:[0,1,2,3].map(delta=>days[(target+delta)%7]),
-      explanation:\`A week has 7 days. \${offset} days is \${Math.floor(offset/7)} full weeks plus \${offset%7} days.\`};
+      explanation:`A week has 7 days. ${offset} days is ${Math.floor(offset/7)} full weeks plus ${offset%7} days.`};
   }
   if (level===4) {
     const packets=3+v,items=2+v%5;
     return numberPuzzle(level,v,
-      \`You have \${packets} packets, with \${items} stickers in each. How many stickers do you have?\`,
-      packets*items,\`Multiply \${packets} by \${items}.\`,items);
+      `You have ${packets} packets, with ${items} stickers in each. How many stickers do you have?`,
+      packets*items,`Multiply ${packets} by ${items}.`,items);
   }
   if (level===5) {
     const start=4+v,a=2+v%5,b=a+3+v%4;
     const values=[start,start+a,start+a+b,start+2*a+b,start+2*a+2*b];
     return numberPuzzle(level,v,
-      \`The jumps alternate between two sizes. What number comes next? \${values.join(', ')}, ?\`,
-      start+3*a+2*b,\`The jumps alternate +\${a}, +\${b}, +\${a}, +\${b}. Next is +\${a}.\`,a);
+      `The jumps alternate between two sizes. What number comes next? ${values.join(', ')}, ?`,
+      start+3*a+2*b,`The jumps alternate +${a}, +${b}, +${a}, +${b}. Next is +${a}.`,a);
   }
   if (level===6) {
     const hidden=3+v,mult=3+v%5,add=8+v%9,total=hidden*mult+add;
     return numberPuzzle(level,v,
-      \`Find the hidden number: (□ × \${mult}) + \${add} = \${total}.\`,
-      hidden,\`Subtract \${add} from \${total} then divide by \${mult}.\`);
+      `Find the hidden number: (□ × ${mult}) + ${add} = ${total}.`,
+      hidden,`Subtract ${add} from ${total} then divide by ${mult}.`);
   }
   if (level===7) {
     const n=1+v,extra=2+v%7;
     return numberPuzzle(level,v,
-      \`What is next in this square-number pattern? \${[0,1,2,3].map(i=>(n+i)**2+extra).join(', ')}, ?\`,
-      (n+4)**2+extra,\`The terms are consecutive perfect squares plus \${extra}.\`,n+4);
+      `What is next in this square-number pattern? ${[0,1,2,3].map(i=>(n+i)**2+extra).join(', ')}, ?`,
+      (n+4)**2+extra,`The terms are consecutive perfect squares plus ${extra}.`,n+4);
   }
   if (level===8) {
     const position=13+v,index=(position-1)%colours.length;
-    return {level,variant:v,prompt:\`A colour pattern repeats: Red, Blue, Green, Yellow, Purple. Which colour is in position \${position}, counting Red as position 1?\`,
+    return {level,variant:v,prompt:`A colour pattern repeats: Red, Blue, Green, Yellow, Purple. Which colour is in position ${position}, counting Red as position 1?`,
       answer:colours[index],options:[0,1,2,3].map(step=>colours[(index+step)%5]),
-      explanation:\`The cycle has 5 colours. Position \${position} corresponds to position \${index+1} in the repeating cycle.\`};
+      explanation:`The cycle has 5 colours. Position ${position} corresponds to position ${index+1} in the repeating cycle.`};
   }
   if (level===9) {
     const middle=7+2*v,sum=3*middle;
     return numberPuzzle(level,v,
-      \`Three consecutive odd numbers add up to \${sum}. What is the largest of the three?\`,
-      middle+2,\`Their middle value is \${sum} ÷ 3 = \${middle}. The largest is 2 higher.\`,2);
+      `Three consecutive odd numbers add up to ${sum}. What is the largest of the three?`,
+      middle+2,`Their middle value is ${sum} ÷ 3 = ${middle}. The largest is 2 higher.`,2);
   }
   const people=6+v;
   return numberPuzzle(level,v,
-    \`At a gathering of \${people} people, each pair shakes hands exactly once. How many handshakes happen?\`,
-    people*(people-1)/2,\`There are \${people} × \${people-1} ÷ 2 unique pairs.\`,people-1);
+    `At a gathering of ${people} people, each pair shakes hands exactly once. How many handshakes happen?`,
+    people*(people-1)/2,`There are ${people} × ${people-1} ÷ 2 unique pairs.`,people-1);
 }
 
 export const brainPuzzleBank=Object.freeze(
@@ -79,7 +79,7 @@ export const brainPuzzleBank=Object.freeze(
       const entry=makePuzzle(i+1,v);
       if(new Set(entry.options).size!==4 || entry.options.length!==4 ||
         !entry.options.includes(entry.answer)) throw Error('Invalid brain puzzle choices');
-      return Object.freeze({...entry,id:\`brain-v1-\${i+1}-\${v}\`,historyId:questionHistoryId(entry.prompt)});
+      return Object.freeze({...entry,id:`brain-v1-${i+1}-${v}`,historyId:questionHistoryId(entry.prompt)});
     })
   ))
 );

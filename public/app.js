@@ -10,7 +10,7 @@ import { modeVariables, sceneBackdrop } from './mode-style.js';
 import { launcherTile, launcherPreview, launcherModes, launcherSetupArtwork, LAUNCHER_PAGE_SIZE } from './home-launcher.js';
 import { stopNarration, toggleNarration } from './narrator.js';
 import { playCue, playTowerImpact } from './sound-cues.js';
-import { boardLengths, boardRoute, boardDuration, durationLabel, suggestedTurnCap } from './board-route.js';
+import { boardLengths, boardRoute, boardDuration, durationLabel, suggestedTurnCap, boardRequiresChoice, boardPathChoices } from './board-route.js';
 import { avatarView, partyView } from './party-views.js';
 import { openLibrary, savedQuizzes } from './quiz-editor.js';
 import { answerGuide, helpTypes, closestStep, createDraft, formatNumber, orderedItems, specialAnswer } from './answer-controls.js';
@@ -290,7 +290,9 @@ function openDialog(mode, value, gameMode, quizId) {
       <div class="form-row"><label>Board spaces<select name="boardLength">${selected(boardLengths.map(length => [length, length + ' spaces']), configured ? state.boardLength : 16)}</select></label>
       <label>Expected players<input name="plannedPlayers" type="number" min="1" max="300" value="${configured ? state.playerCount || state.teamCount : 4}"></label></div>
       <label id="board-speed-field">Max speed bonus<select name="boardSpeed">${selected(boardSpeedValues.map(value => [value, value ? '+' + value + '% of the die roll' : 'Off']), speed)}</select></label>
-      <div class="route-preview" aria-hidden="true"></div><output class="duration-preview" aria-live="polite"></output>
+      <div class="route-preview" aria-hidden="true"></div>
+      <p class="board-path-setup-note"><strong>Two paths at the fork:</strong> Power Lane = fewer spaces and ×2 points for the active team on its special tiles; Question Trail = four extra spaces and more turns to earn points.</p>
+      <output class="duration-preview" aria-live="polite"></output>
       <small>Estimates use dice odds, question time and time between turns.</small>
     </fieldset>
     <label>Phone display<select name="phoneView">${selected([['full', 'Show question and answers'], ['answers', 'Answer controls only · read the TV']], configured ? state.phoneView : 'full')}</select></label>
@@ -384,7 +386,7 @@ function openDialog(mode, value, gameMode, quizId) {
         : privateQuiz ? 'Each player gets a unique multiple-choice or True or False question in each round.'
         : custom ? 'Uses every question in the saved quiz in its authored order.'
         : curated ? 'A curated mixed-topic pack with multiple-choice questions.' : board
-        ? 'The roll sets the move, the base points and the question level. The landing space picks the genre.'
+        ? 'Choose Power Lane for double points on its special tiles, or Question Trail for four extra question spaces. The dice set movement and question level.'
         : game === 'wheel' ? 'The wheel picks a different category until it has used them all. ' + scoringNote
         : game === 'dice' ? 'Two dice set the points multiplier for each question. ' + scoringNote
         : game === 'knockout' ? 'Wrong or missed answers cost a life. The last player standing wins.'
@@ -713,10 +715,11 @@ function render(s) {
   } else if (s.phase === 'ready' || s.phase === 'rolling') {
     const rolling = s.phase === 'rolling';
     const canRoll = board ? host || ownTeam?.id === team.id : canControl;
+    const needsPath = board && !rolling && boardRequiresChoice(s.boardLength,team.position,team.pathChoice);
     const action = board || rally ? 'Roll the dice' : 'Spin the wheel';
     const title = board ? `${team.name}’s turn` : rally ? (rolling ? 'Dice in motion' : 'Roll for points') : rolling ? 'Spinning the wheel' : 'Spin for a category';
     const status = rolling ? (board ? 'Watch the die drop through the tower.' : rally ? 'Rolling the dice…' : 'Choosing a category…')
-      : board ? 'The die sets the move, base points, and question level. Every team answers the landing square’s genre.' : rally ? 'The dice set the multiplier for everyone’s correct answers.' : 'The wheel picks the next topic.';
+      : board ? needsPath ? 'Your team has reached a fork. Choose a path before rolling.' : 'The die sets the move, base points, and question level. Every team answers the landing square’s genre.' : rally ? 'The dice set the multiplier for everyone’s correct answers.' : 'The wheel picks the next topic.';
     body = `<div class="game-panel turn-panel ${board || rally ? 'board-turn' : 'wheel-turn'}">
       ${host ? board ? boardView(s) : rally ? diceView(s) : wheelView(s) : ''}
       <div class="turn-copy"><div class="eyebrow">${board ? 'TURN' : 'QUESTION'} ${s.index + 1} OF ${s.total}</div>
@@ -725,7 +728,11 @@ function render(s) {
         <p role="status">${status}</p>
         ${board ? teamList(rolling ? { ...s, teams: s.teams.map(entry => entry.id === s.activeTeam ? { ...entry, position: s.motion.from } : entry) } : s, ownTeam?.id) : ''}
         ${rally ? '<div class="dice-rules"><span>2–6 <b>×1</b></span><span>7–10 <b>×2</b></span><span>11–12 <b>×3</b></span></div>' : ''}
-        ${!rolling && canRoll ? `<button class="button primary" data-action="roll">${icons(board ? 'dice-5' : rally ? 'dices' : 'disc-3')} ${action}</button>` : ''}
+        ${needsPath ? `<div class="board-path-picker"><h2>Choose your route</h2><p>Both lanes rejoin before the finish. Which will you take?</p>
+          <div class="board-path-options">${boardPathChoices.map(option => `<button class="board-path-option ${option.id}" type="button" data-action="board-path" data-path="${option.id}"
+          ${!canRoll ? 'disabled' : ''}><b>${option.name}</b><small>${option.detail}</small></button>`).join('')}</div></div>` : ''}
+        ${board && team.pathChoice && !rolling ? `<p class="board-route-selected">Route chosen: <strong>${team.pathChoice === 'power' ? 'Power Lane · ×2 points' : 'Question Trail · +4 spaces'}</strong></p>` : ''}
+        ${!rolling && canRoll && !needsPath ? `<button class="button primary" data-action="roll">${icons(board ? 'dice-5' : rally ? 'dices' : 'disc-3')} ${action}</button>` : ''}
         ${board ? boardPrediction(s, host) : ''}
         ${!rolling && !canRoll ? `<p class="turn-wait">${board ? 'Waiting for Team ' + team.name + ' to roll.' : rally ? 'Waiting for the captain to roll.' : 'Waiting for the captain to spin.'}</p>` : ''}
       </div></div>`;
@@ -1425,6 +1432,9 @@ document.addEventListener('click', async event => {
       await refresh();
     } else if (action === 'predict') {
       await api('/' + current.code + '/predict', { game: state.game, index: state.index, guess: button.dataset.guess });
+      await refresh();
+    } else if (action === 'board-path') {
+      await api('/' + current.code + '/board-path', { index: state.index, game: state.game, path: button.dataset.path });
       await refresh();
     } else if (action === 'roll') {
       await api('/' + current.code + '/roll', { index: state.index, game: state.game });

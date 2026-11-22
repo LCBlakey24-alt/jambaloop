@@ -196,3 +196,29 @@ test('Spotlight rejects incorrect role, stale round and invalid option indices',
     assert.ok(expert);
   });
 });
+
+test('Spotlight extended games give every participant the same number of turns',async()=>{
+  await withServer(async request=>{
+    const made=await request('',null,{mode:'spotlight',category:'mixed',format:'choice',count:2,seconds:0},201);
+    const base='/'+made.code;
+    for(const name of ['Taylor','Robin','Jamie','Morgan']) await request(base+'/join',null,{name},201);
+    const state=()=>request(base,made.host);
+    const advance=async()=>{const s=await state();await request(base+'/advance',made.host,
+      {phase:s.phase,game:s.game,index:s.index},204);};
+    await advance();
+    assert.equal((await state()).total,8);
+    const counts=new Map();
+    for(let i=0;i<8;i++){
+      const s=await state();
+      const id=s.party.contestant.id;
+      counts.set(id,(counts.get(id)||0)+1);
+      await advance(); // expert selection
+      await advance(); // expert skipped
+      await advance(); // no final answer
+      await advance(); // next contestant or results
+    }
+    assert.equal((await state()).phase,'finished');
+    assert.equal(counts.size,4);
+    assert.deepEqual([...counts.values()].sort(),[2,2,2,2]);
+  });
+});

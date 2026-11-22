@@ -150,10 +150,12 @@ test('Only the host can adjudicate; approved synonyms share rarity groups; audit
     assert.equal(s.phase,'rare-review');
     assert.equal(s.party.reviewCount,2);
     assert.equal(s.party.remaining,2);
+    assert.match(s.party.reviewSource,/ons\.gov\.uk/,'Reviewing host must have the source reference');
     assert.equal(s.party.results,undefined,'Premature score reveal is prohibited');
     const player=await state(keys[0]);
     assert.equal(player.party.reviews,undefined);
     assert.equal(player.party.answerChoices,undefined);
+    assert.equal(player.party.reviewSource,undefined,'Only the TV host receives review source controls');
     assert.equal(player.party.ownAnswer,'Wales');
     assert.equal(player.party.results,undefined);
     const rows=s.party.reviews;

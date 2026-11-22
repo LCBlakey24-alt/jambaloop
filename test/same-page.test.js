@@ -74,7 +74,7 @@ test('Same Page is playable: private answers, matches, multiple rounds and final
     const duplicate=await write(participants[0],0,'Ice Cream',409);
     assert.match(duplicate.error,/already locked/);
     const hostAttempt=await write(made.host,0,'pizza',403);
-    assert.match(hostAttempt.error,/Join this game/);
+    assert.match(hostAttempt.error,/Join as a player/);
     await write(participants[1],0,'pizza');
     assert.equal((await state()).phase,'party-write');
     await write(participants[2],0,'Ice cream');

@@ -5,6 +5,7 @@ import { makeQuestions } from './questions.js';
 
 import { partyModes, socialModes } from './public/game-config.js';
 import { startSocialRound, advanceSocial, submitSocial, publicSocial, advanceSocialWhenReady } from './social-games.js';
+import {startForkRound, advanceFork, submitFork, publicFork, advanceForkWhenReady} from './fork-game.js';
 export { partyModes };
 const prompts = [
   'Name something you might find under a sofa.',
@@ -31,6 +32,7 @@ function potatoQuestion(room) {
 }
 
 export function startParty(room, publish) {
+  if (room.mode === 'tracks') return startForkRound(room,publish);
   if (socialModes.includes(room.mode)) return startSocialRound(room, publish);
   const keys = connectedPlayers(room);
   if (room.mode === 'bluff') {
@@ -59,6 +61,7 @@ export function expireParty(room, publish) {
 }
 
 export function advanceParty(room, publish) {
+  if (room.mode === 'tracks') return advanceFork(room,publish);
   if (socialModes.includes(room.mode)) return advanceSocial(room, publish);
   if (room.phase === 'party-write') room.phase = 'party-vote';
   else if (room.phase === 'party-vote') {
@@ -75,6 +78,10 @@ export function advanceParty(room, publish) {
 
 export function submitParty(room, key, data, publish) {
   expireParty(room, publish);
+  if (room.mode === 'tracks') {
+    if (data?.game !== room.game) return [409,'This game has moved on.'];
+    return submitFork(room,key,data,publish);
+  }
   if (!room.players.has(key)) return [403, 'Join as a player to take a turn.'];
   if (data?.game !== room.game) return [409, 'This game has moved on.'];
   if (socialModes.includes(room.mode) && room.party) return submitSocial(room, key, data, publish);
@@ -117,6 +124,7 @@ export function submitParty(room, key, data, publish) {
 }
 
 export function publicParty(room, key) {
+  if (room.mode === 'tracks') return publicFork(room,key);
   const party = room.party;
   if (!party) return;
   if (socialModes.includes(room.mode)) return publicSocial(room, key);
@@ -151,6 +159,7 @@ export function publicParty(room, key) {
 }
 
 export function advancePartyWhenReady(room, publish) {
+  if (room.mode === 'tracks') return advanceForkWhenReady(room,publish);
   if (!['party-write', 'party-vote'].includes(room.phase)) return false;
   if (socialModes.includes(room.mode)) return advanceSocialWhenReady(room, publish);
   const party = room.party;

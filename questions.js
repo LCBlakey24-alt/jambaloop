@@ -489,6 +489,8 @@ for (const [category, items] of Object.entries(verifiedChoiceQuestions)) {
 }
 
 const hasSeen = (seen, prompt) => seen.has(prompt) || seen.has(questionHistoryId(prompt));
+const verifiedSources = new Map(Object.values(verifiedChoiceQuestions).flat().map(({prompt,source})=>[prompt,source]));
+export const verifiedSourceFor = prompt => verifiedSources.get(prompt);
 export const questionCategories = Object.keys(banks);
 
 export function makeQuestions(category, count, seen = new Set(), format = 'choice', includeChristmas = true, difficulty = 'standard') {

@@ -17,6 +17,7 @@ import { inviteOriginOptions, qrJoinUrl } from './room-invite.js';
 import { fileURLToPath } from 'node:url';
 import { validateQuiz, prepareCustomQuiz } from './public/custom-quiz.js';
 import { boardQuestion, makeQuestions, questionCategories } from './questions.js';
+import {questionHistoryId, questionHistoryLimit, validQuestionHistoryId} from './public/question-history.js';
 import { modes, themes, formats, difficulties, teams, socialModes, minimumPlayers, boardRollDuration, defaultTheme, fixedQuestionModes, questionCounts, wheelCategories, scoreIntervals, supportsScoreCheckpoints } from './public/game-config.js';
 
 const app = express();
@@ -68,6 +69,8 @@ function resetPlayer(player) {
 }
 
 function resetGame(room, settings) {
+  // Carry already seen race prompts into the shared per-room history before replaying.
+  if (room.race?.issued) for (const prompt of room.race.issued) room.seen.add(prompt);
   for (const [key, player] of room.waiting) room.players.set(key, player);
   room.waiting.clear();
   stopDeadline(room);
@@ -199,7 +202,7 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
     closest: revealed && question?.type === 'estimate' ? room.closest : undefined,
     breakdown: revealed && isHost && !room.privateQuestions && ['choice', 'boolean'].includes(question.type) ? question.options.map((_, option) =>
       [...answers.values()].filter(entry => entry.option === option).length) : undefined,
-    question: visible && question ? { ...publicQuestion, basePoints: room.motion?.points ?? (question.type === 'estimate' && room.legacyScoring ? 1000 : room.scoring?.base), prompt: isHost || room.phoneView === 'full' ? publicQuestion.prompt : undefined, correct: revealed ? correct : undefined } : undefined,
+    question: visible && question ? { ...publicQuestion, historyId:questionHistoryId(question.prompt), basePoints: room.motion?.points ?? (question.type === 'estimate' && room.legacyScoring ? 1000 : room.scoring?.base), prompt: isHost || room.phoneView === 'full' ? publicQuestion.prompt : undefined, correct: revealed ? correct : undefined } : undefined,
     qr: isHost ? qr : undefined, joinUrl: isHost ? joinUrl : undefined,
     joinOptions: isHost ? room.joinOptions : undefined };
 }
@@ -296,7 +299,13 @@ app.post('/api/rooms/:code/join', (req, res) => {
     return res.status(400).json({ error: 'Use a smaller selfie or join without a photo.' });
   }
   const id = token();
+  const seenQuestions = req.body?.seenQuestions ?? [];
+  if (!Array.isArray(seenQuestions) || seenQuestions.length > questionHistoryLimit ||
+      seenQuestions.some(id => !validQuestionHistoryId(id)))
+    return res.status(400).json({ error: 'Your question history could not be loaded. Clear local game history and retry.' });
   const player = { id, name, ready: false, avatar: avatar ? '/api/rooms/' + room.code + '/avatar/' + id : undefined };
+  // Each player's optional device history influences the next question selection.
+  for (const id of seenQuestions) room.seen.add(id);
   if (avatar) {
     room.avatars ??= new Map();
     room.avatars.set(id, Buffer.from(avatar.split(',')[1], 'base64'));
@@ -503,10 +512,10 @@ function readyTurn(room) {
   publish(room);
 }
 
-function raceQuestionPool(category, difficulty, includeChristmas) {
+function raceQuestionPool(category, difficulty, includeChristmas, history = new Set()) {
   // The source bank has uneven Easy/Hard coverage. Supplement in-category curated items
   // with standard questions; the UI labels this limitation rather than changing topics.
-  const standard = makeQuestions(category, 160, new Set(), 'choice', includeChristmas, 'standard');
+  const standard = makeQuestions(category, 160, history, 'choice', includeChristmas, 'standard');
   const levels = difficulty === 'mixed' ? ['family', 'challenge'] : difficulty === 'easy' ? ['family'] : difficulty === 'hard' ? ['challenge'] : [];
   const curated = levels.flatMap(level => difficultyQuestions[level]
     .filter(([genre]) => category === 'mixed' ? (includeChristmas || genre !== 'christmas') : genre === category)
@@ -520,11 +529,13 @@ function raceQuestionPool(category, difficulty, includeChristmas) {
     seen.add(item.prompt);
     pool.push(item);
   }
-  return pool;
+  // Returning players receive unseen prompts first, even on Quiz Race.
+  return pool.sort((a,b) => Number(history.has(a.prompt) || history.has(questionHistoryId(a.prompt))) -
+    Number(history.has(b.prompt) || history.has(questionHistoryId(b.prompt))));
 }
 
 function startRace(room) {
-  const pool = raceQuestionPool(room.category, room.raceDifficulty, room.includeChristmas);
+  const pool = raceQuestionPool(room.category, room.raceDifficulty, room.includeChristmas, room.seen);
   if (!pool.length) throw new Error('No questions available for Quiz Race.');
   room.race = createQuizRace([...room.players], pool, { length: room.raceLength, track: room.raceTrack, difficulty: room.raceDifficulty }, performance.now());
   room.phase = 'race-countdown';
@@ -533,6 +544,11 @@ function startRace(room) {
 }
 
 function startGame(room) {
+  // The first quiz is selected only after everyone has joined and supplied
+  // their previous question history, not when the TV room is first created.
+  if (fixedQuestionModes.includes(room.mode) && !room.customQuiz && !room.privateQuestions) {
+    room.questions = makeQuestions(room.category, room.count, room.seen, room.format, room.includeChristmas, room.difficulty);
+  }
   if (room.mode === 'tracks') {
     // Exactly one round per joined player; every player drives once.
     room.count = room.players.size;

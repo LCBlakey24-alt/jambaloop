@@ -59,7 +59,7 @@ function readSettings(body = {}) {
   const scores = canSetScore(mode) ? (scoring
     ? { base: scoring.base, bonus: seconds ? scoring.bonus : 0, doubles: scoring.doubles }
     : defaultScoring(seconds)) : undefined;
-  return { mode, theme, difficulty, raceLength, raceTrack, raceDifficulty, scoring: scores, boardSpeed: seconds ? boardSpeed : 0, legacyScoring: scoring === undefined, format: privateTeam ? 'choice' : format, category: fixedQuestionModes.includes(mode) && !privateTeam ? category : 'mixed', count: ['tracks', 'samepage'].includes(mode) ? count : socialModes.includes(mode) ? 3 : partyModes.includes(mode) ? 1 : quiz?.questions.length ?? count,
+  return { mode, theme, difficulty, raceLength, raceTrack, raceDifficulty, scoring: scores, boardSpeed: seconds ? boardSpeed : 0, legacyScoring: scoring === undefined, format: privateTeam ? 'choice' : format, category: fixedQuestionModes.includes(mode) && !privateTeam ? category : 'mixed', count: ['tracks', 'samepage', 'spotlight'].includes(mode) ? count : socialModes.includes(mode) ? 3 : partyModes.includes(mode) ? 1 : quiz?.questions.length ?? count,
     seconds, autoReveal, includeChristmas, phoneView: privateTeam ? 'full' : phoneView, privateQuestions: privateTeam,
     teamCount, boardLength, playStyle, scoreInterval: supportsScoreCheckpoints(mode) ? scoreInterval : 1, customQuiz: quiz };
 }
@@ -289,7 +289,7 @@ app.post('/api/rooms/:code/join', (req, res) => {
   const { room } = res.locals;
   const name = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
   if (!name || name.length > 24) return res.status(400).json({ error: 'Enter a nickname of up to 24 characters.' });
-  if (room.players.size + room.waiting.size >= (room.mode === 'quizrace' ? 12 : maxPlayers)) return res.status(409).json({ error: 'This room is full.' });
+  if (room.players.size + room.waiting.size >= (room.mode === 'quizrace' ? 12 : room.mode === 'spotlight' ? 20 : maxPlayers)) return res.status(409).json({ error: 'This room is full.' });
   if ([...room.players.values(), ...room.waiting.values()].some(player => player.name.toLowerCase() === name.toLowerCase())) {
     return res.status(409).json({ error: 'That nickname is taken.' });
   }
@@ -676,8 +676,8 @@ app.post('/api/rooms/:code/pause', (req, res) => {
 app.post('/api/rooms/:code/advance', (req, res) => {
   const { room, key } = res.locals;
   if (!controlsRoom(room, key)) return res.status(403).json({ error: 'Only the captain or TV host can advance the game.' });
-  if (room.mode === 'tracks' && room.phase !== 'lobby' && key !== room.host)
-    return res.status(403).json({error:'The TV host advances trolley phases; the rotating Trolley Driver makes the verdict.'});
+  if (['tracks','spotlight'].includes(room.mode) && room.phase !== 'lobby' && key !== room.host)
+    return res.status(403).json({error:'Only the TV host advances rounds in this game; contestants and experts answer on their phones.'});
   if (req.body?.game !== room.game || req.body?.phase !== room.phase || req.body?.index !== room.index) return res.sendStatus(204);
   if (room.pausedAt) return res.status(409).json({ error: 'Resume the timer before advancing.' });
   if (room.phase === 'lobby') {

@@ -1,0 +1,136 @@
+.game .lobby-game {
+  grid-template-columns: auto minmax(0,1fr);
+  align-items: center;
+  gap: 11px;
+  background: linear-gradient(111deg,color-mix(in srgb,var(--game-accent) 12%,var(--bg)),var(--bg) 73%);
+}
+.lobby-mode-art {
+  width: clamp(43px,8vw,64px);
+  aspect-ratio: 1;
+  object-fit: cover;
+  border: 1px solid var(--edge);
+  border-radius: 9px;
+}
+.lobby-game-copy { min-width: 0; display: grid; gap: 3px; }
+.ready-actions, .ready-meter {
+  display: flex;
+  align-items: center;
+  gap: 8px 10px;
+  flex-wrap: wrap;
+  font-size: .88rem;
+}
+.ready-actions [role="status"] { color: var(--muted); }
+.ready-actions [aria-pressed="true"] {
+  background: #bdeccb;
+  color: #172e22;
+  border-color: #bdeccb;
+}
+.ready-actions [aria-pressed="true"] img { filter: none; }
+.ready-meter {
+  justify-content: space-between;
+  padding: 6px 9px;
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+  background: var(--bg);
+}
+.ready-meter progress {
+  appearance: none;
+  flex: 1 1 85px;
+  min-width: 0;
+  height: 5px;
+  border: none;
+  border-radius: 6px;
+  background: var(--edge);
+  accent-color: #a7e3bf;
+}
+.ready-meter progress::-webkit-progress-bar { background: var(--edge); border-radius: 6px; }
+.ready-meter progress::-webkit-progress-value { background: #a7e3bf; border-radius: 6px; }
+.ready-meter progress::-moz-progress-bar { background: #a7e3bf; border-radius: 6px; }
+.roster-panel .players li[data-ready="true"] { box-shadow: inset 0 0 0 1px #a7e3bf64; }
+.roster-panel .ready-badge { color: #c0f2ce; }
+.round-pace { display: flex; justify-content: end; margin-bottom: 8px; }
+.tv-focus .round-pace { display: none; }
+.game .round-break {
+  min-height: min(51vh,490px);
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: clamp(6px,1.5vw,15px);
+  text-align: center;
+  background:
+    radial-gradient(ellipse at 49% 11%, color-mix(in srgb,var(--game-accent) 23%,transparent),transparent 67%),
+    var(--panel);
+}
+.pause-mark {
+  display: grid;
+  place-items: center;
+  width: clamp(35px,8vw,69px);
+  aspect-ratio: 1;
+  border-radius: 17px;
+  background: var(--game-accent);
+  box-shadow: inset 0 1px 1px #fff8,0 7px 18px #100a1770;
+}
+.pause-mark img { width: 51%; }
+.game .round-break h1 { margin: 0; }
+.break-clock { display: grid; gap: 3px; color: var(--muted); }
+.break-clock .timer {
+  background: transparent;
+  color: var(--game-accent);
+  font-size: clamp(36px,8vw,88px);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  padding: 0;
+}
+.game[data-paused="true"] .scene-backdrop > i { animation-play-state: paused; }
+.recent-rooms { display: grid; gap: 7px; margin: 12px 0; }
+.recent-room {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto minmax(0,1fr) auto;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  overflow-wrap: anywhere;
+  border: 1px solid var(--paper-line,var(--edge));
+  border-radius: 10px;
+  padding: 7px 9px;
+  background: var(--sheet,var(--bg));
+  color: inherit;
+}
+.recent-room:hover { border-color: var(--home-accent,var(--pink)); }
+.recent-room strong, .recent-room small { display: block; }
+.recent-room small { color: var(--home-muted,var(--muted)); margin-top: 2px; }
+.recent-room-icon {
+  display: grid;
+  place-items: center;
+  background: var(--home-accent,var(--pink));
+  border-radius: 8px;
+  width: 32px;
+  aspect-ratio: 1;
+}
+.recent-room-icon img, .recent-room img.recent-arrow { width: 16px; height: 16px; }
+body:not(.playing) .recent-room img.recent-arrow { filter: none; }
+body[data-theme="arcade"] .recent-room img.recent-arrow { filter: invert(1); }
+body[data-theme="arcade"] .recent-room-icon img { filter: none; }
+.resume-room-link { margin-top: 8px; }
+.resume-room-link[hidden] { display: none !important; }
+.mobile-deck .game .round-break { min-height: 0; padding-block: 13px; }
+.mobile-deck .round-break .break-clock .timer { font-size: clamp(34px,12dvh,55px); }
+.mobile-deck .pause-mark { border-radius: 9px; }
+.mobile-deck .round-pace { margin-bottom: 0; }
+.mobile-deck .ready-actions { margin-bottom: 4px; }
+.mobile-deck .resume-room-link { margin-top: 4px; }
+
+#score-interval-field small { color: var(--home-muted,var(--muted)); font-size: .78rem; font-weight: 500; }
+.game .checkpoint-note {
+  display: inline-flex;
+  width: fit-content;
+  padding: 4px 9px;
+  margin: 3px 0 0;
+  border: 1px solid var(--edge);
+  border-radius: 999px;
+  background: color-mix(in srgb,var(--game-accent) 10%,var(--bg));
+  color: var(--game-accent);
+  font-size: .8rem;
+  font-weight: 700;
+}

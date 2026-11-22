@@ -1,0 +1,83 @@
+.night-panel {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  align-items: center;
+  gap: 12px 22px;
+  background: radial-gradient(ellipse at 4% 0%,color-mix(in srgb,var(--game-accent) 17%,transparent),transparent 64%),var(--panel);
+}
+.night-main { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.night-main > div { min-width: 0; }
+.night-main .eyebrow { margin-bottom: 3px; }
+.night-main h2 { margin: 0; overflow-wrap: anywhere; }
+.night-main p { margin: 5px 0 0; }
+.night-icon {
+  width: 48px; aspect-ratio: 1; display: grid; place-items: center; flex: none;
+  border-radius: 15px; background: var(--game-accent); box-shadow: inset 0 0 0 1px #fff8,0 4px 14px #0004;
+}
+.night-icon img { width: 24px; height: 24px; }
+.night-panel .actions { margin: 0; justify-content: flex-end; }
+.night-preview {
+  display: flex; flex-wrap: wrap; gap: 6px 8px; grid-column: 1/-1; grid-row: 2;
+  margin: 0; padding: 0; list-style: none;
+}
+.night-preview li, .roster-counts span {
+  border: 1px solid var(--edge); border-radius: 99px; padding: 4px 10px; color: var(--muted);
+  background: color-mix(in srgb,var(--bg) 50%,transparent); font-size: .83rem;
+}
+.roster-counts { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: 8px 0 10px; }
+.roster-counts .online-count { color: var(--ink); }
+.online-count i {
+  display: inline-block; width: .55em; height: .55em; background: #9de7b2; border-radius: 50%; margin-right: 6px;
+  box-shadow: 0 0 10px #9de7b26b;
+}
+.players li[data-connected="false"] { background: #17152170; }
+.players li small { font-size: .68em; color: var(--muted); border-left: 1px solid var(--edge); padding-inline-start: 6px; }
+.stage-presence { margin: -7px 0 10px; color: var(--muted); font-weight: 650; font-size: .86rem; text-align: right; }
+.stage-presence:empty { display: none; }
+.stage-presence::before { content: '●'; color: #9de7b2; margin-inline-end: 7px; font-size: .8em; }
+.connection-strip {
+  margin-bottom: 9px; padding: 8px 13px; background: #463528; border: 1px solid #b89460; color: #fff1d6;
+  border-radius: 9px; font-weight: 650;
+}
+.waiting-panel { min-height: 240px; display: flex; flex-direction: column; justify-content: center; }
+.waiting-panel p { max-width: 32ch; }
+.playlist-presets, .playlist-buttons { display: flex; flex-wrap: wrap; gap: 5px; }
+.playlist-editor { list-style: none; margin: 14px 0; padding: 0; display: grid; gap: 5px; }
+.playlist-editor li {
+  display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 8px;
+  background: var(--bg); border: 1px solid var(--edge); border-radius: 9px; padding: 7px;
+}
+.playlist-number { border-radius: 50%; display: grid; place-items: center; width: 25px; height: 25px; background: var(--pink); color: #241d27; font-size: .82rem; font-weight: 800; }
+.playlist-buttons .button { padding: 5px; min-height: 34px; min-width: 30px; justify-content: center; }
+.playlist-buttons .button img { margin: 0; }
+.playlist-add { display: flex; gap: 8px; align-items: end; margin-top: 12px; }
+.playlist-add label { flex: 1; min-width: 0; }
+.playlist-add button { padding-inline: 12px; min-height: 43px; }
+.playlist-empty, .shortlist-note { color: var(--muted); }
+.side-prediction { display: grid; gap: 6px; padding: 12px; margin-top: 10px; border: 1px solid var(--edge); border-radius: 12px; }
+.side-prediction > div { display: flex; gap: 6px; flex-wrap: wrap; }
+.side-prediction .button[aria-pressed="true"] { background: var(--game-accent); color: #21201a; }
+.side-prediction small, .board-forecast { color: var(--muted); }
+.board-forecast { font-weight: 700; }
+.join-dialog-qr { width: 166px; height: 166px; }
+.tv-focus .night-panel .actions { display: none; }
+@media(max-width:720px) {
+  .night-panel { grid-template-columns: 1fr; }
+  .night-preview { grid-row: auto; }
+  .night-panel .actions { justify-content: start; }
+  .stage-presence { text-align: left; margin-top: 0; }
+}
+@media(prefers-reduced-motion:no-preference) {
+  .phase-enter .night-panel, .phase-enter .waiting-panel { animation: match-in .35s ease-out both; }
+}
+.practice-scene {
+  padding: 14px 16px;
+  margin: 12px 0;
+  border: 1px solid var(--edge);
+  border-inline-start: 4px solid var(--game-accent);
+  border-radius: 10px;
+  background: var(--bg);
+}
+.practice-scene p { margin-top: 0; font-size: 1.06rem; }
+.practice-scene [data-action="demo-answer"] { text-align: left; justify-content: start; }

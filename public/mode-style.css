@@ -1,0 +1,192 @@
+:root { --body: 'House Sans', system-ui, sans-serif; --head: 'Club Classic', 'House Sans', sans-serif; }
+body:not(.playing) { --home-title: 'House Serif', Georgia, serif; }
+body:not(.playing) .mode-card { --tint: color-mix(in srgb,var(--game-accent) 55%,#fff5e5); }
+body:not(.playing) .mode-card strong {
+  font-family: var(--mode-type),var(--body);
+  font-weight: var(--mode-weight);
+  line-height: 1.13;
+}
+body:not(.playing) .mode-card[data-mode="board"] strong,
+body:not(.playing) .mode-card[data-mode="showdown"] strong { font-size: clamp(14px,1.35vw,20px); }
+body:not(.playing) .mode-card .mode-icon { border-color: color-mix(in srgb,var(--game-accent) 65%,#28182c); }
+
+.game[data-mode] {
+  --head: var(--mode-type),var(--body);
+  --pink: var(--game-accent);
+  --bg: var(--mode-backdrop);
+  --panel: var(--mode-panel);
+  --edge: var(--mode-edge);
+  position: relative;
+  isolation: isolate;
+}
+body.playing:not([data-theme="club"]) .game[data-mode] {
+  --panel: color-mix(in srgb,var(--mode-panel) 74%,var(--room-theme));
+  --bg: color-mix(in srgb,var(--mode-backdrop) 78%,var(--room-theme));
+}
+body.playing[data-theme="christmas"] { --room-theme: #54242b; }
+body.playing[data-theme="arcade"] { --room-theme: #4b2a83; }
+body.playing[data-theme="lodge"] { --room-theme: #3f5838; }
+body.playing .game h1, body.playing .game h2, .game .screen-mode-title {
+  font-weight: var(--mode-weight);
+  overflow-wrap: anywhere;
+}
+.game[data-mode="board"] h1, .game[data-mode="board"] h2,
+.game[data-mode="dice"] h1, .game[data-mode="dice"] h2,
+.game[data-mode="showdown"] h1, .game[data-mode="showdown"] h2 {
+  letter-spacing: -.045em;
+}
+.game[data-mode="knockout"] h1, .game[data-mode="knockout"] h2 { letter-spacing: -.022em; }
+.game .screen-mode-title { line-height: 1.2; }
+.game .primary { background: var(--game-accent); color: #21182a; }
+.game .primary:hover { background: color-mix(in srgb,var(--game-accent) 82%,white); }
+.game .outline { background: var(--bg); border-color: var(--edge); }
+.game .outline:hover { border-color: var(--game-accent); }
+.game .answer:focus-visible, .game .button:focus-visible { outline-color: var(--game-accent); }
+
+.scene-backdrop {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: -1;
+  background: radial-gradient(ellipse at 14% 8%,color-mix(in srgb,var(--game-accent) 11%,transparent),transparent 60%),
+    radial-gradient(ellipse at 98% 92%,color-mix(in srgb,var(--mode-panel) 83%,transparent),transparent 57%),var(--mode-backdrop);
+}
+.scene-backdrop > i {
+  position: absolute;
+  width: clamp(100px,22vw,330px);
+  height: clamp(100px,22vw,330px);
+  display: block;
+  background: var(--game-accent);
+  opacity: .09;
+  transform: rotate(var(--tilt));
+  --tilt: -16deg;
+}
+.scene-backdrop > i:nth-child(1) { left: -10vw; top: 22%; }
+.scene-backdrop > i:nth-child(2) { right: -8vw; top: 10%; --tilt: 23deg; }
+.scene-backdrop > i:nth-child(3) { right: 9%; bottom: -17%; --tilt: -27deg; }
+.scene-backdrop[data-motif="stars"] > i {
+  clip-path: polygon(50% 4%,63% 37%,97% 50%,63% 63%,50% 96%,37% 63%,3% 50%,37% 37%);
+}
+.scene-backdrop[data-motif="orbit"] > i {
+  border-radius: 50%;
+  border: 6px solid var(--game-accent);
+  background: transparent;
+  box-shadow: inset 0 0 0 30px var(--mode-panel),0 0 0 14px var(--mode-panel);
+}
+.scene-backdrop[data-motif="tiles"] > i {
+  border-radius: 18%;
+  background: repeating-linear-gradient(0deg,transparent 0 19%,var(--game-accent) 19% 21%),
+    repeating-linear-gradient(90deg,var(--mode-panel) 0 19%,var(--game-accent) 19% 21%);
+  opacity: .17;
+}
+.scene-backdrop[data-motif="dice"] > i {
+  border: 3px solid var(--game-accent);
+  border-radius: 22%;
+  background: radial-gradient(circle at 28% 27%,var(--game-accent) 0 6%,transparent 7%),
+    radial-gradient(circle at 50% 50%,var(--game-accent) 0 6%,transparent 7%),
+    radial-gradient(circle at 73% 74%,var(--game-accent) 0 6%,transparent 7%);
+  opacity: .15;
+}
+.scene-backdrop[data-motif="pulse"] > i {
+  height: clamp(50px,11vw,160px);
+  clip-path: polygon(0 45%,22% 45%,31% 70%,45% 5%,58% 74%,68% 45%,100% 45%,100% 53%,72% 53%,57% 90%,44% 36%,33% 91%,19% 53%,0 53%);
+}
+.scene-backdrop[data-motif="glints"] > i {
+  background: transparent;
+  border: 3px solid var(--game-accent);
+  border-radius: 62% 25% 58% 30%;
+  box-shadow: inset 0 0 68px var(--game-accent);
+}
+.scene-backdrop[data-motif="bubbles"] > i {
+  width: clamp(135px,23vw,355px);
+  height: clamp(90px,16vw,235px);
+  border-radius: 28%;
+  clip-path: polygon(0 0,100% 0,100% 86%,44% 86%,30% 100%,32% 86%,0 86%);
+}
+.scene-backdrop[data-motif="cards"] > i {
+  width: clamp(90px,16vw,240px);
+  border: 4px solid var(--game-accent);
+  border-radius: 16px;
+  background: linear-gradient(25deg,var(--game-accent),transparent);
+  outline: 1px solid var(--game-accent);
+  outline-offset: -14px;
+}
+.scene-backdrop[data-motif="rails"] > i {
+  width: clamp(68px,11vw,160px);
+  height: clamp(185px,55vh,640px);
+  background: repeating-linear-gradient(0deg,var(--game-accent),var(--game-accent) 5px,transparent 5px,transparent 28px);
+  border-inline: 5px solid var(--game-accent);
+  opacity: .12;
+}
+.scene-backdrop[data-motif="sparks"] > i {
+  clip-path: polygon(54% 2%,24% 46%,51% 46%,39% 98%,77% 42%,52% 42%);
+  opacity: .16;
+}
+.scene-backdrop[data-motif="flags"] > i {
+  clip-path: polygon(12% 10%,82% 10%,100% 48%,82% 86%,12% 86%,12% 100%,5% 100%,5% 10%);
+  background: linear-gradient(120deg,var(--game-accent),var(--mode-panel));
+}
+
+.scene-burst { position: fixed; inset: 0; z-index: 2; visibility: hidden; pointer-events: none; }
+.scene-burst b { position: absolute; top: 12%; left: var(--left); width: 8px; height: 13px; border-radius: 2px; background: var(--game-accent); }
+.scene-burst b:nth-child(1) { --left: 8%; --drift: -35px; }
+.scene-burst b:nth-child(2) { --left: 16%; --drift: 29px; }
+.scene-burst b:nth-child(3) { --left: 26%; --drift: -37px; }
+.scene-burst b:nth-child(4) { --left: 71%; --drift: 32px; }
+.scene-burst b:nth-child(5) { --left: 82%; --drift: -25px; }
+.scene-burst b:nth-child(6) { --left: 91%; --drift: 38px; }
+@keyframes scene-drift {
+  50% { transform: translate(var(--dx,15px),var(--dy,-20px)) rotate(calc(var(--tilt) + 12deg)); }
+}
+@keyframes stage-confetti {
+  0% { opacity: .86; transform: translate(0,30px) rotate(0); }
+  64% { opacity: .68; }
+  100% { opacity: 0; transform: translate(var(--drift),100px) rotate(160deg); }
+}
+@media(prefers-reduced-motion:no-preference) {
+  .scene-backdrop > i { animation: scene-drift 15s ease-in-out infinite; }
+  .scene-backdrop > i:nth-child(2) { animation-duration: 20s; --dx: -19px; --dy: 15px; }
+  .scene-backdrop > i:nth-child(3) { animation-duration: 23s; --dx: 18px; --dy: -27px; }
+  .scene-backdrop[data-motif="rails"] > i { --dy: -33px; }
+  .scene-backdrop[data-motif="bubbles"] > i { --dy: -33px; }
+  .scene-burst { visibility: visible; }
+  .scene-burst > b { animation: stage-confetti .85s ease-out both; }
+  .scene-burst > b:nth-child(even) { animation-delay: .08s; }
+}
+@media(max-width:650px) {
+  .scene-backdrop > i { opacity: .06; }
+  .game[data-mode="showdown"] .screen-mode-title { font-size: 12px; }
+}
+@keyframes phase-swoosh {
+  from { opacity: 0; transform: translateX(-45vw) skewX(-22deg); }
+  35% { opacity: .42; }
+  to { opacity: 0; transform: translateX(128vw) skewX(-22deg); }
+}
+@media(prefers-reduced-motion:no-preference) {
+  .phase-enter:is([data-phase="rolling"],[data-phase="reveal"],[data-phase="party-reveal"]) .scene-backdrop::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: -18%;
+    width: 40vw;
+    height: 136%;
+    background: linear-gradient(90deg,transparent,color-mix(in srgb,var(--game-accent) 25%,transparent),transparent);
+    animation: phase-swoosh .55s ease-out both;
+  }
+}
+
+@keyframes motif-orbit {
+  50% { transform: translate(18px,-17px) rotate(calc(var(--tilt) + 70deg)) scale(.91); }
+}
+@keyframes motif-travel {
+  50% { transform: translate(20px,-32px) rotate(var(--tilt)); }
+}
+@keyframes motif-spark {
+  50% { transform: translate(-10px,-16px) rotate(calc(var(--tilt) + 8deg)) scale(.82); }
+}
+@media(prefers-reduced-motion:no-preference) {
+  .scene-backdrop[data-motif="orbit"] > i { animation-name: motif-orbit; }
+  .scene-backdrop[data-motif="rails"] > i, .scene-backdrop[data-motif="flags"] > i { animation-name: motif-travel; }
+  .scene-backdrop[data-motif="sparks"] > i, .scene-backdrop[data-motif="pulse"] > i { animation-name: motif-spark; }
+}

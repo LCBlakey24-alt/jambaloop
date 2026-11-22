@@ -1,0 +1,120 @@
+/* Game browser */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+body:not(.playing) .hero {
+  background: radial-gradient(ellipse at 82% 46%,color-mix(in srgb,var(--home-accent) 9%,transparent),transparent 68%),var(--paper);
+}
+body:not(.playing) .hero-art { border: 1px solid color-mix(in srgb,var(--home-accent) 18%,transparent); box-shadow: 0 16px 39px #25235527; }
+body:not(.playing) .mode-filters { width: fit-content; padding: 4px; border: 1px solid var(--paper-line); border-radius: 12px; background: var(--sheet); }
+body:not(.playing) .mode-card { min-height: 162px; overflow: hidden; }
+body:not(.playing) .mode-card .mode-description { grid-area: 2/1/3/3; align-self: end; z-index: 1; }
+body:not(.playing) .mode-card .mode-icon { grid-area: 1/1; z-index: 1; }
+body:not(.playing) .mode-card .arrow { grid-area: 1/2; z-index: 1; }
+.mode-with-art .mode-cover {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 0;
+  height: 59%;
+  background: linear-gradient(0deg,var(--tint),transparent 52%),var(--cover) center 51%/cover no-repeat;
+}
+body:not(.playing) .mode-with-art .mode-icon { background: #fffaf1e8; }
+body:not(.playing) .mode-with-art .arrow { padding: 3px; width: 23px; height: 23px; border-radius: 7px; background: #fffaf1e8; opacity: 1; }
+body:not(.playing) .category-toolbar { box-shadow: 0 3px 10px #21182a0e; }
+
+/* The shared stage and phone controls */
+body.playing .game-top {
+  padding: 12px 14px;
+  border: 1px solid var(--edge);
+  border-radius: 14px;
+  background: linear-gradient(120deg,color-mix(in srgb,var(--game-accent) 7%,var(--panel)),var(--panel) 64%);
+}
+.screen-identity { display: flex; align-items: center; min-width: 0; gap: 10px; }
+.screen-identity > div { min-width: 0; }
+.screen-mode-icon {
+  width: 37px;
+  height: 37px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 37px;
+  border-radius: 9px;
+  background: color-mix(in srgb,var(--game-accent) 87%,white);
+}
+.screen-mode-icon img { width: 19px; height: 19px; }
+.screen-mode-title { font: 700 16px/1.1 var(--head); color: var(--ink); overflow-wrap: anywhere; }
+.phase-caption { display: block; margin-top: 4px; font-size: 11px; font-weight: 700; color: var(--game-accent); }
+.game .round-track .current { background: var(--game-accent); }
+.host-screen .party-panel, .host-screen .results {
+  background: radial-gradient(ellipse at 15% 0%,color-mix(in srgb,var(--game-accent) 12%,var(--panel)),transparent 65%),var(--panel);
+}
+.game[data-phase="party-vote"] .bluff-card, .game[data-phase="party-reveal"] .bluff-card { border-top: 2px solid var(--game-accent); }
+.game[data-phase="party-reveal"] .bluff-card strong { color: var(--game-accent); }
+.player-only[data-result]:not([data-result=""]) .round-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 9px;
+  border-radius: 9px;
+  padding: 7px 10px;
+  border: 1px solid var(--edge);
+  background: var(--bg);
+  width: 100%;
+}
+.player-only[data-result="win"] .round-status { border-color: #8bdcbb70; }
+.player-only[data-result="win"] .round-status .status { color: #a8ebca; font-weight: 700; }
+.player-only[data-result="locked"] .round-status { border-color: var(--pink); }
+.player-only[data-result="locked"] .round-status .status { color: var(--pink); }
+.player-only .answer:not(:disabled) { touch-action: manipulation; }
+.game[data-phase="finished"] .results { position: relative; isolation: isolate; }
+.game[data-phase="finished"] .results::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 34%;
+  border-radius: inherit;
+  background: radial-gradient(ellipse at 65% 0%,color-mix(in srgb,var(--game-accent) 17%,transparent),transparent 70%);
+  pointer-events: none;
+  z-index: -1;
+}
+.potato-stage-clock::after {
+  content: '';
+  display: block;
+  margin: 5px 0 15px;
+  width: min(100%,400px);
+  height: 6px;
+  border-radius: 10px;
+  background: linear-gradient(90deg,var(--game-accent) var(--clock-fill,100%),var(--edge) 0);
+}
+@media(max-width:640px) {
+  body.playing .game-top { padding: 8px 10px; }
+  .screen-mode-icon { width: 29px; height: 29px; flex-basis: 29px; }
+  .screen-mode-icon img { width: 15px; height: 15px; }
+  .screen-identity { gap: 6px; }
+  .screen-mode-title { font-size: 14px; }
+  .player-only .game-controls .captain-tag { font-size: 10px; padding: 3px 5px; }
+  body:not(.playing) .mode-card { min-height: 143px; }
+}
+@keyframes phase-detail-in {
+  from { opacity: .66; transform: translateY(7px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes active-round-in {
+  from { opacity: .35; transform: scaleX(.35); }
+  to { opacity: 1; transform: scaleX(1); }
+}
+@media(prefers-reduced-motion:no-preference) {
+  body:not(.playing) .mode-card { animation: phase-detail-in .24s ease-out backwards; animation-delay: calc(16ms * var(--entry)); }
+  .game.phase-enter :is(.phase-caption,.turn-copy,.tv-leaders,.round-leaders,.personal-scorecard,.party-holder) { animation: phase-detail-in .26s ease-out both; }
+  .phase-enter .round-track .current { animation: active-round-in .28s ease-out both; }
+  .phase-enter[data-phase="party-vote"] .bluff-card:nth-child(2) { animation-delay: 35ms; }
+  .phase-enter[data-phase="party-vote"] .bluff-card:nth-child(3) { animation-delay: 70ms; }
+  .phase-enter[data-phase="party-reveal"] .tracks-grid article { animation-delay: 100ms; }
+  .answer:not(:disabled), .button:not(:disabled) { transition: filter .14s,background-color .16s,border-color .16s,transform .14s; }
+  .answer:not(:disabled):active, .button:not(:disabled):active { transform: translateY(2px); }
+}
+.connection-screen { max-width: 620px; }
+.connection-screen [role="status"] { display: flex; align-items: center; gap: 8px; }
+.connection-indicator { height: 9px; width: 9px; border-radius: 50%; background: var(--pink); }
+@keyframes connection-pulse { 50% { opacity: .38; transform: scale(.77); } }
+@media(prefers-reduced-motion:no-preference) {
+  .connection-screen .game-panel { animation: phase-detail-in .22s ease-out both; }
+  .connection-indicator { animation: connection-pulse 1.15s ease-in-out infinite; }
+}

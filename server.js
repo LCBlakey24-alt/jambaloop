@@ -35,8 +35,8 @@ app.use('/api', (_req, res, next) => {
 });
 
 function readSettings(body = {}) {
-  const { mode = 'classic', theme = defaultTheme, format = 'choice', category, count, seconds, autoReveal = false, includeChristmas = false, teamCount = 4, boardLength = 16, playStyle = defaultPlayStyle(mode), privateQuestions = false, phoneView = 'full', difficulty = 'standard', scoring, boardSpeed = 50, scoreInterval = 1, customQuiz = null, raceLength = 'medium', raceTrack = 'neon', raceDifficulty = 'mixed' } = body ?? {};
-  if (typeof privateQuestions !== 'boolean' || !validPlayStyle(mode,playStyle)) return;
+  const { mode = 'classic', theme = defaultTheme, format = 'choice', category, count, seconds, autoReveal = false, includeChristmas = false, teamCount = mode === 'tracks' ? 2 : 4, boardLength = 16, playStyle = defaultPlayStyle(mode), privateQuestions = false, phoneView = 'full', difficulty = 'standard', scoring, boardSpeed = 50, scoreInterval = 1, customQuiz = null, raceLength = 'medium', raceTrack = 'neon', raceDifficulty = 'mixed' } = body ?? {};
+  if (typeof privateQuestions !== 'boolean' || !validPlayStyle(mode,playStyle) || (mode === 'tracks' && teamCount !== 2)) return;
   if (mode === 'quizrace' && (!raceLengths[raceLength] || !raceTracks.includes(raceTrack) || !raceDifficulties.includes(raceDifficulty) || format !== 'choice' || customQuiz !== null)) return;
   const privateTeam = mode === 'showdown' && privateQuestions;
   if (privateTeam && customQuiz !== null) return;
@@ -58,7 +58,7 @@ function readSettings(body = {}) {
   const scores = canSetScore(mode) ? (scoring
     ? { base: scoring.base, bonus: seconds ? scoring.bonus : 0, doubles: scoring.doubles }
     : defaultScoring(seconds)) : undefined;
-  return { mode, theme, difficulty, raceLength, raceTrack, raceDifficulty, scoring: scores, boardSpeed: seconds ? boardSpeed : 0, legacyScoring: scoring === undefined, format: privateTeam ? 'choice' : format, category: fixedQuestionModes.includes(mode) && !privateTeam ? category : 'mixed', count: socialModes.includes(mode) ? 3 : partyModes.includes(mode) ? 1 : quiz?.questions.length ?? count,
+  return { mode, theme, difficulty, raceLength, raceTrack, raceDifficulty, scoring: scores, boardSpeed: seconds ? boardSpeed : 0, legacyScoring: scoring === undefined, format: privateTeam ? 'choice' : format, category: fixedQuestionModes.includes(mode) && !privateTeam ? category : 'mixed', count: mode === 'tracks' ? count : socialModes.includes(mode) ? 3 : partyModes.includes(mode) ? 1 : quiz?.questions.length ?? count,
     seconds, autoReveal, includeChristmas, phoneView: privateTeam ? 'full' : phoneView, privateQuestions: privateTeam,
     teamCount, boardLength, playStyle, scoreInterval: supportsScoreCheckpoints(mode) ? scoreInterval : 1, customQuiz: quiz };
 }

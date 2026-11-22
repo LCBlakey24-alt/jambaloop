@@ -1,6 +1,6 @@
 # Jambaloop — Narrator voice / audio identity proposal (22 November 2026)
 
-**Status:** User-requested concept and original draft scripts. **No third-party narration generated, uploaded or enabled yet.** This audio feature is optional and does not block the current visual homepage rollout. The user's main priority remains a free, one-screen family site with consistent dark, animated game tiles.
+**Implementation status (22 November 2026):** Intro playback has been wired into all twelve expanded tiles in draft PR #7. Three pre-recorded ElevenLabs clips have been generated and uploaded as static MP3s: **Classic Quiz, Board Race and Quiz Race**. The ElevenLabs free generation service became busy while generating the remaining nine, so those modes currently use a **clearly labelled browser-native English speech fallback**, with the same scripts and controls. They do **not yet** have the consistent professional narrator voice. This design branch has not been published to the family site's Render deployment.
 
 ## Creative direction
 
@@ -75,3 +75,15 @@ Phase 2, after testing accessibility and timing: optional short countdown ("Thre
 - Commercial license verified **before** any monetised deployment; attribution visible when a free non-commercial sample is published.
 
 **This document is not evidence that audio files exist or that the website can play generated voiceovers yet.**
+
+## Delivered implementation and credit usage
+
+- Reusable client code: `public/narrator.js` (one audio channel, cancellation, optional local browser voice), `public/narration-scripts.js` (12 original transcripts and asset manifest), expandable tile markup in `public/home-launcher.js`.
+- Permanent audio assets in this repository: `public/audio/narrator/classic.mp3`, `board.mp3`, `quizrace.mp3`. **MP3s are committed, not short-lived ElevenLabs URL references.**
+- All 12 game previews have an opt-in **Listen to intro / Stop narration** button, a **Read spoken introduction** disclosure, and the existing Set up / Back actions. Audio stops on dialog/open/back/tab changes and when the page goes into the background.
+- No audio preloads on the home page, and no ElevenLabs API key or paid AI call is used at runtime. Other nine intros are spoken by the phone/laptop browser using built-in English UK text-to-speech when the user presses Listen.
+- Narrator voice in the three generated recordings: **Mark Munroe — British Radio Presenter and Voiceover Narration**; ElevenLabs ID `nrD2uNU2IUYtedZegcGx`. Model: `eleven_v4`. Each clip about 10 seconds. Generated 22 November 2026.
+- Provider usage reported for these three clips: 199 + 203 + 202 = **604 ElevenLabs credits** (the tool also estimates a corresponding fiat equivalent; this does not establish whether the user's plan is billed).
+- Free-plan noncommercial restrictions apply. Each recorded clip has a visible **Voice generated with ElevenLabs** link in its expanded tile. No commercial deployment rights are asserted.
+
+**Remaining:** Generate the other nine ElevenLabs intros *when the provider's free generation capacity is available* and after checking applicable account usage/rights. Update `recordedIntros` in `public/narration-scripts.js` and add the matching static MP3s. Re-run `npm test` and browser playback tests. Do not rename fallback speech to an ElevenLabs recording until an MP3 is genuinely present.

@@ -61,7 +61,7 @@ try {
       assert.match(await page.locator('#game-preview').innerText(),/How to play/i);
       assert.match(await page.locator('#game-preview').innerText(),/Cross|line first|finish/i);
       assert.equal(await page.locator('#game-preview [data-action="narrator-toggle"]').count(),1);
-      assert.match(await page.locator('.narrator-script').innerText(),/Welcome to Quiz Race!/);
+      assert.match(await page.locator('.narrator-script p').textContent(),/Welcome to Quiz Race!/);
       const beforeAudio=await page.evaluate(() =>
         performance.getEntriesByType('resource').filter(entry=>entry.name.endsWith('/audio/narrator/quizrace.mp3')).length);
       assert.equal(beforeAudio,0,'Audio should never download before the user taps Listen');

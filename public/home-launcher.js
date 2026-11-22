@@ -18,6 +18,7 @@ const identities = {
   potato:    {lines:['HOT','POTATO'], strap:'PASS THE PRESSURE', kind:'PARTY', steps:['Someone starts holding the hot potato.','Answer correctly to pass it along.','Don’t be holding it when the timer ends.']},
   quizrace:  {lines:['QUIZ','RACE'], strap:'THINK FAST. MOVE FASTER.', kind:'RACING', steps:['Everyone races at the same time.','Fast correct answers give bigger speed boosts.','Overtake the field and cross the line first.']},
   showdown:  {lines:['TEAM','SHOWDOWN'], strap:'BETTER TOGETHER', kind:'TEAMS', steps:['Split into two to four teams.','Answer the team questions on phones.','Combine points to take the team victory.']},
+  samepage:  {lines:['SAME','PAGE'], strap:'THINK ALIKE. SCORE TOGETHER.', kind:'PARTY', steps:['Everyone privately types an answer to the same creative prompt.','Answers are grouped on the big screen after everyone locks in.','Earn 100 points for each other person whose answer matches yours.']},
 };
 
 export function launcherModes(filter = 'all') {

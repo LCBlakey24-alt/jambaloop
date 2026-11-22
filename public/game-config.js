@@ -68,6 +68,7 @@ export const wheelCategories = includeChristmas => categories.filter(([id]) =>
 export const categoryName = id => categories.find(category => category[0] === id)?.[1] ?? '';
 
 export function questionCounts(mode, format, category) {
+  if (mode === 'tracks') return [3, 5, 7];
   if (mode === 'board') return [12, 18, 24, 36, 48, 60];
   const singleTopic = mode !== 'wheel' && category !== 'mixed';
   const shortTopic = ['art', 'games', 'animals', 'space'].includes(category);

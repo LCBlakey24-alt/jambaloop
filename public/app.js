@@ -660,14 +660,14 @@ function tvRoundHud(s, timer, progress, host) {
   if (!host) return '';
   const revealed = s.phase === 'reveal';
   const leaders = revealed && showsScoresEachQuestion(s) && !s.teams.length ? s.players.slice(0, 3) : [];
-  const showdown = showsScoresEachQuestion(s) && s.mode === 'showdown';
+  const groupPlay = showsScoresEachQuestion(s) && s.teams.length && s.mode !== 'board';
   return `<aside class="tv-round-hud">
     <section class="game-panel tv-status">
       <div class="eyebrow">${revealed ? 'ROUND COMPLETE' : 'LIVE ROUND'}</div>
       ${timer || `<strong class="tv-status-title">${revealed ? 'Answer revealed' : 'No timer'}</strong>`}
       <p class="status" id="host-answer-count" role="status">${answerCount(s)}</p>${progress}
     </section>
-    ${showdown ? `<section class="game-panel tv-leaders"><div class="eyebrow">TEAM SCORES</div>${teamScoreboard(s.teams)}</section>` : ''}
+    ${groupPlay ? `<section class="game-panel tv-leaders"><div class="eyebrow">TEAM SCORES</div>${teamScoreboard(s.teams)}</section>` : ''}
     ${leaders.length ? `<section class="game-panel tv-leaders"><div class="eyebrow">TOP SCORES</div>${leaderboard(leaders)}</section>` : ''}
   </aside>`;
 }
@@ -765,11 +765,13 @@ function render(s) {
   } else if (s.phase === 'finished') {
     const winners = s.players.filter(player => sameRank(player, s.players[0]));
     const winningTeams = s.teams.length ? s.teams.filter(team => s.teamWinners.includes(team.id)) : [];
-    const title = board ? winningTeams.length === 1 ? `Team ${winningTeams[0].name} wins the race!` : 'The race ends in a tie!'
-      : showdown ? winningTeams.length === 1 ? `Team ${winningTeams[0].name} wins!` : 'The teams are tied!'
+    const title = board ? winningTeams.length === 1
+        ? (s.playStyle === 'individual' ? escape(winningTeams[0].name) : 'Team ' + escape(winningTeams[0].name)) + ' wins the race!'
+        : 'The race ends in a tie!'
+      : s.playStyle === 'teams' ? winningTeams.length === 1 ? 'Team ' + escape(winningTeams[0].name) + ' wins!' : 'The teams are tied!'
       : winners.length === 1 ? escape(winners[0].name) + ' takes the crown!' : 'It’s a tie!';
     body = `<div class="game-panel results"><div class="eyebrow">FINAL RESULTS</div><h1>${title}</h1>
-      ${board ? teamList(s, ownTeam?.id, true) : showdown ? teamScoreboard(s.teams, ownTeam?.id) : ''}
+      ${board ? teamList(s, ownTeam?.id, true) : s.teams.length ? teamScoreboard(s.teams, ownTeam?.id) : ''}
       ${s.teams.length ? '<h2>Individual scores</h2>' : ''}
       ${host ? `<div class="podium">${standings(s.players)}</div>` : `<p>You placed <strong>#${s.rank} of ${s.playerCount}</strong> with <strong>${s.player.score.toLocaleString()} points</strong>.</p>`}
       ${!host ? `<dl class="personal-scorecard"><div><dt>Rounds won</dt><dd>${s.player.wins} / ${s.index + 1}</dd></div><div><dt>Best streak</dt><dd>${s.player.bestStreak}</dd></div><div><dt>Final rank</dt><dd>#${s.rank}</dd></div></dl>` : ''}
@@ -819,7 +821,7 @@ function render(s) {
       <div class="eyebrow round-kicker"><span>${board ? 'TURN' : 'QUESTION'} ${s.index + 1} OF ${s.total}</span>
         <span>${escape(s.quizTitle || categoryName(question.category))}</span><span>${answerGuide(question.type)[0]}</span></div>
       ${board || rally ? rollRecap(s) : ''}${board ? boardPrediction(s, host) : ''}${scoringLine}${lifeInfo}
-      ${showdown && ownTeam ? `<p class="your-team" style="--team:${ownTeam.color}">Team ${ownTeam.name}${showLiveScores ? ' · ' + ownTeam.score.toLocaleString() + ' pts' : ''}</p>` : ''}
+      ${ownTeam && s.playStyle === 'teams' ? `<p class="your-team" style="--team:${ownTeam.color}">Team ${escape(ownTeam.name)}${showLiveScores ? ' · ' + ownTeam.score.toLocaleString() + ' pts' : ''}</p>` : ''}
       <h2>${controllerOnly ? (revealed ? 'Answer revealed' : 'Look at the TV') : escape(s.question.prompt)}</h2>
       ${timer && !host ? '<div class="time-track" aria-hidden="true"><div id="time-fill"></div></div>' : ''}
       ${promptHelp}
@@ -831,7 +833,7 @@ function render(s) {
       ${pauseButton}
       ${canControl ? `<button class="button primary captain-next" data-action="advance">${nextQuestionLabel(s)} ${icons('arrow-right')}</button>` : ''}</div>
       </div>${tvRoundHud(s, timer, response, host)}${host ? '</div>' : ''}${revealed && board && showLiveScores ? `<div class="game-panel round-leaders"><h2>Race standings</h2>${teamList(s, ownTeam?.id, true)}</div>` : ''}
-      ${host && revealed && showLiveScores && !board && !showdown ? `<div class="game-panel round-leaders"><h2>Leaderboard</h2>${fullLeaderboard(s.players, 'View full leaderboard')}</div>` : ''}`;
+      ${host && revealed && showLiveScores && !board && !s.teams.length ? `<div class="game-panel round-leaders"><h2>Leaderboard</h2>${fullLeaderboard(s.players, 'View full leaderboard')}</div>` : ''}`;
   }
   if (s.phase === 'finished') {
     const nextUp = gameNightView(s, { canControl, escape, icons });

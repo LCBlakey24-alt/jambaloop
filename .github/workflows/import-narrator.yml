@@ -11,19 +11,23 @@ jobs:
     timeout-minutes: 6
     steps:
       - uses: actions/checkout@v4
-      - name: Download previously generated audio as static site asset
+      - name: Download the two completed narrator recordings
         env:
-          INTRO_QUIZRACE: 'https://elevenlabsusercontent.com/database/workspace/ab21d792f05f486fb0434850537aca0d/content_generation/CxKfpZKPfcstqS8POFmt/3PxKJHw4v7CoHHfFPjRC/content.mp3?Expires=1795377600&KeyName=assets-cdn-key-1&Signature=C75aXN9M7awn1n9A4cGjOkGnYTs='
+          INTRO_CLASSIC: 'https://elevenlabsusercontent.com/database/workspace/ab21d792f05f486fb0434850537aca0d/content_generation/PNkGu9mfjbsSll0PpglF/dMGO0A1Q01V84rIheLSA/content.mp3?Expires=1795381200&KeyName=assets-cdn-key-1&Signature=mUdTs0bEUaC9xvdX9ZA6Z7BqEPg='
+          INTRO_BOARD: 'https://elevenlabsusercontent.com/database/workspace/ab21d792f05f486fb0434850537aca0d/content_generation/Rtej1Uz3IRvkQg8u3bRN/T17OYStKNqfd3SMwTHJN/content.mp3?Expires=1795381200&KeyName=assets-cdn-key-1&Signature=8k8n8urqe9K5xlX9nZPS8fOqNY8='
         run: |
           mkdir -p public/audio/narrator
-          curl --fail --location --silent --show-error --retry 2 --max-time 40 "$INTRO_QUIZRACE" --output public/audio/narrator/quizrace.mp3
-          test "$(stat -c%s public/audio/narrator/quizrace.mp3)" -gt 6000
-          file public/audio/narrator/quizrace.mp3
-          echo "Stored quizrace: $(stat -c%s public/audio/narrator/quizrace.mp3) bytes"
+          for kind in classic board; do
+            case "$kind" in classic) url="$INTRO_CLASSIC" ;; board) url="$INTRO_BOARD" ;; esac
+            curl --fail --location --silent --show-error --retry 2 --max-time 40 "$url" --output "public/audio/narrator/$kind.mp3"
+            test "$(stat -c%s "public/audio/narrator/$kind.mp3")" -gt 6000
+            file "public/audio/narrator/$kind.mp3"
+            echo "Stored $kind: $(stat -c%s "public/audio/narrator/$kind.mp3") bytes"
+          done
       - name: Commit static audio to design branch
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add public/audio/narrator
-          git diff --cached --quiet || git commit -m "Bundle generated Quiz Race introduction recording"
+          git diff --cached --quiet || git commit -m "Bundle generated Classic and Board Race narrator introductions"
           git push origin HEAD:design/06-dark-animated-launcher

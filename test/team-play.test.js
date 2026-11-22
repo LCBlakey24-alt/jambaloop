@@ -8,18 +8,19 @@ import {
 const people=n=>Array.from({length:n},(_,i)=>['key'+i,{id:'id'+i,name:'Player '+i,score:0}]);
 
 test('solo/teams are supported in nine score/finish games; three vote/holder games stay solo',()=>{
-  const playable=['classic','wheel','board','dice','knockout','punchline','cards','quizrace','showdown'];
+  const playable=['classic','wheel','board','dice','knockout','punchline','cards','quizrace','showdown','tracks'];
   assert.deepEqual([...teamPlayModes],playable);
   for(const mode of playable){
     assert.equal(validPlayStyle(mode,'teams'),true,mode);
-    assert.equal(validPlayStyle(mode,'individual'),true);
+    assert.equal(validPlayStyle(mode,'individual'),mode!=='tracks');
   }
-  for(const mode of ['bluff','potato','tracks']){
+  for(const mode of ['bluff','potato']){
     assert.equal(validPlayStyle(mode,'teams'),false,mode);
     assert.equal(validPlayStyle(mode,'individual'),true);
   }
   assert.equal(defaultPlayStyle('board'),'teams');
   assert.equal(defaultPlayStyle('showdown'),'teams');
+  assert.equal(defaultPlayStyle('tracks'),'teams');
   assert.equal(defaultPlayStyle('classic'),'individual');
   assert.equal(requiredPlayers('classic','teams',4,1),4);
   assert.equal(requiredPlayers('punchline','teams',2,3),3);

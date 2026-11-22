@@ -7,6 +7,9 @@ on:
       - 'public/app.js'
       - 'public/mobile-deck.js'
       - 'scripts/launcher-browser.mjs'
+      - 'scripts/board-team-browser.mjs'
+      - 'public/board-*.js'
+      - 'public/team-play*'
       - '.github/workflows/launcher-browser.yml'
   workflow_dispatch:
 
@@ -43,6 +46,7 @@ jobs:
           export CHROME_BIN="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)"
           test -n "$CHROME_BIN"
           node scripts/launcher-browser.mjs
+          node scripts/board-team-browser.mjs
       - name: Upload screen captures on success or failure
         if: always()
         uses: actions/upload-artifact@v4

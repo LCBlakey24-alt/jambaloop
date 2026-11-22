@@ -93,9 +93,11 @@ try {
     await host.locator('.fork-game[data-fork-phase="party-judge"]').waitFor({timeout:16000});
     const trackNames=await host.locator('.fork-tile.filled').count();
     assert.equal(trackNames,6,'Both trolley tracks need 3 complete cards');
-    const sentences=await host.locator('.fork-track-sentence').allTextContents();
+    const sentences=(await host.locator('.fork-track-sentence').allInnerTexts())
+      .map(text=>text.replace(/\s+/g,' ').trim());
     assert.equal(sentences.length,2);
-    assert.ok(sentences.every(s=>/If the trolley takes Track [AB], it will hit .+, .+, and .+\./.test(s)));
+    assert.ok(sentences.every(s=>/If the trolley takes Track [AB], it will hit .+, .+, and .+\./.test(s)),
+      'Track cards must compose a single complete sentence: '+JSON.stringify(sentences));
     const viewport=await host.evaluate(()=>{
       const board=document.querySelector('.fork-game').getBoundingClientRect();
       const buttons=[...document.querySelectorAll('.fork-judge-choice')].map(node=>node.getBoundingClientRect().bottom);

@@ -11,7 +11,7 @@ import { launcherTile, launcherPreview, launcherModes, launcherSetupArtwork, LAU
 import { stopNarration, toggleNarration } from './narrator.js';
 import { playCue, playTowerImpact } from './sound-cues.js';
 import { boardLengths, boardRoute, boardDuration, durationLabel, suggestedTurnCap, boardRequiresChoice, boardPathChoices } from './board-route.js';
-import {teamPlayModes, defaultPlayStyle} from '../team-play.js';
+import {teamPlayModes, defaultPlayStyle} from './team-play.js';
 import { avatarView, partyView } from './party-views.js';
 import { openLibrary, savedQuizzes } from './quiz-editor.js';
 import { answerGuide, helpTypes, closestStep, createDraft, formatNumber, orderedItems, specialAnswer } from './answer-controls.js';

@@ -25,7 +25,7 @@ test('new reference-backed multiple choice entries pass structural checks',()=>{
 
 test('quiz selection respects persistent IDs from an earlier game',()=>{
   const all=makeQuestions('space',100,new Set(),'choice');
-  assert.ok(all.length>15);
+  assert.ok(all.length>1,'Need at least two available space questions to test freshness');
   const last=all.at(-1).prompt;
   const history=new Set(all.slice(0,-1).map(row=>questionHistoryId(row.prompt)));
   const next=makeQuestions('space',1,history,'choice');

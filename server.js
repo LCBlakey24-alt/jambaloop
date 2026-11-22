@@ -175,7 +175,8 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
     includeChristmas: room.includeChristmas, autoReveal: room.autoReveal, theme: room.theme, format: room.format, motion: room.motion, activeTeam,
     teams: hiddenScores ? room.teams.map(team => ({ ...team, score: room.lastScoreBreak.get(team.id)?.row.score ?? 0, roundPoints: undefined })) : room.teams,
     lastTurn: revealed && finalTurn(room), teamWinners: phase === 'finished' && room.teams.length ? winningTeams(room) : undefined, teamCount: room.teamCount, boardLength: room.boardLength,
-    teamPreview: phase === 'lobby' && (room.playStyle === 'teams' || room.mode === 'board') ?
+    teamPreview: phase === 'lobby' && room.players.size &&
+      (room.playStyle === 'teams' || (room.mode === 'board' && room.players.size <= 4)) ?
       teamAssignments(room.players,room.mode,room.playStyle,room.teamCount,{allowUnfilled:true}).groups : undefined,
     raceTeams: room.mode === 'quizrace' && room.teams.length && room.race ?
       room.teams.map(team => {

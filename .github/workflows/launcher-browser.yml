@@ -10,6 +10,7 @@ on:
       - 'scripts/board-team-browser.mjs'
       - 'scripts/fork-browser.mjs'
       - 'scripts/same-page-browser.mjs'
+      - 'scripts/tv-all-modes.mjs'
       - 'public/same-page*'
       - 'public/tv-broadcast.css'
       - 'public/fork-*'
@@ -25,7 +26,7 @@ permissions:
 jobs:
   browser-layout:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 18
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -55,6 +56,7 @@ jobs:
           node scripts/board-team-browser.mjs
           node scripts/fork-browser.mjs
           node scripts/same-page-browser.mjs
+          node scripts/tv-all-modes.mjs
       - name: Upload screen captures on success or failure
         if: always()
         uses: actions/upload-artifact@v4

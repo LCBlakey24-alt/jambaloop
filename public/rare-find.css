@@ -33,6 +33,7 @@
 .rare-review-area{display:flex;flex-direction:column;gap:clamp(7px,1dvh,10px);min-height:0;flex:1;align-items:stretch;}
 .rare-review-area h2{font:950 clamp(18px,3dvh,29px)/1.1 'Club Classic',sans-serif;color:#b2f4cf;margin:0;}
 .rare-review-area>p{font:650 clamp(12px,1.55dvh,15px)/1.3 'House Sans',sans-serif;margin:0;color:#d6e6e5;}
+.rare-review-source{color:#ffdfa2;font-weight:850;text-decoration:underline;text-underline-offset:3px;}
 .rare-review-list{display:grid;align-content:start;gap:6px;min-height:0;max-height:40dvh;overflow:auto;padding:2px;}
 .rare-review-row{display:flex;align-items:center;justify-content:space-between;gap:8px;background:#1c494a8a;border:1px solid #86d7b87c;padding:8px 11px;border-radius:9px;min-width:0;}
 .rare-review-row>div:first-child{min-width:0;display:grid;gap:3px;}

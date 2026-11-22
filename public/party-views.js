@@ -1,11 +1,13 @@
 import { replayButtons } from './game-night.js';
 import { socialModes, modes } from './game-config.js';
+import {forkView} from './fork-view.js';
 export function avatarView(player, escape) {
   return player.avatar ? `<img class="player-avatar" src="${escape(player.avatar)}" alt="" loading="lazy">`
     : `<span class="player-avatar avatar-initial" aria-hidden="true">${escape(Array.from(player.name)[0]?.toUpperCase() ?? '?')}</span>`;
 }
 
 export function partyView(state, { host, canControl, escape, reply, icons }) {
+  if (state.mode === 'tracks') return forkView(state,{host,canControl,escape,icons,replayButtons});
   if (socialModes.includes(state.mode)) return socialView(state, { host, canControl, escape, reply, icons });
   const party = state.party;
   const finished = state.phase === 'finished';

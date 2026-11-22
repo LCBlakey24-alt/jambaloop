@@ -29,15 +29,16 @@ The TV is a *broadcast stage*, never a second phone controller. Phone buttons ar
 | Quiz Race | Neon teal | Clear race track, racer trail and rank board | Finish order, distance and time |
 | Team Showdown | Ice blue | Team score strips, question focus | Round points and winning team |
 | Same Page | Mint/lilac | Shared prompt; then matched answer clusters | Group sizes, names and 100 points per matched partner |
+| Spotlight Wheel | Gold/violet | Wheel, rotating contestant and expert, large 4-choice board | Contestant and independent expert points, correct answer |
 
-## New original formats — next to implement
+## New original formats — next to implement or extend
 **Brain Ladder:** progressive logic puzzles; benchmark difficulty via playtesting, never invent population percentages. Stage: tall vertical ladder with increasing difficulty and player-survival count. Phones: private answer and life status.
 
 **Rare Find:** players try to give an obscure *valid* answer to a topic. Do not present fabricated poll percentages or label arbitrary scores as real survey findings. Source a genuinely permissioned survey dataset or explicitly score uniqueness among current room answers. Stage: dramatic falling score columns and an evidence/status ribbon. Phones: typed answer, then review/dispute where required.
 
 **Top Answers:** popularity game driven by a real surveyed audience or a clearly labelled live-room poll; no invented outside poll totals. Stage: six-slot reveal board, score tallies and strikes. Phones: team answer and possible steal. Question packs need survey/sample metadata, consent/source, date, valid alternative wording.
 
-**Spotlight Wheel:** rotating contestant + random helper; spin also picks question topic. Stage: original player/topic wheel with highlighted contestant and expert and source-backed question stage. Phones: contestant answer, expert suggestion, audience spectator/prediction. Each contestant gets a fair turn. Do not copy television programme graphics, audio, catchphrases or show branding.
+**Spotlight Wheel:** implemented in draft PR #18. A host-controlled original wheel selects a topic and expert, with independent contestant and expert scoring and one contestant round per player. No TV programme assets are reused. Optional future extension: audience prediction without answer leakage.
 
 ## Technical acceptance for every game
 - Test full 720p and 1080p 16:9 TV, 1024×768 landscape tablet, 390×844 phone and 320px narrow phone.
@@ -50,4 +51,4 @@ The TV is a *broadcast stage*, never a second phone controller. Phone buttons ar
 - Original names, prompts, rules and stage design only; no unlicensed television show trademarks, theme music, footage or logos.
 
 ## Current scope
-PR #17 implements Same Page end-to-end, gives all thirteen modes common TV broadcast design refinements, and includes Chromium screenshot acceptance for Same Page. The other four new formats above are specifications, **not live features**. Browser screenshots are attached as workflow artefacts when CI completes. The live website is unchanged until reviewed and deliberately deployed.
+PR #17 adds Same Page and shared broadcast visual styling for the first thirteen modes. Draft PR #18 adds the fourteenth game, Spotlight Wheel, with a complete server/client implementation and automated role/privacy/TV tests. Brain Ladder, Rare Find and Top Answers are specified but not yet implemented. Workflow screenshot artefacts are retained on GitHub Actions. Both PRs remain stacked and unmerged; the family live site is unchanged.

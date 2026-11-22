@@ -3,9 +3,9 @@ import {replayButtons} from './game-night.js';
 function ladderRail(total,index,ended) {
   const steps=Array.from({length:total},(_,i)=>total-i);
   return '<ol class="brain-steps" style="--brain-rows:'+total+'" aria-label="Reasoning levels">'+steps.map(step=>{
-    const state=ended?'is-ended':step<index+1?'is-cleared':step===index+1?'is-current':'is-locked';
+    const state=step<index+1?'is-cleared':step===index+1?(ended?'is-cleared':'is-current'):'is-locked';
     return '<li class="'+state+'"><span>LEVEL '+String(step).padStart(2,'0')+'</span>'+
-      '<span class="brain-step-mark" aria-hidden="true">'+(step<index+1||ended?'✓':step===index+1?'◆':'·')+'</span></li>';
+      '<span class="brain-step-mark" aria-hidden="true">'+(step<index+1||(ended&&step===index+1)?'✓':step===index+1?'◆':'·')+'</span></li>';
   }).join('')+'</ol>';
 }
 

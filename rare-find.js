@@ -17,7 +17,8 @@ function reviewRows(room){
  }
  return [...unknown.values()].map((row,index)=>({
   token:'u'+index,answer:row.label,count:row.count,normalized:row.key,
-  decision:party.decisions.get(row.key),
+  decision:party.decisions.get(row.key)?.kind,
+  canonical:party.decisions.get(row.key)?.canonical||undefined,
  }));
 }
 function scoreRareRound(room){
@@ -28,12 +29,14 @@ function scoreRareRound(room){
  for(const [key,answer] of party.entries){
   const norm=normaliseRare(answer);
   const curated=allowed.get(norm);
-  const accepted=party.decisions.get(norm)==='approve';
-  const canonical=curated||(accepted?norm:undefined);
+  const reviewed=party.decisions.get(norm);
+  const accepted=reviewed?.kind==='approve';
+  const canonical=curated||(accepted?reviewed.canonical||norm:undefined);
   const player=room.players.get(key);
   if(!player)continue;
   if(!canonical){invalid.push({id:player.id,name:player.name,answer});continue;}
-  const group=groups.get(canonical)||{answer:curated||answer,canonical,reviewed:!curated,members:[]};
+  const group=groups.get(canonical)||{answer:curated||reviewed?.canonical||answer,canonical,reviewed:!curated,members:[]};
+  group.reviewed ||= accepted;
   group.members.push({id:player.id,name:player.name,key});
   groups.set(canonical,group);
  }
@@ -100,9 +103,11 @@ export function submitRare(room,key,data,publish){
   if(!['approve','reject'].includes(data.decision))return [400,'Choose approve or reject.'];
   const row=reviewRows(room).find(item=>item.token===data.token);
   if(!row)return [400,'Choose an answer currently under review.'];
-  const previous=row.decision;
-  party.decisions.set(row.normalized,data.decision);
-  party.audit.push({answer:row.answer,decision:data.decision,previous:previous||null,
+  const matched=data.decision==='approve'&&data.canonical!==undefined&&data.canonical!==''?data.canonical:null;
+  if(matched!==null&&!party.prompt.answers.includes(matched))return [400,'Choose a recognised answer to match this variant.'];
+  const previous=party.decisions.get(row.normalized);
+  party.decisions.set(row.normalized,{kind:data.decision,canonical:matched});
+  party.audit.push({answer:row.answer,decision:data.decision,canonical:matched,previous:previous||null,
     at:Date.now(),actor:'TV host'});
   publish(room);
   return [204];
@@ -134,10 +139,11 @@ export function publicRare(room,key){
    answered:party.entries.has(key),ownAnswer:own,submissions:party.entries.size,
    responseTarget:eligibleCount(room,party.entries),
    reviewCount:reviewing?reviewRows(room).length:undefined,
-   reviews,remaining:isHost&&reviewing?reviews.filter(row=>!row.decision).length:undefined,
+   reviews,answerChoices:isHost&&reviewing?party.prompt.answers:undefined,
+   remaining:isHost&&reviewing?reviews.filter(row=>!row.decision).length:undefined,
    // Do not reveal anyone else's answer, validated/invalid status, or points before reveal.
    ...(revealed?{results:party.results,source:party.prompt.source,
-       audit:party.audit.map(({answer,decision,actor,at})=>({answer,decision,actor,at})),
+       audit:party.audit.map(({answer,decision,canonical,actor,at})=>({answer,decision,canonical,actor,at})),
        earned:party.earned?.get(key)??0}:{}),
  };
 }

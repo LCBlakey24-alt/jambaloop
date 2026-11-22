@@ -81,6 +81,10 @@ const demonstrations = {
     ['Choose a track', 'What should the town’s new festival be?', ['A parade with floats made of cake', 'A silent disco in the supermarket']],
     ['Vote locked in', 'The TV reveals how many people chose each track after voting ends.', []],
   ],
+  rare: [
+    ['Find a rare valid answer', 'Name one of the eight planets in our Solar System. In the real game you type any correct answer. Try one of these samples.', ['Mercury','Venus','Earth','Neptune']],
+    ['Keep it uncommon', 'Imagine you chose Neptune while your friends chose Mercury and Earth. You could earn 200 points because nobody else chose Neptune — this is only an example, not real survey data.', []],
+  ],
   topanswers: [
     ['Cast your secret vote', 'Which snack would you choose tonight? Everyone privately selects the option they truly prefer.', ['Popcorn','Crisps','Chocolate','Biscuits']],
     ['Make your prediction', 'Now predict which of those four snacks the most people in your room will choose. You cannot see their votes yet.', ['Popcorn','Crisps','Chocolate','Biscuits']],

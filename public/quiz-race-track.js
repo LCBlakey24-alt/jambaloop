@@ -65,10 +65,10 @@ export function mountQuizRaceTrack(root) {
       const count = players.length;
       players.forEach((racer, index) => {
         const item = objects.get(racer.id) ?? add(racer);
-        const lane = (racer.marker - 1 - (count - 1) / 2) * 12;
+        const lane = (racer.marker - 1 - (count - 1) / 2) * (count > 8 ? 11 : 12);
         const progress = clamp((racer.distance + (racer.finishedAt !== undefined ? 0 : racer.speed * msAhead / 1000)) / trackLength);
         const [x,y] = offsetPoint(progress,lane);
-        item.group.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)})`);
+        item.group.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${count > 8 ? 0.72 : 1})`);
         const distance = reduced ? .045 : racer.speed > 1.02 ? .085 : .06;
         item.line.setAttribute('d',pathPart(0,progress,lane,Math.max(3,Math.ceil(38*progress))));
         item.wake.setAttribute('d',pathPart(Math.max(0,progress-distance),progress,lane,12));

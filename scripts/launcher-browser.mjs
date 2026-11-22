@@ -86,6 +86,9 @@ try {
       assert.equal(await page.locator('[data-home-panel="games"]').isVisible(),true,'Game tab did not return');
       console.log('PASS: page navigation, Quiz Race preview, setup dialogue and topic browser');
     }
+    if (await page.locator('#game-preview').isVisible()) {
+      await page.locator('#game-preview [data-action="close-preview"]').click();
+    }
     await page.locator('.game-tile').first().click();
     const previewFit=await page.evaluate(() => {
       const shell=document.querySelector('#game-preview');

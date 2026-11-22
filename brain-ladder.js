@@ -34,7 +34,7 @@ function makePuzzle(level,v) {
     const packets=3+v,items=2+v%5;
     return numberPuzzle(level,v,
       `You have ${packets} packets, with ${items} stickers in each. How many stickers do you have?`,
-      packets*items,`Multiply ${packets} by ${items}.`,items);
+      packets*items,`Each of the ${packets} packets contains ${items} stickers, so ${packets} × ${items} = ${packets*items}.`,items);
   }
   if (level===5) {
     const start=4+v,a=2+v%5,b=a+3+v%4;

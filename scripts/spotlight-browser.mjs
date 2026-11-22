@@ -62,11 +62,13 @@ try{
     host.on('pageerror',error=>errors.push(error.message));
     await host.goto(site,{waitUntil:'domcontentloaded',timeout:30000});
     await host.locator('.roster-panel').waitFor({timeout:15000});
+    assert.match(await host.locator('.studio-publisher').textContent(),/ROOKIE QUEST GAMES/,'TV lobby credits the publishing label');
     const start=await ctx.request.post(site+'/api/rooms/'+code+'/advance',{
       headers:{'x-game-key':hostKey},data:{phase:'lobby',game:1,index:0},
     });
     assert.equal(start.status(),204,await start.text());
     await host.locator('.spotlight-game[data-spotlight-phase="spotlight-ready"]').waitFor({timeout:15000});
+    assert.equal(await host.locator('.studio-publisher').count(),0,'Publisher credit should not cover an active TV game');
     await host.screenshot({path:'browser-screenshots/spotlight-ready-'+width+'x'+height+'.png'});
     await host.locator('.spotlight-game [data-action="advance"]').click();
     await host.locator('.spotlight-game[data-spotlight-phase="spotlight-expert"]').waitFor({timeout:15000});
@@ -120,6 +122,7 @@ try{
     await host.locator('.spotlight-game [data-action="advance"]').click(); // show final standings
     await host.locator('.spotlight-game[data-spotlight-phase="finished"]').waitFor({timeout:15000});
     assert.equal(await host.locator('.spotlight-final-ranking li').count(),3);
+    assert.match(await host.locator('.studio-publisher').textContent(),/ROOKIE QUEST GAMES/,'Final TV screen restores publisher credit');
     const finalFit=await host.evaluate(()=>{
       const board=document.querySelector('.spotlight-game').getBoundingClientRect();
       return {bottom:board.bottom,scrollWidth:document.scrollingElement.scrollWidth,

@@ -81,6 +81,10 @@ test('Three-player survey and private prediction use real vote counts with accur
       assert.equal(s.index,turn);
       assert.equal(s.party.type,'topanswers');
       assert.equal(s.party.options.length,4);
+      const source=topAnswersPrompts.find(prompt=>prompt.prompt===s.party.prompt);
+      assert.ok(source);
+      assert.deepEqual([...s.party.options].sort(),[...source.options].sort(),
+        'Randomised option order must preserve every original response exactly once');
       assert.equal(s.party.counts,undefined,'TV must not know poll counts before reveal');
       assert.equal(s.party.results,undefined);
       assert.ok(!prompts.has(s.party.prompt),'New round must have a fresh prompt');

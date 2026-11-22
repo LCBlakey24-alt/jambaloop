@@ -14,6 +14,10 @@ on:
       - 'scripts/spotlight-browser.mjs'
       - 'scripts/brain-ladder-browser.mjs'
       - 'scripts/top-answers-browser.mjs'
+      - 'scripts/rare-find-browser.mjs'
+      - 'rare-find.js'
+      - 'rare-find-bank.js'
+      - 'public/rare-find*'
       - 'public/top-answers*'
       - 'top-answers.js'
       - 'public/brain-ladder*'
@@ -69,6 +73,7 @@ jobs:
           node scripts/spotlight-browser.mjs
           node scripts/brain-ladder-browser.mjs
           node scripts/top-answers-browser.mjs
+          node scripts/rare-find-browser.mjs
           node scripts/tv-all-modes.mjs
       - name: Upload screen captures on success or failure
         if: always()

@@ -533,6 +533,11 @@ function startRace(room) {
 }
 
 function startGame(room) {
+  if (room.mode === 'tracks') {
+    // Exactly one round per joined player; every player drives once.
+    room.count = room.players.size;
+    room.forkDriverOrder = [...room.players.keys()];
+  }
   const allocation = teamAssignments(room.players,room.mode,room.playStyle,room.teamCount);
   room.teams = allocation.groups;
   for(const [key,player] of room.players) {
@@ -656,7 +661,7 @@ app.post('/api/rooms/:code/advance', (req, res) => {
   const { room, key } = res.locals;
   if (!controlsRoom(room, key)) return res.status(403).json({ error: 'Only the captain or TV host can advance the game.' });
   if (room.mode === 'tracks' && room.phase !== 'lobby' && key !== room.host)
-    return res.status(403).json({error:'Only the host judge can advance the trolley round.'});
+    return res.status(403).json({error:'The TV host advances trolley phases; the rotating Trolley Driver makes the verdict.'});
   if (req.body?.game !== room.game || req.body?.phase !== room.phase || req.body?.index !== room.index) return res.sendStatus(204);
   if (room.pausedAt) return res.status(409).json({ error: 'Resume the timer before advancing.' });
   if (room.phase === 'lobby') {

@@ -10,6 +10,11 @@ const pick = values => values[randomInt(values.length)];
 
 export function startSpotlightGame(room,publish) {
   room.spotlightOrder = [...room.players.keys()];
+  for(let i=room.spotlightOrder.length-1;i>0;i--){
+    const j=randomInt(i+1);
+    [room.spotlightOrder[i],room.spotlightOrder[j]]=[room.spotlightOrder[j],room.spotlightOrder[i]];
+  }
+  room.spotlightTopicTurns = new Map();
   room.spotlightExpertTurns = new Map(room.spotlightOrder.map(key=>[key,0]));
   room.count = room.spotlightOrder.length;
   return startSpotlightRound(room,publish);
@@ -39,7 +44,9 @@ function beginSpotlightQuestion(room,publish) {
   const fair=candidates.filter(key=>(room.spotlightExpertTurns.get(key)||0)===fewest);
   p.expertKey=pick(fair);
   room.spotlightExpertTurns.set(p.expertKey,(room.spotlightExpertTurns.get(p.expertKey)||0)+1);
-  const category=pick(topics);
+  const least=Math.min(...topics.map(topic=>room.spotlightTopicTurns.get(topic.id)||0));
+  const category=pick(topics.filter(topic=>(room.spotlightTopicTurns.get(topic.id)||0)===least));
+  room.spotlightTopicTurns.set(category.id,(room.spotlightTopicTurns.get(category.id)||0)+1);
   p.category=category;
   p.question=makeQuestions(category.id,1,room.seen,'choice',false)[0];
   if (!p.question) throw new Error('No question is available for this Spotlight Wheel topic.');

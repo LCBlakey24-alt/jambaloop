@@ -1,4 +1,6 @@
 /* Spotlight Wheel: original game-show stage with honest, accessible UI. */
+.lobby-spotlight-art {display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;min-width:110px;min-height:85px;gap:2px;padding:9px;border:1px solid #fbd59e9c;border-radius:12px;background:linear-gradient(140deg,#602749,#3c275f,#201c3d);color:#fff;font:950 20px/1.03 'Club Wheel',sans-serif;letter-spacing:-.02em;text-shadow:0 3px 8px #15122b;}
+.lobby-spotlight-art b {color:#ffd299;}
 .spotlight-game {
   --spot-gold:#ffc88d;
   --spot-rose:#d59af5;

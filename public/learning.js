@@ -80,6 +80,11 @@ const demonstrations = {
     ['Choose a track', 'What should the town’s new festival be?', ['A parade with floats made of cake', 'A silent disco in the supermarket']],
     ['Vote locked in', 'The TV reveals how many people chose each track after voting ends.', []],
   ],
+  topanswers: [
+    ['Cast your secret vote', 'Which snack would you choose tonight? Everyone privately selects the option they truly prefer.', ['Popcorn','Crisps','Chocolate','Biscuits']],
+    ['Make your prediction', 'Now predict which of those four snacks the most people in your room will choose. You cannot see their votes yet.', ['Popcorn','Crisps','Chocolate','Biscuits']],
+    ['Real votes revealed', 'In a real game, only the actual votes submitted by your room produce the TV percentages. There are no real poll results in this practice, and no points are awarded here.', []],
+  ],
   brain: [
     ['Your first rung', 'Which number comes next? 2, 4, 6, 8, ?', ['10', '12', '16', '18']],
     ['You climbed!', '10 is correct: the pattern adds two each time. Correct answers earn points; two wrong or missed answers eliminate you, but you can still spectate.', []],

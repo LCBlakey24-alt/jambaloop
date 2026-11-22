@@ -52,3 +52,10 @@
  .game.host-screen.phase-enter::after{display:none!important;}
  .game .game-panel{transition:none!important;}
 }
+
+.question-source {display:inline-flex;align-items:center;gap:5px;align-self:flex-start;
+  font:800 clamp(11px,1.4dvh,14px)/1.3 'House Sans',sans-serif;
+  color:var(--game-accent,#baf);text-decoration:underline;text-underline-offset:3px;
+  padding:5px 7px;border-radius:7px;max-width:100%;}
+.question-source:hover,.question-source:focus-visible {background:var(--journey-glow);outline-offset:2px;}
+@media(max-width:760px){.question-source {font-size:12px;}}

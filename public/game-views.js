@@ -18,6 +18,7 @@ export function wheelView(state) {
   </div>`;
 }
 
+const safeName = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const pawnMarks = ['◆', '▲', '●', '■'];
 const pipCells = [[], [5], [1, 9], [1, 5, 9], [1, 3, 7, 9], [1, 3, 5, 7, 9], [1, 3, 4, 6, 7, 9]];
 
@@ -43,7 +44,7 @@ export function rollRecap(state, forStage = false) {
 export function teamList(state, personalTeam, compact = false) {
   const showScores = state.phase === 'finished' || (state.scoreInterval ?? 1) === 1;
   return `<div class="board-teams ${compact ? 'compact-teams' : ''}">${state.teams.map(team => `<div class="board-team ${team.id === state.activeTeam ? 'active-team' : ''}" style="--team:${team.color}">
-    <span class="team-mark" aria-hidden="true">${pawnMarks[team.id]}</span><span><strong>${team.name}${team.id === personalTeam ? (state.playStyle === 'individual' ? ' · you' : ' · your team') : ''}</strong>
+    <span class="team-mark" aria-hidden="true">${pawnMarks[team.id]}</span><span><strong>${safeName(team.name)}${team.id === personalTeam ? (state.playStyle === 'individual' ? ' · you' : ' · your team') : ''}</strong>
     <small>${team.position >= boardFinish(state.boardLength,team.pathChoice) ? 'Finished' : Math.round(boardMappedPosition(state.boardLength,team.position,team.pathChoice)*10)/10 + ' / ' + state.boardLength + ' towards finish'}${team.pathChoice ? ' · ' + (team.pathChoice === 'power' ? 'Power Lane' : 'Question Trail') : ''}${showScores ? ' · ' + team.score.toLocaleString() + ' pts' : ''}</small></span>
     ${showScores && state.phase === 'reveal' && team.roundPoints ? `<span class="team-bonus">+${team.roundPoints} pts</span>` : ''}</div>`).join('')}</div>`;
 }
@@ -151,7 +152,7 @@ export function teamScoreboard(teams, personalId) {
     const rank = ordered.findIndex(entry => entry.score === team.score) + 1;
     return `<li style="--team:${team.color};--share:${100 * team.score / scale}%">
       <span class="scoreboard-rank">#${rank}</span>
-      <div><strong>Team ${team.name}${team.id === personalId ? ' · your team' : ''}</strong><small>${team.size} ${team.size === 1 ? 'player' : 'players'}</small></div>
+      <div><strong>Team ${safeName(team.name)}${team.id === personalId ? ' · your team' : ''}</strong><small>${team.size} ${team.size === 1 ? 'player' : 'players'}</small></div>
       <div class="team-points"><strong>${team.score.toLocaleString()} pts</strong>${team.roundPoints ? `<small>+${team.roundPoints.toLocaleString()} last round</small>` : ''}</div>
     </li>`;
   }).join('')}</ol>`;

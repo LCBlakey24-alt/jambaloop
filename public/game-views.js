@@ -1,6 +1,7 @@
 import { boardRoute, boardPath, boardPathChoices, boardFinish, boardFork, boardMappedPosition, boardDuration, durationLabel } from './board-route.js';
 import { avatarView } from './party-views.js';
 import { categories, categoryName, partyModes, minimumPlayers, wheelCategories } from './game-config.js';
+import {requiredPlayers} from './team-play.js';
 
 export function wheelView(state) {
   const entries = wheelCategories(state.includeChristmas);
@@ -42,7 +43,7 @@ export function rollRecap(state, forStage = false) {
 export function teamList(state, personalTeam, compact = false) {
   const showScores = state.phase === 'finished' || (state.scoreInterval ?? 1) === 1;
   return `<div class="board-teams ${compact ? 'compact-teams' : ''}">${state.teams.map(team => `<div class="board-team ${team.id === state.activeTeam ? 'active-team' : ''}" style="--team:${team.color}">
-    <span class="team-mark" aria-hidden="true">${pawnMarks[team.id]}</span><span><strong>${team.name}${team.id === personalTeam ? ' · your team' : ''}</strong>
+    <span class="team-mark" aria-hidden="true">${pawnMarks[team.id]}</span><span><strong>${team.name}${team.id === personalTeam ? (state.playStyle === 'individual' ? ' · you' : ' · your team') : ''}</strong>
     <small>${team.position >= boardFinish(state.boardLength,team.pathChoice) ? 'Finished' : Math.round(boardMappedPosition(state.boardLength,team.position,team.pathChoice)*10)/10 + ' / ' + state.boardLength + ' towards finish'}${team.pathChoice ? ' · ' + (team.pathChoice === 'power' ? 'Power Lane' : 'Question Trail') : ''}${showScores ? ' · ' + team.score.toLocaleString() + ' pts' : ''}</small></span>
     ${showScores && state.phase === 'reveal' && team.roundPoints ? `<span class="team-bonus">+${team.roundPoints} pts</span>` : ''}</div>`).join('')}</div>`;
 }
@@ -81,7 +82,7 @@ export function diceView(state) {
 export function lobbyView(state, { host, escape, icons, modeName }) {
   const canControl = host || state.isCaptain;
   const config = `<button class="button outline" data-action="configure">${icons('settings')} Choose game</button>`;
-  const minimum = minimumPlayers(state.mode);
+  const minimum = requiredPlayers(state.mode,state.playStyle,state.teamCount,minimumPlayers(state.mode));
   const start = `<button class="button primary" data-action="advance" ${state.connected < minimum ? 'disabled' : ''}>Start ${state.mode === 'board' ? 'race' : partyModes.includes(state.mode) ? 'game' : 'quiz'} ${icons('play')}</button>`;
   const practice = `<button class="button outline" data-action="practice">${partyModes.includes(state.mode) || ['board', 'wheel', 'dice'].includes(state.mode) ? 'Try a practice round' : 'Practice answers'}</button>`;
   const captain = state.captainName ? `<p class="lobby-rule">Captain <strong>${escape(state.captainName)}</strong></p>` : '<p class="lobby-rule">The first player to join becomes captain.</p>';
@@ -97,8 +98,13 @@ export function lobbyView(state, { host, escape, icons, modeName }) {
       ${state.scoring.doubles === 'final' ? ' · Double scheduled finale' : state.scoring.doubles === 'third' ? ' · Double every third question' : ''}</small>` : ''}
     ${boardPlan && state.boardSpeed ? `<small>Up to +${state.boardSpeed}% for speed · Difficulty follows the die</small>` : ''}
     ${boardPlan ? `<small>${state.boardLength} spaces · ${boardPlan.teams} ${boardPlan.teams === 1 ? 'piece' : 'pieces'} · About ${durationLabel(boardPlan)}${state.playerCount ? '' : ' with ' + state.teamCount + ' players'}</small>` : ''}
-    ${state.connected < minimum && party ? `<small>Needs at least ${minimum} players</small>` : ''}${state.mode === 'showdown' ? `<small>Up to ${state.teamCount} balanced teams${state.playerCount < 2 ? ' · needs at least two players' : ''}</small>` : ''}</div></div>`;
+    ${state.connected < minimum && party ? `<small>Needs at least ${minimum} players</small>` : ''}${state.playStyle === 'teams' ? `<small>${state.teamCount} balanced teams · players automatically allocated</small>` : state.mode === 'board' ? '<small>Individual racers · up to 4 pieces</small>' : '<small>Everyone plays individually</small>'}</div></div>`;
 
+  const teamPreview = state.teamPreview?.length ? `<div class="lobby-team-preview" aria-label="Automatic team allocation">
+    ${state.teamPreview.map(t => `<div class="lobby-team" style="--team:${t.color}">
+      <strong>${state.playStyle === 'individual' ? escape(t.name) : 'Team ' + escape(t.name)}</strong>
+      <span>${t.members.length ? t.members.map(m => escape(m.name)).join(', ') : 'Waiting for player'}</span></div>`).join('')}
+    </div>` : '';
   const joinOrigin = host ? new URL(state.joinUrl).origin : '';
   const joinOptions = host ? (state.joinOptions || []) : [];
   const localOnly = /^https?:\/\/(localhost|127\.0\.0\.1)(:|\/)/i.test(state.joinUrl || '');
@@ -110,7 +116,7 @@ export function lobbyView(state, { host, escape, icons, modeName }) {
     <div class="lobby-eyebrow"><span class="eyebrow">ROOM ${state.code}</span>${state.isCaptain ? '<span class="captain-tag">★ Captain</span>' : ''}</div>
     <h2>${state.game > 1 ? 'Rematch ready, ' : 'You’re in, '}${escape(state.player.name)}!</h2>
     <p>${state.isCaptain ? 'Choose a game for the room and start when everyone is ready.' : 'Stay here while the captain sets up the game.'}</p>
-    ${summary}
+    ${summary}${teamPreview}
     <div class="ready-actions"><button class="button outline" data-action="ready-toggle" aria-label="I’m ready" aria-pressed="${Boolean(state.player.ready)}">
       ${icons(state.player.ready ? 'circle-check' : 'circle')}${state.player.ready ? 'Ready' : 'I’m ready'}</button><span role="status">${readyText}</span></div>
     ${state.isCaptain ? '' : captain}
@@ -134,7 +140,7 @@ export function lobbyView(state, { host, escape, icons, modeName }) {
         ${state.connected < state.playerCount ? `<span>${state.playerCount - state.connected} away</span>` : ''}</div>
       ${state.connected ? `<div class="ready-meter"><strong>${readyText}</strong><progress value="${readyCount}" max="${state.connected}" aria-label="Players ready"></progress></div>` : ''}
       ${state.players.length ? `<ul class="players">${state.players.map(player => `<li data-connected="${player.connected}" data-ready="${Boolean(player.ready && player.connected)}">${avatarView(player, escape)}${escape(player.name)}${player.id === state.captainId ? '<span aria-label="Captain">★</span>' : ''}${player.connected ? player.ready ? '<small class="ready-badge">Ready</small>' : '' : '<small>Away</small>'}</li>`).join('')}</ul>` : '<p>Waiting for players to join…</p>'}
-      ${transfer}${summary}${state.autoReveal ? '<p class="lobby-rule">Auto-reveal is on</p>' : ''}
+      ${transfer}${summary}${teamPreview}${state.autoReveal ? '<p class="lobby-rule">Auto-reveal is on</p>' : ''}
       <div class="actions">${config}${start}${practice}</div></div></div>`;
 }
 

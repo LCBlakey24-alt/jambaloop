@@ -21,6 +21,7 @@ const identities = {
   samepage:  {lines:['SAME','PAGE'], strap:'THINK ALIKE. SCORE TOGETHER.', kind:'PARTY', steps:['Everyone privately types an answer to the same creative prompt.','Answers are grouped on the big screen after everyone locks in.','Earn 100 points for each other person whose answer matches yours.']},
   spotlight: {lines:['SPOTLIGHT','WHEEL'],strap:'YOUR TURN TO SHINE',kind:'GAME SHOW',steps:['Choose one, two or three contestant turns per player.','The wheel selects a topic and another player as your expert.','The expert suggests an answer; the contestant makes the final choice. Earn 100 points for a correct contestant answer or 40 for a correct expert hint.']},
   brain: {lines:['BRAIN','LADDER'],strap:'CLIMB WITH YOUR MIND',kind:'PUZZLES',steps:['Choose a five, seven or ten-level climb.','Everyone starts with two lives; answer original number and logic puzzles privately.','Correct answers earn more points as the challenges get harder. Wrong or missed answers cost one life, and losing both means spectating.']},
+  topanswers: {lines:['TOP','ANSWERS'],strap:'READ YOUR ROOM',kind:'PARTY SHOW',steps:['Choose one of four answers to an original opinion question. That creates a real secret poll of everyone playing.','Then secretly predict which answer will be the most popular among your group.','The TV reveals real vote counts. Your prediction earns 20 points per vote for your choice, plus 100 if it shares the most votes. Tied top answers both count.']},
 };
 
 export function launcherModes(filter = 'all') {

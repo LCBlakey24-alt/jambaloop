@@ -9,6 +9,9 @@ on:
       - 'scripts/launcher-browser.mjs'
       - 'scripts/board-team-browser.mjs'
       - 'scripts/fork-browser.mjs'
+      - 'scripts/same-page-browser.mjs'
+      - 'public/same-page*'
+      - 'public/tv-broadcast.css'
       - 'public/fork-*'
       - 'fork-game.js'
       - 'public/board-*.js'
@@ -51,6 +54,7 @@ jobs:
           node scripts/launcher-browser.mjs
           node scripts/board-team-browser.mjs
           node scripts/fork-browser.mjs
+          node scripts/same-page-browser.mjs
       - name: Upload screen captures on success or failure
         if: always()
         uses: actions/upload-artifact@v4

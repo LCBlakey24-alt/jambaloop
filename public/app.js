@@ -1346,7 +1346,7 @@ document.addEventListener('click', async event => {
     finally {raceSending=false;controls.forEach(control=>control.disabled=false);if(state?.race){signature=undefined;render(state);}} 
     return;
   }
-  if (action === 'fork-card') return sendParty({ action: 'card', step: Number(button.dataset.step), option: Number(button.dataset.option) }, button);
+  if (action === 'fork-card') return sendParty({ action: 'card', step: Number(button.dataset.forkStep), option: Number(button.dataset.option) }, button);
   if (action === 'fork-judge') return sendParty({ action: 'judge', track: Number(button.dataset.track) }, button);
   if (action === 'social-card') return sendParty({ action: 'card', option: Number(button.dataset.option) }, button);
   if (action === 'bluff-vote') return sendParty({ action: 'vote', id: button.dataset.id }, button);

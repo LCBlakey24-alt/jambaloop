@@ -106,6 +106,7 @@ export function lobbyView(state, { host, escape, icons, modeName }) {
       <strong>${state.playStyle === 'individual' ? escape(t.name) : 'Team ' + escape(t.name)}</strong>
       <span>${t.members.length ? t.members.map(m => escape(m.name)).join(', ') : 'Waiting for player'}</span></div>`).join('')}
     </div>` : '';
+  const publicInvite = host && /^https:\/\//.test(state.joinUrl||'');
   const joinOrigin = host ? new URL(state.joinUrl).origin : '';
   const joinOptions = host ? (state.joinOptions || []) : [];
   const localOnly = /^https?:\/\/(localhost|127\.0\.0\.1)(:|\/)/i.test(state.joinUrl || '');
@@ -128,11 +129,11 @@ export function lobbyView(state, { host, escape, icons, modeName }) {
     <button class="button outline small" type="submit">Assign</button></form>` : '';
   return `<h1>${state.game > 1 ? 'Rematch lobby' : 'Party lobby'}<span class="brand-dot">.</span></h1><div class="lobby">
     <div class="game-panel join-panel"><div class="join-network"><div class="eyebrow">JOIN ON YOUR PHONE</div><div class="room-code">${state.code}</div>
-      <p class="join-help">Scan using a phone on the <strong>same Wi-Fi</strong> as this laptop.</p>
+      <p class="join-help">${publicInvite ? 'Scan from any phone — <strong>Wi-Fi, 4G or 5G</strong> all work.' : 'Scan using a phone on the <strong>same Wi-Fi</strong> as this laptop.'}</p>
       <p class="join-url" aria-label="Phone join link">${escape(state.joinUrl)}</p>
       ${joinSelector}
       ${localOnly ? '<p class="join-warning" role="alert">This address works only on the laptop. Connect to Wi-Fi and restart the server to find a phone address.</p>' : ''}
-      <p class="join-help">If scanning fails, try another address or allow Node.js through Windows Firewall.</p>
+      ${publicInvite ? '<p class="join-help">Share the QR or room code with your family.</p>' : '<p class="join-help">If scanning fails, try another address or allow Node.js through Windows Firewall.</p>'}
       <button class="button outline" data-action="copy">${icons('link')} Copy join link</button></div>
       <div class="join-qr-frame"><img class="qr" src="${state.qr}" alt="QR code to join room ${state.code}"></div></div>
     <div class="game-panel roster-panel"><div class="eyebrow">IN THE ROOM</div>

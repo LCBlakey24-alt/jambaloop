@@ -1,5 +1,5 @@
 import {randomInt} from 'node:crypto';
-import {responseTarget} from './room-presence.js';
+import {isConnected} from './room-presence.js';
 import {forkGoodCards, forkBadCards, forkScenes, forkStages} from './public/fork-cards.js';
 
 // The TV host is the one impartial human judge.
@@ -22,10 +22,43 @@ function deal(room, kind) {
   return [cards.slice(0,3),cards.slice(3,6)];
 }
 
+function assignRoundRoles(room) {
+  room.forkDriverOrder ??= [...room.players.keys()];
+  const driverKey = room.forkDriverOrder[room.index % room.forkDriverOrder.length];
+  for (const team of room.teams) {
+    team.members = [];
+    team.size = 0;
+    team.roundPoints = 0;
+    // Teams are reshuffled every round, so only individual points carry forward.
+    team.score = 0;
+  }
+  delete room.players.get(driverKey).team;
+  [...room.players].filter(([key]) => key !== driverKey).forEach(([key,player],index) => {
+    const teamId = (index + room.index) % 2;
+    player.team = teamId;
+    const team = room.teams[teamId];
+    team.size++;
+    team.members.push({id:player.id,name:player.name});
+  });
+  return driverKey;
+}
+
+function eligibleVoters(room, votes) {
+  let count = 0;
+  for (const key of room.players.keys()) {
+    if (key === room.party?.driverKey) continue;
+    if (votes.has(key) || isConnected(room, key)) count++;
+  }
+  return count;
+}
+
 export function startForkRound(room, publish) {
   if (room.mode !== 'tracks' || room.teams.length !== 2) throw new Error('Fork in the Tracks requires two teams.');
+  const driverKey = assignRoundRoles(room);
+  const driverPlayer = room.players.get(driverKey);
   room.party = {
-    type:'fork', step:0, placements:[[null,null,null],[null,null,null]],
+    type:'fork', driverKey, driver:{id:driverPlayer.id,name:driverPlayer.name},
+    step:0, placements:[[null,null,null],[null,null,null]],
     hands:deal(room,'good'), votes:new Map(), judgeChoice:null, winner:null,
     scene:forkScenes[room.index % forkScenes.length],
   };
@@ -72,7 +105,7 @@ function lockPlacement(room, publish) {
 export function forkReadyToLock(room) {
   if(room.phase!=='party-build' || !room.party?.votes?.size) return false;
   const votes=room.party.votes;
-  if (votes.size < responseTarget(room,votes)) return false;
+  if (votes.size < eligibleVoters(room,votes)) return false;
   // If a whole team is missing, don't auto-select on their behalf.
   return room.teams.every(team=>[...votes.keys()].some(key=>room.players.get(key)?.team===team.id));
 }
@@ -117,7 +150,8 @@ export function submitFork(room,key,data,publish) {
     return [204];
   }
   if(data.action==='judge' && room.phase==='party-judge') {
-    if(key!==room.host)return [403,'Only the host judge can choose which track the trolley hits.'];
+    if(key!==party.driverKey && !(key===room.host && !isConnected(room, party.driverKey)))
+      return [403,'Only the current Trolley Driver can pull the lever.'];
     if(!Number.isInteger(data.track) || ![0,1].includes(data.track))
       return [400,'Choose Track A or Track B.'];
     const hit=data.track;
@@ -151,8 +185,12 @@ export function publicFork(room,key) {
     hand:room.phase==='party-build' && [0,1].includes(team) ? [...party.hands[team]] : undefined,
     voted:party.votes.has(key),
     submissions:party.votes.size,
-    responseTarget:room.phase==='party-build' ? responseTarget(room,party.votes) : 0,
-    judge:key===room.host,
+    responseTarget:room.phase==='party-build' ? eligibleVoters(room,party.votes) : 0,
+    driver:party.driver,
+    driverTurn:key===party.driverKey,
+    driverConnected:isConnected(room,party.driverKey),
+    canJudge:key===party.driverKey || (key===room.host && !isConnected(room,party.driverKey)),
+    judge:key===party.driverKey,
     team,
     hit:party.judgeChoice,
     saved:party.winner,

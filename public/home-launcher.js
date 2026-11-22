@@ -19,6 +19,7 @@ const identities = {
   quizrace:  {lines:['QUIZ','RACE'], strap:'THINK FAST. MOVE FASTER.', kind:'RACING', steps:['Everyone races at the same time.','Fast correct answers give bigger speed boosts.','Overtake the field and cross the line first.']},
   showdown:  {lines:['TEAM','SHOWDOWN'], strap:'BETTER TOGETHER', kind:'TEAMS', steps:['Split into two to four teams.','Answer the team questions on phones.','Combine points to take the team victory.']},
   samepage:  {lines:['SAME','PAGE'], strap:'THINK ALIKE. SCORE TOGETHER.', kind:'PARTY', steps:['Everyone privately types an answer to the same creative prompt.','Answers are grouped on the big screen after everyone locks in.','Earn 100 points for each other person whose answer matches yours.']},
+  spotlight: {lines:['SPOTLIGHT','WHEEL'],strap:'YOUR TURN TO SHINE',kind:'GAME SHOW',steps:['Every player has a contestant turn.','The wheel selects a topic and another player as your expert.','The expert suggests an answer; the contestant makes the final choice. Earn 100 points for a correct contestant answer or 40 for a correct expert hint.']},
 };
 
 export function launcherModes(filter = 'all') {

@@ -15,7 +15,8 @@ export const narration = {
   showdown: "It's Team Showdown! Bring your team together, share your knowledge and pile up the points. Only one side can take the victory — let the showdown begin!",
   samepage: "Welcome to Same Page! Read the prompt, write your first thought, and hope your friends think exactly like you. Every matching mind earns you points!",
   spotlight: "Welcome to Spotlight Wheel! Everyone gets a turn as the contestant. Spin to reveal a trivia topic and a fellow player who will offer expert advice. Listen carefully, make your choice and shine in the spotlight!",
-  brain: "Welcome to Brain Ladder! Ten levels of original puzzles, two lives per player, and a tougher challenge at every step. Think carefully, lock an answer and see how high you can climb!",  
+  brain: "Welcome to Brain Ladder! Ten levels of original puzzles, two lives per player, and a tougher challenge at every step. Think carefully, lock an answer and see how high you can climb!",
+  topanswers: "Welcome to Top Answers! First, vote for the answer you really prefer. Then guess which choice the rest of this room picked most. We'll reveal the actual votes on the big screen — no mystery surveys, just your crowd!",   
 };
 // Three professional ElevenLabs recordings were successfully generated on 22 November 2026.
 // Remaining modes use offline-capable, no-cost browser-native speech synthesis until recordings exist.

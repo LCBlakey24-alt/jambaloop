@@ -31,13 +31,14 @@ The TV is a *broadcast stage*, never a second phone controller. Phone buttons ar
 | Same Page | Mint/lilac | Shared prompt; then matched answer clusters | Group sizes, names and 100 points per matched partner |
 | Spotlight Wheel | Gold/violet | Wheel, rotating contestant and expert, large 4-choice board | Contestant and independent expert points, correct answer |
 | Brain Ladder | Cyan/bronze | Original multi-level reasoning tower, survivor count and four choices | Correct mathematical solution, lives lost and advancing rung |
+| Top Answers | Violet/gold | Four-option real room popularity poll; sealed vote counts then prediction | Vote bars from current players only; ties, score awards and final podium |
 
 ## New original formats — next to implement or extend
 **Brain Ladder:** implemented as the next draft game. Original programmatically checked reasoning deck, 5/7/10 levels, two-life elimination, vertical TV ladder and private phone controls. Benchmark difficulty through playtesting; never invent population percentages.
 
 **Rare Find:** players try to give an obscure *valid* answer to a topic. Do not present fabricated poll percentages or label arbitrary scores as real survey findings. Source a genuinely permissioned survey dataset or explicitly score uniqueness among current room answers. Stage: dramatic falling score columns and an evidence/status ribbon. Phones: typed answer, then review/dispute where required.
 
-**Top Answers:** popularity game driven by a real surveyed audience or a clearly labelled live-room poll; no invented outside poll totals. Stage: six-slot reveal board, score tallies and strikes. Phones: team answer and possible steal. Question packs need survey/sample metadata, consent/source, date, valid alternative wording.
+**Top Answers:** implemented in a draft original **live-room poll + prediction** version. Players vote among four original options, predict the room favourite, then the TV reveals the *actual* collected counts and percentages, including ties. No fabricated sample; optional future team/steal variant needs a separate build. An externally surveyed question pack would require documented sample/source/date and rights metadata.
 
 **Spotlight Wheel:** implemented in draft PR #18. A host-controlled original wheel selects a topic and expert, with independent contestant and expert scoring and one contestant round per player. No TV programme assets are reused. Optional future extension: audience prediction without answer leakage.
 
@@ -52,4 +53,4 @@ The TV is a *broadcast stage*, never a second phone controller. Phone buttons ar
 - Original names, prompts, rules and stage design only; no unlicensed television show trademarks, theme music, footage or logos.
 
 ## Current scope
-PR #17 adds Same Page and shared broadcast visual styling for the first thirteen modes. Draft PR #18 adds the fourteenth game, Spotlight Wheel, with a complete server/client implementation and automated role/privacy/TV tests. Brain Ladder is implemented in draft on top of this branch. Rare Find and Top Answers remain planned, not yet implemented. Workflow screenshot artefacts are retained on GitHub Actions. Both PRs remain stacked and unmerged; the family live site is unchanged.
+PR #17 adds Same Page and shared broadcast visual styling for the first thirteen modes. Draft PR #18 adds the fourteenth game, Spotlight Wheel, with a complete server/client implementation and automated role/privacy/TV tests. Brain Ladder is implemented in draft on top of this branch. Rare Find remains planned. Top Answers now has a draft live-room poll implementation, while external survey packs and team/steal variants remain future extensions. Workflow screenshot artefacts are retained on GitHub Actions. Both PRs remain stacked and unmerged; the family live site is unchanged.

@@ -11,6 +11,8 @@ on:
       - 'scripts/fork-browser.mjs'
       - 'scripts/same-page-browser.mjs'
       - 'scripts/tv-all-modes.mjs'
+      - 'scripts/spotlight-browser.mjs'
+      - 'public/spotlight*'
       - 'public/same-page*'
       - 'public/tv-broadcast.css'
       - 'public/fork-*'
@@ -56,6 +58,7 @@ jobs:
           node scripts/board-team-browser.mjs
           node scripts/fork-browser.mjs
           node scripts/same-page-browser.mjs
+          node scripts/spotlight-browser.mjs
           node scripts/tv-all-modes.mjs
       - name: Upload screen captures on success or failure
         if: always()

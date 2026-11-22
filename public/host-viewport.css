@@ -39,6 +39,8 @@
   body.playing .host-screen > .connection-strip,
   body.playing .host-screen > .stage-presence,
   body.playing .host-screen > .live-lineup { flex: none; margin: 0; line-height: 1.2; }
+  /* The explanatory guide remains available on player phones and in Help. */
+  body.playing .host-screen[data-phase="lobby"] > .lobby-guide { display: none; }
   /* Lobby heading duplicates the room/game label in the bar above; reclaim the space. */
   body.playing .host-screen[data-phase="lobby"] > h1 { display: none; }
   body.playing .host-screen[data-phase="lobby"] > .lobby {

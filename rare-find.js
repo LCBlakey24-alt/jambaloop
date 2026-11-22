@@ -143,7 +143,7 @@ export function publicRare(room,key){
    remaining:isHost&&reviewing?reviews.filter(row=>!row.decision).length:undefined,
    // Do not reveal anyone else's answer, validated/invalid status, or points before reveal.
    ...(revealed?{results:party.results,source:party.prompt.source,
-       audit:party.audit.map(({answer,decision,canonical,actor,at})=>({answer,decision,canonical,actor,at})),
+       audit:isHost?party.audit.map(({answer,decision,canonical,previous,actor,at})=>({answer,decision,canonical,previous,actor,at})):undefined,
        earned:party.earned?.get(key)??0}:{}),
  };
 }

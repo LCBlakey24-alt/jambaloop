@@ -15,6 +15,8 @@ on:
       - 'public/spotlight*'
       - 'public/same-page*'
       - 'public/tv-broadcast.css'
+      - 'public/publisher-brand.css'
+      - 'test/publisher-brand.test.js'
       - 'public/fork-*'
       - 'fork-game.js'
       - 'public/board-*.js'

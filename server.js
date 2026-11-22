@@ -12,6 +12,7 @@ import { performance } from 'node:perf_hooks';
 import { difficultyQuestions } from './difficulty-questions.js';
 import { advanceQuizRace, createQuizRace, publicRaceState, raceDifficulties, raceLengths, racePlacings, raceTracks, setRacePaused, submitRaceAnswer } from './quiz-race.js';
 import { networkInterfaces } from 'node:os';
+import { inviteOriginOptions, qrJoinUrl } from './room-invite.js';
 import { fileURLToPath } from 'node:url';
 import { validateQuiz, prepareCustomQuiz } from './public/custom-quiz.js';
 import { boardQuestion, makeQuestions, questionCategories } from './questions.js';
@@ -94,12 +95,14 @@ app.post('/api/rooms', async (req, res) => {
   const host = token();
   const room = { code, host, game: 1, revision: 0, clients: new Map(), seen: new Set(), players: new Map(), waiting: new Map(), livePlayers: new Map(), lastSeen: new Map(), night: { queue: [], played: 0, version: 0 }, answers: new Map(), updated: Date.now() };
   resetGame(room, settings);
-  const hostHeader = req.get('x-forwarded-host')?.split(',')[0].trim() || req.get('host');
-  const protocol = req.get('x-forwarded-proto')?.split(',')[0].trim() || req.protocol;
-  const lan = Object.values(networkInterfaces()).flat().find(entry => entry.family === 'IPv4' && !entry.internal);
-  const origin = process.env.PUBLIC_URL || (/^(localhost|127\.0\.0\.1)(:|$)/.test(hostHeader) && lan
-    ? `http://${lan.address}:${server.address().port}` : `${protocol}://${hostHeader}`);
-  room.joinUrl = new URL('/?join=' + code, origin).href;
+  // Prefer a real Wi-Fi/LAN address over localhost or virtual adapters.
+  // Hosts can switch adapters from the lobby if the recommended one is unreachable.
+  // Do not use x-forwarded-host/proto when generating invite links.
+  room.joinOptions = inviteOriginOptions({
+    publicUrl: process.env.PUBLIC_URL, host: req.get('host'), protocol: req.protocol,
+    port: server.address().port, interfaces: networkInterfaces()
+  });
+  room.joinUrl = qrJoinUrl(room.joinOptions[0].origin, code);
   rooms.set(code, room);
   try {
     room.qr = await QRCode.toDataURL(room.joinUrl, { margin: 2, width: 220 });
@@ -185,7 +188,8 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
     breakdown: revealed && isHost && !room.privateQuestions && ['choice', 'boolean'].includes(question.type) ? question.options.map((_, option) =>
       [...answers.values()].filter(entry => entry.option === option).length) : undefined,
     question: visible && question ? { ...publicQuestion, basePoints: room.motion?.points ?? (question.type === 'estimate' && room.legacyScoring ? 1000 : room.scoring?.base), prompt: isHost || room.phoneView === 'full' ? publicQuestion.prompt : undefined, correct: revealed ? correct : undefined } : undefined,
-    qr: isHost ? qr : undefined, joinUrl: isHost ? joinUrl : undefined };
+    qr: isHost ? qr : undefined, joinUrl: isHost ? joinUrl : undefined,
+    joinOptions: isHost ? room.joinOptions : undefined };
 }
 
 const comparePlayers = (a, b) => (b.lives ?? 0) - (a.lives ?? 0) || b.score - a.score;
@@ -235,6 +239,24 @@ function publish(room, hostOnly = false) {
     }, 100);
   }
 }
+
+// Let the TV host switch to a reachable network adapter. Do not allow arbitrary external URLs.
+app.post('/api/rooms/:code/invite', async (req, res) => {
+  const {room, key} = res.locals;
+  if (key !== room.host) return res.status(403).json({error: 'Only the TV host can change the join address.'});
+  const option = room.joinOptions?.find(entry => entry.origin === req.body?.origin);
+  if (!option) return res.status(400).json({error: 'Choose one of the listed connection addresses.'});
+  const url = qrJoinUrl(option.origin, room.code);
+  try {
+    const qr = await QRCode.toDataURL(url, {margin: 2, width: 220});
+    room.joinUrl = url;
+    room.qr = qr;
+    publish(room);
+    res.sendStatus(204);
+  } catch {
+    res.status(500).json({error: 'Could not generate the new QR code. Try again.'});
+  }
+});
 
 app.get('/api/rooms/:code/live', (req, res) => {
   const { room, key } = res.locals;

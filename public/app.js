@@ -274,7 +274,7 @@ function openDialog(mode, value, gameMode, quizId) {
       <label>Race length<select name="raceLength">${selected([['short','Short · ~1 min'],['medium','Medium · ~2 min'],['long','Long · ~3 min']],raceSetup.raceLength ?? 'medium')}</select></label>
       <label>Track theme<select name="raceTrack">${selected([['neon','Neon Circuit'],['desert','Desert Run'],['snow','Snow Circuit'],['jungle','Jungle Trail'],['space','Space Route']],raceSetup.raceTrack ?? 'neon')}</select></label>
       <label>Difficulty<select name="raceDifficulty">${selected([['easy','Easy'],['medium','Medium'],['hard','Hard'],['mixed','Mixed']],raceSetup.raceDifficulty ?? 'mixed')}</select></label></div>
-      <small>2–8 racers. Multiple-choice questions appear privately on phones. Fast correct answers boost speed. Easy/Hard use curated questions where available, supplemented by standard questions.</small></fieldset>
+      <small>2–12 racers. Multiple-choice questions appear privately on phones. Fast correct answers boost speed. Easy/Hard use curated questions where available, supplemented by standard questions.</small></fieldset>
     <label id="score-interval-field">Leaderboard reveal<select name="scoreInterval" aria-label="Leaderboard reveal" aria-describedby="score-interval-help">${selected(scoreIntervals.map(value => [value, intervalLabels[value]]), interval)}</select>
       <small id="score-interval-help">Correct answers are still revealed after each question.</small></label>
     <div class="setup-presets" aria-label="Timing presets"><button type="button" class="button outline small" data-preset="quick">Quick game</button>
@@ -417,7 +417,7 @@ function openDialog(mode, value, gameMode, quizId) {
         : form.elements.seconds.value === '0' ? 'No speed bonus.'
         : format === 'mixed' ? 'Timed correct answers can earn a speed bonus. Closest guesses receive equal base points.'
         : 'Faster correct answers earn more.';
-      form.querySelector('#scoring-note').textContent = race ? 'You steer your speed with answers. Correct boosts you, Pass and wrong answers slow you down. First to finish wins.' : party ? (trolley ? 'Two teams place a good card, a sabotage card on the opposing track, then a final good card. The host judges each round. Choose 3, 5 or 7 rounds.' : game === 'bluff' ? 'Three or more players. Write a reply, then vote for the bluff.' : game === 'potato' ? 'Two or more players. The potato has one shared two-minute timer.' : 'Three rounds. Players use their phones to enter or vote.')
+      form.querySelector('#scoring-note').textContent = race ? 'You steer your speed with answers. Correct boosts you, Pass and wrong answers slow you down. First to finish wins.' : party ? (trolley ? 'Two teams place a good card, a sabotage card on the opposing track, then a final good card. A different player becomes Trolley Driver each round; everyone gets a turn.' : game === 'bluff' ? 'Three or more players. Write a reply, then vote for the bluff.' : game === 'potato' ? 'Two or more players. The potato has one shared two-minute timer.' : 'Three rounds. Players use their phones to enter or vote.')
         : privateQuiz ? 'Each player gets a unique multiple-choice or True or False question in each round.'
         : custom ? 'Uses every question in the saved quiz in its authored order.'
         : curated ? 'A curated mixed-topic pack with multiple-choice questions.' : board

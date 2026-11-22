@@ -60,6 +60,15 @@ try {
       assert.equal(await page.locator('#mode-list').isVisible(),false,'Grid should hide while preview is expanded');
       assert.match(await page.locator('#game-preview').innerText(),/How to play/i);
       assert.match(await page.locator('#game-preview').innerText(),/Cross|line first|finish/i);
+      assert.equal(await page.locator('#game-preview [data-action="narrator-toggle"]').count(),1);
+      assert.match(await page.locator('.narrator-script').innerText(),/Welcome to Quiz Race!/);
+      const beforeAudio=await page.evaluate(() =>
+        performance.getEntriesByType('resource').filter(entry=>entry.name.endsWith('/audio/narrator/quizrace.mp3')).length);
+      assert.equal(beforeAudio,0,'Audio should never download before the user taps Listen');
+      const audioRequest=page.waitForRequest(request=>request.url().endsWith('/audio/narrator/quizrace.mp3'),{timeout:8000});
+      await page.locator('#game-preview [data-action="narrator-toggle"]').click();
+      await audioRequest;
+      console.log('PASS: narrator is opt-in and static Quiz Race recording starts downloading on Listen');
       await page.screenshot({path:'browser-screenshots/preview-quizrace.png'});
       await page.locator('[data-action="close-preview"]').click();
       assert.equal(await page.locator('.game-tile[data-mode="quizrace"]').isVisible(),true);
@@ -79,6 +88,14 @@ try {
     }
     await page.close();
   }
+  const audioPage=await browser.newPage();
+  for(const id of ['classic','board','quizrace']) {
+    const response=await audioPage.request.get(base+'/audio/narrator/'+id+'.mp3');
+    assert.equal(response.status(),200,'Missing committed recording '+id);
+    assert.ok((await response.body()).length>6000,'Empty recorded audio for '+id);
+  }
+  await audioPage.close();
+  console.log('PASS: all three pre-recorded ElevenLabs MP3 files are bundled and served');
   const page=await browser.newPage({viewport:{width:1366,height:768},reducedMotion:'reduce'});
   await page.goto(base,{waitUntil:'networkidle',timeout:30000});
   await page.locator('.game-tile').first().waitFor();

@@ -45,3 +45,40 @@ test('host can select a reachable QR origin; players cannot change invite URLs',
   assert.ok(updated.qr.startsWith('data:image/png;base64,'));
   assert.equal(updated.joinOptions.length,before.joinOptions.length);
 });
+
+test('Render HTTPS URL is used by new room QR links even if server listens on localhost', async t => {
+  const child = spawn(process.execPath, ['server.js'], {
+    env: {
+      ...process.env, PORT: '0', PUBLIC_URL: '',
+      RENDER_EXTERNAL_URL: 'https://jambaloop-family-test.onrender.com'
+    },
+    stdio: ['ignore', 'pipe', 'pipe']
+  });
+  t.after(() => child.kill());
+  const [output] = await Promise.race([
+    once(child.stdout, 'data'),
+    once(child, 'exit').then(([code]) => {
+      throw new Error('Server exited before startup: ' + code);
+    })
+  ]);
+  const origin = String(output).match(/http:\/\/localhost:\d+/)?.[0];
+  assert.ok(origin);
+  const created = await fetch(origin + '/api/rooms', {
+    method: 'POST',
+    headers: {'content-type': 'application/json'},
+    body: JSON.stringify({mode: 'classic', category: 'mixed', count: 5, seconds: 0})
+  });
+  assert.equal(created.status, 201, await created.clone().text());
+  const {code, host} = await created.json();
+  const room = await fetch(origin + '/api/rooms/' + code, {
+    headers: {'x-game-key': host}
+  });
+  assert.equal(room.status, 200);
+  const data = await room.json();
+  assert.equal(data.joinUrl, 'https://jambaloop-family-test.onrender.com/?join=' + code);
+  assert.deepEqual(data.joinOptions, [{
+    origin: 'https://jambaloop-family-test.onrender.com',
+    label: 'Public website'
+  }]);
+  assert.ok(data.qr.startsWith('data:image/png;base64,'));
+});

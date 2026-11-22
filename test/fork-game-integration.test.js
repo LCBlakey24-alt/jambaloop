@@ -49,118 +49,117 @@ async function liveServer(action) {
   }finally {child.kill();}
 }
 
-test('host-judged two-team trolley builds three coherent cards in correct ownership order',async()=>{
+
+test('four players rotate the driver, choose one of three cards, and place coherent tracks',async()=>{
   await liveServer(async({makeRoom})=>{
     const room=await makeRoom(4,5);
     const lobby=await room.state();
-    assert.equal(lobby.playStyle,'teams');
-    assert.equal(lobby.teamCount,2);
     assert.deepEqual(lobby.teamPreview.map(group=>group.size),[2,2]);
     await room.advance();
     let host=await room.state();
+    assert.equal(host.total,4,'Exactly one trolley round per player');
     assert.equal(host.phase,'party-build');
-    assert.equal(host.party.type,'fork');
-    assert.equal(host.party.step,0);
-    assert.equal(host.party.hand,undefined,'Do not leak private card choices to judge');
-    const participants=await Promise.all(room.keys.map(key=>room.state(key)));
-    assert.deepEqual(participants.map(x=>x.player.team),[0,1,0,1]);
-    assert.ok(participants.every(x=>x.party.hand.length===3));
-    assert.notDeepEqual(participants[0].party.hand,participants[1].party.hand);
-    const ownStart=[participants[0].party.hand[0],participants[1].party.hand[0]];
-    for(const key of room.keys) await room.party(key,'card',{step:0,option:0});
+    assert.equal(host.party.hand,undefined);
+    const first=await Promise.all(room.keys.map(key=>room.state(key)));
+    const driverIndex=first.findIndex(x=>x.party.driverTurn);
+    assert.ok(driverIndex>=0);
+    assert.equal(first[driverIndex].party.hand,undefined,'Driver must not see team cards');
+    assert.deepEqual(first.map(x=>x.player.team).filter(x=>x!==undefined).sort(),[0,0,1]);
+    const byTeam=stageStates=>new Map(stageStates.filter(x=>!x.party.driverTurn)
+      .map(x=>[x.player.team,x.party.hand[0]]));
+    const firstCards=byTeam(first);
+    assert.ok(first.filter(x=>!x.party.driverTurn).every(x=>x.party.hand.length===3));
+    for(let i=0;i<room.keys.length;i++) if(i!==driverIndex)
+      await room.party(room.keys[i],'card',{step:0,option:0});
     host=await room.state();
-    assert.equal(host.phase,'party-build');
     assert.equal(host.party.step,1);
-    assert.equal(host.party.placements[0][0],ownStart[0]);
-    assert.equal(host.party.placements[1][0],ownStart[1]);
-    const sabotage=await Promise.all(room.keys.map(key=>room.state(key)));
-    const outgoing=[sabotage[0].party.hand[0],sabotage[1].party.hand[0]];
-    for(const key of room.keys) await room.party(key,'card',{step:1,option:0});
+    assert.equal(host.party.placements[0][0],firstCards.get(0));
+    assert.equal(host.party.placements[1][0],firstCards.get(1));
+    const second=await Promise.all(room.keys.map(key=>room.state(key)));
+    const badCards=byTeam(second);
+    for(let i=0;i<room.keys.length;i++) if(i!==driverIndex)
+      await room.party(room.keys[i],'card',{step:1,option:0});
     host=await room.state();
     assert.equal(host.party.step,2);
-    assert.equal(host.party.placements[0][1],outgoing[1],'Team B sabotage belongs on Track A');
-    assert.equal(host.party.placements[1][1],outgoing[0],'Team A sabotage belongs on Track B');
-    const defence=await Promise.all(room.keys.map(key=>room.state(key)));
-    const extra=[defence[0].party.hand[0],defence[1].party.hand[0]];
-    for(const key of room.keys) await room.party(key,'card',{step:2,option:0});
+    assert.equal(host.party.placements[0][1],badCards.get(1));
+    assert.equal(host.party.placements[1][1],badCards.get(0));
+    const third=await Promise.all(room.keys.map(key=>room.state(key)));
+    const finalCards=byTeam(third);
+    for(let i=0;i<room.keys.length;i++) if(i!==driverIndex)
+      await room.party(room.keys[i],'card',{step:2,option:0});
     host=await room.state();
     assert.equal(host.phase,'party-judge');
-    assert.equal(host.party.placements[0][2],extra[0]);
-    assert.equal(host.party.placements[1][2],extra[1]);
-    for(const [i,items] of host.party.placements.entries()){
-      assert.ok(items.every(text=>typeof text==='string'&&text.length>10));
-      const sentence=forkSentence(items,'AB'[i]);
-      assert.match(sentence,/If the trolley takes Track [AB], it will hit .+, .+, and .+\.$/);
-    }
-    const forbidden=await room.party(room.keys[0],'judge',{track:0},403);
-    assert.match(forbidden.error,/Only the host judge/);
-    await room.advance();
-    assert.equal((await room.state()).phase,'party-judge','Cannot skip impartial judge');
-    await room.party(room.host,'judge',{track:0});
+    assert.equal(host.party.placements[0][2],finalCards.get(0));
+    assert.equal(host.party.placements[1][2],finalCards.get(1));
+    for(const [i,cards] of host.party.placements.entries())
+      assert.match(forkSentence(cards,'AB'[i]),/If the trolley takes Track [AB], it will hit .+, .+, and .+\.$/);
+    const denied=await room.party(room.host,'judge',{track:0},403);
+    assert.match(denied.error,/current Trolley Driver/);
+    await room.party(room.keys[driverIndex],'judge',{track:0});
     host=await room.state();
     assert.equal(host.phase,'party-reveal');
-    assert.equal(host.party.hit,0);
     assert.equal(host.party.saved,1);
-    assert.deepEqual(host.teams.map(team=>team.score),[0,1]);
-    const after=await Promise.all(room.keys.map(key=>room.state(key)));
-    assert.deepEqual(after.map(x=>x.player.score),[0,100,0,100]);
+    const scored=await Promise.all(room.keys.map(key=>room.state(key)));
+    for(const p of scored) assert.equal(p.player.score,p.player.team===1?100:0);
     await room.advance();
-    host=await room.state();
-    assert.equal(host.index,1);
-    assert.equal(host.phase,'party-build');
-    assert.equal(host.party.step,0);
-    assert.deepEqual(host.teams.map(team=>team.score),[0,1]);
+    const next=await Promise.all(room.keys.map(key=>room.state(key)));
+    assert.equal(next[0].index,1);
+    assert.equal(next.filter(x=>x.party.driverTurn).length,1);
+    assert.notEqual(next.findIndex(x=>x.party.driverTurn),driverIndex);
   });
 });
 
-test('trolley rounds can run 7 rounds with explicit host control and a winner',async()=>{
+test('every joined player drives once before the game ends',async()=>{
   await liveServer(async({makeRoom})=>{
-    const r=await makeRoom(3,7);
-    await r.advance();
-    for(let round=0;round<7;round++){
-      let state=await r.state();
-      assert.equal(state.index,round);
-      for(let stage=0;stage<3;stage++) {
-        assert.equal(state.phase,'party-build');
-        assert.equal(state.party.step,stage);
-        // Judge may progress a stalled team: a complete, grammatical first card is substituted.
-        await r.advance();
-        state=await r.state();
+    const room=await makeRoom(3,7);
+    await room.advance();
+    const driven=new Set();
+    for(let round=0;round<3;round++){
+      let states=await Promise.all(room.keys.map(key=>room.state(key)));
+      assert.equal(states[0].total,3);
+      const driver=states.findIndex(x=>x.party.driverTurn);
+      assert.ok(driver>=0);
+      assert.ok(!driven.has(driver),'Driver must never repeat in a standard game');
+      driven.add(driver);
+      for(let stage=0;stage<3;stage++){
+        states=await Promise.all(room.keys.map(key=>room.state(key)));
+        for(let i=0;i<room.keys.length;i++) if(i!==driver)
+          await room.party(room.keys[i],'card',{step:stage,option:0});
       }
-      assert.equal(state.phase,'party-judge');
-      assert.ok(state.party.placements.flat().every(Boolean));
-      await r.party(r.host,'judge',{track:round===0?1:0});
-      state=await r.state();
-      assert.equal(state.phase,'party-reveal');
-      await r.advance();
+      assert.equal((await room.state()).phase,'party-judge');
+      await room.party(room.keys[driver],'judge',{track:round%2});
+      assert.equal((await room.state()).phase,'party-reveal');
+      await room.advance();
     }
-    const finished=await r.state();
+    assert.equal(driven.size,3);
+    const finished=await room.state();
     assert.equal(finished.phase,'finished');
-    assert.deepEqual(finished.teams.map(team=>team.score),[1,6]);
-    assert.deepEqual(finished.teamWinners,[1]);
+    assert.equal(finished.playerCount,3);
   });
 });
 
-test('invalid team styles/counts and duplicate placements are rejected by the server',async()=>{
+test('invalid configuration, too few players, duplicate choices and premature judging are rejected',async()=>{
   await liveServer(async({request,makeRoom})=>{
     const base={mode:'tracks',category:'mixed',format:'mixed',seconds:0,count:5};
     await request('',undefined,{...base,playStyle:'individual',teamCount:2},400);
     await request('',undefined,{...base,playStyle:'teams',teamCount:3},400);
     await request('',undefined,{...base,playStyle:'teams',teamCount:2,count:10},400);
-    const r=await makeRoom(2,3);
-    await r.advance();
-    await r.party(r.keys[0],'card',{step:0,option:1});
-    const duplicate=await r.party(r.keys[0],'card',{step:0,option:2},409);
-    assert.match(duplicate.error,/already chosen/);
-    const stale=await r.party(r.keys[1],'card',{step:2,option:0},409);
+    const room=await makeRoom(3,3);
+    await room.advance();
+    const state=await Promise.all(room.keys.map(key=>room.state(key)));
+    const voters=room.keys.filter((_,i)=>!state[i].party.driverTurn);
+    await room.party(voters[0],'card',{step:0,option:1});
+    const dupe=await room.party(voters[0],'card',{step:0,option:2},409);
+    assert.match(dupe.error,/already chosen/);
+    const stale=await room.party(voters[1],'card',{step:2,option:0},409);
     assert.match(stale.error,/already ended/);
-    const early=await r.party(r.host,'judge',{track:0},409);
+    const early=await room.party(voters[1],'judge',{track:0},409);
     assert.match(early.error,/not available/);
-    const captainAdvance=await r.state(r.keys[0]);
-    const denied=await request(r.path+'/advance',r.keys[0],{
-      phase:captainAdvance.phase,game:captainAdvance.game,index:captainAdvance.index},403);
-    assert.match(denied.error,/host judge/);
-    await r.party(r.keys[1],'card',{step:0,option:0});
-    assert.equal((await r.state()).party.step,1);
+    const now=await room.state(voters[0]);
+    const denied=await request(room.path+'/advance',voters[0],{
+      phase:now.phase,game:now.game,index:now.index},403);
+    assert.match(denied.error,/TV host/);
+    await room.party(voters[1],'card',{step:0,option:0});
+    assert.equal((await room.state()).party.step,1);
   });
 });

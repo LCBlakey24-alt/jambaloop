@@ -10,7 +10,9 @@ const stageTag={
 };
 
 function wheelFaces(roster,escape) {
-  const visible=roster.slice(0,10);
+  // Never imply the wheel excludes people when a large group will not fit legibly.
+  if(roster.length>10) return '<span class="spotlight-wheel-size">ALL '+roster.length+' PLAYERS</span>';
+  const visible=roster;
   return visible.map((player,index) => {
     const angle=index*360/visible.length;
     return '<span class="spotlight-wheel-label" style="--angle:'+angle+'deg">'+escape(player.name)+'</span>';

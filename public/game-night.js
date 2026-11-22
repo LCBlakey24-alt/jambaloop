@@ -4,7 +4,7 @@ export const playlistLimit = 12;
 
 export const gameNightPresets = {
   15: ['classic', 'punchline', 'potato'],
-  30: ['classic', 'wheel', 'samepage', 'punchline', 'potato', 'dice'],
+  30: ['classic', 'wheel', 'samepage', 'punchline', 'tracks', 'potato', 'dice'],
   60: ['classic', 'samepage', 'punchline', 'board', 'cards', 'potato', 'wheel', 'bluff', 'showdown', 'tracks', 'dice', 'knockout'],
 };
 

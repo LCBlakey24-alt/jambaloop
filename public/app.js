@@ -350,6 +350,7 @@ function openDialog(mode, value, gameMode, quizId) {
       const supportsCustom = fixedQuestionModes.includes(game) && !privateQuiz;
       const trolley = game === 'tracks';
       const matching = game === 'samepage';
+      const spotlight = game === 'spotlight';
       const allowsTeams = teamPlayModes.includes(game);
       const teamOption = form.querySelector('input[name="playStyle"][value="teams"]');
       const soloOption = form.querySelector('input[name="playStyle"][value="individual"]');
@@ -397,7 +398,7 @@ function openDialog(mode, value, gameMode, quizId) {
       const christmasField = form.querySelector('#christmas-field');
       christmasField.hidden = (party && game !== 'potato') || custom || curated || (!categoryField.hidden && form.elements.category.value !== 'mixed');
       form.elements.includeChristmas.disabled = christmasField.hidden;
-      form.querySelector('#count-label').textContent = board ? 'Maximum turns' : trolley || matching ? 'Rounds' : 'Questions';
+      form.querySelector('#count-label').textContent = board ? 'Maximum turns' : trolley || matching || spotlight ? 'Rounds' : 'Questions';
       const counts = questionCounts(game, privateQuiz || curated ? 'choice' : form.elements.format.value, privateQuiz || curated ? 'mixed' : form.elements.category.value);
       const previous = Number(form.elements.count.value) || (configured ? state.total : 0);
       const spaces = Number(form.elements.boardLength.value);
@@ -420,7 +421,7 @@ function openDialog(mode, value, gameMode, quizId) {
         : form.elements.seconds.value === '0' ? 'No speed bonus.'
         : format === 'mixed' ? 'Timed correct answers can earn a speed bonus. Closest guesses receive equal base points.'
         : 'Faster correct answers earn more.';
-      form.querySelector('#scoring-note').textContent = race ? 'You steer your speed with answers. Correct boosts you, Pass and wrong answers slow you down. First to finish wins.' : party ? (matching ? 'Write a short answer privately. Each other player who matches it earns you 100 points. Choose 3, 5 or 7 rounds.' : trolley ? 'Each round: two teams choose one of three cards in each phase (defend, sabotage, reinforce). The Trolley Driver pulls the lever. One round per player.' : game === 'bluff' ? 'Three or more players. Write a reply, then vote for the bluff.' : game === 'potato' ? 'Two or more players. The potato has one shared two-minute timer.' : 'Three rounds. Players use their phones to enter or vote.')
+      form.querySelector('#scoring-note').textContent = race ? 'You steer your speed with answers. Correct boosts you, Pass and wrong answers slow you down. First to finish wins.' : party ? (spotlight ? 'Everyone takes one contestant turn. A randomly selected expert suggests an answer first. Contestants earn 100 points for a correct answer; experts earn 40 for a correct suggestion. Up to twenty players.' : matching ? 'Write a short answer privately. Each other player who matches it earns you 100 points. Choose 3, 5 or 7 rounds.' : trolley ? 'Each round: two teams choose one of three cards in each phase (defend, sabotage, reinforce). The Trolley Driver pulls the lever. One round per player.' : game === 'bluff' ? 'Three or more players. Write a reply, then vote for the bluff.' : game === 'potato' ? 'Two or more players. The potato has one shared two-minute timer.' : 'Three rounds. Players use their phones to enter or vote.')
         : privateQuiz ? 'Each player gets a unique multiple-choice or True or False question in each round.'
         : custom ? 'Uses every question in the saved quiz in its authored order.'
         : curated ? 'A curated mixed-topic pack with multiple-choice questions.' : board
@@ -701,6 +702,10 @@ function phaseCaption(s) {
     'party-write': s.mode === 'cards' ? 'Choose a card' : s.mode === 'samepage' ? 'Write your matching answer' : 'Write a reply',
     'party-vote': 'Voting open',
     'party-reveal': s.mode === 'samepage' ? 'Matching answers revealed' : 'Votes revealed',
+    'spotlight-ready': 'Contestant enters the spotlight',
+    'spotlight-expert': 'Expert advice in progress',
+    'spotlight-answer': 'Contestant final answer',
+    'spotlight-reveal': 'Spotlight answer and scores',
     'party-potato': 'Potato in play',
     'race-countdown': 'Race about to start',
     race: 'Quiz Race in progress',
@@ -875,7 +880,7 @@ function render(s) {
   const captainSelect = !enter && focused?.matches('#captain-form select') ? focused.value : undefined;
   const writing = !enter && focused?.matches('#bluff-form textarea')
     ? [focused.selectionStart, focused.selectionEnd] : undefined;
-  const showProgress = ['ready', 'rolling', 'question', 'reveal', 'score-break', 'party-build', 'party-judge', 'party-write', 'party-vote', 'party-reveal'].includes(s.phase) && s.total > 1;
+  const showProgress = ['ready', 'rolling', 'question', 'reveal', 'score-break', 'party-build', 'party-judge', 'party-write', 'party-vote', 'party-reveal', 'spotlight-ready', 'spotlight-expert', 'spotlight-answer', 'spotlight-reveal'].includes(s.phase) && s.total > 1;
   const caption = phaseCaption(s);
   const boost = s.boost > 1 && ['ready', 'rolling', 'question', 'reveal'].includes(s.phase)
     ? `<span class="score-boost">${icons('zap')} Double points</span>` : '';
@@ -1020,6 +1025,7 @@ function receive(next, current) {
     rememberQuestion(next.question?.historyId);
     rememberQuestion(next.race?.own?.question?.historyId);
     if (next.party?.type === 'samepage') rememberQuestion(next.party.historyId);
+    if (next.party?.type === 'spotlight') rememberQuestion(next.party.question?.historyId);
   }
   if(next.race) raceSnapshotLocal=Date.now();
   if (!current.host && next.player && (current.name !== next.player.name || current.mode !== next.mode)) {
@@ -1359,6 +1365,7 @@ document.addEventListener('click', async event => {
   }
   if (action === 'fork-card') return sendParty({ action: 'card', step: Number(button.dataset.forkStep), option: Number(button.dataset.option) }, button);
   if (action === 'fork-judge') return sendParty({ action: 'judge', track: Number(button.dataset.track) }, button);
+  if (action === 'spotlight-advice' || action === 'spotlight-answer') return sendParty({ action: action === 'spotlight-advice' ? 'advice' : 'answer', option: Number(button.dataset.option) }, button);
   if (action === 'social-card') return sendParty({ action: 'card', option: Number(button.dataset.option) }, button);
   if (action === 'bluff-vote') return sendParty({ action: 'vote', id: button.dataset.id }, button);
   if (action === 'potato-skip' || action === 'potato-answer') {

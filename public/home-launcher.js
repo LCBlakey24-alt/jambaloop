@@ -1,6 +1,7 @@
 // Animated mode identities are CSS-driven: real text, no photographic covers.
 import { modes, minimumPlayers, partyModes } from './game-config.js';
 import { modeStyle, modeVariables } from './mode-style.js';
+import { narration, narratorAsset } from './narration-scripts.js';
 
 export const LAUNCHER_PAGE_SIZE = 8;
 
@@ -64,6 +65,18 @@ export function launcherPreview(id) {
       <div class="preview-overline"><span class="preview-dot"></span> ${kind} <span>·</span> ${players}+ PLAYERS</div>
       <h2 id="preview-title">${name}</h2>
       <p class="preview-description">${description}</p>
+      <div class="narrator-controls">
+        <button type="button" class="narrator-toggle" data-action="narrator-toggle" data-mode="${key}"
+            aria-pressed="false" aria-label="Listen to ${name} introduction">
+          <span data-narrator-symbol aria-hidden="true">▶</span><span data-narrator-label>Listen to intro</span>
+        </button>
+        <span class="narrator-mode" data-narrator-status role="status">${narratorAsset(key)?'Recorded announcer':'Device read-aloud'}</span>
+      </div>
+      <details class="narrator-script">
+        <summary>Read spoken introduction</summary>
+        <p>${narration[key]}</p>
+      </details>
+      ${narratorAsset(key) ? '<a class="narrator-credit" href="https://elevenlabs.io" target="_blank" rel="noopener noreferrer">Voice generated with ElevenLabs</a>' : ''}
       <h3>How to play</h3>
       <ol class="preview-steps">${steps.map((step,i)=>`<li><b>${String(i+1).padStart(2,'0')}</b><span>${step}</span></li>`).join('')}</ol>
       <div class="preview-actions">

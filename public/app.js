@@ -1395,6 +1395,7 @@ document.addEventListener('click', async event => {
   if (action === 'demo-answer') {
     const { mode, step } = practice;
     const option = Number(button.dataset.option);
+    if (mode === 'brain' && step === 0 && option !== 0) return showDemo(mode,0,'Not quite. The sequence increases by two. Try again; the correct next number is 10.');
     if (mode === 'potato' && option !== 1) {
       return showDemo(mode, 0, option === 2 ? 'You still have the potato. In a game a skip deals a fresh question. Try this sample again.' : 'Keep the potato and try again. Beavers are known for building dams.');
     }

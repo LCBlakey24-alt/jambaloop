@@ -116,10 +116,11 @@ function renderModeCards(group) {
     group === 'all' || partyModes.includes(id) === (group === 'party'))
     .map(([id, name, description, icon], index) => {
       const minimum = minimumPlayers(id);
+      const kind = partyModes.includes(id) ? 'PARTY GAME' : id === 'showdown' ? 'TEAM GAME' : 'TRIVIA & CHALLENGES';
       return `<button class="mode-card mode-with-art" data-action="host" data-mode="${id}" style="--entry:${Math.min(index, 7)};${modeVariables(id)}">
         <img class="mode-cover" src="/mode-${id}.webp" alt="" loading="lazy" decoding="async">
         <span class="mode-icon" style="--icon:url('/icons/${icon}.svg')"><i></i></span>
-        <span class="mode-description"><strong>${name}</strong><small>${description}</small><small class="mode-minimum">${minimum}+${minimum === 1 ? ' player' : ' players'}</small></span>
+        <span class="mode-description"><span class="mode-kind">${kind}</span><strong>${name}</strong><small>${description}</small><small class="mode-minimum">${minimum}+${minimum === 1 ? ' player' : ' players'}</small></span>
         ${icons('arrow-up-right', 'arrow')}</button>`;
     }).join('');
 }

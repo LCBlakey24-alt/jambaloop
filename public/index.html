@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#f8f2e6">
+<meta name="theme-color" content="#131A33">
 <title>Jambaloop — Multiplayer games night</title>
-<meta name="description" content="Jambaloop brings quizzes, challenges and party games to one big screen while everyone plays from their phones."> 
+<meta name="description" content="Host quizzes and party games on the big screen. Everyone joins from their phone — no app required.">
 <link rel="icon" type="image/png" href="/branding/jambaloop-icon.png">
 <link rel="apple-touch-icon" href="/branding/jambaloop-icon.png">
 <link rel="stylesheet" href="/fonts.css">
@@ -22,6 +22,7 @@
 <link rel="stylesheet" href="/live-controls.css">
 <link rel="stylesheet" href="/score-break.css">
 <link rel="stylesheet" href="/branding.css">
+<link rel="stylesheet" href="/jambaloop-home.css">
 <script type="module" src="/app.js"></script>
 </head>
 <body>
@@ -32,20 +33,26 @@
 <div class="sr-only" id="phase-announcement" role="status"></div>
 <main id="app">
 <section class="hero"><div class="wrap hero-inner">
-<div class="hero-copy"><div class="eyebrow"><img src="/icons/sparkles.svg" alt=""> LIVE TRIVIA FOR GROUPS</div>
-<h1>Big screen.<br><em>Big quiz.</em></h1>
-<p>One TV, everyone on their phones. Play trivia, bluff your friends, or race to pass the hot potato.</p>
-<div class="actions"><button class="button primary" data-action="party"><img src="/icons/users.svg" alt=""> Open party lobby</button><button class="button outline" data-action="host"><img src="/icons/monitor-play.svg" alt=""> Host a game <img src="/icons/arrow-up-right.svg" alt=""></button><button class="button outline" data-action="join"><img src="/icons/smartphone.svg" alt=""> Join with a code</button></div>
-<div class="mobile-home-links"><a href="#mode-heading">Games</a><a href="#category-heading">Topics</a><button class="text-button" data-action="library">My quizzes</button><button class="text-button" data-action="help">How to play</button></div><p class="mobile-facts">Up to 300 players · 560+ questions · Free to play</p><button class="button outline small resume-room-link" data-action="recent-rooms" hidden><img src="/icons/rotate-ccw.svg" alt=""> Resume a room</button><p id="home-error" class="error" role="alert"></p></div>
-<div class="hero-art" role="img" aria-label="Retro quiz spinner, tumbling dice and a question-mark card"></div>
+<div class="hero-copy"><div class="eyebrow"><span class="eyebrow-signal" aria-hidden="true"></span> THE PARTY STARTS HERE</div>
+<h1>One screen.<br><em>Everyone plays.</em></h1>
+<p>Bring your favourite people together for quizzes, bluffing and laugh-out-loud party games. Host on the big screen; everyone joins from their phone.</p>
+<div class="actions"><button class="button primary" data-action="party"><img src="/icons/users.svg" alt=""> Host game night</button><button class="button outline" data-action="join"><img src="/icons/smartphone.svg" alt=""> Join with a code</button><a class="button hero-explore" href="#mode-heading">Explore games <span aria-hidden="true">↓</span></a></div>
+<div class="hero-highlights"><span><i aria-hidden="true"></i> 11 ways to play</span><span><i aria-hidden="true"></i> No downloads</span><span><i aria-hidden="true"></i> One shared room</span></div>
+<div class="mobile-home-links"><a href="#mode-heading">Games</a><a href="#category-heading">Topics</a><button class="text-button" data-action="library">My quizzes</button><button class="text-button" data-action="help">How to play</button></div><p class="mobile-facts">11 games · 16 trivia topics · Play in your browser</p><button class="button outline small resume-room-link" data-action="recent-rooms" hidden><img src="/icons/rotate-ccw.svg" alt=""> Resume a room</button><p id="home-error" class="error" role="alert"></p></div>
+<div class="hero-art" aria-hidden="true">
+  <div class="showcase-header"><span>YOUR NEXT GAME NIGHT</span><span class="showcase-live"><i></i> READY TO PLAY</span></div>
+  <div class="showcase-feature"><img src="/mode-board.webp" alt="" loading="eager" decoding="async"><div class="showcase-feature-copy"><span>FEATURED GAME</span><strong>Board Race</strong><small>Roll. Race. Win.</small></div></div>
+  <div class="showcase-lineup"><div class="showcase-mini"><img src="/mode-potato.webp" alt="" loading="lazy" decoding="async"><span><strong>Hot Potato</strong><small>Quick & chaotic</small></span></div><div class="showcase-mini"><img src="/mode-bluff.webp" alt="" loading="lazy" decoding="async"><span><strong>Spot the Bluff</strong><small>Bluff your friends</small></span></div></div>
+  <span class="showcase-orbit showcase-orbit-one"></span><span class="showcase-orbit showcase-orbit-two"></span>
+</div>
 </div></section>
-<div class="wrap quick-facts" aria-label="Game details">
-  <div><img src="/icons/users.svg" alt=""><span><strong>Up to 300</strong><small>Players in a room</small></span></div>
-  <div><img src="/icons/layers.svg" alt=""><span><strong>560+ questions</strong><small>Across 16 categories</small></span></div>
-  <div><img src="/icons/smartphone.svg" alt=""><span><strong>Play for free</strong><small>Join in your browser</small></span></div>
+<div class="wrap quick-facts" aria-label="How to play">
+  <div><img src="/icons/monitor-play.svg" alt=""><span><strong>1. Host</strong><small>Choose a game on the big screen</small></span></div>
+  <div><img src="/icons/smartphone.svg" alt=""><span><strong>2. Join</strong><small>Friends enter the room code</small></span></div>
+  <div><img src="/icons/sparkles.svg" alt=""><span><strong>3. Play</strong><small>Make it a night to remember</small></span></div>
 </div>
 <section class="modes wrap" data-deck-section aria-labelledby="mode-heading">
-<div class="section-heading"><div><h2 id="mode-heading" tabindex="-1">Pick a game mode<span class="brand-dot">.</span></h2></div><p>Play solo or team up on the big screen.</p></div>
+<div class="section-heading"><div><p class="section-eyebrow">THE GAME COLLECTION</p><h2 id="mode-heading" tabindex="-1">Choose your next game<span class="brand-dot">.</span></h2></div><p>From quick-fire trivia to glorious chaos. Pick a game to set it up.</p></div>
 <div class="category-filters mode-filters" role="group" aria-label="Game types">
   <button class="topic-filter" type="button" data-action="filter-modes" data-group="all" aria-pressed="true">All games</button>
   <button class="topic-filter" type="button" data-action="filter-modes" data-group="quiz" aria-pressed="false">Trivia games</button>
@@ -55,7 +62,7 @@
 <div class="library-link"><button class="button outline small" data-action="library"><img src="/icons/book-open.svg" alt=""> Make your own quiz</button></div>
 </section>
 <section class="categories wrap" data-deck-section aria-labelledby="category-heading">
-<div class="section-heading"><div><h2 id="category-heading" tabindex="-1">Browse categories<span class="brand-dot">.</span></h2></div><p>Start a Classic Quiz with any category.</p></div>
+<div class="section-heading"><div><p class="section-eyebrow">KEEP THE QUESTIONS COMING</p><h2 id="category-heading" tabindex="-1">Find your trivia topic<span class="brand-dot">.</span></h2></div><p>Pick a category to start a quiz together.</p></div>
 <div class="category-toolbar">
   <div id="category-filters" class="category-filters" role="group" aria-label="Category groups"></div>
   <label class="topic-search"><img src="/icons/search.svg" alt=""><input id="topic-search" type="search" placeholder="Find a category" aria-label="Find a category"></label>
@@ -64,7 +71,7 @@
 <div id="category-list" class="cards"></div>
 </section>
 </main>
-<footer class="wrap footer"><span class="brand site-brand" role="img" aria-label="Jambaloop"><img class="site-logo site-logo-navy" src="/branding/jambaloop-logo-navy.webp" alt="" width="1561" height="324" loading="lazy"><img class="site-logo site-logo-white" src="/branding/jambaloop-logo-white.webp" alt="" width="1561" height="324" loading="lazy"></span><div class="footer-links"><button class="text-button" data-action="library">My quizzes</button><button class="text-button" data-action="themes">Styles</button><button class="text-button" data-action="help">How to play</button></div></footer>
+<footer class="wrap footer"><span class="brand site-brand" role="img" aria-label="Jambaloop"><img class="site-logo site-logo-navy" src="/branding/jambaloop-logo-navy.webp" alt="" width="1561" height="324"><img class="site-logo site-logo-white" src="/branding/jambaloop-logo-white.webp" alt="" width="1561" height="324"></span><div class="footer-links"><button class="text-button" data-action="library">My quizzes</button><button class="text-button" data-action="themes">Styles</button><button class="text-button" data-action="help">How to play</button></div></footer>
 <dialog id="dialog" aria-labelledby="dialog-title"><div class="dialog-inner"><button class="icon-button" data-action="close" aria-label="Close"><img src="/icons/x.svg" alt=""></button><div id="dialog-content"></div></div></dialog>
 </body>
 </html>

@@ -4,7 +4,7 @@ import { answerValue, boardSpeedValues, bonusValues, canSetScore, defaultScoring
 import { playlistLimit, queuedSettings } from './public/game-night.js';
 import { isConnected, responseTarget, touchPlayer, trackConnection } from './room-presence.js';
 import { boardLengths, boardRoute, boardPath, boardPathChoices, boardFork, boardFinish, boardMappedPosition, boardRequiresChoice } from './public/board-route.js';
-import { teamPlayModes, defaultPlayStyle, validPlayStyle, requiredPlayers, teamAssignments } from './team-play.js';
+import { teamPlayModes, defaultPlayStyle, validPlayStyle, requiredPlayers, teamAssignments } from './public/team-play.js';
 import { partyModes, startParty, advanceParty, advancePartyWhenReady, expireParty, submitParty, publicParty } from './party-games.js';
 import express from 'express';
 import QRCode from 'qrcode';

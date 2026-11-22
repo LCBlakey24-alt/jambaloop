@@ -30,9 +30,10 @@ The TV is a *broadcast stage*, never a second phone controller. Phone buttons ar
 | Team Showdown | Ice blue | Team score strips, question focus | Round points and winning team |
 | Same Page | Mint/lilac | Shared prompt; then matched answer clusters | Group sizes, names and 100 points per matched partner |
 | Spotlight Wheel | Gold/violet | Wheel, rotating contestant and expert, large 4-choice board | Contestant and independent expert points, correct answer |
+| Brain Ladder | Cyan/bronze | Original multi-level reasoning tower, survivor count and four choices | Correct mathematical solution, lives lost and advancing rung |
 
 ## New original formats — next to implement or extend
-**Brain Ladder:** progressive logic puzzles; benchmark difficulty via playtesting, never invent population percentages. Stage: tall vertical ladder with increasing difficulty and player-survival count. Phones: private answer and life status.
+**Brain Ladder:** implemented as the next draft game. Original programmatically checked reasoning deck, 5/7/10 levels, two-life elimination, vertical TV ladder and private phone controls. Benchmark difficulty through playtesting; never invent population percentages.
 
 **Rare Find:** players try to give an obscure *valid* answer to a topic. Do not present fabricated poll percentages or label arbitrary scores as real survey findings. Source a genuinely permissioned survey dataset or explicitly score uniqueness among current room answers. Stage: dramatic falling score columns and an evidence/status ribbon. Phones: typed answer, then review/dispute where required.
 
@@ -51,4 +52,4 @@ The TV is a *broadcast stage*, never a second phone controller. Phone buttons ar
 - Original names, prompts, rules and stage design only; no unlicensed television show trademarks, theme music, footage or logos.
 
 ## Current scope
-PR #17 adds Same Page and shared broadcast visual styling for the first thirteen modes. Draft PR #18 adds the fourteenth game, Spotlight Wheel, with a complete server/client implementation and automated role/privacy/TV tests. Brain Ladder, Rare Find and Top Answers are specified but not yet implemented. Workflow screenshot artefacts are retained on GitHub Actions. Both PRs remain stacked and unmerged; the family live site is unchanged.
+PR #17 adds Same Page and shared broadcast visual styling for the first thirteen modes. Draft PR #18 adds the fourteenth game, Spotlight Wheel, with a complete server/client implementation and automated role/privacy/TV tests. Brain Ladder is implemented in draft on top of this branch. Rare Find and Top Answers remain planned, not yet implemented. Workflow screenshot artefacts are retained on GitHub Actions. Both PRs remain stacked and unmerged; the family live site is unchanged.

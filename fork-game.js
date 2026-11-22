@@ -9,7 +9,7 @@ function deal(room, kind) {
   room.forkUsed ??= {good:new Set(),bad:new Set()};
   const used = room.forkUsed[kind];
   let available = bank.filter(value => !used.has(value));
-  if (available.length < 8) {
+  if (available.length < 6) {
     used.clear();
     available = [...bank];
   }
@@ -17,9 +17,9 @@ function deal(room, kind) {
     const j=randomInt(i+1);
     [available[i],available[j]]=[available[j],available[i]];
   }
-  const cards=available.slice(0,8);
+  const cards=available.slice(0,6);
   for(const card of cards) used.add(card);
-  return [cards.slice(0,4),cards.slice(4,8)];
+  return [cards.slice(0,3),cards.slice(3,6)];
 }
 
 export function startForkRound(room, publish) {
@@ -34,7 +34,7 @@ export function startForkRound(room, publish) {
 }
 
 function winningCard(votes, teamId, hand, room) {
-  const choices=[0,0,0,0];
+  const choices=[0,0,0];
   let first=null;
   for(const [key,option] of votes) {
     if(room.players.get(key)?.team !== teamId)continue;
@@ -109,8 +109,8 @@ export function submitFork(room,key,data,publish) {
     const player=room.players.get(key);
     if(!player || ![0,1].includes(player.team))return [403,'Join one of the two teams to place a card.'];
     if(data.step!==party.step)return [409,'That placement has already ended.'];
-    if(!Number.isInteger(data.option)||data.option<0||data.option>=4)
-      return [400,'Select one of the four cards.'];
+    if(!Number.isInteger(data.option)||data.option<0||data.option>=3)
+      return [400,'Select one of the three cards.'];
     if(party.votes.has(key))return [409,'You have already chosen this placement.'];
     party.votes.set(key,data.option);
     if(!advanceForkWhenReady(room,publish))publish(room,true);

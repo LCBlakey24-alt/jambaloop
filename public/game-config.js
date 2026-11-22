@@ -33,6 +33,7 @@ export const modes = [
   ['showdown', 'Team Showdown', 'Play together in two to four teams.', 'users-round', '#c1e3ec'],
   ['samepage', 'Same Page', 'Secretly write matching answers and score for thinking alike.', 'messages-square', '#77efdc'],
   ['spotlight', 'Spotlight Wheel', 'Take turns as contestant with an expert chosen by the wheel.', 'aperture', '#ffc88d'],
+  ['brain', 'Brain Ladder', 'Solve fresh original logic puzzles, protect your two lives and climb ten levels.', 'brain-circuit', '#86e7fa'],
 ];
 
 export const defaultTheme = 'club';
@@ -70,6 +71,7 @@ export const wheelCategories = includeChristmas => categories.filter(([id]) =>
 export const categoryName = id => categories.find(category => category[0] === id)?.[1] ?? '';
 
 export function questionCounts(mode, format, category) {
+  if (mode === 'brain') return [5, 7, 10];
   if (mode === 'spotlight') return [1, 2, 3];
   if (['tracks','samepage'].includes(mode)) return [3, 5, 7];
   if (mode === 'board') return [12, 18, 24, 36, 48, 60];
@@ -89,10 +91,11 @@ export const categoryGroups = [
 export const fixedQuestionModes = ['classic', 'dice', 'knockout', 'showdown'];
 
 export const socialModes = ['punchline', 'cards', 'tracks'];
-export const partyModes = ['bluff', 'potato', 'samepage', 'spotlight', ...socialModes];
+export const partyModes = ['bluff', 'potato', 'samepage', 'spotlight', 'brain', ...socialModes];
 export const scoreIntervals = [0, 1, 3, 5];
 export const defaultScoreInterval = 3;
 export const supportsScoreCheckpoints = mode => mode !== 'quizrace' && modes.some(([id]) => id === mode) && !partyModes.includes(mode);
 export const minimumPlayers = mode => mode === 'quizrace' ? 2 : ['bluff', 'punchline', 'cards', 'samepage', 'spotlight'].includes(mode) ? 3
+  : mode === 'brain' ? 2
   : mode === 'tracks' ? 3 : ['potato', 'showdown'].includes(mode) ? 2 : 1;
 export const boardRollDuration = 5400;

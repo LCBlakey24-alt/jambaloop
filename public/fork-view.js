@@ -25,7 +25,7 @@ function trackBoard(state, escape) {
 
 function scores(state, escape) {
   return `<div class="fork-score-strip" aria-label="Team points">${state.teams.map(team=>
-    `<div style="--fork-team:${team.color}"><span>TEAM ${escape(team.name)}</span><strong>${team.score} ${team.score===1?'POINT':'POINTS'}</strong></div>`).join('')}</div>`;
+    `<div style="--fork-team:${team.color}"><span>TEAM ${escape(team.name)}</span><strong>${state.phase==='party-reveal'?team.roundPoints+' POINT THIS ROUND':team.size+' '+(team.size===1?'PLAYER':'PLAYERS')}</strong></div>`).join('')}</div>`;
 }
 
 export function forkView(state, {host,escape,icons,replayButtons}) {
@@ -37,7 +37,7 @@ export function forkView(state, {host,escape,icons,replayButtons}) {
   const judge=phase==='party-judge';
   const reveal=phase==='party-reveal';
   const step=party.step;
-  const title=finished?'THE FINAL VERDICT':judge?'JUDGE: MAKE YOUR CHOICE':reveal?'THE TROLLEY HAS SPOKEN':stages[step];
+  const title=finished?'THE FINAL RESULTS':judge?'TROLLEY DRIVER: PULL THE LEVER':reveal?'THE TROLLEY HAS SPOKEN':stages[step];
   const scene=escape(party.scene);
   const yourTeam=state.teams.find(team=>team.id===party.team);
   const destination=step===1 ? party.team===0?1:0 : party.team;
@@ -48,30 +48,34 @@ export function forkView(state, {host,escape,icons,replayButtons}) {
   const progress=building ? `<div class="fork-vote-status" role="status">${party.submissions} of ${party.responseTarget} players selected a card. ${host?'Each team decides by majority vote.':''}</div>` : '';
   const controls=building ? host
       ? `<div class="fork-controls"><button class="button primary" data-action="advance">Lock placements and continue ${icons('arrow-right')}</button><small>Or wait for both teams to finish voting.</small></div>`
+      : party.driverTurn ? '<p class="fork-locked" role="status">You are the Trolley Driver. Wait for both teams to complete their tracks, then pull the lever.</p>'
       : party.voted ? '<p class="fork-locked" role="status">Your card is locked in. Waiting for your teammates.</p>'
       : `<section class="fork-hand" aria-label="Choose a card"><h2>${escape(forkStages[step].title)}</h2>
          <p>${escape(forkStages[step].prompt)} Your team’s most popular choice will be placed.</p>
          <div class="fork-hand-options">${(party.hand??[]).map((card,index)=>
            `<button type="button" class="fork-card-pick ${step===1?'bad':'good'}" data-action="fork-card" data-fork-step="${step}" data-option="${index}"><small>CARD ${index+1}</small><span>${escape(card)}</span></button>`).join('')}</div></section>`
-    : judge ? host
-      ? `<section class="fork-controls fork-judge-controls"><h2>Which track should the trolley hit?</h2>
-        <p>Pick the most ridiculous track to hit. The other team saves its track and wins one point.</p>
+    : judge ? party.canJudge
+      ? `<section class="fork-controls fork-judge-controls"><h2>${host?'Host fallback: driver disconnected':'You are the Trolley Driver!'}</h2>
+        <p>Choose the funniest track to hit. Players on the spared track each earn one point.</p>
         <div class="fork-choice-buttons">${state.teams.map((team,index)=>
           `<button type="button" class="fork-judge-choice" data-action="fork-judge" data-track="${index}" style="--fork-team:${team.color}">
           <b>HIT TRACK ${trackLetters[index]}</b><small>Spare Team ${escape(state.teams[1-index].name)}</small></button>`).join('')}</div></section>`
-      : '<p class="fork-locked">The judge is deciding which track the trolley hits.</p>'
+      : `<p class="fork-locked">${escape(party.driver.name)} is deciding which track the trolley hits.</p>`
     : reveal ? `<section class="fork-outcome" role="status"><h2>Track ${trackLetters[party.hit]} gets hit!</h2>
-        <p>Team <strong>${escape(state.teams[party.saved].name)}</strong> saves its track and earns a point.</p>
+        <p>Players on <strong>Team ${escape(state.teams[party.saved].name)}</strong> save their track and each earn a point.</p>
         ${host ? `<button type="button" class="button primary" data-action="advance">${state.index+1<state.total?'Next round':'Final results'} ${icons('arrow-right')}</button>` : '<small>Waiting for the judge to continue.</small>'}</section>`
-    : finished ? `<div class="fork-final"><h2>${state.teamWinners?.length===1
-      ? 'Team '+escape(state.teams.find(t=>t.id===state.teamWinners[0]).name)+' wins the trolley showdown!'
-      : 'The trolley showdown ends in a tie!'}</h2>
-      ${host?'<p>The final tally is in. Who is brave enough for a rematch?</p>':''}
+    : finished ? `<div class="fork-final"><h2>${state.players?.length
+      ? ((state.players.filter(p=>p.score===state.players[0].score).length===1)
+        ? escape(state.players[0].name)+' wins the trolley showdown!'
+        : 'It is a tie at the top!')
+      : 'The trolley showdown is complete!'}</h2>
+      <div class="fork-individual-results" aria-label="Individual player points">${(state.players??[]).map((player,index)=>
+        `<div><span>#${index+1} ${escape(player.name)}</span><strong>${Math.round(player.score/100)} points</strong></div>`).join('')}</div>
       ${host?replayButtons(state,icons):'<p>Stay here for a rematch or return to the homepage.</p>'}</div>`:'';
   return `<section class="game-panel fork-game ${host?'fork-host':'fork-phone'}" data-fork-phase="${phase}">
     <div class="fork-intro"><div><div class="eyebrow">FORK IN THE TRACKS · ROUND ${state.index+1} OF ${state.total} ${building?'· PLACEMENT '+(step+1)+'/3':''}</div>
       <h1>${title}</h1><p>${scene}</p>${prompt?`<strong class="fork-your-role">${prompt}</strong>`:''}</div>
-      <span class="fork-judge-label">${host?'YOU ARE THE JUDGE':'HOST JUDGES'}</span></div>
+      <span class="fork-judge-label">${party.driverTurn?'YOU ARE THE DRIVER':'TROLLEY DRIVER: '+escape(party.driver.name)}</span></div>
     ${scores(state,escape)}
     ${trackBoard(state,escape)}
     ${progress}${controls}

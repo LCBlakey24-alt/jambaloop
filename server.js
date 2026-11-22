@@ -16,7 +16,7 @@ import { networkInterfaces } from 'node:os';
 import { inviteOriginOptions, qrJoinUrl } from './room-invite.js';
 import { fileURLToPath } from 'node:url';
 import { validateQuiz, prepareCustomQuiz } from './public/custom-quiz.js';
-import { boardQuestion, makeQuestions, questionCategories } from './questions.js';
+import { boardQuestion, makeQuestions, questionCategories, verifiedSourceFor } from './questions.js';
 import {questionHistoryId, questionHistoryLimit, validQuestionHistoryId} from './public/question-history.js';
 import { modes, themes, formats, difficulties, teams, socialModes, minimumPlayers, boardRollDuration, defaultTheme, fixedQuestionModes, questionCounts, wheelCategories, scoreIntervals, supportsScoreCheckpoints } from './public/game-config.js';
 
@@ -202,7 +202,7 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
     closest: revealed && question?.type === 'estimate' ? room.closest : undefined,
     breakdown: revealed && isHost && !room.privateQuestions && ['choice', 'boolean'].includes(question.type) ? question.options.map((_, option) =>
       [...answers.values()].filter(entry => entry.option === option).length) : undefined,
-    question: visible && question ? { ...publicQuestion, historyId:questionHistoryId(question.prompt), basePoints: room.motion?.points ?? (question.type === 'estimate' && room.legacyScoring ? 1000 : room.scoring?.base), prompt: isHost || room.phoneView === 'full' ? publicQuestion.prompt : undefined, correct: revealed ? correct : undefined } : undefined,
+    question: visible && question ? { ...publicQuestion, historyId:questionHistoryId(question.prompt), basePoints: room.motion?.points ?? (question.type === 'estimate' && room.legacyScoring ? 1000 : room.scoring?.base), prompt: isHost || room.phoneView === 'full' ? publicQuestion.prompt : undefined, correct: revealed ? correct : undefined, source: revealed ? verifiedSourceFor(question.prompt) : undefined } : undefined,
     qr: isHost ? qr : undefined, joinUrl: isHost ? joinUrl : undefined,
     joinOptions: isHost ? room.joinOptions : undefined };
 }
@@ -444,7 +444,7 @@ function reveal(room) {
   const correct = question.type === 'estimate' ? question.correct
     : question.type === 'order' ? question.correct.map(index => question.options[index])
     : question.options[question.correct];
-  if (!room.privateQuestions) room.roundReview.push({ prompt: question.prompt, type: question.type, correct, unit: question.unit });
+  if (!room.privateQuestions) room.roundReview.push({ prompt: question.prompt, type: question.type, correct, unit: question.unit, source: verifiedSourceFor(question.prompt) });
   for (const [key, player] of room.players) {
     const answer = room.answers.get(key);
     if (answer) {

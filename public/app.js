@@ -11,6 +11,7 @@ import { launcherTile, launcherPreview, launcherModes, launcherSetupArtwork, LAU
 import { stopNarration, toggleNarration } from './narrator.js';
 import { playCue, playTowerImpact } from './sound-cues.js';
 import { boardLengths, boardRoute, boardDuration, durationLabel, suggestedTurnCap, boardRequiresChoice, boardPathChoices } from './board-route.js';
+import {teamPlayModes, defaultPlayStyle} from '../team-play.js';
 import { avatarView, partyView } from './party-views.js';
 import { openLibrary, savedQuizzes } from './quiz-editor.js';
 import { answerGuide, helpTypes, closestStep, createDraft, formatNumber, orderedItems, specialAnswer } from './answer-controls.js';
@@ -283,9 +284,16 @@ function openDialog(mode, value, gameMode, quizId) {
       <label>Max speed bonus<select name="speedPoints">${selected(bonusValues.map(value => [value, value ? '+' + value + ' points' : 'Off']), scoring.bonus)}</select></label>
       <label>Double points<select name="doublePoints">${selected(doubleSchedules, scoring.doubles)}</select></label></div>
       <small>Double points apply to correct answers and their speed bonus. Dice Rally also applies its dice multiplier.</small></fieldset>
+    <fieldset class="team-play-setup" id="team-play-setup"><legend>How are you playing?</legend>
+      <div class="play-style-options" role="group" aria-label="Play style">
+        <label><input type="radio" name="playStyle" value="individual" ${(configured ? state.playStyle : defaultPlayStyle(selectedMode)) === 'individual' ? 'checked' : ''}><span><b>Individual</b><small>Everyone plays for themselves</small></span></label>
+        <label><input type="radio" name="playStyle" value="teams" ${(configured ? state.playStyle : defaultPlayStyle(selectedMode)) === 'teams' ? 'checked' : ''}><span><b>Teams</b><small>Balanced groups compete together</small></span></label>
+      </div>
+      <p id="team-play-help" class="team-play-help" aria-live="polite">Players will be assigned automatically when the game starts.</p>
+    </fieldset>
     <label class="switch-row" id="private-field"><input type="checkbox" name="privateQuestions" ${!configured || state.privateQuestions || state.mode !== 'showdown' ? 'checked' : ''}>
       <span><strong>Private questions</strong><small>Deal a different question to each phone. The TV shows team scores.</small></span></label>
-    <label id="team-count-field"><span id="team-count-label">Number of teams</span><select name="teamCount" aria-labelledby="team-count-label">${selected([[2, '2 teams'], [3, '3 teams'], [4, '4 teams']], configured ? state.teamCount : 4)}</select></label>
+    <label id="team-count-field"><span id="team-count-label">Number of teams</span><select name="teamCount" aria-labelledby="team-count-label">${selected([[2, '2 teams'], [3, '3 teams'], [4, '4 teams']], configured ? state.teamCount : 2)}</select></label>
     <fieldset class="board-planner" id="board-planner" hidden><legend>Board &amp; timing</legend>
       <div class="form-row"><label>Board spaces<select name="boardLength">${selected(boardLengths.map(length => [length, length + ' spaces']), configured ? state.boardLength : 16)}</select></label>
       <label>Expected players<input name="plannedPlayers" type="number" min="1" max="300" value="${configured ? state.playerCount || state.teamCount : 4}"></label></div>
@@ -309,6 +317,10 @@ function openDialog(mode, value, gameMode, quizId) {
       const game = form.elements.mode.value;
       if (explained !== game) {
         form.querySelector('.explainer-slot').innerHTML = setupPreview(game, true);
+        if (event?.target?.name === 'mode') {
+          const preferred = defaultPlayStyle(game);
+          form.querySelector('[name="playStyle"][value="' + preferred + '"]').checked = true;
+        }
         explained = game;
       }
       const party = partyModes.includes(game);
@@ -335,9 +347,21 @@ function openDialog(mode, value, gameMode, quizId) {
       }
       const categoryField = form.querySelector('#category-field');
       const supportsCustom = fixedQuestionModes.includes(game) && !privateQuiz;
-      form.querySelector('#team-count-field').hidden = !board && game !== 'showdown';
-      form.querySelector('#team-count-label').textContent = board ? 'Board pieces' : 'Number of teams';
-      for (const option of form.elements.teamCount.options) option.textContent = option.value + (board ? ' pieces' : ' teams');
+      const allowsTeams = teamPlayModes.includes(game);
+      const teamOption = form.querySelector('input[name="playStyle"][value="teams"]');
+      teamOption.disabled = !allowsTeams;
+      if (!allowsTeams && teamOption.checked) {
+        form.querySelector('input[name="playStyle"][value="individual"]').checked = true;
+      }
+      const style = form.querySelector('input[name="playStyle"]:checked').value;
+      form.querySelector('#team-count-field').hidden = style !== 'teams';
+      form.querySelector('#team-count-label').textContent = 'Number of teams';
+      const help = form.querySelector('#team-play-help');
+      help.textContent = !allowsTeams ? 'This game has a shared vote or one-holder outcome, so it currently plays individually.'
+        : style === 'teams' ? 'Choose 2–4 teams. Everyone who joins is assigned evenly when play starts; team scores use the average member score so a larger team has no advantage.'
+        : board ? 'Every person races their own board piece, up to four racers.'
+        : race ? 'Each person races independently for first place.' : 'Every player competes individually.';
+      for (const option of form.elements.teamCount.options) option.textContent = option.value + ' teams';
       form.querySelector('#board-planner').hidden = !board;
       if (board && event?.target === form.elements.count) boardCapEdited = true;
       form.querySelector('#quiz-source').hidden = !supportsCustom;
@@ -363,7 +387,7 @@ function openDialog(mode, value, gameMode, quizId) {
       const counts = questionCounts(game, privateQuiz || curated ? 'choice' : form.elements.format.value, privateQuiz || curated ? 'mixed' : form.elements.category.value);
       const previous = Number(form.elements.count.value) || (configured ? state.total : 0);
       const spaces = Number(form.elements.boardLength.value);
-      const pieces = Number(form.elements.teamCount.value);
+      const pieces = style === 'individual' ? Math.min(4,Math.max(1,Number(form.elements.plannedPlayers.value)||1)) : Number(form.elements.teamCount.value);
       const players = Math.min(300, Math.max(1, Number(form.elements.plannedPlayers.value) || pieces));
       const preferred = board && !boardCapEdited ? suggestedTurnCap(spaces, Math.min(pieces, players)) : previous;
       form.elements.count.innerHTML = selected(counts.map(count => [count, count]), counts.includes(preferred) ? preferred : counts[1] ?? counts[0]);
@@ -558,12 +582,12 @@ document.addEventListener('submit', async event => {
   event.preventDefault();
   const button = form.querySelector('button:not([type="button"])');
   button.disabled = true;
-  const { mode, theme, format, category, count, seconds, code, name, autoReveal, includeChristmas, phoneView, quiz, teamCount, boardLength, privateQuestions, difficulty, basePoints, speedPoints, doublePoints, boardSpeed, scoreInterval, raceLength, raceTrack, raceDifficulty } = Object.fromEntries(new FormData(form));
+  const { mode, theme, format, category, count, seconds, code, name, autoReveal, includeChristmas, phoneView, quiz, teamCount, boardLength, playStyle, privateQuestions, difficulty, basePoints, speedPoints, doublePoints, boardSpeed, scoreInterval, raceLength, raceTrack, raceDifficulty } = Object.fromEntries(new FormData(form));
   try {
     const customQuiz = quiz && quiz !== 'current' ? savedQuizzes().find(entry => entry.id === quiz) : undefined;
     const curated = difficulty && difficulty !== 'standard';
     const scoring = basePoints ? { base: Number(basePoints), bonus: Number(speedPoints), doubles: doublePoints } : undefined;
-    const settings = { mode, theme, difficulty, raceLength, raceTrack, raceDifficulty, scoring, scoreInterval: scoreInterval === undefined ? undefined : Number(scoreInterval), boardSpeed: boardSpeed === undefined ? undefined : Number(boardSpeed), format: curated ? 'choice' : format, category: curated ? 'mixed' : category, phoneView, teamCount: Number(teamCount), boardLength: Number(boardLength), customQuiz, useRoomQuiz: quiz === 'current', count: Number(count), privateQuestions: privateQuestions === 'on', seconds: Number(seconds), autoReveal: autoReveal === 'on', includeChristmas: includeChristmas === 'on' };
+    const settings = { mode, playStyle, theme, difficulty, raceLength, raceTrack, raceDifficulty, scoring, scoreInterval: scoreInterval === undefined ? undefined : Number(scoreInterval), boardSpeed: boardSpeed === undefined ? undefined : Number(boardSpeed), format: curated ? 'choice' : format, category: curated ? 'mixed' : category, phoneView, teamCount: Number(teamCount), boardLength: Number(boardLength), customQuiz, useRoomQuiz: quiz === 'current', count: Number(count), privateQuestions: privateQuestions === 'on', seconds: Number(seconds), autoReveal: autoReveal === 'on', includeChristmas: includeChristmas === 'on' };
     if (form.id === 'rematch-form' || form.id === 'configure-form') {
       const action = form.id === 'rematch-form' ? 'rematch' : 'configure';
       await api('/' + session.code + '/' + action, { ...settings, game: state.game });

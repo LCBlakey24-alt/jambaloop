@@ -23,6 +23,7 @@ Examples: Three real voters choose A, A, B. If you predict A, you earn 100 + (2 
 ## Prompt library and privacy
 
 - The first edition includes **80 original subjective prompts**, each with four plausible responses. Subjective answers do not claim a factual correct option and therefore do not need outside factual references or fake poll citations.
+- The four answer positions are **shuffled for each round**, preventing a permanent first-option advantage.
 - Questions are fresh-first, using the current room and previous device question-history IDs. Once all 80 have been played, repeats are possible; add more audited prompts over time.
 - The server checks joined player identity, active game and round, correct phase, option range and one submission per player. Stale and duplicate requests are rejected.
 - During poll and prediction, the TV and other players see only submission totals, not secret votes, predictions, option popularity or correct leader IDs.

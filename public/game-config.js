@@ -36,7 +36,7 @@ export const modes = [
 export const defaultTheme = 'club';
 
 export const themes = [
-  [defaultTheme, 'Quiz Club', '#3550cb', '#f8f2e6'],
+  [defaultTheme, 'Jambaloop Classic', '#3550cb', '#f8f2e6'],
   ['christmas', 'Christmas', '#f4a9c7', '#1c1a1e'],
   ['arcade', 'Neon Arcade', '#b8afff', '#1c1934'],
   ['lodge', 'Winter Lodge', '#f6cc8b', '#252422'],

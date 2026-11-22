@@ -140,6 +140,7 @@ export function publicRare(room,key){
    responseTarget:eligibleCount(room,party.entries),
    reviewCount:reviewing?reviewRows(room).length:undefined,
    reviews,answerChoices:isHost&&reviewing?party.prompt.answers:undefined,
+   reviewSource:isHost&&reviewing?party.prompt.source:undefined,
    remaining:isHost&&reviewing?reviews.filter(row=>!row.decision).length:undefined,
    // Do not reveal anyone else's answer, validated/invalid status, or points before reveal.
    ...(revealed?{results:party.results,source:party.prompt.source,

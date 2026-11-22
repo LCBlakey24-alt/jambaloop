@@ -64,7 +64,7 @@ test('host-judged two-team trolley builds three coherent cards in correct owners
     assert.equal(host.party.hand,undefined,'Do not leak private card choices to judge');
     const participants=await Promise.all(room.keys.map(key=>room.state(key)));
     assert.deepEqual(participants.map(x=>x.player.team),[0,1,0,1]);
-    assert.ok(participants.every(x=>x.party.hand.length===4));
+    assert.ok(participants.every(x=>x.party.hand.length===3));
     assert.notDeepEqual(participants[0].party.hand,participants[1].party.hand);
     const ownStart=[participants[0].party.hand[0],participants[1].party.hand[0]];
     for(const key of room.keys) await room.party(key,'card',{step:0,option:0});

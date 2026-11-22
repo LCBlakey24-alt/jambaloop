@@ -2,14 +2,14 @@ import { clockExpired, setClockPaused, stopDeadline, watchDeadline } from './roo
 import { deskAwards } from './awards.js';
 import { answerValue, boardSpeedValues, bonusValues, canSetScore, defaultScoring, doubleSchedules, pointValues, roundMultiplier } from './public/scoring.js';
 import { playlistLimit, queuedSettings } from './public/game-night.js';
-import { isConnected, responseTarget, touchPlayer, trackConnection } from './room-presence.js';
+import { isConnected, liveConnection, responseTarget, touchPlayer, trackConnection } from './room-presence.js';
 import { boardLengths, boardRoute } from './public/board-route.js';
 import { partyModes, startParty, advanceParty, advancePartyWhenReady, expireParty, submitParty, publicParty } from './party-games.js';
 import express from 'express';
 import QRCode from 'qrcode';
 import { randomBytes, randomInt } from 'node:crypto';
-import { networkInterfaces } from 'node:os';
 import { fileURLToPath } from 'node:url';
+import { isRoomMember, localOrigin, positiveSetting, publicOrigin, readAvatar, requestBudget } from './room-http.js';
 import { validateQuiz, prepareCustomQuiz } from './public/custom-quiz.js';
 import { boardQuestion, makeQuestions, questionCategories } from './questions.js';
 import { modes, themes, formats, difficulties, teams, socialModes, minimumPlayers, boardRollDuration, defaultTheme, fixedQuestionModes, questionCounts, wheelCategories, scoreIntervals, supportsScoreCheckpoints } from './public/game-config.js';
@@ -18,8 +18,14 @@ const app = express();
 const rooms = new Map();
 const port = process.env.PORT || 3000;
 const maxPlayers = 300;
+const maxRooms = positiveSetting('MAX_ROOMS', 128);
+const idleRoomMs = positiveSetting('ROOM_IDLE_MS', 4 * 60 * 60 * 1000);
+const createBudget = requestBudget(positiveSetting('ROOMS_PER_MINUTE', 12));
+const joinBudget = requestBudget(positiveSetting('JOINS_PER_ROOM_PER_MINUTE', 360));
+const inviteOrigin = publicOrigin(process.env.PUBLIC_URL);
 const categories = [...questionCategories, 'mixed'];
 const token = () => randomBytes(18).toString('hex');
+if (process.env.TRUST_PROXY) app.set('trust proxy', process.env.TRUST_PROXY);
 app.use(express.json({ limit: '128kb' }));
 app.use('/vendor', express.static(fileURLToPath(new URL('./node_modules/three/build/', import.meta.url))));
 app.use('/icons', express.static(fileURLToPath(new URL('./node_modules/lucide-static/icons/', import.meta.url))));
@@ -83,18 +89,17 @@ function resetGame(room, settings) {
 }
 
 app.post('/api/rooms', async (req, res) => {
+  const retry = createBudget.retryIn(req.ip);
+  if (retry) return res.set('Retry-After', String(retry)).status(429).json({ error: 'Too many room requests. Wait a moment and try again.' });
+  if (rooms.size >= maxRooms) return res.set('Retry-After', '60').status(503).json({ error: 'All game rooms are in use. Please try again later.' });
   const settings = readSettings(req.body);
   if (!settings) return res.status(400).json({ error: 'Choose a game mode, category, question count and timer.' });
   let code;
   do { code = String(randomInt(100000, 1000000)); } while (rooms.has(code));
   const host = token();
-  const room = { code, host, game: 1, revision: 0, clients: new Map(), seen: new Set(), players: new Map(), waiting: new Map(), livePlayers: new Map(), lastSeen: new Map(), night: { queue: [], played: 0, version: 0 }, answers: new Map(), updated: Date.now() };
+  const room = { code, host, game: 1, revision: 0, clients: new Map(), seen: new Set(), players: new Map(), waiting: new Map(), liveConnections: new Map(), lastSeen: new Map(), night: { queue: [], played: 0, version: 0 }, answers: new Map(), updated: Date.now() };
   resetGame(room, settings);
-  const hostHeader = req.get('x-forwarded-host')?.split(',')[0].trim() || req.get('host');
-  const protocol = req.get('x-forwarded-proto')?.split(',')[0].trim() || req.protocol;
-  const lan = Object.values(networkInterfaces()).flat().find(entry => entry.family === 'IPv4' && !entry.internal);
-  const origin = process.env.PUBLIC_URL || (/^(localhost|127\.0\.0\.1)(:|$)/.test(hostHeader) && lan
-    ? `http://${lan.address}:${server.address().port}` : `${protocol}://${hostHeader}`);
+  const origin = inviteOrigin ?? localOrigin(req.socket.localAddress, server.address().port);
   room.joinUrl = new URL('/?join=' + code, origin).href;
   rooms.set(code, room);
   try {
@@ -109,18 +114,23 @@ app.post('/api/rooms', async (req, res) => {
 app.use('/api/rooms/:code', (req, res, next) => {
   const room = rooms.get(req.params.code);
   if (!room) return res.status(404).json({ error: 'Room not found. Check the code and try again.' });
-  room.updated = Date.now();
-  expireParty(room, publish);
-  if (room.phase === 'question' && clockExpired(room)) reveal(room);
+  const key = req.get('x-game-key');
+  const member = isRoomMember(room, key);
   res.locals.room = room;
-  res.locals.key = req.get('x-game-key');
-  touchPlayer(room, res.locals.key);
+  res.locals.key = key;
+  res.locals.member = member;
+  if (member) {
+    room.updated = Date.now();
+    expireParty(room, publish);
+    if (room.phase === 'question' && clockExpired(room)) reveal(room);
+    touchPlayer(room, key);
+  }
   next();
 });
 
 app.get('/api/rooms/:code', (_req, res) => {
-  const { room, key } = res.locals;
-  if (key !== room.host && !room.players.has(key) && !room.waiting.has(key)) return res.status(403).json({ error: 'Join the room to continue.' });
+  const { room, key, member } = res.locals;
+  if (!member) return res.status(403).json({ error: 'Join the room to continue.' });
   res.json(roomState(room, key));
 });
 
@@ -202,11 +212,15 @@ function liveCounts(room) {
   return { ids, ready, connected: ids.size, target: responseTarget(room) };
 }
 
+function canWriteLive(client) {
+  if (client.destroyed || client.writableEnded) return false;
+  if (client.writableLength <= 128 * 1024) return true;
+  client.destroy();
+  return false;
+}
+
 function sendState(room, key, client, ranked, counts) {
-  if (client.writableLength > 128 * 1024) {
-    client.destroy();
-    return;
-  }
+  if (!canWriteLive(client)) return;
   client.write(JSON.stringify(roomState(room, key, ranked, counts)) + '\n');
 }
 
@@ -232,35 +246,43 @@ function publish(room, hostOnly = false) {
   }
 }
 
-app.get('/api/rooms/:code/live', (req, res) => {
-  const { room, key } = res.locals;
-  if (key !== room.host && !room.players.has(key) && !room.waiting.has(key)) return res.status(403).json({ error: 'Join the room to continue.' });
+app.get('/api/rooms/:code/live', (_req, res) => {
+  const { room, key, member } = res.locals;
+  if (!member) return res.status(403).json({ error: 'Join the room to continue.' });
+  if (liveConnection(room, key)) {
+    return res.set('Retry-After', '5').status(409).json({ error: 'This session is already receiving live updates. Try again shortly.' });
+  }
   res.set({ 'Content-Type': 'application/x-ndjson', 'X-Accel-Buffering': 'no', 'Cache-Control': 'no-store, no-transform' });
   res.flushHeaders();
   room.clients.set(res, key);
-  res.on('close', () => room.clients.delete(res));
+  res.once('close', () => {
+    room.clients.delete(res);
+    room.updated = Date.now();
+  });
   trackConnection(room, key, res);
   sendState(room, key, res);
 });
 
 app.post('/api/rooms/:code/join', (req, res) => {
   const { room } = res.locals;
-  const name = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
-  if (!name || name.length > 24) return res.status(400).json({ error: 'Enter a nickname of up to 24 characters.' });
+  const retry = joinBudget.retryIn(room.code + '/' + req.ip);
+  if (retry) return res.set('Retry-After', String(retry)).status(429).json({ error: 'Too many attempts to join. Wait a moment and try again.' });
+  const name = typeof req.body?.name === 'string' ? req.body.name.normalize('NFC').trim() : '';
+  if (!name || name.length > 24 || /[\p{Cc}\p{Bidi_Control}]/u.test(name)) return res.status(400).json({ error: 'Enter a nickname of up to 24 characters with no control characters.' });
   if (room.players.size + room.waiting.size >= maxPlayers) return res.status(409).json({ error: 'This room is full.' });
   if ([...room.players.values(), ...room.waiting.values()].some(player => player.name.toLowerCase() === name.toLowerCase())) {
     return res.status(409).json({ error: 'That nickname is taken.' });
   }
   const key = token();
-  const avatar = req.body?.avatar;
-  if (avatar !== undefined && (typeof avatar !== 'string' || avatar.length > 14000 || !/^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(avatar))) {
+  const avatar = readAvatar(req.body?.avatar);
+  if (req.body?.avatar !== undefined && !avatar) {
     return res.status(400).json({ error: 'Use a smaller selfie or join without a photo.' });
   }
   const id = token();
   const player = { id, name, ready: false, avatar: avatar ? '/api/rooms/' + room.code + '/avatar/' + id : undefined };
   if (avatar) {
     room.avatars ??= new Map();
-    room.avatars.set(id, Buffer.from(avatar.split(',')[1], 'base64'));
+    room.avatars.set(id, avatar);
   }
   resetPlayer(player);
   if (room.phase === 'lobby') {
@@ -268,6 +290,7 @@ app.post('/api/rooms/:code/join', (req, res) => {
     room.captain ??= key;
   } else room.waiting.set(key, player);
   touchPlayer(room, key);
+  room.updated = Date.now();
   res.status(201).json({ key });
   publish(room, true);
 });
@@ -287,9 +310,10 @@ app.post('/api/rooms/:code/ready', (req, res) => {
 });
 
 app.get('/api/rooms/:code/avatar/:id', (req, res) => {
+  if (!res.locals.member) return res.status(403).json({ error: 'Join the room to view photos.' });
   const avatar = res.locals.room.avatars?.get(req.params.id);
   if (!avatar) return res.sendStatus(404);
-  res.type('jpeg').set('X-Content-Type-Options', 'nosniff').send(avatar);
+  res.type('jpeg').set({ 'X-Content-Type-Options': 'nosniff', 'Cross-Origin-Resource-Policy': 'same-origin' }).send(avatar);
 });
 
 app.post('/api/rooms/:code/party', (req, res) => {
@@ -534,6 +558,9 @@ app.post('/api/rooms/:code/advance', (req, res) => {
   if (req.body?.game !== room.game || req.body?.phase !== room.phase || req.body?.index !== room.index) return res.sendStatus(204);
   if (room.pausedAt) return res.status(409).json({ error: 'Resume the timer before advancing.' });
   if (room.phase === 'lobby') {
+    if (req.body.lobbyVersion !== undefined && req.body.lobbyVersion !== room.lobbyVersion) {
+      return res.status(409).json({ error: 'The lobby settings changed. Review them before starting.' });
+    }
     const minimum = minimumPlayers(room.mode);
     if (liveCounts(room).connected < minimum) return res.status(409).json({ error: `You need at least ${minimum} connected ${minimum === 1 ? 'player' : 'players'} to start.` });
     startGame(room);
@@ -656,6 +683,9 @@ app.post('/api/rooms/:code/configure', (req, res) => {
   const { room, key } = res.locals;
   if (!controlsRoom(room, key)) return res.status(403).json({ error: 'Only the captain or TV host can change the game.' });
   if (room.phase !== 'lobby' || req.body?.game !== room.game) return res.status(409).json({ error: 'The lobby has closed.' });
+  if (req.body.lobbyVersion !== undefined && req.body.lobbyVersion !== room.lobbyVersion) {
+    return res.status(409).json({ error: 'The lobby settings changed. Reopen setup to see the latest choices.' });
+  }
   const body = req.body?.useRoomQuiz === true && room.customQuiz ? { ...req.body, customQuiz: room.customQuiz } : req.body;
   const settings = readSettings(body);
   if (!settings) return res.status(400).json({ error: 'Check the game settings or saved quiz.' });
@@ -690,13 +720,29 @@ app.post('/api/rooms/:code/rematch', (req, res) => {
   res.sendStatus(204);
 });
 
+app.use('/api', (error, req, res, next) => {
+  if (res.headersSent) return next(error);
+  res.set('Cache-Control', 'no-store');
+  if (error.type === 'entity.too.large') return res.status(413).json({ error: 'This request is too large.' });
+  if (error.type === 'entity.parse.failed') return res.status(400).json({ error: 'Check the request format and try again.' });
+  console.error('Game API request failed:', error.name);
+  res.status(500).json({ error: 'Something went wrong. Please try again.' });
+});
+
 setInterval(() => {
+  const now = Date.now();
   for (const [code, room] of rooms) {
-    if (!room.clients.size && Date.now() - room.updated > 4 * 60 * 60 * 1000) {
+    if (!room.clients.size && now - room.updated >= idleRoomMs) {
+      stopDeadline(room);
+      clearTimeout(room.hostUpdate);
+      clearTimeout(room.timer);
+      clearTimeout(room.autoTimer);
       rooms.delete(code);
     }
   }
-}, 60_000).unref();
+  createBudget.sweep(now);
+  joinBudget.sweep(now);
+}, Math.min(60_000, idleRoomMs)).unref();
 setInterval(() => {
   for (const room of rooms.values()) {
     if (!room.clients.size && Date.now() - room.updated > 60000) continue;
@@ -712,8 +758,7 @@ setInterval(() => {
 setInterval(() => {
   for (const room of rooms.values()) {
     for (const client of room.clients.keys()) {
-      if (client.writableLength > 128 * 1024) client.destroy();
-      else client.write('\n');
+      if (canWriteLive(client)) client.write('\n');
     }
   }
 }, 12000).unref();

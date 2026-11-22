@@ -1,10 +1,8 @@
-# Quiz Club deployment and testing notes
-
-The original uploaded source (22 November 2026) is preserved in this repository. The initial GitHub migration adds only the gitignore, documentation and GitHub Actions checks; it intentionally makes no changes to game logic or UI.
+# Jambaloop deployment and testing
 
 ## Local development
 
-Requires Node.js 22 and npm, with an internet connection to install dependencies:
+Use Node.js 22 and npm.
 
 ```bash
 npm ci
@@ -12,26 +10,33 @@ npm test
 npm start
 ```
 
-Open `http://localhost:3000` on the host computer. To join from phones on the same Wi-Fi, use the LAN address shown by the host/invite URL. Ensure the computer's firewall allows access to the app, and that client isolation is disabled on the network.
+Open `http://localhost:3000` on the host computer. Phone controllers on the same Wi-Fi can use the LAN address displayed next to the QR code. The host's firewall must allow incoming connections on the selected port. Networks that isolate wireless clients may block local play.
 
-## Hosting
+## Initial hosted setup
 
-This Express app must run as a long-lived Node.js service in its present architecture, because rooms are stored in a process-local `Map` and their state is lost on process restart. Do **not** assume a serverless deployment or multiple replicas will work correctly for one shared game session.
+Run `npm start` as one long-lived Node.js process behind an HTTPS reverse proxy. Use one replica and one worker process. Route the homepage and the entire API to that process. Set `PUBLIC_URL` to the public origin, for example `https://games.example.com`. Set `PORT` to the port used between the proxy and Node. Keep the Node port private.
 
-Set `PORT` to the port configured by the host, and set `PUBLIC_URL` to the canonical HTTPS origin (for example `https://games.example.com`) so QR and invite links have the correct trusted address.
+Disable response buffering for `/api/rooms/*/live` so NDJSON updates reach phones promptly. The proxy's idle read timeout should exceed the server's 12-second heartbeat. Configure the proxy to overwrite incoming forwarding headers before forwarding the request. If Express needs the client address for rate limits, set `TRUST_PROXY` to the immediate proxy's exact IP address or trusted CIDR. With that setting unset, limits use the address of the direct connection. Invite URLs use the configured public origin independently of forwarding headers.
 
-Evaluate proxy and forwarded-host trust before a public launch, and never commit passwords, environment files or API tokens. If deploying beyond private testing, add durable rooms, capacity/load testing, rate limits/abuse protection, and client reconnect checks.
+| Setting | Default | Purpose |
+| --- | --- | --- |
+| `PORT` | `3000` | Port the Node process listens on |
+| `PUBLIC_URL` | Local interface and port | Public join-link and QR origin |
+| `TRUST_PROXY` | Unset | Trusted forwarding hop addresses for client IP detection |
+| `MAX_ROOMS` | `128` | Total live or retained rooms in memory |
+| `ROOMS_PER_MINUTE` | `12` | Room creation requests per source IP |
+| `JOINS_PER_ROOM_PER_MINUTE` | `360` | Join requests per source IP and room |
+| `ROOM_IDLE_MS` | `14400000` | Idle retention when all live streams are closed, plus up to one cleanup interval |
 
-## Verification checklist
+Room codes, score state, and uploaded photos live in memory. A restart or rollout ends every active room. Participants can reconnect to the same process while the room is retained. Closing a browser tab does not revoke membership immediately, so that a player can reconnect to their existing seat. Photos are optional, accessible to authenticated members of the same room, and removed when the room expires or the process restarts.
 
-- `npm ci` installs cleanly with Node.js 22
-- `npm test` runs all tests (including integration tests that launch the Express server)
-- A host can create a six-digit room; a second device can join by code and QR
-- Try each of the 11 game modes end to end, including phone controls and scoring
-- Try reconnecting and refreshing host and player devices
-- Try 4, 12, and 30 players before separately testing larger groups under realistic conditions
-- Verify games hosted on a public HTTPS URL and `PUBLIC_URL` invite links
+Serverless requests and multiple Node processes would see different in-memory rooms. Before adding replicas, measure load and define a single owner or transactional shared store for game state and clocks, a cross-instance event channel, and durable membership and expiration. Validate reconnects and rollout behavior under load before adopting that design.
 
-## Known limitations of initial migration verification
+## Verification
 
-In the ChatGPT container used to prepare this handoff, network dependency installation did not complete. The 7 standalone tests passed; server-backed integration tests remain unverified. The README contains a 300-player product limit, but that is not equivalent to an audited load test.
+- Run `npm test` on Node.js 22. The integration tests launch their own local servers.
+- Follow [the browser test instructions](../test/browser/README.md) for the opt-in Chromium checks.
+- On a real TV or laptop and two phones, create a room, scan the QR code, and confirm that the public hostname matches the address opened on the TV.
+- Test starting from the phone captain, making a selection, losing Wi-Fi temporarily, and resuming with the same nickname and answer.
+- Confirm the staging reverse proxy streams updates without buffering and accepts reconnects after the original connection drops.
+- Treat 300 registered players as a configured room limit. The current automated multiplayer checks exercise up to 30 players. Test concurrent streams, answer bursts, repeated rooms, and memory on deployment-class hardware before advertising measured capacity.

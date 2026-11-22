@@ -1,8 +1,8 @@
 import { replayButtons } from './game-night.js';
 import { socialModes, modes } from './game-config.js';
 export function avatarView(player, escape) {
-  return player.avatar ? `<img class="player-avatar" src="${escape(player.avatar)}" alt="" loading="lazy">`
-    : `<span class="player-avatar avatar-initial" aria-hidden="true">${escape(Array.from(player.name)[0]?.toUpperCase() ?? '?')}</span>`;
+  const photo = player.avatar ? ` data-room-avatar="${escape(player.avatar)}"` : '';
+  return `<span class="player-avatar avatar-initial" aria-hidden="true"${photo}>${escape(Array.from(player.name)[0]?.toUpperCase() ?? '?')}</span>`;
 }
 
 export function partyView(state, { host, canControl, escape, reply, icons }) {

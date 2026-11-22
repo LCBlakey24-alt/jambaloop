@@ -11,7 +11,7 @@ let origin;
 
 before(async () => {
   server = spawn(process.execPath, ['server.js'], {
-    env: { ...process.env, PORT: '0', PUBLIC_URL: '' },
+    env: { ...process.env, PORT: '0', PUBLIC_URL: '', ROOMS_PER_MINUTE: '60' },
     stdio: ['ignore', 'pipe', 'inherit'],
   });
   const [output] = await once(server.stdout, 'data');

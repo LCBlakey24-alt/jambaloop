@@ -101,6 +101,7 @@ export function submitSocial(room, key, data, publish) {
   if (data.index !== room.index) return [409, 'This round has moved on.'];
   const party = room.party;
   if (room.phase === 'party-write' && ['write', 'card'].includes(data.action)) {
+    if (room.mode === 'cards' && !Number.isInteger(data.option)) return [400, 'Choose a card from your hand.'];
     const text = room.mode === 'cards' ? party.hands.get(key)?.[data.option]
       : typeof data.text === 'string' ? data.text.trim() : '';
     if (typeof text !== 'string' || !text || text.length > 100) return [400, room.mode === 'cards' ? 'Choose a card from your hand.' : 'Enter a reply of 1 to 100 characters.'];

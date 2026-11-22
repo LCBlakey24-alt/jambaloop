@@ -1,5 +1,6 @@
 import { randomInt } from 'node:crypto';
 import { isConnected } from './room-presence.js';
+import { questionHistoryId } from './public/question-history.js';
 
 // Original creative prompts. No survey statistics or factual claims are required.
 export const samePagePrompts = Object.freeze([
@@ -71,7 +72,7 @@ export function normaliseSamePageAnswer(value) {
 }
 
 function choosePrompt(room) {
-  const fresh = samePagePrompts.filter(prompt => !room.seen.has('samepage:' + prompt));
+  const fresh = samePagePrompts.filter(prompt => !room.seen.has('samepage:' + prompt) && !room.seen.has(questionHistoryId(prompt)));
   const pool = fresh.length ? fresh : samePagePrompts;
   const prompt = pool[randomInt(pool.length)];
   room.seen.add('samepage:' + prompt);
@@ -160,7 +161,7 @@ export function publicSamePage(room, key) {
   const earned = revealed
     ? (party.groups.find(group => group.members.includes(key))?.points ?? 0) : undefined;
   return {
-    type: 'samepage', prompt: party.prompt, answered: Boolean(ownAnswer),
+    type: 'samepage', prompt: party.prompt, historyId: questionHistoryId(party.prompt), answered: Boolean(ownAnswer),
     ownAnswer, submissions: party.entries.size,
     responseTarget: [...room.players.keys()].filter(member =>
       party.entries.has(member) || isConnected(room, member)).length,

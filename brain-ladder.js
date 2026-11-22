@@ -28,7 +28,7 @@ function makePuzzle(level,v) {
     const day=v%7,offset=8+v,target=(day+offset)%7;
     return {level,variant:v,prompt:`Today is ${days[day]}. What day of the week will it be in ${offset} days?`,
       answer:days[target],options:[0,1,2,3].map(delta=>days[(target+delta)%7]),
-      explanation:`A week has 7 days. ${offset} days is ${Math.floor(offset/7)} full weeks plus ${offset%7} days.`};
+      explanation:`A week has seven days. ${offset} days is ${Math.floor(offset/7)} full ${Math.floor(offset/7)===1?'week':'weeks'} plus ${offset%7} ${offset%7===1?'day':'days'}.`};
   }
   if (level===4) {
     const packets=3+v,items=2+v%5;

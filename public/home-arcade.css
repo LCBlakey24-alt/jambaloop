@@ -345,3 +345,6 @@ body:not(.playing) .footer { display:none !important; }
   .game-tile { transition:none; }
   .game-tile:hover { transform:none; }
 }
+
+/* Honour hidden panels even when a responsive grid declares display:grid !important. */
+#app .home-shell [hidden] { display:none !important; }

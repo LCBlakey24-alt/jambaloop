@@ -367,7 +367,7 @@ function openDialog(mode, value, gameMode, quizId) {
       form.querySelector('#team-count-field').hidden = style !== 'teams';
       form.querySelector('#team-count-label').textContent = trolley ? 'Exactly two teams' : 'Number of teams';
       const help = form.querySelector('#team-play-help');
-      help.textContent = trolley ? 'Exactly two teams. Each team votes for three cards while the TV host acts as judge and chooses which track is hit.'
+      help.textContent = trolley ? 'One player becomes the Trolley Driver each round. Everyone else is reshuffled into two teams and votes for one of three cards per phase.'
         : !allowsTeams ? 'This game has a shared vote or one-holder outcome, so it currently plays individually.'
         : style === 'teams' ? 'Choose 2–4 teams. Everyone who joins is assigned evenly when play starts; team scores use the average member score so a larger team has no advantage.'
         : board ? 'Every person races their own board piece, up to four racers.'
@@ -383,7 +383,7 @@ function openDialog(mode, value, gameMode, quizId) {
       const curated = !form.elements.difficulty.disabled && form.elements.difficulty.value !== 'standard';
       categoryField.hidden = (!supportsCustom && !race) || custom || curated;
       form.elements.format.closest('label').hidden = custom || party || privateQuiz || curated || race;
-      form.elements.count.closest('label').hidden = custom || (party && !trolley) || race;
+      form.elements.count.closest('label').hidden = custom || party || race;
       form.elements.seconds.closest('label').hidden = party || race;
       form.elements.autoReveal.closest('label').hidden = party || race;
       form.elements.phoneView.closest('label').hidden = party || privateQuiz || race;
@@ -417,7 +417,7 @@ function openDialog(mode, value, gameMode, quizId) {
         : form.elements.seconds.value === '0' ? 'No speed bonus.'
         : format === 'mixed' ? 'Timed correct answers can earn a speed bonus. Closest guesses receive equal base points.'
         : 'Faster correct answers earn more.';
-      form.querySelector('#scoring-note').textContent = race ? 'You steer your speed with answers. Correct boosts you, Pass and wrong answers slow you down. First to finish wins.' : party ? (trolley ? 'Two teams place a good card, a sabotage card on the opposing track, then a final good card. A different player becomes Trolley Driver each round; everyone gets a turn.' : game === 'bluff' ? 'Three or more players. Write a reply, then vote for the bluff.' : game === 'potato' ? 'Two or more players. The potato has one shared two-minute timer.' : 'Three rounds. Players use their phones to enter or vote.')
+      form.querySelector('#scoring-note').textContent = race ? 'You steer your speed with answers. Correct boosts you, Pass and wrong answers slow you down. First to finish wins.' : party ? (trolley ? 'Each round: two teams choose one of three cards in each phase (defend, sabotage, reinforce). The Trolley Driver pulls the lever. One round per player.' : game === 'bluff' ? 'Three or more players. Write a reply, then vote for the bluff.' : game === 'potato' ? 'Two or more players. The potato has one shared two-minute timer.' : 'Three rounds. Players use their phones to enter or vote.')
         : privateQuiz ? 'Each player gets a unique multiple-choice or True or False question in each round.'
         : custom ? 'Uses every question in the saved quiz in its authored order.'
         : curated ? 'A curated mixed-topic pack with multiple-choice questions.' : board

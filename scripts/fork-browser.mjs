@@ -52,6 +52,9 @@ try {
     const game=body.game;
     for(let step=0;step<3;step++){
       await phone.locator('.fork-card-pick').first().click();
+      // Playwright click returns before this async API call finishes; wait for
+      // the phone's confirmed locked state before submitting the other votes.
+      await phone.locator('.fork-locked').waitFor({timeout:10000});
       for(let i=1;i<players.length;i++){
         const response=await context.request.post(site+'/api/rooms/'+code+'/party',{
           headers:{'x-game-key':players[i]},

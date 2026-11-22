@@ -7,6 +7,7 @@ import { partyModes, socialModes } from './public/game-config.js';
 import { startSocialRound, advanceSocial, submitSocial, publicSocial, advanceSocialWhenReady } from './social-games.js';
 import {startForkRound, advanceFork, submitFork, publicFork, advanceForkWhenReady} from './fork-game.js';
 import {startSamePageRound, advanceSamePage, submitSamePage, publicSamePage, advanceSamePageWhenReady} from './same-page.js';
+import {startSpotlightGame,advanceSpotlight,submitSpotlight,publicSpotlight} from './spotlight-wheel.js';
 export { partyModes };
 const prompts = [
   'Name something you might find under a sofa.',
@@ -33,6 +34,7 @@ function potatoQuestion(room) {
 }
 
 export function startParty(room, publish) {
+  if (room.mode === 'spotlight') return startSpotlightGame(room,publish);
   if (room.mode === 'samepage') return startSamePageRound(room, publish);
   if (room.mode === 'tracks') return startForkRound(room,publish);
   if (socialModes.includes(room.mode)) return startSocialRound(room, publish);
@@ -63,6 +65,7 @@ export function expireParty(room, publish) {
 }
 
 export function advanceParty(room, publish) {
+  if (room.mode === 'spotlight') return advanceSpotlight(room,publish);
   if (room.mode === 'samepage') return advanceSamePage(room, publish);
   if (room.mode === 'tracks') return advanceFork(room,publish);
   if (socialModes.includes(room.mode)) return advanceSocial(room, publish);
@@ -87,6 +90,7 @@ export function submitParty(room, key, data, publish) {
   }
   if (!room.players.has(key)) return [403, 'Join as a player to take a turn.'];
   if (data?.game !== room.game) return [409, 'This game has moved on.'];
+  if (room.mode === 'spotlight') return submitSpotlight(room,key,data,publish);
   if (room.mode === 'samepage') return submitSamePage(room, key, data, publish);
   if (socialModes.includes(room.mode) && room.party) return submitSocial(room, key, data, publish);
   const party = room.party;
@@ -128,6 +132,7 @@ export function submitParty(room, key, data, publish) {
 }
 
 export function publicParty(room, key) {
+  if (room.mode === 'spotlight') return publicSpotlight(room,key);
   if (room.mode === 'samepage') return publicSamePage(room, key);
   if (room.mode === 'tracks') return publicFork(room,key);
   const party = room.party;

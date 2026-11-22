@@ -1,0 +1,16 @@
+/* Jambaloop wordmarks: automatic contrast across existing light/dark themes. */
+.site-brand { display: inline-flex; align-items: center; flex: 0 0 auto; width: clamp(148px, 18vw, 218px); min-width: 0; line-height: 0; letter-spacing: normal; }
+.site-brand .site-logo { display: block; width: 100%; height: auto; max-height: 52px; object-fit: contain; }
+.site-brand .site-logo-navy { display: none; }
+.site-brand .site-logo-white { display: block; }
+/* Most home themes have light paper backgrounds; Arcade and live play are dark. */
+body:not(.playing):not([data-theme="arcade"]) .site-brand .site-logo-navy { display: block; }
+body:not(.playing):not([data-theme="arcade"]) .site-brand .site-logo-white { display: none; }
+.footer .site-brand { width: 182px; }
+@media (max-width: 660px) {
+  .header .site-brand { width: 148px; }
+  .footer .site-brand { width: 158px; }
+}
+@media (max-width: 360px) {
+  .header .site-brand { width: 130px; }
+}

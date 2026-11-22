@@ -4,7 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f8f2e6">
-<title>Quiz Club — Game night on the big screen</title>
+<title>Jambaloop — Multiplayer games night</title>
+<meta name="description" content="Jambaloop brings quizzes, challenges and party games to one big screen while everyone plays from their phones."> 
+<link rel="icon" type="image/png" href="/branding/jambaloop-icon.png">
+<link rel="apple-touch-icon" href="/branding/jambaloop-icon.png">
 <link rel="stylesheet" href="/fonts.css">
 <link rel="stylesheet" href="/style.css">
 <link rel="stylesheet" href="/studio.css">
@@ -18,11 +21,12 @@
 <link rel="stylesheet" href="/mobile-deck.css">
 <link rel="stylesheet" href="/live-controls.css">
 <link rel="stylesheet" href="/score-break.css">
+<link rel="stylesheet" href="/branding.css">
 <script type="module" src="/app.js"></script>
 </head>
 <body>
 <header class="header"><div class="wrap nav">
-<a href="/" class="brand"><span class="brand-icon"><img src="/icons/sparkles.svg" alt=""></span>quiz club<span class="brand-dot">.</span></a>
+<a href="/" class="brand site-brand" aria-label="Jambaloop home"><img class="site-logo site-logo-navy" src="/branding/jambaloop-logo-navy.webp" alt="" width="1561" height="324"><img class="site-logo site-logo-white" src="/branding/jambaloop-logo-white.webp" alt="" width="1561" height="324"></a>
 <nav aria-label="Main navigation"><a class="text-button nav-modes" href="#mode-heading">Game modes</a><a class="text-button nav-categories" href="#category-heading">Categories</a><button class="text-button nav-library" data-action="library">My quizzes</button><button class="text-button" data-action="themes">Styles</button><button class="text-button" data-action="help">How to play</button><button class="button outline small" data-action="join"><img src="/icons/smartphone.svg" alt=""> Join game</button></nav>
 </div></header>
 <div class="sr-only" id="phase-announcement" role="status"></div>
@@ -60,7 +64,7 @@
 <div id="category-list" class="cards"></div>
 </section>
 </main>
-<footer class="wrap footer"><span class="brand">quiz club<span class="brand-dot">.</span></span><div class="footer-links"><button class="text-button" data-action="library">My quizzes</button><button class="text-button" data-action="themes">Styles</button><button class="text-button" data-action="help">How to play</button></div></footer>
+<footer class="wrap footer"><span class="brand site-brand" role="img" aria-label="Jambaloop"><img class="site-logo site-logo-navy" src="/branding/jambaloop-logo-navy.webp" alt="" width="1561" height="324" loading="lazy"><img class="site-logo site-logo-white" src="/branding/jambaloop-logo-white.webp" alt="" width="1561" height="324" loading="lazy"></span><div class="footer-links"><button class="text-button" data-action="library">My quizzes</button><button class="text-button" data-action="themes">Styles</button><button class="text-button" data-action="help">How to play</button></div></footer>
 <dialog id="dialog" aria-labelledby="dialog-title"><div class="dialog-inner"><button class="icon-button" data-action="close" aria-label="Close"><img src="/icons/x.svg" alt=""></button><div id="dialog-content"></div></div></dialog>
 </body>
 </html>

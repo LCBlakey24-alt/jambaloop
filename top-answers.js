@@ -94,10 +94,21 @@ export function chooseTopAnswersPrompt(seen=new Set()) {
   return pool[randomInt(pool.length)];
 }
 
+const shuffleChoices=options=>{
+  const choices=[...options];
+  for(let i=choices.length-1;i>0;i--){
+    const j=randomInt(i+1);
+    [choices[i],choices[j]]=[choices[j],choices[i]];
+  }
+  return choices;
+};
+
 const eligible=(room,submissions)=>[...room.players.keys()].filter(key=>submissions.has(key)||isConnected(room,key)).length;
 
 export function startTopAnswersRound(room,publish) {
-  const prompt=chooseTopAnswersPrompt(room.seen);
+  const original=chooseTopAnswersPrompt(room.seen);
+  // Prevent fixed A/B/C/D positions from influencing the group's own survey.
+  const prompt={...original,options:shuffleChoices(original.options)};
   room.seen.add('topanswers:'+prompt.prompt);
   room.seen.add(prompt.historyId);
   room.party={type:'topanswers',prompt, votes:new Map(),predictions:new Map(),counts:null,results:null,roundEarned:null};

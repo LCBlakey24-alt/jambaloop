@@ -17,7 +17,7 @@ function revealRows(p,escape){
 function reviewQueue(p,escape){
  const rows=p.reviews||[];
  return `<section class="rare-review-area"><h2>Host answer review</h2>
-  <p>These answers are not recognised by the curated list. Approve only if they genuinely fit this specific question. Your decisions are recorded.</p>
+  <p>These answers are not recognised by the curated list. Approve only if they genuinely fit this specific question. Your decisions are recorded. ${p.reviewSource?`<a class="rare-review-source" href="${escape(p.reviewSource)}" target="_blank" rel="noopener noreferrer">Open the topic reference</a>`:'No external reference is attached for this topic; verify unfamiliar answers before accepting.'}</p>
   <div class="rare-review-list">${rows.map(row=>`<article class="rare-review-row">
    <div><strong>${escape(row.answer)}</strong><small>${row.count} ${row.count===1?'entry':'entries'} · ${row.decision?'Marked '+row.decision:'Review required'}</small></div>
    <div class="rare-review-buttons">

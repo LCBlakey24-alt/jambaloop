@@ -286,7 +286,7 @@ app.post('/api/rooms/:code/join', (req, res) => {
   const { room } = res.locals;
   const name = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
   if (!name || name.length > 24) return res.status(400).json({ error: 'Enter a nickname of up to 24 characters.' });
-  if (room.players.size + room.waiting.size >= (room.mode === 'quizrace' ? 8 : maxPlayers)) return res.status(409).json({ error: 'This room is full.' });
+  if (room.players.size + room.waiting.size >= (room.mode === 'quizrace' ? 12 : maxPlayers)) return res.status(409).json({ error: 'This room is full.' });
   if ([...room.players.values(), ...room.waiting.values()].some(player => player.name.toLowerCase() === name.toLowerCase())) {
     return res.status(409).json({ error: 'That nickname is taken.' });
   }
@@ -665,7 +665,7 @@ app.post('/api/rooms/:code/advance', (req, res) => {
     if (room.mode === 'board' && room.playStyle === 'individual' && room.players.size > 4) {
       return res.status(409).json({error:'Individual Board Race supports up to four racers. Choose Teams for larger groups.'});
     }
-    if (room.mode === 'quizrace' && room.players.size > 8) return res.status(409).json({error:'Quiz Race supports up to eight racers. Please choose another mode or a smaller group.'});
+    if (room.mode === 'quizrace' && room.players.size > 12) return res.status(409).json({error:'Quiz Race supports up to twelve racers. Please choose another mode or a smaller group.'});
     startGame(room);
   } else if (partyModes.includes(room.mode)) {
     advanceParty(room, publish);
@@ -800,7 +800,7 @@ app.post('/api/rooms/:code/configure', (req, res) => {
   const body = req.body?.useRoomQuiz === true && room.customQuiz ? { ...req.body, customQuiz: room.customQuiz } : req.body;
   const settings = readSettings(body);
   if (!settings) return res.status(400).json({ error: 'Check the game settings or saved quiz.' });
-  if (settings.mode === 'quizrace' && room.players.size > 8) return res.status(409).json({error:'Quiz Race supports up to eight racers.'});
+  if (settings.mode === 'quizrace' && room.players.size > 12) return res.status(409).json({error:'Quiz Race supports up to twelve racers.'});
   resetGame(room, settings);
   publish(room);
   res.sendStatus(204);

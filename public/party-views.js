@@ -94,6 +94,12 @@ function socialView(state, { host, canControl, escape, reply, icons }) {
       ${voting && !host && party.voted ? '<p role="status">Vote locked in.</p>' : ''}
       ${next(voting ? 'Reveal votes' : index + 1 < total ? 'Next round' : 'Final results')}`;
   }
+  const teamScores = state.playStyle === 'teams' && state.teams.length && (finished || phase === 'party-reveal')
+    ? `<div class="party-team-scores" aria-label="Team standings">${[...state.teams].sort((a,b)=>b.score-a.score).map(team=>
+      `<div style="--team:${team.color}"><strong>Team ${escape(team.name)}</strong><span>${team.score.toLocaleString()} pts</span></div>`).join('')}</div>`
+    : '';
+  const winner = finished && state.playStyle === 'teams' && state.teamWinners?.length === 1
+    ? `<p class="party-team-winner">Team ${escape(state.teams.find(t=>t.id===state.teamWinners[0])?.name)} wins!</p>` : '';
   return `<section class="game-panel party-panel ${finished ? 'results' : ''}">
-    <div class="eyebrow">${title} · Round ${index + 1} of ${total}</div>${body}</section>`;
+    <div class="eyebrow">${title} · Round ${index + 1} of ${total}</div>${winner}${teamScores}${body}</section>`;
 }

@@ -10,6 +10,23 @@ await mkdir('browser-screenshots',{recursive:true});
 
 const sizes=[[1280,720],[1920,1080],[1024,768]];
 try{
+  // Validate that a real player can discover and configure the new game.
+  const setupContext=await browser.newContext({viewport:{width:1366,height:768}});
+  const setupPage=await setupContext.newPage();
+  await setupPage.goto(site,{waitUntil:'domcontentloaded',timeout:30000});
+  await setupPage.locator('[data-action="mode-page"][data-direction="1"]').click();
+  await setupPage.locator('.game-tile[data-mode="spotlight"]').click();
+  await setupPage.locator('#game-preview [data-action="host"]').click();
+  const setupForm=setupPage.locator('#host-form');
+  assert.equal(await setupForm.locator('input[name="mode"]:checked').inputValue(),'spotlight');
+  assert.equal(await setupForm.locator('select[name="count"]').isVisible(),true);
+  assert.deepEqual(await setupForm.locator('select[name="count"] option')
+    .evaluateAll(options=>options.map(option=>option.value)),['1','2','3']);
+  assert.equal(await setupForm.locator('select[name="count"]').inputValue(),'1');
+  assert.equal(await setupForm.locator('input[name="playStyle"][value="teams"]').isDisabled(),true);
+  await setupContext.close();
+  console.log('PASS: Spotlight Wheel launches from the menu with 1–3 turns per contestant');
+
   for(const [width,height] of sizes){
     const ctx=await browser.newContext({viewport:{width,height}});
     const errors=[];

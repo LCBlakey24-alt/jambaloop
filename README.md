@@ -4,7 +4,7 @@ Jambaloop is an original multiplayer browser-game product within the planned **R
 
 This is an active development project. Draft pull requests are not necessarily deployed to the live website; always check the branch and GitHub Actions before assuming a feature is published. See [the publisher and brand guide](docs/ROOKIE_QUEST_GAMES_JAMBALOOP_BRAND.md).
 
-Jambaloop currently supports a big-screen host and phone controllers, with mode-specific capacity limits. The general server can host up to 300 participants for suitable modes. Includes more than 560 questions in 16 categories, with multiple-choice, true-or-false, closest-number, and put-in-order formats. Mixed formats rotate through all four. Choose from Quiz Club, Christmas, Neon Arcade, and Winter Lodge visual styles. Christmas is a selectable category. Turn on **Include Christmas questions** to add it to Mixed Bag, Spin the Wheel, or Board Race.
+Jambaloop currently supports a big-screen host and phone controllers, with mode-specific capacity limits. The general server can host up to 300 participants for suitable modes. The question library includes more than 560 questions across its categories, with multiple-choice, true-or-false, closest-number, and put-in-order formats. Mixed formats rotate through all four. Choose from Quiz Club, Christmas, Neon Arcade, and Winter Lodge visual styles. Christmas is a selectable category. Turn on **Include Christmas questions** to add it to Mixed Bag, Spin the Wheel, or Board Race.
 
 ## Play at home
 

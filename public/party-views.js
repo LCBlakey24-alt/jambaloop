@@ -3,12 +3,14 @@ import { socialModes, modes } from './game-config.js';
 import {forkView} from './fork-view.js';
 import {samePageView} from './same-page-view.js';
 import {spotlightView} from './spotlight-view.js';
+import {brainLadderView} from './brain-ladder-view.js';
 export function avatarView(player, escape) {
   return player.avatar ? `<img class="player-avatar" src="${escape(player.avatar)}" alt="" loading="lazy">`
     : `<span class="player-avatar avatar-initial" aria-hidden="true">${escape(Array.from(player.name)[0]?.toUpperCase() ?? '?')}</span>`;
 }
 
 export function partyView(state, { host, canControl, escape, reply, icons }) {
+  if (state.mode === 'brain') return brainLadderView(state,{host,canControl,escape,icons});
   if (state.mode === 'spotlight') return spotlightView(state,{host,canControl,escape,icons});
   if (state.mode === 'samepage') return samePageView(state,{host,canControl,escape,icons,reply});
   if (state.mode === 'tracks') return forkView(state,{host,canControl,escape,icons,replayButtons});

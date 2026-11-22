@@ -8,7 +8,7 @@ export function avatarView(player, escape) {
 }
 
 export function partyView(state, { host, canControl, escape, reply, icons }) {
-  if (state.mode === 'samepage') return samePageView(state,{host,canControl,escape,icons});
+  if (state.mode === 'samepage') return samePageView(state,{host,canControl,escape,icons,reply});
   if (state.mode === 'tracks') return forkView(state,{host,canControl,escape,icons,replayButtons});
   if (socialModes.includes(state.mode)) return socialView(state, { host, canControl, escape, reply, icons });
   const party = state.party;

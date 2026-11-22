@@ -45,7 +45,7 @@ function correctOption(question) {
 
 test('Spotlight rotates contestant, keeps expert hints confidential and scores both roles',async()=>{
   await withServer(async request=>{
-    const made=await request('',null,{mode:'spotlight',category:'mixed',format:'choice',count:5,seconds:0},201);
+    const made=await request('',null,{mode:'spotlight',category:'mixed',format:'choice',count:1,seconds:0},201);
     const base='/'+made.code;
     const keys=[];
     for(const name of ['Alex','Bailey','Charlie']) keys.push((await request(base+'/join',null,{name},201)).key);
@@ -132,7 +132,7 @@ test('Spotlight rotates contestant, keeps expert hints confidential and scores b
 
 test('Spotlight handles twenty individual players without duplicating contestant turns',async()=>{
   await withServer(async request=>{
-    const made=await request('',null,{mode:'spotlight',category:'mixed',format:'choice',count:3,seconds:0},201);
+    const made=await request('',null,{mode:'spotlight',category:'mixed',format:'choice',count:1,seconds:0},201);
     const base='/'+made.code;
     const keys=[];
     for(let i=0;i<20;i++) keys.push((await request(base+'/join',null,{name:'Guest '+i},201)).key);

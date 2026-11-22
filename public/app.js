@@ -1088,6 +1088,23 @@ function checkPractice(value) {
 
 document.addEventListener('change', async event => {
   const input = event.target;
+  if (input.matches('[data-join-origin]')) {
+    const current = session;
+    if (!current?.host || !state?.joinUrl || input.value === new URL(state.joinUrl).origin) return;
+    const previous = new URL(state.joinUrl).origin;
+    input.disabled = true;
+    try {
+      await api('/' + current.code + '/invite', { origin: input.value });
+      if (session === current) await refresh();
+    } catch (error) {
+      if (input.isConnected) input.value = previous;
+      const message = document.querySelector('#game-error');
+      if (message) message.textContent = error.message || 'Could not change the phone connection address.';
+    } finally {
+      if (input.isConnected) input.disabled = false;
+    }
+    return;
+  }
   if (!input.matches('[data-selfie]') || !input.files[0]) return;
   const form = input.closest('form');
   const submit = form.querySelector('button:not([type="button"])');
@@ -1294,10 +1311,12 @@ document.addEventListener('click', async event => {
       if (document.fullscreenElement) await document.exitFullscreen();
       else await document.documentElement.requestFullscreen();
     } else if (action === 'show-join') {
-      content.innerHTML = `<div class="eyebrow">JOIN QUIZ CLUB</div><h2 id="dialog-title">Room ${state.code}</h2>
-        <p>Scan to join the next game in this room.</p><img class="qr join-dialog-qr" src="${state.qr}" alt="QR code to join room ${state.code}">
+      content.innerHTML = `<div class="eyebrow">JOIN JAMBALOOP</div><h2 id="dialog-title">Room ${state.code}</h2>
+        <p>Scan from a phone on the same Wi-Fi. If the link fails, return to the lobby and choose a different phone address.</p>
+        <img class="qr join-dialog-qr" src="${state.qr}" alt="QR code to join room ${state.code}">
+        <p class="join-url">${escape(state.joinUrl)}</p>
         <button class="button outline" data-action="copy">${icons('link')} Copy join link</button>`;
-      dialog.showModal();
+            dialog.showModal();
     } else if (action === 'copy') {
       try {
         await navigator.clipboard.writeText(state.joinUrl);

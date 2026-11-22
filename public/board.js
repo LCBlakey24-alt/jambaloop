@@ -287,7 +287,7 @@ function buildBoard(scene, state, shadowMap) {
   finial.position.set(pole.position.x, pole.position.y + poleHeight / 2, pole.position.z);
   board.add(flag, finial);
   const center = new THREE.Mesh(new THREE.PlaneGeometry(2.18, 2.18), new THREE.MeshBasicMaterial({
-    map: label('QUIZ CLUB', tableColor, accent, 'Board Race'), transparent: true,
+    map: label('JAMBALOOP', tableColor, accent, 'Board Race'), transparent: true,
   }));
   center.position.set(.21, .19, -.14);
   center.rotation.x = -Math.PI / 2;

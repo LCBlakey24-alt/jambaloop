@@ -6,6 +6,7 @@ import { awardView, currentFrame, frameView, revealFrames, scoreReveal } from '.
 import { boardSpeedValues, bonusValues, canSetScore, defaultScoring, doubleSchedules, pointValues } from './scoring.js';
 import { gameNightPresets, gameNightView, playlistEditor, playlistLimit, replayButtons } from './game-night.js';
 import { forgetPlayer, parseRoomCode, recentRooms, rememberPlayer, rememberedPlayer } from './room-session.js';
+import {readQuestionHistory, rememberQuestion} from './question-history.js';
 import { modeVariables, sceneBackdrop } from './mode-style.js';
 import { launcherTile, launcherPreview, launcherModes, launcherSetupArtwork, LAUNCHER_PAGE_SIZE } from './home-launcher.js';
 import { stopNarration, toggleNarration } from './narrator.js';
@@ -613,7 +614,7 @@ document.addEventListener('submit', async event => {
         startSession(known);
         return;
       }
-      const player = await api('/' + code + '/join', { name, avatar: joinAvatar });
+      const player = await api('/' + code + '/join', { name, avatar: joinAvatar, seenQuestions: readQuestionHistory() });
       startSession({ code, key: player.key, host: false });
     }
   } catch (error) {
@@ -1010,6 +1011,11 @@ function receive(next, current) {
   if (dialog.open && state && (state.game !== next.game || state.phase === 'lobby' && next.phase !== 'lobby')) dialog.close();
   if (state?.game !== next.game || state?.index !== next.index || next.phase === 'lobby') partyReply = '';
   state = next;
+  // Store only opaque question IDs, never answer keys or other players' data.
+  if (!current.host) {
+    rememberQuestion(next.question?.historyId);
+    rememberQuestion(next.race?.own?.question?.historyId);
+  }
   if(next.race) raceSnapshotLocal=Date.now();
   if (!current.host && next.player && (current.name !== next.player.name || current.mode !== next.mode)) {
     Object.assign(current, { name: next.player.name, mode: next.mode });

@@ -12,7 +12,7 @@ const results = (party, escape, compact=false) =>
       </article>`).join('') : '<p>No answers were entered this round.</p>')+
     '</div>';
 
-export function samePageView(state, {host,canControl,escape,icons}) {
+export function samePageView(state, {host,canControl,escape,icons,reply}) {
   const {party,phase,index,total} = state;
   if (!party || party.type !== 'samepage') return '';
   const writing = phase === 'party-write';
@@ -45,7 +45,7 @@ export function samePageView(state, {host,canControl,escape,icons}) {
         ? `<div class="samepage-locked" role="status"><strong>Answer locked</strong><span>${escape(party.ownAnswer)}</span><p>See whether the others think like you.</p></div>`
         : `<form id="bluff-form" class="samepage-answer-form">
             <label for="samepage-answer">Your answer</label>
-            <textarea id="samepage-answer" name="reply" rows="2" maxlength="60" placeholder="Type your first thought…" required></textarea>
+            <textarea id="samepage-answer" name="reply" rows="2" maxlength="60" placeholder="Type your first thought…" required>${escape(reply ?? '')}</textarea>
             <button class="button primary" type="submit">Lock in answer ${icons('check')}</button>
             <small>Capitalisation and punctuation do not affect matches.</small>
           </form>`}

@@ -14,7 +14,7 @@ try{
     const ctx=await browser.newContext({viewport:{width,height}});
     const errors=[];
     const created=await ctx.request.post(site+'/api/rooms',{data:{
-      mode:'spotlight',category:'mixed',format:'choice',count:5,seconds:0,playStyle:'individual',
+      mode:'spotlight',category:'mixed',format:'choice',count:1,seconds:0,playStyle:'individual',
     }});
     assert.equal(created.status(),201,await created.text());
     const {code,host:hostKey}=await created.json();

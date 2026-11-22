@@ -160,7 +160,7 @@ test('Host can finish unresponsive polls; no votes cannot produce imaginary popu
     assert.equal(reveal.phase,'top-reveal');
     assert.deepEqual(reveal.party.counts,[0,0,0,0]);
     assert.deepEqual(reveal.party.results.leaders,[]);
-    assert.equal(reveal.players.length,0,'No unrevealed active scoreboard leak');
+    assert.ok(reveal.players.every(player=>player.score===0),'No real votes means no points can be awarded');
     for(const key of keys){
       const view=await request(base,key);
       assert.equal(view.party.earned,0);

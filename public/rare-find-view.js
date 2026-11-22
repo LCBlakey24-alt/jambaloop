@@ -21,6 +21,10 @@ function reviewQueue(p,escape){
   <div class="rare-review-list">${rows.map(row=>`<article class="rare-review-row">
    <div><strong>${escape(row.answer)}</strong><small>${row.count} ${row.count===1?'entry':'entries'} · ${row.decision?'Marked '+row.decision:'Review required'}</small></div>
    <div class="rare-review-buttons">
+     <select aria-label="Match ${escape(row.answer)} to an accepted answer" data-review-select="${escape(row.token)}">
+       <option value="" ${!row.canonical?'selected':''}>Accept as another valid answer</option>
+       ${p.answerChoices.map(choice=>`<option value="${escape(choice)}" ${row.canonical===choice?'selected':''}>Match: ${escape(choice)}</option>`).join('')}
+     </select>
      <button type="button" class="button outline small" data-action="rare-review-approve" data-review-token="${escape(row.token)}" aria-pressed="${row.decision==='approve'}">Accept</button>
      <button type="button" class="button outline small" data-action="rare-review-reject" data-review-token="${escape(row.token)}" aria-pressed="${row.decision==='reject'}">Reject</button>
    </div></article>`).join('')}</div>

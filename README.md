@@ -1,6 +1,10 @@
-# Quiz Club
+# Jambaloop — a Rookie Quest Games production
 
-A free browser game for one TV host and up to 300 phone controllers. Includes more than 560 questions in 16 categories, with multiple-choice, true-or-false, closest-number, and put-in-order formats. Mixed formats rotate through all four. Choose from Quiz Club, Christmas, Neon Arcade, and Winter Lodge visual styles. Christmas is a selectable category. Turn on **Include Christmas questions** to add it to Mixed Bag, Spin the Wheel, or Board Race.
+Jambaloop is an original multiplayer browser-game product within the planned **Rookie Quest Games** publishing label, part of the wider **Rookie Quest** family (Keeper, Forge, Worlds and the planned RPG). It remains its own game with distinct branding, code, domain and TV/phone experience. Other planned Games titles can share the publisher label later.
+
+This is an active development project. Draft pull requests are not necessarily deployed to the live website; always check the branch and GitHub Actions before assuming a feature is published. See [the publisher and brand guide](docs/ROOKIE_QUEST_GAMES_JAMBALOOP_BRAND.md).
+
+Jambaloop currently supports a big-screen host and phone controllers, with mode-specific capacity limits. The general server can host up to 300 participants for suitable modes. Includes more than 560 questions in 16 categories, with multiple-choice, true-or-false, closest-number, and put-in-order formats. Mixed formats rotate through all four. Choose from Quiz Club, Christmas, Neon Arcade, and Winter Lodge visual styles. Christmas is a selectable category. Turn on **Include Christmas questions** to add it to Mixed Bag, Spin the Wheel, or Board Race.
 
 ## Play at home
 
@@ -17,7 +21,7 @@ Quiz Club fits a phone or small touch screen one page at a time. When a view nee
 
 Every mode has its own stage palette, display font and animated backdrop. The fonts are bundled, so the game can load them over your local network. Turn on **Sound** on the TV for mode-specific transition cues and swooshes. Quiz Club follows your device’s reduced-motion setting for background and transition effects.
 
-All 11 games have illustrated covers. Board Race has a brass and hardwood tower, a felt board, and four pawn silhouettes that match the standings. The die drops through opening gates, strikes four ramps and bounces onto the board. The timed animation settles on the number drawn by the room server. With TV sound on, the tower plays a clack at each impact. The camera moves closer for the drop and pulls back for the pawn’s route. Dice Rally uses a copper-trimmed tray and two separate bounce paths. Both games carry the roll result into the question screen. Reduced motion displays the settled result, and TV browsers without WebGL show a flat view.
+The game modes have distinct cover identities, with newer formats also using original typographic cover designs. Board Race has a brass and hardwood tower, a felt board, and four pawn silhouettes that match the standings. The die drops through opening gates, strikes four ramps and bounces onto the board. The timed animation settles on the number drawn by the room server. With TV sound on, the tower plays a clack at each impact. The camera moves closer for the drop and pulls back for the pawn’s route. Dice Rally uses a copper-trimmed tray and two separate bounce paths. Both games carry the roll result into the question screen. Reduced motion displays the settled result, and TV browsers without WebGL show a flat view.
 
 ## Browse and present
 

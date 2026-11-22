@@ -187,6 +187,7 @@ body:not(.playing) .footer { display:none !important; }
 .game-tile[data-mode="punchline"] .tile-wordmark,
 .game-tile[data-mode="tracks"] .tile-wordmark { font-size:clamp(18px,13.5cqw,34px); }
 .game-tile[data-mode="showdown"] .tile-wordmark { font-size:clamp(16px,12.5cqw,31px); letter-spacing:-.06em; }
+.game-tile[data-mode="spotlight"] .tile-wordmark {font-size:clamp(18px,11cqw,33px);}
 .game-tile[data-mode="wheel"] .tile-wordmark { font-size:clamp(20px,14.2cqw,36px); }
 .game-tile[data-mode="bluff"] .tile-wordmark { font-size:clamp(18px,14cqw,36px); }
 .game-tile[data-mode="potato"] .tile-wordmark { font-size:clamp(23px,19cqw,46px); }

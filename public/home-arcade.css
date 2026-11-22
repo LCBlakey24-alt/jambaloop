@@ -341,7 +341,7 @@ body:not(.playing) .footer { display:none !important; }
   .home-shell { grid-template-rows:auto 32px minmax(0,1fr); }
 }
 @media (prefers-reduced-motion:reduce) {
-  body:not(.playing)::before,.tile-motion,.game-preview { animation:none !important; }
+  body:not(.playing)::before,.tile-motion,.tile-motion *, .game-preview { animation:none !important; }
   .game-tile { transition:none; }
   .game-tile:hover { transform:none; }
 }

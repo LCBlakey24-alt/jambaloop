@@ -146,6 +146,8 @@ test('Spotlight handles twenty individual players without duplicating contestant
     await advance();
     assert.equal((await state()).total,20);
     const turns=[];
+    const topics=[];
+    const prompts=[];
     for(let i=0;i<20;i++){
       let s=await state();
       turns.push(s.party.contestant.id);
@@ -153,12 +155,16 @@ test('Spotlight handles twenty individual players without duplicating contestant
       s=await state();
       assert.equal(s.phase,'spotlight-expert');
       assert.notEqual(s.party.contestant.id,s.party.expert.id);
+      topics.push(s.party.question.category);
+      prompts.push(s.party.question.prompt);
       await advance();
       await advance();
       assert.equal((await state()).phase,'spotlight-reveal');
       await advance();
     }
     assert.equal(new Set(turns).size,20);
+    assert.equal(new Set(topics.slice(0,15)).size,15,'All fifteen playable topics appear before a topic repeats');
+    assert.equal(new Set(prompts).size,20,'Every contestant receives an unseen question in this game');
     assert.equal((await state()).phase,'finished');
   });
 });

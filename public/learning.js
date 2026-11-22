@@ -14,11 +14,14 @@ const summaries = {
   showdown: 'Join a balanced team and answer on your own phone. Each team scores the average of its players’ points. The highest team score wins.',
   knockout: 'Start with three lives. Wrong or missed answers cost a life. For number questions, the closest guesses keep their lives.',
   quizrace: 'Everyone races on a curving track. Correct answers boost your speed; quick answers boost more. Wrong answers and Pass slow you down. First to finish wins.',
+  brain: 'Start with two lives, solve fresh logic puzzles, and climb five, seven or ten increasingly difficult levels. Every wrong or missed answer costs a life. Correct answers are worth more points on higher levels.',
+  samepage: 'Everyone privately types an answer to a prompt. Matching answers earn points when revealed together.',
+  spotlight: 'The wheel chooses a topic and a player expert. The expert suggests an answer privately, then the contestant makes the final choice. Everyone takes a turn.',
 };
 
 export function explainer(mode, play) {
   const title = modes.find(([id]) => id === mode)[1];
-  if(mode==='quizrace')return `<details class="mode-explainer" ${play?'open':''}><summary>How to play ${title}</summary><p>${summaries[mode]}</p></details>`;
+  if(['quizrace','brain','samepage','spotlight'].includes(mode))return `<details class="mode-explainer" ${play?'open':''}><summary>How to play ${title}</summary><p>${summaries[mode]}</p></details>`;
   return `<details class="mode-explainer" ${play ? 'open' : ''}><summary>Watch how to play ${title}</summary>
     <video aria-label="How to play ${title}" controls playsinline muted preload="none" poster="/videos/${mode}.jpg"
       ${play && !matchMedia('(prefers-reduced-motion: reduce)').matches ? 'autoplay' : ''}>
@@ -75,6 +78,10 @@ const demonstrations = {
   tracks: [
     ['Choose a track', 'What should the town’s new festival be?', ['A parade with floats made of cake', 'A silent disco in the supermarket']],
     ['Vote locked in', 'The TV reveals how many people chose each track after voting ends.', []],
+  ],
+  brain: [
+    ['Your first rung', 'Which number comes next? 2, 4, 6, 8, ?', ['10', '12', '16', '18']],
+    ['You climbed!', '10 is correct: the pattern adds two each time. Correct answers earn points; two wrong or missed answers eliminate you, but you can still spectate.', []],
   ],
   potato: [
     ['You have the potato!', 'Which animal builds dams? A skip gives you a new question while you keep the potato.', ['Otter', 'Beaver', 'Skip question']],

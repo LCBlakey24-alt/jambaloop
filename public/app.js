@@ -895,6 +895,7 @@ function render(s) {
       <div><div class="screen-mode-title">${escape(s.quizTitle || (s.mode === 'classic' ? categoryName(s.category) : modeName(s.mode)))}</div>
       <div class="screen-status"><span class="phase-caption">${caption}</span>
       ${s.isCaptain && s.phase !== 'lobby' ? '<span class="captain-tag">★ Captain</span>' : ''}${boost}
+      ${host && ['lobby','finished'].includes(s.phase) ? '<span class="studio-publisher">A ROOKIE QUEST GAMES PRODUCTION</span>' : ''}
       ${host && !['lobby','waiting'].includes(s.phase) ? `<span class="tv-live-pill"><i aria-hidden="true"></i>JAMBALOOP LIVE · <span data-tv-connected>${s.connected}</span> PLAYERS</span>` : ''}</div></div></div>${track}
       <div class="game-controls">${host ? '' : timer}
     ${host ? `<button class="button outline small tv-focus-toggle" data-action="tv-focus" title="Hide TV host controls while the captain runs the game" aria-pressed="${tvFocus}" aria-label="${tvFocus ? 'Exit TV focus' : 'TV focus'}">${icons('monitor-play', 'host-compact-icon')} <span>${tvFocus ? 'Exit TV focus' : 'TV focus'}</span></button>` : ''}

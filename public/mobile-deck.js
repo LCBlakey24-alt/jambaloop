@@ -183,8 +183,9 @@ export function mobileDeck(app, dialog, content) {
     root.classList.toggle('mobile-keyboard', height < 365 && Boolean(window.visualViewport && height < innerHeight - 55));
     // Home launcher already has a 4/6/8-card page controller; avoid a second mobile pager.
     if (!dialog.open && app.querySelector('[data-home-shell]')) { appLayout.clear(); keep = undefined; return; }
-    // Quiz Race needs one naturally scrolling question page; pagination would hide answer choices.
-    if (!dialog.open && app.querySelector('.game[data-mode="quizrace"]')) { appLayout.clear(); keep = undefined; return; }
+    // Real-time racing and the trolley's three-card sentences need intact phone screens.
+    // Page splitting would hide answers, cards or the judge's verdict.
+    if (!dialog.open && app.querySelector('.game[data-mode="quizrace"], .game[data-mode="tracks"]')) { appLayout.clear(); keep = undefined; return; }
     active().measure(keep || (document.activeElement?.matches('input,select,textarea') ? document.activeElement : null));
     keep = undefined;
   }

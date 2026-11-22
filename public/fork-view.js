@@ -52,7 +52,7 @@ export function forkView(state, {host,escape,icons,replayButtons}) {
       : `<section class="fork-hand" aria-label="Choose a card"><h2>${escape(forkStages[step].title)}</h2>
          <p>${escape(forkStages[step].prompt)} Your team’s most popular choice will be placed.</p>
          <div class="fork-hand-options">${(party.hand??[]).map((card,index)=>
-           `<button type="button" class="fork-card-pick ${step===1?'bad':'good'}" data-action="fork-card" data-step="${step}" data-option="${index}"><small>CARD ${index+1}</small><span>${escape(card)}</span></button>`).join('')}</div></section>`
+           `<button type="button" class="fork-card-pick ${step===1?'bad':'good'}" data-action="fork-card" data-fork-step="${step}" data-option="${index}"><small>CARD ${index+1}</small><span>${escape(card)}</span></button>`).join('')}</div></section>`
     : judge ? host
       ? `<section class="fork-controls fork-judge-controls"><h2>Which track should the trolley hit?</h2>
         <p>Pick the most ridiculous track to hit. The other team saves its track and wins one point.</p>

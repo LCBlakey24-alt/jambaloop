@@ -16,7 +16,7 @@ This branch implements a playable first version of **Quiz Race**, the twelfth Ja
 
 ## Known limitations and follow-up before merge
 
-1. **Testing:** new pure Node tests and existing standalone tests pass locally; the full Express-backed suite is expected to run in GitHub Actions with dependencies installed. Browser and real-phone gameplay has **not yet been verified** in this environment; browser automation navigation was blocked by environment policy.
+1. **Testing:** the dependency-installed GitHub Actions test suite passed **29 of 29 tests**, including the new API integration test, on commit `438317b7a88b45380e89f508154cbd3b275b0fa3` (run [45042100202](https://github.com/LCBlakey24-alt/jambaloop/actions/runs/45042100202)). Browser and real-phone gameplay has **not yet been verified** in this environment; browser automation navigation was blocked by environment policy.
 2. **Integration with draft PRs:** PR #2 changes security and reconnect logic in both `server.js` and `public/app.js`. Rebase or merge those changes carefully; don't let this feature overwrite their fixes. PR #3 updates `public/app.js` and the homepage, so verify new card styling once combined.
 3. **Question difficulty:** the source bank contains relatively few category-specific curated Easy/Hard questions. The MVP supplements the relevant curated set with standard questions **from the selected category** to avoid empty races. Expand/taxonomise the banks before claiming uniformly difficulty-graded questions in every category.
 4. **Appearance:** themes currently provide different background colour/scenery treatments over a shared SVG track; detailed original scenery illustrations and optional deeper 3D camera work are future polish.

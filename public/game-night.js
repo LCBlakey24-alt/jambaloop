@@ -10,7 +10,7 @@ export const gameNightPresets = {
 
 export function queuedSettings(mode, theme) {
   return {
-    mode, theme, count: mode === 'board' ? 12 : 5, category: 'mixed', seconds: 20,
+    mode, theme, count: mode === 'board' ? 12 : mode === 'spotlight' ? 1 : 5, category: 'mixed', seconds: 20,
     format: 'choice', autoReveal: true,
     scoreInterval: supportsScoreCheckpoints(mode) ? defaultScoreInterval : undefined,
     privateQuestions: mode === 'showdown',

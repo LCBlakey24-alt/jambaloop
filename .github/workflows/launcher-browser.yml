@@ -8,6 +8,9 @@ on:
       - 'public/mobile-deck.js'
       - 'scripts/launcher-browser.mjs'
       - 'scripts/board-team-browser.mjs'
+      - 'scripts/fork-browser.mjs'
+      - 'public/fork-*'
+      - 'fork-game.js'
       - 'public/board-*.js'
       - 'public/team-play*'
       - '.github/workflows/launcher-browser.yml'
@@ -47,6 +50,7 @@ jobs:
           test -n "$CHROME_BIN"
           node scripts/launcher-browser.mjs
           node scripts/board-team-browser.mjs
+          node scripts/fork-browser.mjs
       - name: Upload screen captures on success or failure
         if: always()
         uses: actions/upload-artifact@v4

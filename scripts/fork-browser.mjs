@@ -42,6 +42,10 @@ try {
       sessionStorage.setItem('quizmas-session',JSON.stringify({code,key,host:false}));
     },{code,key:players[0]});
     const phone=await phoneContext.newPage();
+    phone.on('pageerror',error=>console.log('PHONE_JS_ERROR',error.message));
+    phone.on('response',response=>{
+      if(response.url().includes('/party'))console.log('PHONE_PARTY_RESPONSE',response.status(),response.url());
+    });
     await phone.goto(site,{waitUntil:'domcontentloaded',timeout:30000});
     await host.locator('.roster-panel [data-action="advance"]').click();
     await host.locator('.fork-game[data-fork-phase="party-build"]').waitFor({timeout:16000});
@@ -52,9 +56,18 @@ try {
     const game=body.game;
     for(let step=0;step<3;step++){
       await phone.locator('.fork-card-pick').first().click();
-      // Playwright click returns before this async API call finishes; wait for
-      // the phone's confirmed locked state before submitting the other votes.
-      await phone.locator('.fork-locked').waitFor({timeout:10000});
+      // Inspect server acknowledgement separately from UI visibility to catch errors.
+      await phone.waitForTimeout(700);
+      const phoneSnap=await context.request.get(site+'/api/rooms/'+code,{headers:{'x-game-key':players[0]}});
+      const phoneState=await phoneSnap.json();
+      console.log('PHONE_AFTER_PICK',{
+        stage:step,phase:phoneState.phase,serverStep:phoneState.party?.step,
+        voted:phoneState.party?.voted,voteCount:phoneState.party?.submissions,
+        clientPhase:await phone.locator('.fork-game').getAttribute('data-fork-phase'),
+        gameError:await phone.locator('#game-error').textContent().catch(()=>'not found')
+      });
+      assert.equal(phoneState.party?.voted,true,'Phone must submit its card vote');
+      await phone.locator('.fork-locked').waitFor({timeout:8000});
       for(let i=1;i<players.length;i++){
         const response=await context.request.post(site+'/api/rooms/'+code+'/party',{
           headers:{'x-game-key':players[i]},

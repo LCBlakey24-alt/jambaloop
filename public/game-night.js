@@ -5,6 +5,7 @@ export const playlistLimit = 12;
 export const gameNightPresets = {
   15: ['classic', 'punchline', 'potato'],
   30: ['classic', 'wheel', 'samepage', 'punchline', 'tracks', 'potato', 'dice'],
+  // Brain Ladder is also available in custom playlists (5, 7 or 10 levels).
   60: ['classic', 'samepage', 'punchline', 'board', 'cards', 'potato', 'wheel', 'bluff', 'showdown', 'tracks', 'dice', 'knockout'],
 };
 

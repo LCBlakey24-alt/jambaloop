@@ -1,4 +1,5 @@
 /** Server-authoritative continuous Quiz Race simulation. All times are race-clock ms. */
+import {questionHistoryId} from './public/question-history.js';
 export const raceLengths = Object.freeze({ short: 70, medium: 120, long: 190 });
 export const raceTracks = Object.freeze(['neon', 'desert', 'snow', 'jungle', 'space']);
 export const raceDifficulties = Object.freeze(['easy', 'medium', 'hard', 'mixed']);
@@ -46,7 +47,7 @@ export function createQuizRace(entries, questionPool, { length = 'medium', track
   return {
     lastWall: now, time: 0, length: raceLengths[length], track, difficulty, paused: false,
     finished: false, firstFinish: undefined, graceEnd: undefined,
-    pool: questionPool, results: [],
+    pool: questionPool, issued: new Set(), results: [],
     racers: new Map(entries.map(([key, player], i) => [key, {
       id: player.id, name: player.name, color: raceColors[i % raceColors.length], marker: i + 1,
       distance: 0, effect: null, speed: 1, questionIndex: 0, question: null, nextAt: 3000,
@@ -57,7 +58,8 @@ export function createQuizRace(entries, questionPool, { length = 'medium', track
 
 function issueQuestion(race, racer, at) {
   if (race.finished || racer.finishedAt !== undefined || racer.question || racer.nextAt > at || at < 3000) return false;
-  const item = race.pool[racer.questionIndex % race.pool.length];
+  const item = race.pool[(racer.questionIndex + racer.marker - 1) % race.pool.length];
+  race.issued.add(item.prompt);
   racer.questionIndex++;
   racer.question = { id: racer.questionIndex, item, started: at, deadline: at + raceQuestionWindow };
   return true;
@@ -160,7 +162,7 @@ export function publicRaceState(race, key, isHost) {
       connected: true,
     })),
     own: own && !isHost ? {
-      question: own.question ? { id: own.question.id, prompt: own.question.item.prompt, options: own.question.item.options, category: own.question.item.category, deadline: own.question.deadline } : undefined,
+      question: own.question ? { id: own.question.id, historyId:questionHistoryId(own.question.item.prompt), prompt: own.question.item.prompt, options: own.question.item.options, category: own.question.item.category, deadline: own.question.deadline } : undefined,
       feedback: own.feedback && race.time < own.feedback.at + 1400 ? { ...own.feedback } : undefined,
       correct: own.correct, wrong: own.wrong, passed: own.passed, timeouts: own.timeouts,
       nextAt: own.nextAt, position: sorted.indexOf(own) + 1, distance: +own.distance.toFixed(3),

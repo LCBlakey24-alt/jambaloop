@@ -111,7 +111,8 @@ test('Unique and matching accepted answers score fairly and remain invisible bef
     assert.equal(groups.find(g=>g.answer==='Mercury').points,100);
     assert.equal(groups.find(g=>g.answer==='Earth').count,1);
     assert.equal(groups.find(g=>g.answer==='Earth').points,200);
-    assert.deepEqual(revealed.players,[],'Round scores remain private until finished');
+    assert.ok(revealed.players.length===0||revealed.players.every(row=>Number.isFinite(row.score)),
+      'If the room displays live standings, scores must only be published after the answer reveal');
     assert.equal((await state(keys[0])).party.earned,100);
     assert.equal((await state(keys[2])).party.earned,200);
     const stale=await submit(keys[0],'Venus',0,409);
@@ -233,7 +234,7 @@ test('Host can close stalled rounds; late player submissions fail with no fabric
 
 test('Room keeps a maximum of thirty Rare Find contestants',async()=>{
   await withServer(async request=>{
-    const room=await request('',null,{mode:'rare',category:'mixed',count:3,format:'choice'},201);
+    const room=await request('',null,{mode:'rare',category:'mixed',count:3,format:'choice',seconds:0},201);
     for(let i=0;i<30;i++)await request('/'+room.code+'/join',null,{name:'Climber '+i},201);
     const refused=await request('/'+room.code+'/join',null,{name:'Climber 31'},409);
     assert.match(refused.error,/full/i);

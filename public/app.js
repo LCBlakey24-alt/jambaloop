@@ -349,6 +349,7 @@ function openDialog(mode, value, gameMode, quizId) {
       const categoryField = form.querySelector('#category-field');
       const supportsCustom = fixedQuestionModes.includes(game) && !privateQuiz;
       const trolley = game === 'tracks';
+      const matching = game === 'samepage';
       const allowsTeams = teamPlayModes.includes(game);
       const teamOption = form.querySelector('input[name="playStyle"][value="teams"]');
       const soloOption = form.querySelector('input[name="playStyle"][value="individual"]');
@@ -369,6 +370,7 @@ function openDialog(mode, value, gameMode, quizId) {
       form.querySelector('#team-count-label').textContent = trolley ? 'Exactly two teams' : 'Number of teams';
       const help = form.querySelector('#team-play-help');
       help.textContent = trolley ? 'One player becomes the Trolley Driver each round. Everyone else is reshuffled into two teams and votes for one of three cards per phase.'
+        : matching ? 'Everyone writes a secret answer individually. Matching answers score points; there are no teams or predetermined correct answers.'
         : !allowsTeams ? 'This game has a shared vote or one-holder outcome, so it currently plays individually.'
         : style === 'teams' ? 'Choose 2–4 teams. Everyone who joins is assigned evenly when play starts; team scores use the average member score so a larger team has no advantage.'
         : board ? 'Every person races their own board piece, up to four racers.'
@@ -384,7 +386,7 @@ function openDialog(mode, value, gameMode, quizId) {
       const curated = !form.elements.difficulty.disabled && form.elements.difficulty.value !== 'standard';
       categoryField.hidden = (!supportsCustom && !race) || custom || curated;
       form.elements.format.closest('label').hidden = custom || party || privateQuiz || curated || race;
-      form.elements.count.closest('label').hidden = custom || party || race;
+      form.elements.count.closest('label').hidden = custom || (party && !matching) || race;
       form.elements.seconds.closest('label').hidden = party || race;
       form.elements.autoReveal.closest('label').hidden = party || race;
       form.elements.phoneView.closest('label').hidden = party || privateQuiz || race;
@@ -395,7 +397,7 @@ function openDialog(mode, value, gameMode, quizId) {
       const christmasField = form.querySelector('#christmas-field');
       christmasField.hidden = (party && game !== 'potato') || custom || curated || (!categoryField.hidden && form.elements.category.value !== 'mixed');
       form.elements.includeChristmas.disabled = christmasField.hidden;
-      form.querySelector('#count-label').textContent = board ? 'Maximum turns' : trolley ? 'Trolley rounds' : 'Questions';
+      form.querySelector('#count-label').textContent = board ? 'Maximum turns' : trolley || matching ? 'Rounds' : 'Questions';
       const counts = questionCounts(game, privateQuiz || curated ? 'choice' : form.elements.format.value, privateQuiz || curated ? 'mixed' : form.elements.category.value);
       const previous = Number(form.elements.count.value) || (configured ? state.total : 0);
       const spaces = Number(form.elements.boardLength.value);
@@ -418,7 +420,7 @@ function openDialog(mode, value, gameMode, quizId) {
         : form.elements.seconds.value === '0' ? 'No speed bonus.'
         : format === 'mixed' ? 'Timed correct answers can earn a speed bonus. Closest guesses receive equal base points.'
         : 'Faster correct answers earn more.';
-      form.querySelector('#scoring-note').textContent = race ? 'You steer your speed with answers. Correct boosts you, Pass and wrong answers slow you down. First to finish wins.' : party ? (trolley ? 'Each round: two teams choose one of three cards in each phase (defend, sabotage, reinforce). The Trolley Driver pulls the lever. One round per player.' : game === 'bluff' ? 'Three or more players. Write a reply, then vote for the bluff.' : game === 'potato' ? 'Two or more players. The potato has one shared two-minute timer.' : 'Three rounds. Players use their phones to enter or vote.')
+      form.querySelector('#scoring-note').textContent = race ? 'You steer your speed with answers. Correct boosts you, Pass and wrong answers slow you down. First to finish wins.' : party ? (matching ? 'Write a short answer privately. Each other player who matches it earns you 100 points. Choose 3, 5 or 7 rounds.' : trolley ? 'Each round: two teams choose one of three cards in each phase (defend, sabotage, reinforce). The Trolley Driver pulls the lever. One round per player.' : game === 'bluff' ? 'Three or more players. Write a reply, then vote for the bluff.' : game === 'potato' ? 'Two or more players. The potato has one shared two-minute timer.' : 'Three rounds. Players use their phones to enter or vote.')
         : privateQuiz ? 'Each player gets a unique multiple-choice or True or False question in each round.'
         : custom ? 'Uses every question in the saved quiz in its authored order.'
         : curated ? 'A curated mixed-topic pack with multiple-choice questions.' : board
@@ -696,9 +698,9 @@ function phaseCaption(s) {
     'score-break': 'Leaderboard checkpoint',
     'party-build': 'Build your track',
     'party-judge': 'Judge chooses track',
-    'party-write': s.mode === 'cards' ? 'Choose a card' : 'Write a reply',
+    'party-write': s.mode === 'cards' ? 'Choose a card' : s.mode === 'samepage' ? 'Write your matching answer' : 'Write a reply',
     'party-vote': 'Voting open',
-    'party-reveal': 'Votes revealed',
+    'party-reveal': s.mode === 'samepage' ? 'Matching answers revealed' : 'Votes revealed',
     'party-potato': 'Potato in play',
     'race-countdown': 'Race about to start',
     race: 'Quiz Race in progress',

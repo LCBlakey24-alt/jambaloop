@@ -35,6 +35,7 @@ export const modes = [
   ['spotlight', 'Spotlight Wheel', 'Take turns as contestant with an expert chosen by the wheel.', 'aperture', '#ffc88d'],
   ['brain', 'Brain Ladder', 'Solve fresh original logic puzzles, protect your two lives and climb ten levels.', 'brain-circuit', '#86e7fa'],
   ['topanswers', 'Top Answers', 'Vote for your favourite, predict the room’s most popular choice, and reveal the real results.', 'chart-no-axes-column-increasing', '#ffca83'],
+  ['rare', 'Rare Find', 'Find the correct answer nobody else picks. Unusual valid answers earn the most.', 'gem', '#a2f4cd'],
 ];
 
 export const defaultTheme = 'club';
@@ -74,6 +75,7 @@ export const categoryName = id => categories.find(category => category[0] === id
 export function questionCounts(mode, format, category) {
   if (mode === 'brain') return [5, 7, 10];
   if (mode === 'topanswers') return [3, 5, 7];
+  if (mode === 'rare') return [3, 5, 7];
   if (mode === 'spotlight') return [1, 2, 3];
   if (['tracks','samepage'].includes(mode)) return [3, 5, 7];
   if (mode === 'board') return [12, 18, 24, 36, 48, 60];
@@ -93,11 +95,11 @@ export const categoryGroups = [
 export const fixedQuestionModes = ['classic', 'dice', 'knockout', 'showdown'];
 
 export const socialModes = ['punchline', 'cards', 'tracks'];
-export const partyModes = ['bluff', 'potato', 'samepage', 'spotlight', 'brain', 'topanswers', ...socialModes];
+export const partyModes = ['bluff', 'potato', 'samepage', 'spotlight', 'brain', 'topanswers', 'rare', ...socialModes];
 export const scoreIntervals = [0, 1, 3, 5];
 export const defaultScoreInterval = 3;
 export const supportsScoreCheckpoints = mode => mode !== 'quizrace' && modes.some(([id]) => id === mode) && !partyModes.includes(mode);
-export const minimumPlayers = mode => mode === 'quizrace' ? 2 : ['bluff', 'punchline', 'cards', 'samepage', 'spotlight', 'topanswers'].includes(mode) ? 3
+export const minimumPlayers = mode => mode === 'quizrace' ? 2 : ['bluff', 'punchline', 'cards', 'samepage', 'spotlight', 'topanswers', 'rare'].includes(mode) ? 3
   : mode === 'brain' ? 2
   : mode === 'tracks' ? 3 : ['potato', 'showdown'].includes(mode) ? 2 : 1;
 export const boardRollDuration = 5400;

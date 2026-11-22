@@ -16,6 +16,7 @@ const styles = {
   spotlight: { font: 'Club Wheel', weight: 800, accent: '#ffc88d', backdrop: '#20182c', panel: '#34233f', edge: '#7a5577', motif: 'orbit', notes: [330, 440, 659], wave: 'sine' },
   brain: {font:'Club Classic',weight:800,accent:'#86e7fa',backdrop:'#0c2232',panel:'#19364c',edge:'#45738a',motif:'tiles',notes:[392,523,784],wave:'sine'},
   topanswers: {font:'Club Classic',weight:850,accent:'#ffca83',backdrop:'#221932',panel:'#342a43',edge:'#785c7e',motif:'bubbles',notes:[330,494,659],wave:'triangle'},
+  rare: {font:'Club Classic',weight:900,accent:'#a2f4cd',backdrop:'#0f2630',panel:'#1b3c47',edge:'#428078',motif:'glints',notes:[392,523,659],wave:'sine'},
 };
 
 export function modeStyle(mode) {

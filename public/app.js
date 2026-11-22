@@ -1382,7 +1382,11 @@ document.addEventListener('click', async event => {
   }
   if (action === 'fork-card') return sendParty({ action: 'card', step: Number(button.dataset.forkStep), option: Number(button.dataset.option) }, button);
   if (action === 'fork-judge') return sendParty({ action: 'judge', track: Number(button.dataset.track) }, button);
-  if (action === 'rare-review-approve' || action === 'rare-review-reject') return sendParty({action:'review',decision:action === 'rare-review-approve'?'approve':'reject',token:button.dataset.reviewToken},button);
+  if (action === 'rare-review-approve' || action === 'rare-review-reject') return sendParty({
+    action:'review',decision:action === 'rare-review-approve'?'approve':'reject',
+    token:button.dataset.reviewToken,
+    canonical:action === 'rare-review-approve' ? button.closest('.rare-review-row')?.querySelector('select[data-review-select]')?.value ?? '' : '',
+  },button);
   if (action === 'top-poll' || action === 'top-guess') return sendParty({ action: action === 'top-poll' ? 'poll' : 'guess', option: Number(button.dataset.option) }, button);
   if (action === 'brain-answer') return sendParty({ action: 'answer', option: Number(button.dataset.option) }, button);
   if (action === 'spotlight-advice' || action === 'spotlight-answer') return sendParty({ action: action === 'spotlight-advice' ? 'advice' : 'answer', option: Number(button.dataset.option) }, button);

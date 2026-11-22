@@ -22,6 +22,10 @@ try {
     await page.goto(base,{waitUntil:'networkidle',timeout:30000});
     await page.locator('.game-tile').first().waitFor({timeout:15000});
     await page.evaluate(()=>document.fonts.ready);
+    assert.match(await page.title(),/Jambaloop.*Rookie Quest Games/);
+    const publisher = page.locator('.home-publisher');
+    assert.equal(await publisher.isVisible(),true,'The publisher should be credited without taking over the Jambaloop home screen');
+    assert.match(await publisher.innerText(),/ROOKIE QUEST GAMES/);
     const layout=await page.evaluate(()=>{
       const tiles=[...document.querySelectorAll('.game-tile')];
       const visible=tiles.filter(tile=>{

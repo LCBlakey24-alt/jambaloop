@@ -1019,6 +1019,7 @@ function receive(next, current) {
   if (!current.host) {
     rememberQuestion(next.question?.historyId);
     rememberQuestion(next.race?.own?.question?.historyId);
+    if (next.party?.type === 'samepage') rememberQuestion(next.party.historyId);
   }
   if(next.race) raceSnapshotLocal=Date.now();
   if (!current.host && next.player && (current.name !== next.player.name || current.mode !== next.mode)) {

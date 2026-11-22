@@ -59,7 +59,7 @@ try {
 
     if(width===1366) {
       await page.locator('[data-action="mode-page"][data-direction="1"]').click();
-      assert.equal(await page.locator('.game-tile').count(),modes.length-8,'Second page should contain the remaining game modes');
+      assert.equal(await page.locator('.game-tile').count(),Math.min(8,modes.length-8),'Second page should respect the eight-tile launcher pagination');
       await page.locator('.game-tile[data-mode="quizrace"]').click();
       assert.equal(await page.locator('#game-preview').isVisible(),true,'Expanded preview missing');
       assert.equal(await page.locator('#mode-list').isVisible(),false,'Grid should hide while preview is expanded');

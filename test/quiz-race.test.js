@@ -14,7 +14,7 @@ const start = () => {const race=make();advanceQuizRace(race,3100);return race;};
 test('Quiz Race is a distinct registered mode needing two players', () => {
   assert.ok(modes.some(([id])=>id==='quizrace'));
   assert.equal(minimumPlayers('quizrace'),2);
-  assert.throws(()=>createQuizRace(players.slice(0,1),sample), /2 to 8/);
+  assert.throws(()=>createQuizRace(players.slice(0,1),sample), /2 to 12/);
   assert.throws(()=>createQuizRace(players,[],{}),/question pool/);
 });
 

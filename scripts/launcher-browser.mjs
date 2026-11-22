@@ -86,6 +86,22 @@ try {
       assert.equal(await page.locator('[data-home-panel="games"]').isVisible(),true,'Game tab did not return');
       console.log('PASS: page navigation, Quiz Race preview, setup dialogue and topic browser');
     }
+    await page.locator('.game-tile').first().click();
+    const previewFit=await page.evaluate(() => {
+      const shell=document.querySelector('#game-preview');
+      const actions=shell?.querySelector('.preview-actions');
+      const intro=shell?.querySelector('[data-action="narrator-toggle"]');
+      const r=actions?.getBoundingClientRect(), p=shell?.getBoundingClientRect();
+      const a=intro?.getBoundingClientRect();
+      return {previewBottom:p?.bottom,actionsBottom:r?.bottom,actionsWidth:r?.width,
+        introBottom:a?.bottom,viewportHeight:innerHeight};
+    });
+    assert.ok(previewFit.actionsWidth>60 && previewFit.actionsBottom<=height+2 &&
+      previewFit.actionsBottom<=previewFit.previewBottom+2 &&
+      previewFit.introBottom<=previewFit.previewBottom+2,
+      'Expanded preview buttons clipped at '+width+'×'+height+': '+JSON.stringify(previewFit));
+    await page.screenshot({path:`browser-screenshots/intro-${width}x${height}.png`,fullPage:false});
+    console.log('PASS: narrator, instructions and Setup buttons fit the '+width+'×'+height+' preview');
     await page.close();
   }
   const audioPage=await browser.newPage();

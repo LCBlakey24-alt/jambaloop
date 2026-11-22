@@ -1,0 +1,120 @@
+name: Live family trolley and Board Race smoke test
+on:
+  push:
+    branches: [feature/04-quiz-race-mvp]
+    paths:
+      - '.github/workflows/live-trolley-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Verify live HTTPS, phone QR, three-stage trolley verdict and Board Race fork
+        env:
+          SITE: https://jambaloop-family-test.onrender.com
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          const site=process.env.SITE;
+          const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+          let page='';
+          for(let retry=0;retry<24;retry++) {
+            try {
+              const response=await fetch(site,{signal:AbortSignal.timeout(12000)});
+              page=await response.text();
+              if(response.ok&&page.includes('home-shell')&&page.includes('fork-game.css'))break;
+            }catch {}
+            await delay(3500);
+          }
+          assert.match(page,/fork-game.css/,'Live site must serve the new trolley game');
+          console.log('PASS: new trolley homepage deployed over HTTPS');
+          for(const resource of ['/fork-view.js','/fork-cards.js','/fork-game.css','/board-fork.css','/team-play.js']) {
+            const result=await fetch(site+resource,{signal:AbortSignal.timeout(12000)});
+            assert.equal(result.status,200,'Missing live asset '+resource);
+          }
+          console.log('PASS: new trolley, board paths and team assets reachable');
+          async function request(path,body,key,expected=200) {
+            const response=await fetch(site+'/api/rooms'+path,{
+              method:body===undefined?'GET':'POST',
+              headers:{'content-type':'application/json',...(key?{'x-game-key':key}:{})},
+              ...(body===undefined?{}:{body:JSON.stringify(body)}),
+              signal:AbortSignal.timeout(15000),
+            });
+            const data=response.status===204?undefined:await response.json();
+            assert.equal(response.status,expected,
+              'Unexpected response from '+path+': '+JSON.stringify(data));
+            return data;
+          }
+          const trolley=await request('',{
+            mode:'tracks',playStyle:'teams',teamCount:2,category:'mixed',
+            format:'mixed',count:5,seconds:0
+          },undefined,201);
+          const path='/'+trolley.code;
+          const alpha=await request(path+'/join',{name:'Live Trolley Alpha'},undefined,201);
+          const beta=await request(path+'/join',{name:'Live Trolley Beta'},undefined,201);
+          const state=key=>request(path,undefined,key||trolley.host);
+          let now=await state();
+          assert.equal(new URL(now.joinUrl).origin,site);
+          assert.equal(new URL(now.joinUrl).searchParams.get('join'),trolley.code);
+          assert.deepEqual(now.teamPreview.map(team=>team.size),[1,1]);
+          console.log('PASS: QR is public HTTPS and two teams assigned');
+          await request(path+'/advance',{
+            game:now.game,index:now.index,phase:now.phase
+          },trolley.host,204);
+          now=await state();
+          assert.equal(now.phase,'party-build');
+          for(let step=0;step<3;step++){
+            for(const key of [alpha.key,beta.key]){
+              await request(path+'/party',{
+                game:now.game,index:now.index,action:'card',step,option:0
+              },key,204);
+            }
+            now=await state();
+            if(step<2){
+              assert.equal(now.phase,'party-build');
+              assert.equal(now.party.step,step+1);
+            }
+          }
+          assert.equal(now.phase,'party-judge');
+          assert.ok(now.party.placements.flat().every(Boolean));
+          console.log('PASS: all six family trolley cards placed in correct 3-step order');
+          await request(path+'/party',{
+            game:now.game,index:now.index,action:'judge',track:0
+          },trolley.host,204);
+          now=await state();
+          assert.equal(now.phase,'party-reveal');
+          assert.deepEqual(now.teams.map(team=>team.score),[0,1]);
+          console.log('PASS: neutral host judge saves other team, team receives a point');
+
+          const board=await request('',{
+            mode:'board',playStyle:'teams',teamCount:2,category:'mixed',
+            format:'choice',count:12,seconds:0,boardLength:16
+          },undefined,201);
+          const boardPath='/'+board.code;
+          await request(boardPath+'/join',{name:'Board Alpha'},undefined,201);
+          await request(boardPath+'/join',{name:'Board Beta'},undefined,201);
+          let boardState=await request(boardPath,undefined,board.host);
+          assert.equal(boardState.teamPreview.length,2);
+          await request(boardPath+'/advance',{
+            game:boardState.game,index:boardState.index,phase:boardState.phase
+          },board.host,204);
+          boardState=await request(boardPath,undefined,board.host);
+          assert.equal(boardState.phase,'ready');
+          await request(boardPath+'/board-path',{
+            game:boardState.game,index:boardState.index,path:'questions'
+          },board.host,204);
+          boardState=await request(boardPath,undefined,board.host);
+          assert.equal(boardState.teams[0].pathChoice,'questions');
+          await request(boardPath+'/roll',{
+            game:boardState.game,index:boardState.index
+          },board.host,204);
+          boardState=await request(boardPath,undefined,board.host);
+          assert.equal(boardState.motion.pathChoice,'questions');
+          assert.equal(boardState.boardFork.extra,4);
+          console.log('PASS: new online Board Race uses the longer Question Trail');
+          NODE

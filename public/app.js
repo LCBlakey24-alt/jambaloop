@@ -347,17 +347,28 @@ function openDialog(mode, value, gameMode, quizId) {
       }
       const categoryField = form.querySelector('#category-field');
       const supportsCustom = fixedQuestionModes.includes(game) && !privateQuiz;
+      const trolley = game === 'tracks';
       const allowsTeams = teamPlayModes.includes(game);
       const teamOption = form.querySelector('input[name="playStyle"][value="teams"]');
+      const soloOption = form.querySelector('input[name="playStyle"][value="individual"]');
+      soloOption.disabled = trolley;
       teamOption.disabled = !allowsTeams;
+      if (trolley) {
+        teamOption.checked = true;
+        form.elements.teamCount.value = '2';
+      }
+      for (const option of form.elements.teamCount.options) {
+        option.disabled = trolley && option.value !== '2';
+      }
       if (!allowsTeams && teamOption.checked) {
         form.querySelector('input[name="playStyle"][value="individual"]').checked = true;
       }
       const style = form.querySelector('input[name="playStyle"]:checked').value;
       form.querySelector('#team-count-field').hidden = style !== 'teams';
-      form.querySelector('#team-count-label').textContent = 'Number of teams';
+      form.querySelector('#team-count-label').textContent = trolley ? 'Exactly two teams' : 'Number of teams';
       const help = form.querySelector('#team-play-help');
-      help.textContent = !allowsTeams ? 'This game has a shared vote or one-holder outcome, so it currently plays individually.'
+      help.textContent = trolley ? 'Exactly two teams. Each team votes for three cards while the TV host acts as judge and chooses which track is hit.'
+        : !allowsTeams ? 'This game has a shared vote or one-holder outcome, so it currently plays individually.'
         : style === 'teams' ? 'Choose 2–4 teams. Everyone who joins is assigned evenly when play starts; team scores use the average member score so a larger team has no advantage.'
         : board ? 'Every person races their own board piece, up to four racers.'
         : race ? 'Each person races independently for first place.' : 'Every player competes individually.';
@@ -372,7 +383,7 @@ function openDialog(mode, value, gameMode, quizId) {
       const curated = !form.elements.difficulty.disabled && form.elements.difficulty.value !== 'standard';
       categoryField.hidden = (!supportsCustom && !race) || custom || curated;
       form.elements.format.closest('label').hidden = custom || party || privateQuiz || curated || race;
-      form.elements.count.closest('label').hidden = custom || party || race;
+      form.elements.count.closest('label').hidden = custom || (party && !trolley) || race;
       form.elements.seconds.closest('label').hidden = party || race;
       form.elements.autoReveal.closest('label').hidden = party || race;
       form.elements.phoneView.closest('label').hidden = party || privateQuiz || race;
@@ -383,7 +394,7 @@ function openDialog(mode, value, gameMode, quizId) {
       const christmasField = form.querySelector('#christmas-field');
       christmasField.hidden = (party && game !== 'potato') || custom || curated || (!categoryField.hidden && form.elements.category.value !== 'mixed');
       form.elements.includeChristmas.disabled = christmasField.hidden;
-      form.querySelector('#count-label').textContent = board ? 'Maximum turns' : 'Questions';
+      form.querySelector('#count-label').textContent = board ? 'Maximum turns' : trolley ? 'Trolley rounds' : 'Questions';
       const counts = questionCounts(game, privateQuiz || curated ? 'choice' : form.elements.format.value, privateQuiz || curated ? 'mixed' : form.elements.category.value);
       const previous = Number(form.elements.count.value) || (configured ? state.total : 0);
       const spaces = Number(form.elements.boardLength.value);
@@ -406,7 +417,7 @@ function openDialog(mode, value, gameMode, quizId) {
         : form.elements.seconds.value === '0' ? 'No speed bonus.'
         : format === 'mixed' ? 'Timed correct answers can earn a speed bonus. Closest guesses receive equal base points.'
         : 'Faster correct answers earn more.';
-      form.querySelector('#scoring-note').textContent = race ? 'You steer your speed with answers. Correct boosts you, Pass and wrong answers slow you down. First to finish wins.' : party ? (game === 'bluff' ? 'Three or more players. Write a reply, then vote for the bluff.' : game === 'potato' ? 'Two or more players. The potato has one shared two-minute timer.' : 'Three rounds. Players use their phones to enter or vote.')
+      form.querySelector('#scoring-note').textContent = race ? 'You steer your speed with answers. Correct boosts you, Pass and wrong answers slow you down. First to finish wins.' : party ? (trolley ? 'Two teams place a good card, a sabotage card on the opposing track, then a final good card. The host judges each round. Choose 3, 5 or 7 rounds.' : game === 'bluff' ? 'Three or more players. Write a reply, then vote for the bluff.' : game === 'potato' ? 'Two or more players. The potato has one shared two-minute timer.' : 'Three rounds. Players use their phones to enter or vote.')
         : privateQuiz ? 'Each player gets a unique multiple-choice or True or False question in each round.'
         : custom ? 'Uses every question in the saved quiz in its authored order.'
         : curated ? 'A curated mixed-topic pack with multiple-choice questions.' : board
@@ -682,6 +693,8 @@ function phaseCaption(s) {
     question: 'Question live',
     reveal: 'Answer revealed',
     'score-break': 'Leaderboard checkpoint',
+    'party-build': 'Build your track',
+    'party-judge': 'Judge chooses track',
     'party-write': s.mode === 'cards' ? 'Choose a card' : 'Write a reply',
     'party-vote': 'Voting open',
     'party-reveal': 'Votes revealed',
@@ -847,7 +860,7 @@ function render(s) {
       body = (s.night.queue.length ? nextUp : '') + body + awardView(s.awards, escape, icons) + (s.night.queue.length ? '' : nextUp);
     }
   } else if (['lobby', 'waiting'].includes(s.phase)) body += gameNightView(s, { canControl, escape, icons });
-  const phaseKey = `${s.code}/${s.game}/${s.index}/${s.phase}${s.pausedAt ? '/paused' : ''}${s.party?.holding ? '/' + s.party.step : ''}`;
+  const phaseKey = `${s.code}/${s.game}/${s.index}/${s.phase}${s.pausedAt ? '/paused' : ''}${s.party?.holding || s.party?.type === 'fork' ? '/' + s.party.step : ''}`;
   const enter = renderedPhase !== phaseKey;
   const animateRoll = Boolean(boardDisplay && s.phase === 'rolling' && renderedPhase === `${s.code}/${s.game}/${s.index}/ready`);
   renderedPhase = phaseKey;
@@ -858,7 +871,7 @@ function render(s) {
   const captainSelect = !enter && focused?.matches('#captain-form select') ? focused.value : undefined;
   const writing = !enter && focused?.matches('#bluff-form textarea')
     ? [focused.selectionStart, focused.selectionEnd] : undefined;
-  const showProgress = ['ready', 'rolling', 'question', 'reveal', 'score-break', 'party-write', 'party-vote', 'party-reveal'].includes(s.phase) && s.total > 1;
+  const showProgress = ['ready', 'rolling', 'question', 'reveal', 'score-break', 'party-build', 'party-judge', 'party-write', 'party-vote', 'party-reveal'].includes(s.phase) && s.total > 1;
   const caption = phaseCaption(s);
   const boost = s.boost > 1 && ['ready', 'rolling', 'question', 'reveal'].includes(s.phase)
     ? `<span class="score-boost">${icons('zap')} Double points</span>` : '';
@@ -1333,6 +1346,8 @@ document.addEventListener('click', async event => {
     finally {raceSending=false;controls.forEach(control=>control.disabled=false);if(state?.race){signature=undefined;render(state);}} 
     return;
   }
+  if (action === 'fork-card') return sendParty({ action: 'card', step: Number(button.dataset.forkStep), option: Number(button.dataset.option) }, button);
+  if (action === 'fork-judge') return sendParty({ action: 'judge', track: Number(button.dataset.track) }, button);
   if (action === 'social-card') return sendParty({ action: 'card', option: Number(button.dataset.option) }, button);
   if (action === 'bluff-vote') return sendParty({ action: 'vote', id: button.dataset.id }, button);
   if (action === 'potato-skip' || action === 'potato-answer') {

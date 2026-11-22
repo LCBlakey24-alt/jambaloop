@@ -1,15 +1,15 @@
 import { teams, modes } from './game-config.js';
 
 // Modes whose existing rules produce meaningful points, survival or a finish.
-// Bluff, Hot Potato and Fork in the Tracks are outcome/vote games; a team
-// win-condition needs a separate rules pass rather than simply adding colours.
+// Fork in the Tracks has a dedicated two-team host-judge rules engine.
+// Bluff and Hot Potato remain individual-only until redesigned.
 export const teamPlayModes = Object.freeze([
-  'classic','wheel','board','dice','knockout','punchline','cards','quizrace','showdown',
+  'classic','wheel','board','dice','knockout','punchline','cards','quizrace','showdown','tracks',
 ]);
-export const defaultPlayStyle = mode => ['board','showdown'].includes(mode) ? 'teams' : 'individual';
+export const defaultPlayStyle = mode => ['board','showdown','tracks'].includes(mode) ? 'teams' : 'individual';
 export function validPlayStyle(mode,style) {
   return modes.some(([id])=>id===mode) &&
-    (style==='individual' || (style==='teams' && teamPlayModes.includes(mode)));
+    (mode === 'tracks' ? style === 'teams' : style==='individual' || (style==='teams' && teamPlayModes.includes(mode)));
 }
 export function requiredPlayers(mode,style,teamCount,minimum) {
   return style==='teams' ? Math.max(minimum,teamCount) : minimum;

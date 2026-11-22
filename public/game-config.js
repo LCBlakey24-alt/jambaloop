@@ -26,7 +26,7 @@ export const modes = [
   ['knockout', 'Knockout', 'Start with three lives and try to stay in.', 'heart', '#f0a8a9'],
   ['punchline', 'Punchline Party', 'Write a funny reply, then vote for your favourite.', 'message-circle', '#f6c9ac'],
   ['cards', 'Fill the Blank', 'Play a silly phrase from your private hand.', 'layers', '#c9dcf5'],
-  ['tracks', 'Fork in the Tracks', 'Pick a side in ridiculous family dilemmas.', 'git-fork', '#c4e7ce'],
+  ['tracks', 'Fork in the Tracks', 'Two teams build hilarious trolley tracks while a host judge decides.', 'git-fork', '#c4e7ce'],
   ['bluff', 'Spot the Bluff', 'One player never sees the prompt. Vote for the bluff.', 'venetian-mask', '#f2d4ae'],
   ['potato', 'Hot Potato', 'Answer correctly to pass it before two minutes run out.', 'timer', '#f5c1af'],
   ['quizrace', 'Quiz Race', 'Answer fast to accelerate along a winding track.', 'flag-triangle-right', '#1dd9be'],
@@ -68,6 +68,7 @@ export const wheelCategories = includeChristmas => categories.filter(([id]) =>
 export const categoryName = id => categories.find(category => category[0] === id)?.[1] ?? '';
 
 export function questionCounts(mode, format, category) {
+  if (mode === 'tracks') return [3, 5, 7];
   if (mode === 'board') return [12, 18, 24, 36, 48, 60];
   const singleTopic = mode !== 'wheel' && category !== 'mixed';
   const shortTopic = ['art', 'games', 'animals', 'space'].includes(category);

@@ -8,7 +8,7 @@ export const narration = {
   knockout: "Here comes Knockout! Three lives each, and every wrong answer puts you under pressure. Hold your nerve, stay in the game, and be the last one standing!",
   punchline: "Welcome to Punchline Party! The sillier the prompt, the better. Write your funniest answer, read the room, and see whose punchline wins the biggest vote!",
   cards: "It's Fill the Blank! You've got a hand of ridiculous answers and one very unfinished sentence. Pick the perfect punchline and see if your friends agree!",
-  tracks: "All aboard Fork in the Tracks! Two choices, one impossible decision. Pick your side, defend your thinking, and find out where everyone else stands!",
+  tracks: "All aboard Fork in the Tracks! Two teams defend their tracks, sabotage the opposition, and make one final plea. Then the judge picks which track gets hit. Let the trolley chaos begin!",
   bluff: "Think you can Spot the Bluff? Someone's pretending to know the prompt, and they are counting on you believing them. Ask questions, read the room, and catch the faker!",
   potato: "Things are heating up in Hot Potato! Answer quickly to pass the pressure to someone else. Don't get caught holding it when time runs out. Good luck!",
   quizrace: "Welcome to Quiz Race! Think fast, answer correctly, and put your foot down! Every second counts as you race your friends to the finish line. Ready? Let's race!",

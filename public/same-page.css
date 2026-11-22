@@ -96,3 +96,10 @@
 }
 @keyframes samepage-card {from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
 @keyframes samepage-pulse {50%{transform:scale(.86);opacity:.85}}
+
+.lobby-samepage-art {display:flex;flex-direction:column;justify-content:center;align-items:center;
+  flex-shrink:0;min-width:110px;min-height:85px;padding:10px;border-radius:12px;
+  font:950 25px/1 'Club Classic','House Sans',sans-serif;
+  letter-spacing:-.04em;color:#f7ffff;text-shadow:0 2px 8px #030f2380;
+  background:linear-gradient(135deg,#156c76,#312c69);border:1px solid #83efd6aa;}
+.lobby-samepage-art b {color:#83efd6;}

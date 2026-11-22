@@ -1,0 +1,18 @@
+# Free, single-instance family test deployment for the existing Node.js multiplayer server.
+# This file configures a Render Blueprint, but does not itself create a service.
+# It deliberately disables automatic redeploys until changes have been reviewed.
+services:
+  - type: web
+    name: jambaloop-family-test
+    runtime: node
+    plan: free
+    region: frankfurt
+    repo: https://github.com/LCBlakey24-alt/jambaloop
+    branch: feature/04-quiz-race-mvp
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /
+    autoDeployTrigger: "off"
+    envVars:
+      - key: NODE_VERSION
+        value: "22"

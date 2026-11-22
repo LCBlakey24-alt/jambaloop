@@ -8,6 +8,9 @@ import { partyModes, startParty, advanceParty, advancePartyWhenReady, expirePart
 import express from 'express';
 import QRCode from 'qrcode';
 import { randomBytes, randomInt } from 'node:crypto';
+import { performance } from 'node:perf_hooks';
+import { difficultyQuestions } from './difficulty-questions.js';
+import { advanceQuizRace, createQuizRace, publicRaceState, raceDifficulties, raceLengths, racePlacings, raceTracks, setRacePaused, submitRaceAnswer } from './quiz-race.js';
 import { networkInterfaces } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { validateQuiz, prepareCustomQuiz } from './public/custom-quiz.js';
@@ -30,8 +33,9 @@ app.use('/api', (_req, res, next) => {
 });
 
 function readSettings(body = {}) {
-  const { mode = 'classic', theme = defaultTheme, format = 'choice', category, count, seconds, autoReveal = false, includeChristmas = false, teamCount = 4, boardLength = 16, privateQuestions = false, phoneView = 'full', difficulty = 'standard', scoring, boardSpeed = 50, scoreInterval = 1, customQuiz = null } = body ?? {};
+  const { mode = 'classic', theme = defaultTheme, format = 'choice', category, count, seconds, autoReveal = false, includeChristmas = false, teamCount = 4, boardLength = 16, privateQuestions = false, phoneView = 'full', difficulty = 'standard', scoring, boardSpeed = 50, scoreInterval = 1, customQuiz = null, raceLength = 'medium', raceTrack = 'neon', raceDifficulty = 'mixed' } = body ?? {};
   if (typeof privateQuestions !== 'boolean') return;
+  if (mode === 'quizrace' && (!raceLengths[raceLength] || !raceTracks.includes(raceTrack) || !raceDifficulties.includes(raceDifficulty) || format !== 'choice' || customQuiz !== null)) return;
   const privateTeam = mode === 'showdown' && privateQuestions;
   if (privateTeam && customQuiz !== null) return;
   if (!boardLengths.includes(boardLength) || !['full', 'answers'].includes(phoneView) || ![2, 3, 4].includes(teamCount)) return;
@@ -52,7 +56,7 @@ function readSettings(body = {}) {
   const scores = canSetScore(mode) ? (scoring
     ? { base: scoring.base, bonus: seconds ? scoring.bonus : 0, doubles: scoring.doubles }
     : defaultScoring(seconds)) : undefined;
-  return { mode, theme, difficulty, scoring: scores, boardSpeed: seconds ? boardSpeed : 0, legacyScoring: scoring === undefined, format: privateTeam ? 'choice' : format, category: fixedQuestionModes.includes(mode) && !privateTeam ? category : 'mixed', count: socialModes.includes(mode) ? 3 : partyModes.includes(mode) ? 1 : quiz?.questions.length ?? count,
+  return { mode, theme, difficulty, raceLength, raceTrack, raceDifficulty, scoring: scores, boardSpeed: seconds ? boardSpeed : 0, legacyScoring: scoring === undefined, format: privateTeam ? 'choice' : format, category: fixedQuestionModes.includes(mode) && !privateTeam ? category : 'mixed', count: socialModes.includes(mode) ? 3 : partyModes.includes(mode) ? 1 : quiz?.questions.length ?? count,
     seconds, autoReveal, includeChristmas, phoneView: privateTeam ? 'full' : phoneView, privateQuestions: privateTeam,
     teamCount, boardLength, scoreInterval: supportsScoreCheckpoints(mode) ? scoreInterval : 1, customQuiz: quiz };
 }
@@ -68,7 +72,7 @@ function resetGame(room, settings) {
   Object.assign(room, settings, {
     settings, lobbyVersion: (room.lobbyVersion ?? 0) + 1, clockVersion: 0, pausedAt: 0,
     scoreBreak: undefined, lastScoreBreak: new Map(),
-    phase: 'lobby', index: 0, opened: 0, ends: 0, ceremony: undefined, awards: [], motion: null, predictions: new Map(), wheelRemaining: [], teams: [], roundReview: [], party: undefined, privateReview: new Map(), privateRound: undefined, remaining: room.players.size,
+    phase: 'lobby', index: 0, opened: 0, ends: 0, ceremony: undefined, awards: [], motion: null, predictions: new Map(), wheelRemaining: [], teams: [], roundReview: [], party: undefined, privateReview: new Map(), privateRound: undefined, remaining: room.players.size, race: undefined,
     route: settings.mode === 'board' ? boardRoute(settings.boardLength, settings.includeChristmas) : undefined,
     quizTypes: settings.privateQuestions ? ['choice', 'boolean'] : settings.customQuiz ? [...new Set(settings.customQuiz.questions.map(item => item.type))] : undefined,
     questions: settings.customQuiz ? prepareCustomQuiz(settings.customQuiz) : fixedQuestionModes.includes(settings.mode) ? makeQuestions(settings.category, settings.count, room.seen, settings.format, settings.includeChristmas, settings.difficulty) : [],
@@ -162,7 +166,7 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
     } : undefined,
     ceremony: isHost && phase === 'finished' ? room.ceremony : undefined,
     awards: !waiting && phase === 'finished' ? room.awards : undefined,
-    mode: room.mode, privateQuestions: room.privateQuestions, party: waiting ? undefined : publicParty(room, key), phoneView: room.phoneView, isCaptain: key === room.captain, captainId: captain?.id, captainName: captain?.name,
+    mode: room.mode, privateQuestions: room.privateQuestions, party: waiting ? undefined : publicParty(room, key), race: room.mode === 'quizrace' && room.race ? publicRaceState(room.race, key, isHost) : undefined, raceLength: room.raceLength, raceTrack: room.raceTrack, raceDifficulty: room.raceDifficulty, phoneView: room.phoneView, isCaptain: key === room.captain, captainId: captain?.id, captainName: captain?.name,
     quizTitle: room.customQuiz?.title, quizTypes: room.quizTypes,
     includeChristmas: room.includeChristmas, autoReveal: room.autoReveal, theme: room.theme, format: room.format, motion: room.motion, activeTeam,
     teams: hiddenScores ? room.teams.map(team => ({ ...team, score: room.lastScoreBreak.get(team.id)?.row.score ?? 0, roundPoints: undefined })) : room.teams,
@@ -188,7 +192,7 @@ const comparePlayers = (a, b) => (b.lives ?? 0) - (a.lives ?? 0) || b.score - a.
 const compareTeams = mode => (a, b) => (mode === 'board' ? b.position - a.position : 0) || b.score - a.score;
 
 function rankings(room) {
-  return [...room.players.values()].sort(comparePlayers);
+  return room.mode === 'quizrace' && room.race ? racePlacings(room.race).map(r => [...room.players.values()].find(p => p.id === r.id)) : [...room.players.values()].sort(comparePlayers);
 }
 
 function liveCounts(room) {
@@ -247,7 +251,7 @@ app.post('/api/rooms/:code/join', (req, res) => {
   const { room } = res.locals;
   const name = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
   if (!name || name.length > 24) return res.status(400).json({ error: 'Enter a nickname of up to 24 characters.' });
-  if (room.players.size + room.waiting.size >= maxPlayers) return res.status(409).json({ error: 'This room is full.' });
+  if (room.players.size + room.waiting.size >= (room.mode === 'quizrace' ? 8 : maxPlayers)) return res.status(409).json({ error: 'This room is full.' });
   if ([...room.players.values(), ...room.waiting.values()].some(player => player.name.toLowerCase() === name.toLowerCase())) {
     return res.status(409).json({ error: 'That nickname is taken.' });
   }
@@ -446,7 +450,37 @@ function readyTurn(room) {
   publish(room);
 }
 
+function raceQuestionPool(category, difficulty, includeChristmas) {
+  // The source bank has uneven Easy/Hard coverage. Supplement in-category curated items
+  // with standard questions; the UI labels this limitation rather than changing topics.
+  const standard = makeQuestions(category, 160, new Set(), 'choice', includeChristmas, 'standard');
+  const levels = difficulty === 'mixed' ? ['family', 'challenge'] : difficulty === 'easy' ? ['family'] : difficulty === 'hard' ? ['challenge'] : [];
+  const curated = levels.flatMap(level => difficultyQuestions[level]
+    .filter(([genre]) => category === 'mixed' ? (includeChristmas || genre !== 'christmas') : genre === category)
+    .map(([genre, prompt, correct, ...other]) => {
+      const options = [correct, ...other].sort(() => Math.random() - .5);
+      return {category: genre, prompt, options, correct: options.indexOf(correct), type: 'choice'};
+    }));
+  const seen = new Set();
+  const pool = [];
+  for (const item of [...curated, ...standard]) if (!seen.has(item.prompt)) {
+    seen.add(item.prompt);
+    pool.push(item);
+  }
+  return pool;
+}
+
+function startRace(room) {
+  const pool = raceQuestionPool(room.category, room.raceDifficulty, room.includeChristmas);
+  if (!pool.length) throw new Error('No questions available for Quiz Race.');
+  room.race = createQuizRace([...room.players], pool, { length: room.raceLength, track: room.raceTrack, difficulty: room.raceDifficulty }, performance.now());
+  room.phase = 'race-countdown';
+  room.opened = Date.now();
+  publish(room);
+}
+
 function startGame(room) {
+  if (room.mode === 'quizrace') return startRace(room);
   if (partyModes.includes(room.mode)) return startParty(room, publish);
   if (room.privateQuestions) for (const key of room.players.keys()) room.privateReview.set(key, []);
   if (room.mode === 'knockout') {
@@ -512,6 +546,15 @@ app.post('/api/rooms/:code/pause', (req, res) => {
   if (!controlsRoom(room, key)) return res.status(403).json({ error: 'Only the captain or TV host can pause the timer.' });
   const { phase, game, index, paused, clockVersion } = req.body ?? {};
   if (typeof paused !== 'boolean') return res.status(400).json({ error: 'Choose pause or resume.' });
+  if (room.mode === 'quizrace' && room.race && ['race-countdown', 'race'].includes(room.phase)) {
+    if (game !== room.game || phase !== room.phase || index !== room.index || clockVersion !== room.clockVersion) return res.status(409).json({error:'The race has changed.'});
+    if (Boolean(room.race.paused) === paused) return res.sendStatus(204);
+    setRacePaused(room.race, paused, performance.now());
+    room.pausedAt = paused ? Date.now() : 0;
+    room.clockVersion++;
+    publish(room);
+    return res.sendStatus(204);
+  }
   if (!room.ends || !['question', 'party-potato'].includes(room.phase)
     || phase !== room.phase || game !== room.game || index !== room.index || clockVersion !== room.clockVersion) {
     return res.status(409).json({ error: 'The timer has changed.' });
@@ -536,6 +579,7 @@ app.post('/api/rooms/:code/advance', (req, res) => {
   if (room.phase === 'lobby') {
     const minimum = minimumPlayers(room.mode);
     if (liveCounts(room).connected < minimum) return res.status(409).json({ error: `You need at least ${minimum} connected ${minimum === 1 ? 'player' : 'players'} to start.` });
+    if (room.mode === 'quizrace' && room.players.size > 8) return res.status(409).json({error:'Quiz Race supports up to eight racers. Please choose another mode or a smaller group.'});
     startGame(room);
   } else if (partyModes.includes(room.mode)) {
     advanceParty(room, publish);
@@ -553,6 +597,17 @@ app.post('/api/rooms/:code/advance', (req, res) => {
   } else if (room.phase === 'score-break') {
     nextTurn(room);
   }
+  res.sendStatus(204);
+});
+
+app.post('/api/rooms/:code/race-answer', (req, res) => {
+  const {room, key} = res.locals;
+  if (!room.players.has(key) || room.mode !== 'quizrace' || !room.race) return res.status(403).json({error:'Join an active Quiz Race to answer.'});
+  if (req.body?.game !== room.game || !['race', 'race-countdown'].includes(room.phase)) return res.status(409).json({error:'This race is no longer active.'});
+  advanceQuizRace(room.race, performance.now());
+  const result = submitRaceAnswer(room.race, key, {questionId:req.body?.questionId, option:req.body?.option, pass:req.body?.pass}, room.race.time);
+  if (result.status !== 204) return res.status(result.status).json({error: result.error});
+  publish(room);
   res.sendStatus(204);
 });
 
@@ -659,6 +714,7 @@ app.post('/api/rooms/:code/configure', (req, res) => {
   const body = req.body?.useRoomQuiz === true && room.customQuiz ? { ...req.body, customQuiz: room.customQuiz } : req.body;
   const settings = readSettings(body);
   if (!settings) return res.status(400).json({ error: 'Check the game settings or saved quiz.' });
+  if (settings.mode === 'quizrace' && room.players.size > 8) return res.status(409).json({error:'Quiz Race supports up to eight racers.'});
   resetGame(room, settings);
   publish(room);
   res.sendStatus(204);
@@ -689,6 +745,28 @@ app.post('/api/rooms/:code/rematch', (req, res) => {
   publish(room);
   res.sendStatus(204);
 });
+
+setInterval(() => {
+  for (const room of rooms.values()) {
+    if (!room.race || !['race-countdown', 'race'].includes(room.phase)) continue;
+    const phaseWas = room.phase;
+    const event = advanceQuizRace(room.race, performance.now());
+    if (room.race.finished) {
+      room.phase = 'finished';
+      room.ceremony = undefined;
+      room.awards = [];
+    } else if (room.race.time >= 3000) room.phase = 'race';
+    for (const [key, racer] of room.race.racers) {
+      const player = room.players.get(key);
+      if (player) player.score = Math.round(100 * racer.distance / room.race.length);
+    }
+    const now = Date.now();
+    if (event || room.phase !== phaseWas || now - (room.race.lastBroadcast || 0) >= 250) {
+      room.race.lastBroadcast = now;
+      publish(room);
+    }
+  }
+}, 100).unref();
 
 setInterval(() => {
   for (const [code, room] of rooms) {

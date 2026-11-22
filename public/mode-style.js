@@ -1,5 +1,6 @@
 // Display fonts and scene colours share the same palette on every device.
 const styles = {
+  quizrace: { font: 'Club Race', weight: 700, accent: '#1dd9be', backdrop: '#131a33', panel: '#222d4a', edge: '#4a5a83', motif: 'orbit', notes: [523, 622, 784], wave: 'triangle' },
   classic: { font: 'Club Classic', weight: 700, accent: '#aabaff', backdrop: '#141831', panel: '#232b4a', edge: '#414e76', motif: 'stars', notes: [523, 659, 784], wave: 'sine' },
   wheel: { font: 'Club Wheel', weight: 700, accent: '#dfbbff', backdrop: '#201333', panel: '#34204a', edge: '#584075', motif: 'orbit', notes: [440, 622, 831], wave: 'triangle' },
   board: { font: 'Club Race', weight: 700, accent: '#e8c591', backdrop: '#141f1a', panel: '#23352b', edge: '#49634d', motif: 'tiles', notes: [392, 523, 659], wave: 'triangle' },

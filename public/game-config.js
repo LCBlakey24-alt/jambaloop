@@ -29,6 +29,7 @@ export const modes = [
   ['tracks', 'Fork in the Tracks', 'Pick a side in ridiculous family dilemmas.', 'git-fork', '#c4e7ce'],
   ['bluff', 'Spot the Bluff', 'One player never sees the prompt. Vote for the bluff.', 'venetian-mask', '#f2d4ae'],
   ['potato', 'Hot Potato', 'Answer correctly to pass it before two minutes run out.', 'timer', '#f5c1af'],
+  ['quizrace', 'Quiz Race', 'Answer fast to accelerate along a winding track.', 'flag-triangle-right', '#1dd9be'],
   ['showdown', 'Team Showdown', 'Play together in two to four teams.', 'users-round', '#c1e3ec'],
 ];
 
@@ -87,7 +88,7 @@ export const socialModes = ['punchline', 'cards', 'tracks'];
 export const partyModes = ['bluff', 'potato', ...socialModes];
 export const scoreIntervals = [0, 1, 3, 5];
 export const defaultScoreInterval = 3;
-export const supportsScoreCheckpoints = mode => modes.some(([id]) => id === mode) && !partyModes.includes(mode);
-export const minimumPlayers = mode => ['bluff', 'punchline', 'cards'].includes(mode) ? 3
+export const supportsScoreCheckpoints = mode => mode !== 'quizrace' && modes.some(([id]) => id === mode) && !partyModes.includes(mode);
+export const minimumPlayers = mode => mode === 'quizrace' ? 2 : ['bluff', 'punchline', 'cards'].includes(mode) ? 3
   : ['potato', 'tracks', 'showdown'].includes(mode) ? 2 : 1;
 export const boardRollDuration = 5400;

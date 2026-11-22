@@ -9,7 +9,7 @@ export const doubleSchedules = [
   ['third', 'Every third question'],
 ];
 
-export const canSetScore = mode => mode !== 'board' && !partyModes.includes(mode);
+export const canSetScore = mode => mode !== 'board' && mode !== 'quizrace' && !partyModes.includes(mode);
 export const defaultScoring = seconds => ({ base: seconds ? 500 : 1000, bonus: seconds ? 500 : 0, doubles: 'off' });
 
 export function roundMultiplier(scoring, index, count) {

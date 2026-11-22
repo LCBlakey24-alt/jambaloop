@@ -1,4 +1,6 @@
 import { scoreBreakView, updateScoreBreak } from './score-break.js';
+import { quizRaceView } from './quiz-race-view.js';
+import { mountQuizRaceTrack } from './quiz-race-track.js';
 import { mobileDeck } from './mobile-deck.js';
 import { awardView, currentFrame, frameView, revealFrames, scoreReveal } from './ceremony.js';
 import { boardSpeedValues, bonusValues, canSetScore, defaultScoring, doubleSchedules, pointValues } from './scoring.js';
@@ -34,6 +36,10 @@ let streamReady = false;
 let nextConnect = 0;
 let offset = 0;
 let submittingAnswer;
+let raceSending = false;
+let raceTrackView;
+let raceAnimationFrame = 0;
+let raceSnapshotLocal = 0;
 let sound;
 let soundEnabled = false;
 let draftKey;
@@ -92,9 +98,43 @@ function renderGraphics(s, previous, animateRoll) {
   });
 }
 
+
+function updateQuizRaceVisuals() {
+  raceAnimationFrame = 0;
+  if(!session || !state?.race || !['race-countdown','race','finished'].includes(state.phase)) return;
+  const snapshot=state.race;
+  const elapsed=snapshot.paused ? 0 : Math.min(320,Math.max(0, Date.now()-raceSnapshotLocal));
+  const sim=snapshot.time+(snapshot.paused?0:Math.max(0,Date.now()-raceSnapshotLocal));
+  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  raceTrackView?.update(snapshot.racers,snapshot.length,reduced?0:elapsed,reduced);
+  const set=(selector,text)=>{const item=app.querySelector(selector);if(item&&item.textContent!==String(text))item.textContent=String(text);};
+  set('[data-race-clock]',`${Math.floor(Math.max(0,sim-3000)/60000)}:${String(Math.floor(Math.max(0,sim-3000)/1000)%60).padStart(2,'0')}`);
+  set('[data-race-countdown]',Math.max(1,Math.ceil((3000-sim)/1000)));
+  const own=snapshot.own;
+  if(own){
+    const current=snapshot.racers.find(p=>p.id===state.player?.id);
+    const ratio=Math.round(100*(own.distance+(reduced?0:(current?.speed??1)*elapsed/1000))/Math.max(1,snapshot.length));
+    const progress=app.querySelector('[data-race-progress]');if(progress)progress.style.width=Math.min(100,ratio)+'%';
+    set('[data-race-progress-text]',Math.min(100,ratio)+'%');
+    set('[data-race-speed-value]',(current?.speed??1).toFixed(2)+'×');
+    set('[data-race-position]',own.position+' / '+state.playerCount);
+    set('[data-race-speed]',(current?.speed??1)>1.04?'BOOSTING':(current?.speed??1)<.96?'SLOWED':'CRUISING');
+    if(own.question)set('[data-race-deadline]',Math.max(0,Math.ceil((own.question.deadline-sim)/1000))+'s');
+  }
+  snapshot.racers.forEach(r=>{const row=[...app.querySelectorAll('[data-race-rank]')].find(node=>node.dataset.raceRank===r.id);if(!row)return;
+    const rank=row.querySelector('.race-position');if(rank)rank.textContent=r.position;
+    const percent=Math.min(100,Math.round(100*r.distance/snapshot.length));
+    const text=row.querySelector('.race-rank-percent');if(text)text.textContent=percent+'%';
+    const meter=row.querySelector('.race-mini-track i');if(meter)meter.style.width=percent+'%';
+  });
+  raceAnimationFrame=requestAnimationFrame(updateQuizRaceVisuals);
+}
+
 function renderHome() {
   boardDisplay?.dispose();
   boardDisplay = undefined;
+  raceTrackView?.dispose(); raceTrackView = undefined;
+  cancelAnimationFrame(raceAnimationFrame); raceAnimationFrame = 0;
   setTheme(previewTheme);
   app.innerHTML = home;
   renderedPhase = undefined;
@@ -117,7 +157,7 @@ function renderModeCards(group) {
     .map(([id, name, description, icon], index) => {
       const minimum = minimumPlayers(id);
       return `<button class="mode-card mode-with-art" data-action="host" data-mode="${id}" style="--entry:${Math.min(index, 7)};${modeVariables(id)}">
-        <img class="mode-cover" src="/mode-${id}.webp" alt="" loading="lazy" decoding="async">
+        <img class="mode-cover" src="/mode-${id}.${id==='quizrace'?'svg':'webp'}" alt="" loading="lazy" decoding="async">
         <span class="mode-icon" style="--icon:url('/icons/${icon}.svg')"><i></i></span>
         <span class="mode-description"><strong>${name}</strong><small>${description}</small><small class="mode-minimum">${minimum}+${minimum === 1 ? ' player' : ' players'}</small></span>
         ${icons('arrow-up-right', 'arrow')}</button>`;
@@ -126,7 +166,7 @@ function renderModeCards(group) {
 
 function setupPreview(mode, play = false) {
   return `<div class="setup-look" style="${modeVariables(mode)}">
-    <img class="setup-mode-still" src="/mode-${mode}.webp" alt="" decoding="async">
+    <img class="setup-mode-still" src="/mode-${mode}.${mode==='quizrace'?'svg':'webp'}" alt="" decoding="async">
     ${explainer(mode, play)}</div>`;
 }
 
@@ -150,6 +190,7 @@ function openDialog(mode, value, gameMode, quizId) {
     const configured = mode !== 'host';
     const rematch = mode === 'rematch';
     const selectedMode = quizId ? 'classic' : configured ? state.mode : gameMode ?? 'classic';
+    const raceSetup = configured && state.mode === 'quizrace' ? state : {}; 
     const seconds = configured ? state.seconds : 20;
     const scoring = configured && state.scoring ? state.scoring : defaultScoring(seconds);
     const interval = configured ? state.scoreInterval ?? defaultScoreInterval : defaultScoreInterval;
@@ -177,6 +218,11 @@ function openDialog(mode, value, gameMode, quizId) {
     <label>Question format<select name="format">${selected(formats, configured ? state.format : 'mixed')}</select></label>
     <label><span id="count-label">Questions</span><select name="count" aria-labelledby="count-label"></select></label>
     <label>Time per question<select name="seconds">${selected([15, 20, 30, 45, 0].map(value => [value, value ? value + ' seconds' : 'No timer']), seconds)}</select></label></div>
+    <fieldset id="race-setup" class="race-setup"><legend>Quiz Race</legend><div class="form-row">
+      <label>Race length<select name="raceLength">${selected([['short','Short · ~1 min'],['medium','Medium · ~2 min'],['long','Long · ~3 min']],raceSetup.raceLength ?? 'medium')}</select></label>
+      <label>Track theme<select name="raceTrack">${selected([['neon','Neon Circuit'],['desert','Desert Run'],['snow','Snow Circuit'],['jungle','Jungle Trail'],['space','Space Route']],raceSetup.raceTrack ?? 'neon')}</select></label>
+      <label>Difficulty<select name="raceDifficulty">${selected([['easy','Easy'],['medium','Medium'],['hard','Hard'],['mixed','Mixed']],raceSetup.raceDifficulty ?? 'mixed')}</select></label></div>
+      <small>2–8 racers. Multiple-choice questions appear privately on phones. Fast correct answers boost speed. Easy/Hard use curated questions where available, supplemented by standard questions.</small></fieldset>
     <label id="score-interval-field">Leaderboard reveal<select name="scoreInterval" aria-label="Leaderboard reveal" aria-describedby="score-interval-help">${selected(scoreIntervals.map(value => [value, intervalLabels[value]]), interval)}</select>
       <small id="score-interval-help">Correct answers are still revealed after each question.</small></label>
     <div class="setup-presets" aria-label="Timing presets"><button type="button" class="button outline small" data-preset="quick">Quick game</button>
@@ -218,6 +264,10 @@ function openDialog(mode, value, gameMode, quizId) {
       const privateQuiz = game === 'showdown' && form.elements.privateQuestions.checked;
       form.elements.privateQuestions.disabled = game !== 'showdown';
       const board = game === 'board';
+      const race = game === 'quizrace';
+      form.querySelector('#race-setup').hidden = !race;
+      form.querySelector('#race-setup').disabled = !race;
+      if(race){form.elements.format.value='choice';form.elements.seconds.value='0';form.elements.difficulty.value='standard';}
       const timed = form.elements.seconds.value !== '0';
       const scoreFields = form.querySelector('#quiz-scoring');
       scoreFields.hidden = !canSetScore(game);
@@ -240,16 +290,16 @@ function openDialog(mode, value, gameMode, quizId) {
       form.querySelector('#quiz-source').hidden = !supportsCustom;
       form.elements.quiz.disabled = !supportsCustom;
       const custom = supportsCustom && Boolean(form.elements.quiz.value);
-      form.elements.difficulty.disabled = !supportsCustom || custom;
+      form.elements.difficulty.disabled = !supportsCustom || custom || race;
       form.querySelector('#difficulty-field').hidden = form.elements.difficulty.disabled;
       const curated = !form.elements.difficulty.disabled && form.elements.difficulty.value !== 'standard';
-      categoryField.hidden = !supportsCustom || custom || curated;
-      form.elements.format.closest('label').hidden = custom || party || privateQuiz || curated;
-      form.elements.count.closest('label').hidden = custom || party;
-      form.elements.seconds.closest('label').hidden = party;
-      form.elements.autoReveal.closest('label').hidden = party;
-      form.elements.phoneView.closest('label').hidden = party || privateQuiz;
-      form.querySelector('.setup-presets').hidden = party;
+      categoryField.hidden = (!supportsCustom && !race) || custom || curated;
+      form.elements.format.closest('label').hidden = custom || party || privateQuiz || curated || race;
+      form.elements.count.closest('label').hidden = custom || party || race;
+      form.elements.seconds.closest('label').hidden = party || race;
+      form.elements.autoReveal.closest('label').hidden = party || race;
+      form.elements.phoneView.closest('label').hidden = party || privateQuiz || race;
+      form.querySelector('.setup-presets').hidden = party || race;
       const scoreInterval = form.elements.scoreInterval;
       scoreInterval.disabled = !supportsScoreCheckpoints(game);
       scoreInterval.closest('label').hidden = scoreInterval.disabled;
@@ -279,7 +329,7 @@ function openDialog(mode, value, gameMode, quizId) {
         : form.elements.seconds.value === '0' ? 'No speed bonus.'
         : format === 'mixed' ? 'Timed correct answers can earn a speed bonus. Closest guesses receive equal base points.'
         : 'Faster correct answers earn more.';
-      form.querySelector('#scoring-note').textContent = party ? (game === 'bluff' ? 'Three or more players. Write a reply, then vote for the bluff.' : game === 'potato' ? 'Two or more players. The potato has one shared two-minute timer.' : 'Three rounds. Players use their phones to enter or vote.')
+      form.querySelector('#scoring-note').textContent = race ? 'You steer your speed with answers. Correct boosts you, Pass and wrong answers slow you down. First to finish wins.' : party ? (game === 'bluff' ? 'Three or more players. Write a reply, then vote for the bluff.' : game === 'potato' ? 'Two or more players. The potato has one shared two-minute timer.' : 'Three rounds. Players use their phones to enter or vote.')
         : privateQuiz ? 'Each player gets a unique multiple-choice or True or False question in each round.'
         : custom ? 'Uses every question in the saved quiz in its authored order.'
         : curated ? 'A curated mixed-topic pack with multiple-choice questions.' : board
@@ -381,6 +431,8 @@ function startSession(next) {
   dialog.close();
   boardDisplay?.dispose();
   boardDisplay = undefined;
+  raceTrackView?.dispose(); raceTrackView = undefined;
+  cancelAnimationFrame(raceAnimationFrame); raceAnimationFrame = 0;
   app.innerHTML = `<section class="game connection-screen"><div class="game-panel">
     <div class="eyebrow">ROOM ${escape(next.code)}</div><h1>Joining the lobby<span class="brand-dot">.</span></h1>
     <p role="status"><span class="connection-indicator" aria-hidden="true"></span>Connecting to the room…</p>
@@ -395,6 +447,8 @@ function leave() {
   session = undefined;
   tvFocus = false;
   submittingAnswer = undefined;
+  raceSending = false; raceTrackView?.dispose(); raceTrackView = undefined;
+  cancelAnimationFrame(raceAnimationFrame);raceAnimationFrame=0;
   document.body.classList.remove('playing');
   sessionStorage.removeItem('quizmas-session');
   history.replaceState(null, '', '/');
@@ -451,12 +505,12 @@ document.addEventListener('submit', async event => {
   event.preventDefault();
   const button = form.querySelector('button:not([type="button"])');
   button.disabled = true;
-  const { mode, theme, format, category, count, seconds, code, name, autoReveal, includeChristmas, phoneView, quiz, teamCount, boardLength, privateQuestions, difficulty, basePoints, speedPoints, doublePoints, boardSpeed, scoreInterval } = Object.fromEntries(new FormData(form));
+  const { mode, theme, format, category, count, seconds, code, name, autoReveal, includeChristmas, phoneView, quiz, teamCount, boardLength, privateQuestions, difficulty, basePoints, speedPoints, doublePoints, boardSpeed, scoreInterval, raceLength, raceTrack, raceDifficulty } = Object.fromEntries(new FormData(form));
   try {
     const customQuiz = quiz && quiz !== 'current' ? savedQuizzes().find(entry => entry.id === quiz) : undefined;
     const curated = difficulty && difficulty !== 'standard';
     const scoring = basePoints ? { base: Number(basePoints), bonus: Number(speedPoints), doubles: doublePoints } : undefined;
-    const settings = { mode, theme, difficulty, scoring, scoreInterval: scoreInterval === undefined ? undefined : Number(scoreInterval), boardSpeed: boardSpeed === undefined ? undefined : Number(boardSpeed), format: curated ? 'choice' : format, category: curated ? 'mixed' : category, phoneView, teamCount: Number(teamCount), boardLength: Number(boardLength), customQuiz, useRoomQuiz: quiz === 'current', count: Number(count), privateQuestions: privateQuestions === 'on', seconds: Number(seconds), autoReveal: autoReveal === 'on', includeChristmas: includeChristmas === 'on' };
+    const settings = { mode, theme, difficulty, raceLength, raceTrack, raceDifficulty, scoring, scoreInterval: scoreInterval === undefined ? undefined : Number(scoreInterval), boardSpeed: boardSpeed === undefined ? undefined : Number(boardSpeed), format: curated ? 'choice' : format, category: curated ? 'mixed' : category, phoneView, teamCount: Number(teamCount), boardLength: Number(boardLength), customQuiz, useRoomQuiz: quiz === 'current', count: Number(count), privateQuestions: privateQuestions === 'on', seconds: Number(seconds), autoReveal: autoReveal === 'on', includeChristmas: includeChristmas === 'on' };
     if (form.id === 'rematch-form' || form.id === 'configure-form') {
       const action = form.id === 'rematch-form' ? 'rematch' : 'configure';
       await api('/' + session.code + '/' + action, { ...settings, game: state.game });
@@ -555,6 +609,8 @@ function phaseCaption(s) {
     'party-vote': 'Voting open',
     'party-reveal': 'Votes revealed',
     'party-potato': 'Potato in play',
+    'race-countdown': 'Race about to start',
+    race: 'Quiz Race in progress',
     finished: 'Final results',
   }[s.phase];
 }
@@ -565,7 +621,7 @@ function render(s) {
   const won = s.answerCorrect ?? Boolean(s.earned);
   const canControl = host || s.isCaptain;
   const controllerOnly = !host && s.phoneView === 'answers';
-  const canPause = canControl && s.ends && ['question', 'party-potato'].includes(s.phase);
+  const canPause = canControl && ((s.ends && ['question', 'party-potato'].includes(s.phase)) || (s.mode === 'quizrace' && ['race','race-countdown'].includes(s.phase)));
   const pauseButton = canPause ? `<button class="button outline small" data-action="clock">
     ${icons('pause')} Pause timer</button>` : '';
   setTheme(s.theme);
@@ -583,6 +639,8 @@ function render(s) {
       <h1>You’re on the list, ${escape(s.player.name)}<span class="brand-dot">.</span></h1>
       <p>The current game is underway. Keep this open and you’ll join the next lobby automatically.</p>
     </section>`;
+  } else if (s.mode === 'quizrace' && s.race && ['race-countdown', 'race', 'finished'].includes(s.phase)) {
+    body = quizRaceView({...s, categoryName: categoryName(s.category)}, {host,canControl,icons,replayButtons,sending:raceSending});
   } else if (s.pausedAt) {
     body = `<section class="game-panel round-break">
       <span class="pause-mark">${icons('pause')}</span><div class="eyebrow">ROUND ON HOLD</div><h1>Timer paused<span class="brand-dot">.</span></h1>
@@ -744,6 +802,11 @@ function render(s) {
     ${body}<p class="error" id="game-error" role="alert"></p></section>`;
   if (backdrop) app.querySelector('.scene-backdrop').replaceWith(backdrop);
   renderGraphics(s, stage, animateRoll);
+  if(s.mode==='quizrace' && s.race){
+    raceTrackView?.dispose(); raceTrackView=mountQuizRaceTrack(app);
+    raceSnapshotLocal=Date.now();
+    if(!raceAnimationFrame) raceAnimationFrame=requestAnimationFrame(updateQuizRaceVisuals);
+  }
   updateCeremony();
   updateScoreBreak(app, Date.now() + offset);
   if (enter) announcement.textContent = caption + (showProgress ? ' · ' + (s.index + 1) + ' of ' + s.total : '');
@@ -850,13 +913,16 @@ function receive(next, current) {
   if (dialog.open && state && (state.game !== next.game || state.phase === 'lobby' && next.phase !== 'lobby')) dialog.close();
   if (state?.game !== next.game || state?.index !== next.index || next.phase === 'lobby') partyReply = '';
   state = next;
+  if(next.race) raceSnapshotLocal=Date.now();
   if (!current.host && next.player && (current.name !== next.player.name || current.mode !== next.mode)) {
     Object.assign(current, { name: next.player.name, mode: next.mode });
     rememberPlayer(current);
   }
-  const { now, revision, answered, connected, waitingCount, responseTarget, ...stable } = next;
+  const { now, revision, answered, connected, waitingCount, responseTarget, race, ...stable } = next;
+  const raceSignature = race && { question:race.own?.question?.id, feedback:race.own?.feedback?.outcome, paused:race.paused, finished:race.finished };
   const lobbyStatus = next.phase === 'lobby' ? { connected } : undefined;
-  const nextSignature = JSON.stringify({ ...stable, lobbyStatus,
+  const raceStable = next.mode==='quizrace' ? { ...stable, players: next.phase==='finished' ? stable.players : undefined, player: stable.player ? {...stable.player, score: undefined} : undefined } : stable;
+  const nextSignature = JSON.stringify({ ...raceStable, raceSignature, lobbyStatus,
     prediction: next.phase === 'ready' && current.host ? undefined : next.prediction });
   if (signature !== nextSignature) {
     signature = nextSignature;
@@ -1121,6 +1187,19 @@ document.addEventListener('click', async event => {
     document.querySelectorAll('.mode-filters button').forEach(filter =>
       filter.setAttribute('aria-pressed', String(filter === button)));
     renderModeCards(button.dataset.group);
+    return;
+  }
+  if (action === 'race-answer' || action === 'race-pass') {
+    if (raceSending || !state.race?.own?.question) return;
+    raceSending = true;
+    const qid = state.race.own.question.id;
+    const controls = document.querySelectorAll('[data-action="race-answer"], [data-action="race-pass"]');
+    controls.forEach(control => control.disabled=true);
+    try {
+      await api('/' + session.code + '/race-answer', {game:state.game,questionId:qid,...(action==='race-pass'?{pass:true}:{option:Number(button.dataset.raceOption)})});
+      await refresh();
+    } catch(error){const err=document.querySelector('#game-error');if(err)err.textContent=error.message;}
+    finally {raceSending=false;controls.forEach(control=>control.disabled=false);if(state?.race){signature=undefined;render(state);}} 
     return;
   }
   if (action === 'social-card') return sendParty({ action: 'card', option: Number(button.dataset.option) }, button);

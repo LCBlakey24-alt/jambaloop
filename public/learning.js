@@ -13,10 +13,12 @@ const summaries = {
   potato: 'One phone at a time has the potato. Get a question right to pass it. Whoever holds it when the shared two-minute timer ends loses.',
   showdown: 'Join a balanced team and answer on your own phone. Each team scores the average of its players’ points. The highest team score wins.',
   knockout: 'Start with three lives. Wrong or missed answers cost a life. For number questions, the closest guesses keep their lives.',
+  quizrace: 'Everyone races on a curving track. Correct answers boost your speed; quick answers boost more. Wrong answers and Pass slow you down. First to finish wins.',
 };
 
 export function explainer(mode, play) {
   const title = modes.find(([id]) => id === mode)[1];
+  if(mode==='quizrace')return `<details class="mode-explainer" ${play?'open':''}><summary>How to play ${title}</summary><p>${summaries[mode]}</p></details>`;
   return `<details class="mode-explainer" ${play ? 'open' : ''}><summary>Watch how to play ${title}</summary>
     <video aria-label="How to play ${title}" controls playsinline muted preload="none" poster="/videos/${mode}.jpg"
       ${play && !matchMedia('(prefers-reduced-motion: reduce)').matches ? 'autoplay' : ''}>

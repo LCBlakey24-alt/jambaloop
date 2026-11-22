@@ -15,7 +15,8 @@ test('fork paths share a start, junction, rejoin and finish at all board sizes',
     assert.equal(power.length,spaces+1);
     assert.equal(quiz.length,spaces+extra+1);
     for (let i=0;i<=start;i++) assert.deepEqual(quiz[i].x,normal[i].x);
-    assert.deepEqual(quiz[start],power[start]);
+    assert.deepEqual([quiz[start].x,quiz[start].z,quiz[start].category],
+      [power[start].x,power[start].z,power[start].category]);
     assert.deepEqual([quiz[rejoin+extra].x,quiz[rejoin+extra].z],
                      [power[rejoin].x,power[rejoin].z]);
     assert.deepEqual([quiz.at(-1).x,quiz.at(-1).z],

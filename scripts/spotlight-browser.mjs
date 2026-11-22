@@ -88,6 +88,9 @@ try{
     await contestant.page.locator('button[data-action="spotlight-answer"]').first().waitFor({timeout:15000});
     assert.ok((await contestant.page.locator('.spotlight-expert-tip').innerText()).includes('Expert advice'));
     assert.equal((await snap(hostKey)).party.advice,undefined,'Expert hint must stay private from TV');
+    // Portrait phones must always be able to scroll an answer button into view, even for long prompts.
+    await contestant.page.locator('button[data-action="spotlight-answer"]').first().scrollIntoViewIfNeeded({timeout:15000});
+    assert.equal(await contestant.page.locator('button[data-action="spotlight-answer"]').first().isVisible(),true);
     await contestant.page.locator('button[data-action="spotlight-answer"]').first().click();
     await host.locator('.spotlight-game[data-spotlight-phase="spotlight-reveal"]').waitFor({timeout:15000});
     const reveal=await snap(hostKey);

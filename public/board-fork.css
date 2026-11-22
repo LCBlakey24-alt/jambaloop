@@ -1,0 +1,44 @@
+/* Board Race — two distinct paths, responsive team choice and TV track legend. */
+.board-path-picker {
+  display:grid; gap:7px; margin:clamp(5px,1vh,10px) 0;
+  border:1px solid color-mix(in srgb,var(--pink) 32%,var(--edge));
+  background:color-mix(in srgb,var(--pink) 7%,var(--panel));
+  border-radius:12px; padding:clamp(8px,1.2vh,13px);
+}
+.board-path-picker h2 { margin:0; font:800 clamp(14px,2dvh,19px)/1.1 var(--head,'House Sans',sans-serif); }
+.board-path-picker p { margin:0; line-height:1.3; font-size:clamp(11px,1.5dvh,13px); }
+.board-path-options { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
+.board-path-option {
+  cursor:pointer; text-align:left; min-width:0;
+  border:1px solid var(--edge); border-radius:10px;
+  padding:clamp(8px,1dvh,12px); color:var(--ink); background:var(--panel);
+  display:grid; gap:4px;
+}
+.board-path-option:disabled { cursor:default; opacity:.55; }
+.board-path-option b { font-size:clamp(13px,1.75dvh,17px); line-height:1.15; }
+.board-path-option small { color:var(--muted); font-size:clamp(10px,1.4dvh,12px); line-height:1.3; }
+.board-path-option.power { border-color:#ffbe4e; box-shadow:inset 0 0 0 1px #ffbe4e22; }
+.board-path-option.questions { border-color:#4bd5c2; box-shadow:inset 0 0 0 1px #4bd5c222; }
+.board-path-option.power b { color:#ffc85b; }
+.board-path-option.questions b { color:#64e8d5; }
+.board-path-option:hover:not(:disabled),.board-path-option:focus-visible { outline:2px solid var(--pink); outline-offset:2px; }
+.board-route-selected { font-size:12px; margin:8px 0; }
+.board-path-setup-note { color:var(--muted); font-size:12px; line-height:1.35; }
+.board-path-setup-note strong { color:var(--ink); }
+.board-fork-key {
+  position:absolute; z-index:2; left:clamp(6px,1.2vw,15px); bottom:clamp(4px,1vh,12px);
+  display:flex; gap:7px; flex-wrap:wrap; pointer-events:none;
+}
+.board-fork-key span {
+  background:#0d1725d9; border:1px solid currentColor; border-radius:8px;
+  font:800 clamp(9px,1.3vh,12px)/1.2 'House Sans',sans-serif;
+  padding:5px 7px;
+}
+.board-fork-key .power { color:#ffd06c; }
+.board-fork-key .questions { color:#6be8d6; }
+@media (max-width:760px) {
+  .board-path-picker { margin:6px 0; }
+  .board-fork-key { gap:4px; }
+  .board-fork-key span { font-size:9px; padding:3px 5px; }
+}
+@media (max-width:370px) { .board-path-options { grid-template-columns:1fr; } }

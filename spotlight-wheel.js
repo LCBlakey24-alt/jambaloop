@@ -9,6 +9,7 @@ const topics = wheelCategories(false).map(([id,name])=>({id,name}));
 const pick = values => values[randomInt(values.length)];
 
 export function startSpotlightGame(room,publish) {
+  const laps=room.count;
   room.spotlightOrder = [...room.players.keys()];
   for(let i=room.spotlightOrder.length-1;i>0;i--){
     const j=randomInt(i+1);
@@ -16,12 +17,13 @@ export function startSpotlightGame(room,publish) {
   }
   room.spotlightTopicTurns = new Map();
   room.spotlightExpertTurns = new Map(room.spotlightOrder.map(key=>[key,0]));
-  room.count = room.spotlightOrder.length;
+  room.spotlightLaps=laps;
+  room.count = room.spotlightOrder.length * laps;
   return startSpotlightRound(room,publish);
 }
 
 export function startSpotlightRound(room,publish) {
-  const contestantKey=room.spotlightOrder?.[room.index];
+  const contestantKey=room.spotlightOrder?.[room.index % room.spotlightOrder.length];
   if (!contestantKey || !room.players.has(contestantKey)) {
     room.phase='finished';
     publish(room);
@@ -142,6 +144,7 @@ export function publicSpotlight(room,key) {
     contestant:playerCard(room,p.contestantKey),
     expert:p.expertKey?playerCard(room,p.expertKey):undefined,
     roster:room.spotlightOrder.map(id=>playerCard(room,id)).filter(Boolean),
+    laps:room.spotlightLaps,
     topic:p.category?.name, question,
     contestantTurn:key===p.contestantKey,
     expertTurn:key===p.expertKey,

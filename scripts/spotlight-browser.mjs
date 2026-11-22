@@ -106,8 +106,31 @@ try{
       await contestant.page.screenshot({path:'browser-screenshots/spotlight-contestant-phone.png'});
       await expert.page.screenshot({path:'browser-screenshots/spotlight-expert-phone.png'});
     }
+    // Complete the full game and verify the final standings fit the TV stage.
+    for(let turn=1;turn<3;turn++) {
+      await host.locator('.spotlight-game [data-action="advance"]').click(); // next contestant
+      await host.locator('.spotlight-game[data-spotlight-phase="spotlight-ready"]').waitFor({timeout:15000});
+      await host.locator('.spotlight-game [data-action="advance"]').click(); // spin for expert
+      await host.locator('.spotlight-game[data-spotlight-phase="spotlight-expert"]').waitFor({timeout:15000});
+      await host.locator('.spotlight-game [data-action="advance"]').click(); // skip advice
+      await host.locator('.spotlight-game[data-spotlight-phase="spotlight-answer"]').waitFor({timeout:15000});
+      await host.locator('.spotlight-game [data-action="advance"]').click(); // reveal unanswered question
+      await host.locator('.spotlight-game[data-spotlight-phase="spotlight-reveal"]').waitFor({timeout:15000});
+    }
+    await host.locator('.spotlight-game [data-action="advance"]').click(); // show final standings
+    await host.locator('.spotlight-game[data-spotlight-phase="finished"]').waitFor({timeout:15000});
+    assert.equal(await host.locator('.spotlight-final-ranking li').count(),3);
+    const finalFit=await host.evaluate(()=>{
+      const board=document.querySelector('.spotlight-game').getBoundingClientRect();
+      return {bottom:board.bottom,scrollWidth:document.scrollingElement.scrollWidth,
+        scrollHeight:document.scrollingElement.scrollHeight};
+    });
+    assert.ok(finalFit.bottom<=height+3,'Spotlight final board clipped: '+JSON.stringify(finalFit));
+    assert.ok(finalFit.scrollWidth<=width+2&&finalFit.scrollHeight<=height+2,
+      'Spotlight final results overflow TV: '+JSON.stringify(finalFit));
+    await host.screenshot({path:'browser-screenshots/spotlight-final-'+width+'x'+height+'.png'});
     assert.deepEqual(errors,[],'No JavaScript errors in the TV and phone flow');
-    console.log('PASS: Spotlight Wheel role privacy, advice, answer and TV reveal at '+width+'x'+height);
+    console.log('PASS: Spotlight Wheel complete phone/TV match, reveal and final leaderboard at '+width+'x'+height);
     await expert.context.close();
     await contestant.context.close();
     await ctx.close();

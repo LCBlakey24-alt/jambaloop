@@ -8,6 +8,7 @@ import { gameNightPresets, gameNightView, playlistEditor, playlistLimit, replayB
 import { forgetPlayer, parseRoomCode, recentRooms, rememberPlayer, rememberedPlayer } from './room-session.js';
 import { modeVariables, sceneBackdrop } from './mode-style.js';
 import { launcherTile, launcherPreview, launcherModes, launcherSetupArtwork, LAUNCHER_PAGE_SIZE } from './home-launcher.js';
+import { stopNarration, toggleNarration } from './narrator.js';
 import { playCue, playTowerImpact } from './sound-cues.js';
 import { boardLengths, boardRoute, boardDuration, durationLabel, suggestedTurnCap } from './board-route.js';
 import { avatarView, partyView } from './party-views.js';
@@ -136,6 +137,7 @@ function updateQuizRaceVisuals() {
 }
 
 function renderHome() {
+  stopNarration();
   boardDisplay?.dispose();
   boardDisplay = undefined;
   raceTrackView?.dispose(); raceTrackView = undefined;
@@ -162,6 +164,7 @@ function renderHome() {
 
 function showHomeTab(tab) {
   if (!['games','topics'].includes(tab)) return;
+  stopNarration();
   homeTab = tab;
   app.querySelectorAll('[data-home-panel]').forEach(panel => {
     panel.hidden = panel.dataset.homePanel !== tab;
@@ -180,6 +183,7 @@ function homePageSize() {
 }
 
 function renderModeCards(group = homeFilter) {
+  stopNarration();
   const list = app.querySelector('#mode-list');
   if (!list) return;
   homeFilter = group;
@@ -230,6 +234,7 @@ function renderCategories() {
 }
 
 function openDialog(mode, value, gameMode, quizId) {
+  stopNarration();
   practice = undefined;
   dialog.classList.toggle('setup-dialog', ['host', 'configure', 'rematch', 'practice', 'library', 'night'].includes(mode));
   if (['host', 'configure', 'rematch'].includes(mode)) {
@@ -1238,6 +1243,10 @@ document.addEventListener('click', async event => {
   const button = event.target.closest('[data-action]');
   if (!button) return;
   const action = button.dataset.action;
+  if (action === 'narrator-toggle') {
+    toggleNarration(button.dataset.mode);
+    return;
+  }
   if (action === 'clear-selfie') {
     joinAvatar = undefined;
     const preview = content.querySelector('#selfie-preview');

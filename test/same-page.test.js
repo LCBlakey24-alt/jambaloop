@@ -3,6 +3,7 @@ import test from 'node:test';
 import {spawn} from 'node:child_process';
 import {once} from 'node:events';
 import {normaliseSamePageAnswer,samePagePrompts} from '../same-page.js';
+import {questionHistoryId} from '../public/question-history.js';
 
 test('matching ignores case, punctuation, spacing and leading articles',()=>{
   assert.equal(normaliseSamePageAnswer(' The    PIZZA! '),normaliseSamePageAnswer('pizza'));
@@ -126,5 +127,21 @@ test('Same Page refuses empty/malformed answers and preserves next-game role che
     assert.match((await write('!!!')).error,/letters or numbers/);
     const stale=await request(path+'/party',keys[0],{game:1,index:2,action:'write',text:'valid'},409);
     assert.match(stale.error,/ended/);
+  });
+});
+
+test('a returning player receives a never-seen creative prompt when available',async()=>{
+  await runServer(async request=>{
+    const made=await request('',null,{mode:'samepage',category:'mixed',format:'choice',count:3,seconds:0},201);
+    const path='/'+made.code;
+    const history=samePagePrompts.slice(0,-1).map(questionHistoryId);
+    const returning=await request(path+'/join',null,{name:'Returning',seenQuestions:history},201);
+    assert.ok(returning.key);
+    for(const name of ['Friend One','Friend Two']) await request(path+'/join',null,{name},201);
+    await request(path+'/advance',made.host,{game:1,index:0,phase:'lobby'},204);
+    const state=await request(path,made.host);
+    assert.equal(state.phase,'party-write');
+    assert.equal(state.party.prompt,samePagePrompts.at(-1));
+    assert.equal(state.party.historyId,questionHistoryId(samePagePrompts.at(-1)));
   });
 });

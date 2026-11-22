@@ -2,8 +2,8 @@ import {randomInt} from 'node:crypto';
 import {isConnected} from './room-presence.js';
 import {forkGoodCards, forkBadCards, forkScenes, forkStages} from './public/fork-cards.js';
 
-// The TV host is the one impartial human judge.
-// Everyone joining on a phone is balanced into two teams by the room server.
+// Each round has a new player Trolley Driver; all other players are
+// randomly dealt into two balanced teams by the authoritative room server.
 function deal(room, kind) {
   const bank = kind === 'bad' ? forkBadCards : forkGoodCards;
   room.forkUsed ??= {good:new Set(),bad:new Set()};
@@ -33,8 +33,13 @@ function assignRoundRoles(room) {
     team.score = 0;
   }
   delete room.players.get(driverKey).team;
-  [...room.players].filter(([key]) => key !== driverKey).forEach(([key,player],index) => {
-    const teamId = (index + room.index) % 2;
+  const competitors = [...room.players].filter(([key]) => key !== driverKey);
+  for (let i=competitors.length-1;i>0;i--) {
+    const j = randomInt(i+1);
+    [competitors[i],competitors[j]] = [competitors[j],competitors[i]];
+  }
+  competitors.forEach(([key,player],index) => {
+    const teamId = index % 2;
     player.team = teamId;
     const team = room.teams[teamId];
     team.size++;

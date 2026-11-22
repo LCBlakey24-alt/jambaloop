@@ -6,7 +6,7 @@ import { launcherPreview } from '../public/home-launcher.js';
 
 test('every game mode offers an original spoken introduction and a preview Listen control', () => {
   const ids = modes.map(([id]) => id);
-  assert.equal(ids.length, 12);
+  assert.ok(ids.length >= 13,'Every launched Jambaloop mode must have an intro');
   assert.deepEqual(Object.keys(narration).sort(), [...ids].sort());
   for(const [id, name] of modes) {
     assert.ok(narration[id].length > 80 && narration[id].length < 400, 'Intro length invalid for ' + id);

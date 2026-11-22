@@ -13,7 +13,7 @@ const identities = {
   knockout:  {lines:['KNOCK','OUT'], strap:'STAY IN THE GAME', kind:'ELIMINATION', steps:['Everyone starts with three lives.','Wrong answers cost you a life.','Survive as the field gets smaller.']},
   punchline: {lines:['PUNCHLINE','PARTY'], strap:'MAKE THEM LAUGH', kind:'PARTY', steps:['Read the ridiculous writing prompt.','Send a funny reply from your phone.','Vote for your favourite punchline.']},
   cards:     {lines:['FILL THE','BLANK'], strap:'COMPLETE THE CHAOS', kind:'PARTY', steps:['Receive a private hand of phrase cards.','Pick the funniest way to finish the prompt.','Compare picks and vote.']},
-  tracks:    {lines:['FORK IN','THE TRACKS'], strap:'PICK YOUR PATH', kind:'PARTY', steps:['See the two sides of a tricky dilemma.','Choose the track you would take.','Reveal how the room voted.']},
+  tracks:    {lines:['FORK IN','THE TRACKS'], strap:'DEFEND YOUR TRACK', kind:'TEAMS', steps:['Split into two teams; the host becomes the judge.','Place a good card, sabotage their track, then add one more good card.','The judge chooses which track the trolley hits. Play 3, 5 or 7 rounds.']},
   bluff:     {lines:['SPOT THE','BLUFF'], strap:'TRUST NO ONE', kind:'PARTY', steps:['One player is secretly missing the prompt.','Everyone submits an answer or bluff.','Vote for who is faking it.']},
   potato:    {lines:['HOT','POTATO'], strap:'PASS THE PRESSURE', kind:'PARTY', steps:['Someone starts holding the hot potato.','Answer correctly to pass it along.','Don’t be holding it when the timer ends.']},
   quizrace:  {lines:['QUIZ','RACE'], strap:'THINK FAST. MOVE FASTER.', kind:'RACING', steps:['Everyone races at the same time.','Fast correct answers give bigger speed boosts.','Overtake the field and cross the line first.']},

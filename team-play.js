@@ -17,7 +17,7 @@ export function requiredPlayers(mode,style,teamCount,minimum) {
 
 // Deterministic balanced round-robin allocation. Stable by lobby join order.
 // For Board Race Individual, each person receives a separate pawn (max four).
-export function teamAssignments(entries, mode, style, teamCount) {
+export function teamAssignments(entries, mode, style, teamCount, {allowUnfilled=false} = {}) {
   const players=[...entries];
   if (!validPlayStyle(mode,style)) throw new Error('This play style is not available for this game.');
   const boardSolo=mode==='board' && style==='individual';
@@ -27,7 +27,7 @@ export function teamAssignments(entries, mode, style, teamCount) {
   if (!Number.isInteger(total) || total<1 || total>4 || (style==='teams' && total<2)) {
     throw new Error('Choose 2 to 4 teams, or up to four individual board racers.');
   }
-  if (players.length<total) throw new Error('At least one player must join each team.');
+  if (!allowUnfilled && players.length<total) throw new Error('At least one player must join each team.');
   const ids=new Map();
   const groups=Array.from({length:total},(_,index)=>({
     id:index,

@@ -486,15 +486,41 @@ function openDialog(mode, value, gameMode, quizId) {
       <button class="button outline" data-action="join">Join another room</button>`;
   } else if (mode === 'join') {
     joinAvatar = undefined;
-    content.innerHTML = `<div class="eyebrow">PLAYER CONTROLLER</div><h2>Join a game</h2><p>Enter the six-digit code shown on the host screen.</p>
-    <form id="join-form"><label>Room code<input name="code" value="${escape(value ?? '')}" placeholder="123456" inputmode="numeric" autocomplete="off" pattern="[0-9]{6}" maxlength="6" required></label>
-    <label>Nickname<input name="name" placeholder="Your nickname" autocomplete="nickname" maxlength="24" required></label>
-    <div class="selfie-picker"><img id="selfie-preview" class="player-avatar" alt="Your avatar preview" hidden>
-      <label class="button outline small file-button">Take a selfie<input data-selfie type="file" accept="image/*" capture="user" aria-label="Take a selfie"></label>
-      <label class="button outline small file-button">Choose photo<input data-selfie type="file" accept="image/*" aria-label="Choose photo"></label><button type="button" class="button outline small" data-action="clear-selfie" hidden>Remove photo</button></div>
-    <small class="photo-privacy">Optional photos are visible only to people who have joined this room.</small>
-    <p class="error" role="alert"></p><button class="button primary">Join game ${icons('arrow-up-right')}</button></form>
-    ${recentRooms().length ? '<button class="text-button" data-action="recent-rooms">Resume a recent room</button>' : ''}`;
+    const roomCode = parseRoomCode(String(value ?? ''));
+    content.innerHTML = `<div class="join-intro">
+      <div class="eyebrow">YOUR PHONE IS THE CONTROLLER</div>
+      <h2>Join game night<span class="brand-dot">.</span></h2>
+      <p>Ask the host for their six-digit room code, or scan their QR code to join directly.</p>
+    </div>
+    <ol class="join-quick-steps" aria-label="How joining works">
+      <li><b>01</b><span>Get the code</span></li>
+      <li><b>02</b><span>Pick your name</span></li>
+      <li><b>03</b><span>Tap Ready</span></li>
+    </ol>
+    <form id="join-form" autocomplete="on">
+      <label class="join-room-field" for="join-room-code">Room code
+        <input id="join-room-code" name="code" value="${escape(roomCode)}" placeholder="123456"
+          inputmode="numeric" autocomplete="off" enterkeyhint="next" pattern="[0-9]{6}" maxlength="6"
+          aria-describedby="join-room-hint" required>
+      </label>
+      <small class="join-field-hint" id="join-room-hint">You can also paste a room invitation link here.</small>
+      <label for="join-player-name">Your player name
+        <input id="join-player-name" name="name" placeholder="What should we call you?" autocomplete="nickname"
+          maxlength="24" enterkeyhint="go" required>
+      </label>
+      <details class="join-photo-option">
+        <summary>Choose a player photo <span>(optional)</span></summary>
+        <div class="selfie-picker"><img id="selfie-preview" class="player-avatar" alt="Your avatar preview" hidden>
+          <label class="button outline small file-button">Take a selfie<input data-selfie type="file" accept="image/*" capture="user" aria-label="Take a selfie"></label>
+          <label class="button outline small file-button">Choose photo<input data-selfie type="file" accept="image/*" aria-label="Choose photo"></label>
+          <button type="button" class="button outline small" data-action="clear-selfie" hidden>Remove photo</button>
+        </div>
+        <small class="photo-privacy">Your photo is optional and only visible to players who have joined the same room.</small>
+      </details>
+      <p class="error" role="alert"></p>
+      <button class="button primary join-room-submit" type="submit">Join the room ${icons('arrow-up-right')}</button>
+    </form>
+    ${recentRooms().length ? '<button class="text-button join-resume-link" data-action="recent-rooms">Resume a recent room</button>' : ''}`;
   } else {
     content.innerHTML = `<div class="eyebrow">QUIZ NIGHT</div><h2>How to play</h2><ol>
     <li>Host a game in the TV browser or connect a laptop to the TV. Choose a game mode and create a room.</li>
@@ -567,6 +593,14 @@ function leave() {
   history.replaceState(null, '', '/');
   renderHome();
 }
+
+// A pasted invite URL (or a six-digit number) becomes a plain, validated room code.
+document.addEventListener('input', event => {
+  if (!event.target.matches('#join-form input[name="code"]')) return;
+  const value = event.target.value;
+  const compact = value.replace(/[^0-9]/g, '').slice(0, 6);
+  if (value !== compact) event.target.value = compact;
+});
 
 document.addEventListener('paste', event => {
   if (!event.target.matches('#join-form input[name="code"]')) return;

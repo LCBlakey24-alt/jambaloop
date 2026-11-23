@@ -1,4 +1,5 @@
 import { scoreBreakView, updateScoreBreak } from './score-break.js';
+import { bindRoomAvatars } from './room-avatars.js';
 import { quizRaceView } from './quiz-race-view.js';
 import { mountQuizRaceTrack } from './quiz-race-track.js';
 import { mobileDeck } from './mobile-deck.js';
@@ -6,7 +7,6 @@ import { awardView, currentFrame, frameView, revealFrames, scoreReveal } from '.
 import { boardSpeedValues, bonusValues, canSetScore, defaultScoring, doubleSchedules, pointValues } from './scoring.js';
 import { gameNightPresets, gameNightView, playlistEditor, playlistLimit, replayButtons } from './game-night.js';
 import { clearRoomSession, forgetPlayer, parseRoomCode, recentRooms, rememberPlayer, rememberedPlayer, restoreRoomSession, saveRoomSession } from './room-session.js';
-import { bindRoomAvatars } from './room-avatars.js';
 import {readQuestionHistory, rememberQuestion} from './question-history.js';
 import { modeVariables, sceneBackdrop } from './mode-style.js';
 import { launcherTile, launcherPreview, launcherModes, launcherSetupArtwork, LAUNCHER_PAGE_SIZE } from './home-launcher.js';
@@ -929,6 +929,7 @@ function render(s) {
     ${(host || s.isCaptain) && !['lobby', 'finished', 'waiting'].includes(s.phase) && s.night.queue.length ? `<p class="live-lineup">Up next <strong>${modeName(s.night.queue[0])}</strong>
       ${canControl ? '<button class="button outline small" data-action="night">Edit playlist</button>' : ''}</p>` : ''}
     ${body}<p class="error" id="game-error" role="alert"></p></section>`;
+  switchAvatarSession.refresh();
   if (backdrop) app.querySelector('.scene-backdrop').replaceWith(backdrop);
   renderGraphics(s, stage, animateRoll);
   if(s.mode==='quizrace' && s.race){

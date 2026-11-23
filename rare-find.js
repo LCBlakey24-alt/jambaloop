@@ -93,6 +93,13 @@ export function advanceRare(room,publish){
  return true;
 }
 
+export function advanceRareWhenReady(room,publish){
+ if(room.phase!=='rare-write'||!room.party?.entries.size)return false;
+ if(room.party.entries.size!==eligibleCount(room,room.party.entries))return false;
+ advanceRare(room,publish);
+ return true;
+}
+
 export function submitRare(room,key,data,publish){
  const party=room.party;
  if(!party||party.type!=='rare')return [409,'Rare Find is not active.'];
@@ -120,9 +127,7 @@ export function submitRare(room,key,data,publish){
  if(answer.length<1||answer.length>60||/[\u0000-\u001f\u007f<>]/.test(answer)||!/[\p{L}\p{N}]/u.test(answer))
    return [400,'Enter a clear answer of 1 to 60 characters.'];
  party.entries.set(key,answer);
- const eligible=eligibleCount(room,party.entries);
- if(party.entries.size&&party.entries.size===eligible)advanceRare(room,publish);
- else publish(room);
+ if(!advanceRareWhenReady(room,publish))publish(room);
  return [204];
 }
 

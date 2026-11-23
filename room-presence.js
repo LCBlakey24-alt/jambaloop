@@ -1,7 +1,7 @@
 export const reconnectWindow = 18_000;
 
 export function liveConnection(room, key) {
-  const response = room.liveConnections.get(key);
+  const response = room.liveConnections?.get(key);
   return response && !response.destroyed && !response.writableEnded ? response : undefined;
 }
 
@@ -29,6 +29,7 @@ export function touchPlayer(room, key) {
 export function trackConnection(room, key, response) {
   room.liveConnections.set(key, response);
   response.once('close', () => {
+    // A delayed close from an old transport must not clear its replacement.
     if (room.liveConnections.get(key) !== response) return;
     room.liveConnections.delete(key);
     touchPlayer(room, key);

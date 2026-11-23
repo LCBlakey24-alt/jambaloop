@@ -262,6 +262,36 @@ test('playlist version prevents overwrites and the next game welcomes late joine
   assert.ok(!questions.has((await room.state()).question.prompt));
 });
 
+test('game night standings award normalized podium stars across rematches', async () => {
+  const room = await roomWith('classic', 3, { customQuiz: checkpointQuiz(1) });
+  await room.advance();
+  await answerCheckpointRound(room, [0]);
+  await room.advance();
+  const first = await room.state();
+  assert.equal(first.phase, 'finished');
+  assert.deepEqual(first.night.standings.map(player => [player.name, player.stars, player.wins, player.games]), [
+    ['Player 0', 3, 1, 1],
+    ['Player 1', 2, 0, 1],
+    ['Player 2', 2, 0, 1],
+  ]);
+  assert.equal(first.night.results.length, 1);
+  assert.deepEqual(first.night.results[0].winners, [first.night.standings[0].id]);
+
+  await request(room.path + '/rematch', room.host, {game: first.game, sameGame: true}, 204);
+  assert.ok((await room.state()).players.every(player => player.score === 0));
+  await room.advance();
+  await answerCheckpointRound(room, [1]);
+  await room.advance();
+  const second = await room.state();
+  assert.deepEqual(second.night.standings.map(player => [player.name, player.stars, player.wins, player.games]), [
+    ['Player 0', 5, 1, 2],
+    ['Player 1', 5, 1, 2],
+    ['Player 2', 4, 0, 2],
+  ]);
+  assert.equal(second.night.results.length, 2);
+  assert.ok(second.night.standings.every(player => player.stars < 10), 'raw quiz points must not leak into game-night stars');
+});
+
 test('a 30-player punchline ballot stays anonymous and has six entries', async () => {
   const room = await roomWith('punchline', 30);
   await room.advance();

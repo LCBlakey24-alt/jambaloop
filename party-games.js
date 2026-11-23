@@ -10,7 +10,7 @@ import {startSamePageRound, advanceSamePage, submitSamePage, publicSamePage, adv
 import {startSpotlightGame,advanceSpotlight,submitSpotlight,publicSpotlight} from './spotlight-wheel.js';
 import {startBrainGame,advanceBrain,submitBrain,publicBrain} from './brain-ladder.js';
 import {startTopAnswersRound,advanceTopAnswers,submitTopAnswers,publicTopAnswers} from './top-answers.js';
-import {startRareRound,advanceRare,submitRare,publicRare} from './rare-find.js';
+import {startRareRound,advanceRare,advanceRareWhenReady,submitRare,publicRare} from './rare-find.js';
 export { partyModes };
 const prompts = [
   'Name something you might find under a sofa.',
@@ -187,6 +187,7 @@ export function publicParty(room, key) {
 }
 
 export function advancePartyWhenReady(room, publish) {
+  if (room.mode === 'rare') return advanceRareWhenReady(room,publish);
   if (room.mode === 'samepage') return advanceSamePageWhenReady(room, publish);
   if (room.mode === 'tracks') return advanceForkWhenReady(room,publish);
   if (!['party-write', 'party-vote'].includes(room.phase)) return false;

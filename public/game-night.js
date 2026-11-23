@@ -3,10 +3,9 @@ import { defaultScoreInterval, fixedQuestionModes, minimumPlayers, modes, suppor
 export const playlistLimit = 12;
 
 export const gameNightPresets = {
-  15: ['classic', 'punchline', 'potato'],
-  30: ['classic', 'wheel', 'samepage', 'punchline', 'tracks', 'potato', 'dice'],
-  // Brain Ladder is also available in custom playlists (5, 7 or 10 levels).
-  60: ['classic', 'samepage', 'punchline', 'board', 'cards', 'potato', 'wheel', 'bluff', 'showdown', 'tracks', 'dice', 'knockout'],
+  15: ['rare', 'samepage', 'potato'],
+  30: ['classic', 'spotlight', 'topanswers', 'samepage', 'brain'],
+  60: ['classic', 'rare', 'spotlight', 'board', 'samepage', 'brain', 'topanswers', 'punchline', 'tracks', 'potato', 'quizrace', 'showdown'],
 };
 
 export function queuedSettings(mode, theme) {
@@ -25,7 +24,7 @@ export function replayButtons(state, icons) {
 }
 
 export function gameNightView(state, { canControl, escape, icons }) {
-  const { queue, played } = state.night;
+  const { queue, played, standings = [] } = state.night;
   if (!queue.length && !played && !canControl) return '';
   const finished = state.phase === 'finished';
   const nameOf = mode => modes.find(([id]) => mode === id)[1];
@@ -39,6 +38,8 @@ export function gameNightView(state, { canControl, escape, icons }) {
       <div class="eyebrow">${upcoming ? 'UP NEXT' : 'GAME NIGHT'}</div><h2>${title}</h2><p>${help}</p>
     </div></div>
     ${queue.length > 1 ? `<ol class="night-preview" aria-label="Later games">${queue.slice(1).map(id => `<li>${escape(nameOf(id))}</li>`).join('')}</ol>` : ''}
+    ${standings.length ? `<div class="night-standings"><div><span class="eyebrow">GAME NIGHT STANDINGS</span><small>3 / 2 / 1 stars for a podium place · ties share stars</small></div>
+      <ol>${standings.slice(0, 5).map((player, index) => `<li><b>${index + 1}</b><span>${escape(player.name)}</span><strong>${player.stars} ★</strong><small>${player.wins} ${player.wins === 1 ? 'win' : 'wins'}</small></li>`).join('')}</ol></div>` : ''}
     ${canControl ? `<div class="actions">
       ${finished && upcoming ? `<button class="button primary" data-action="night-next">Load next game ${icons('arrow-right')}</button>` : ''}
       <button class="button outline small" data-action="night">${icons('list-ordered')} ${queue.length ? 'Edit playlist' : 'Build a playlist'}</button>

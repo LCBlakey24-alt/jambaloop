@@ -1,4 +1,5 @@
-// Fetch photos with the existing room credential. Only the resulting local blob URL enters an img.
+// Fetch room-scoped photos with the existing room credential. Only a local
+// blob URL is assigned to an image, so credentials never enter URLs or markup.
 export function bindRoomAvatars(root) {
   const selector = '[data-room-avatar]';
   const photos = new Map();
@@ -8,12 +9,13 @@ export function bindRoomAvatars(root) {
   async function show(placeholder) {
     const path = placeholder.dataset.roomAvatar;
     const session = current;
-    if (!session || !placeholder.isConnected || !path.startsWith('/api/rooms/' + session.code + '/avatar/') ||
-        !/^\/api\/rooms\/\d{6}\/avatar\/[a-f0-9]{36}$/.test(path)) return;
+    if (!session || !placeholder.isConnected ||
+        !/^\/api\/rooms\/\d{6}\/avatar\/[a-f0-9]{36}$/.test(path) ||
+        !path.startsWith('/api/rooms/' + session.code + '/avatar/')) return;
 
     if (!photos.has(path)) {
-      const { signal } = controller;
-      const request = fetch(path, { headers: { 'x-game-key': session.key }, signal })
+      const {signal} = controller;
+      const request = fetch(path, {headers: {'x-game-key': session.key}, signal})
         .then(response => response.ok ? response.blob() : null)
         .then(photo => photo && !signal.aborted ? URL.createObjectURL(photo) : null)
         .catch(() => null);
@@ -29,48 +31,32 @@ export function bindRoomAvatars(root) {
     image.src = url;
     image.addEventListener('load', () => {
       if (session === current && placeholder.isConnected) placeholder.replaceWith(image);
-    }, { once: true });
+    }, {once: true});
   }
-
-  const visibility = typeof IntersectionObserver === 'function' ? new IntersectionObserver(entries => {
-    for (const { target, isIntersecting } of entries) {
-      if (!isIntersecting) continue;
-      visibility.unobserve(target);
-      show(target);
-    }
-  }) : undefined;
 
   function watch(node) {
     if (node.nodeType !== Node.ELEMENT_NODE) return;
     const elements = node.matches(selector) ? [node] : node.querySelectorAll(selector);
-    for (const item of elements) {
-      if (visibility) visibility.observe(item);
-      else show(item);
-    }
+    for (const item of elements) show(item);
   }
 
   const roster = new MutationObserver(records => {
-    for (const { addedNodes, removedNodes } of records) {
+    for (const {addedNodes} of records) {
       for (const node of addedNodes) watch(node);
-      if (!visibility) continue;
-      for (const node of removedNodes) {
-        if (node.nodeType !== Node.ELEMENT_NODE || node.isConnected) continue;
-        if (node.matches(selector)) visibility.unobserve(node);
-        else for (const item of node.querySelectorAll(selector)) visibility.unobserve(item);
-      }
     }
   });
   window.addEventListener('online', () => { if (current) watch(root); });
 
-  return session => {
+  const switchSession = session => {
     roster.disconnect();
-    visibility?.disconnect();
     controller?.abort();
     for (const photo of photos.values()) photo.then(url => { if (url) URL.revokeObjectURL(url); });
     photos.clear();
     current = session;
     if (!session) return;
     controller = new AbortController();
-    roster.observe(root, { childList: true, subtree: true });
+    roster.observe(root, {childList: true, subtree: true});
   };
+  switchSession.refresh = () => { if (current) watch(root); };
+  return switchSession;
 }

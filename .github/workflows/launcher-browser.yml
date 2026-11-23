@@ -5,6 +5,9 @@ on:
       - 'public/home-*'
       - 'public/index.html'
       - 'public/app.js'
+      - 'public/game-night*'
+      - 'public/room-avatars.js'
+      - 'server.js'
       - 'public/mobile-deck.js'
       - 'scripts/launcher-browser.mjs'
       - 'scripts/board-team-browser.mjs'
@@ -15,6 +18,7 @@ on:
       - 'scripts/brain-ladder-browser.mjs'
       - 'scripts/top-answers-browser.mjs'
       - 'scripts/rare-find-browser.mjs'
+      - 'scripts/game-night-browser.mjs'
       - 'rare-find.js'
       - 'rare-find-bank.js'
       - 'public/rare-find*'
@@ -74,6 +78,7 @@ jobs:
           node scripts/brain-ladder-browser.mjs
           node scripts/top-answers-browser.mjs
           node scripts/rare-find-browser.mjs
+          node scripts/game-night-browser.mjs
           node scripts/tv-all-modes.mjs
       - name: Upload screen captures on success or failure
         if: always()

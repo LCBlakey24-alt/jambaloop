@@ -164,6 +164,10 @@ function renderHome() {
   document.querySelector('#category-filters').innerHTML = categoryGroups.map(([name], index) => `
     <button class="topic-filter" type="button" data-action="filter-topics" data-group="${index}" aria-pressed="${index === 0}">${name}</button>`).join('');
   renderCategories();
+  const topicCount=app.querySelector('[data-action="home-tab"][data-tab="topics"] span');
+  if(topicCount)topicCount.textContent=String(categories.length-1);
+  const gameCount=app.querySelector('[data-action="home-tab"][data-tab="games"] span');
+  if(gameCount)gameCount.textContent=String(modes.length);
 }
 
 function showHomeTab(tab) {
@@ -181,6 +185,8 @@ function showHomeTab(tab) {
 }
 
 function homePageSize() {
+  // Show every game on ordinary desktop screens; small/short displays retain paging.
+  if (matchMedia('(min-width: 1100px) and (min-height: 700px)').matches) return modes.length;
   if (matchMedia('(max-width: 760px)').matches) return 4;
   if (matchMedia('(max-width: 900px)').matches) return 6;
   return LAUNCHER_PAGE_SIZE;
@@ -1583,6 +1589,12 @@ document.addEventListener('keydown', event => {
   homeSelected = undefined;
   renderModeCards(homeFilter);
   app.querySelector(`[data-action="preview-mode"][data-mode="${id}"]`)?.focus({preventScroll:true});
+});
+// Reflow at the desktop all-games threshold, including rotation and window resizing.
+matchMedia('(min-width: 1100px) and (min-height: 700px)').addEventListener('change', () => {
+  if(session || !app.querySelector('[data-home-shell]')) return;
+  homePage=0;
+  renderModeCards(homeFilter);
 });
 matchMedia('(max-width: 900px)').addEventListener('change', () => {
   if (session || !app.querySelector('[data-home-shell]')) return;

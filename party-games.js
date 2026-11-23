@@ -193,6 +193,7 @@ export function submitParty(room, key, data, publish) {
   if (room.mode === 'samepage') return submitSamePage(room, key, data, publish);
   if (socialModes.includes(room.mode) && room.party) return submitSocial(room, key, data, publish);
   const party = room.party;
+  if (room.mode === 'bluff' && data.index !== room.index) return [409, 'This Bluff round has moved on.'];
   if (room.phase === 'party-write' && data.action === 'write') {
     const reply = typeof data.text === 'string' ? data.text.trim() : '';
     if (!reply || reply.length > 100) return [400, 'Enter a reply of 1 to 100 characters.'];

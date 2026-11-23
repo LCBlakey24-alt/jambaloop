@@ -7,8 +7,8 @@ import {brainLadderView} from './brain-ladder-view.js';
 import {topAnswersView} from './top-answers-view.js';
 import {rareFindView} from './rare-find-view.js';
 export function avatarView(player, escape) {
-  return player.avatar ? `<img class="player-avatar" src="${escape(player.avatar)}" alt="" loading="lazy">`
-    : `<span class="player-avatar avatar-initial" aria-hidden="true">${escape(Array.from(player.name)[0]?.toUpperCase() ?? '?')}</span>`;
+  const photo = player.avatar ? ` data-room-avatar="${escape(player.avatar)}"` : '';
+  return `<span class="player-avatar avatar-initial" aria-hidden="true"${photo}>${escape(Array.from(player.name)[0]?.toUpperCase() ?? '?')}</span>`;
 }
 
 export function partyView(state, { host, canControl, escape, reply, icons }) {

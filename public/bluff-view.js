@@ -1,3 +1,4 @@
+import { partyFinale } from './party-finale.js';
 import {replayButtons} from './game-night.js';
 
 // TV/phone view for original Spot the Bluff, with no secret prompt in TV markup.
@@ -58,7 +59,7 @@ export function bluffView(s,{host,canControl,escape,reply,icons}){
     const winners=players.filter(p=>p.score===top);
     body=`<div class="bluff-show-finale"><span class="eyebrow">THE FINAL REVEAL</span>
       <h1>${winners.length===1?escape(winners[0].name)+' wins!':'It’s a shared win!'}</h1>
-      <p>Correctly identify the bluff for +100 points. Escape as the bluff for +100 points.</p>
+      ${partyFinale(s,{host,escape})}<p>Correctly identify the bluff for +100 points. Escape as the bluff for +100 points.</p>
       <ol class="ranking bluff-show-standings">${players.map(p=>{
         const rank=players.findIndex(candidate=>candidate.score===p.score)+1;
         return `<li><span>${rank}. ${escape(p.name)}</span><strong>${p.score.toLocaleString()} pts</strong></li>`;

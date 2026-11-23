@@ -1,4 +1,5 @@
 // Original TV-first matching game. All player-submitted strings are escaped.
+import { partyFinale } from './party-finale.js';
 import {replayButtons} from './game-night.js';
 
 const results = (party, escape, compact=false) =>
@@ -28,7 +29,7 @@ export function samePageView(state, {host,canControl,escape,icons,reply}) {
     const resultTitle = leaders.length===1 ? escape(leaders[0].name)+' wins Same Page!' : 'It’s a shared victory!';
     body = `<div class="samepage-finale">
       <div class="samepage-victory-mark" aria-hidden="true">✧ ✧</div>
-      <h1>${resultTitle}</h1>
+      <h1>${resultTitle}</h1>${partyFinale(state,{host,escape})}
       <p>Most matching minds across ${total} rounds.</p>
       <ol class="samepage-final-board">${standings.map((player,i)=>`<li><span><b>#${i+1}</b> ${escape(player.name)}</span><strong>${player.score.toLocaleString()} pts</strong></li>`).join('')}</ol>
       ${!host ? `<p>Your final score: <strong>${state.player?.score?.toLocaleString()??0} points</strong></p>` : ''}

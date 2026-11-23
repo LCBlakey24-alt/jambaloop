@@ -1,5 +1,6 @@
 // TV/phone presenter for original Jambaloop Fork in the Tracks.
 // Sentence fragments are predefined noun phrases and always fit the shared structure.
+import { partyFinale } from './party-finale.js';
 import {forkStages} from './fork-cards.js';
 
 const stages=['DEFEND YOUR TRACK','SABOTAGE THEIR TRACK','ONE LAST DEFENCE'];
@@ -64,7 +65,7 @@ export function forkView(state, {host,escape,icons,replayButtons}) {
     : reveal ? `<section class="fork-outcome" role="status"><h2>Track ${trackLetters[party.hit]} gets hit!</h2>
         <p>Players on <strong>Team ${escape(state.teams[party.saved].name)}</strong> save their track and each earn a point.</p>
         ${host ? `<button type="button" class="button primary" data-action="advance">${state.index+1<state.total?'Next round':'Final results'} ${icons('arrow-right')}</button>` : '<small>Waiting for the judge to continue.</small>'}</section>`
-    : finished ? `<div class="fork-final"><h2>${state.players?.length
+    : finished ? `<div class="fork-final">${partyFinale(state,{host,escape,variant:'tracks'})}<h2>${state.players?.length
       ? ((state.players.filter(p=>p.score===state.players[0].score).length===1)
         ? escape(state.players[0].name)+' wins the trolley showdown!'
         : 'It is a tie at the top!')

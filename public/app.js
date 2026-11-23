@@ -955,7 +955,7 @@ function render(s) {
   const focused = document.activeElement;
   const guideWasOpen = !enter && !host && s.phase === 'lobby' && Boolean(app.querySelector('.player-game-guide')?.open);
   const guideHadFocus = guideWasOpen && Boolean(focused?.closest('.player-game-guide'));
-  const ballotScroll = !enter && !host && ['party-vote', 'party-reveal', 'top-poll', 'top-guess', 'top-reveal'].includes(s.phase) ? app.scrollTop : null;
+  const ballotScroll = !enter && !host && ['party-vote', 'party-reveal', 'top-poll', 'top-guess', 'top-reveal', 'finished'].includes(s.phase) ? app.scrollTop : null;
   const rosterScroll = enter ? 0 : app.querySelector('.players')?.scrollTop;
   const lobbyAction = !enter && s.phase === 'lobby' && app.contains(focused) && focused.matches('button[data-action]') ? focused.dataset.action : undefined;
   const captainSelect = !enter && focused?.matches('#captain-form select') ? focused.value : undefined;

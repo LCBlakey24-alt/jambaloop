@@ -140,3 +140,47 @@ test('Old lobby version cannot override a newer configured game',async()=>{
    assert.equal(fresh.response.status,204);
  });
 });
+
+
+test('One player key owns one live update stream; duplicate tabs get an explicit retry and reconnect succeeds',async()=>{
+ await withServer({},async({request,site})=>{
+   const create=await request('','POST',settings);
+   assert.equal(create.response.status,201);
+   const {code,host}=create.payload;
+   const joined=await request('/'+code+'/join','POST',{name:'Stream Tester'});
+   assert.equal(joined.response.status,201);
+   const key=joined.payload.key;
+   const origin=site+'/api/rooms/'+code+'/live';
+   const headers={'x-game-key':key};
+   const forbidden=await fetch(origin);
+   assert.equal(forbidden.status,403);
+   await forbidden.body?.cancel();
+   const controller=new AbortController();
+   const primary=await fetch(origin,{headers,signal:controller.signal});
+   assert.equal(primary.status,200);
+   assert.match(primary.headers.get('content-type'),/ndjson/);
+   const duplicate=await fetch(origin,{headers});
+   assert.equal(duplicate.status,409);
+   assert.ok(Number(duplicate.headers.get('retry-after'))>0);
+   await duplicate.body?.cancel();
+   // A different room member is still entitled to their own connection.
+   const hostController=new AbortController();
+   const hostStream=await fetch(origin,{headers:{'x-game-key':host},signal:hostController.signal});
+   assert.equal(hostStream.status,200);
+   hostController.abort();
+   controller.abort();
+   let reconnected=false;
+   for(let attempt=0;attempt<30;attempt++){
+     await new Promise(resolve=>setTimeout(resolve,35));
+     const again=await fetch(origin,{headers});
+     if(again.status===200){
+       reconnected=true;
+       await again.body.cancel();
+       break;
+     }
+     assert.equal(again.status,409);
+     await again.body?.cancel();
+   }
+   assert.equal(reconnected,true,'Closing the previous stream must free the player seat');
+ });
+});

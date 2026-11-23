@@ -63,7 +63,7 @@ function socialView(state, { host, canControl, escape, reply, icons }) {
   const finished = phase === 'finished';
   const next = label => canControl ? `<div class="actions"><button class="button primary" data-action="advance">${label}</button></div>` : '';
   const vote = (id, label) => !host && voting && !party.voted
-    ? `<button class="button primary small" data-action="bluff-vote" data-id="${id}">${label}</button>` : '';
+    ? `<button class="button primary small party-vote-button" type="button" data-action="bluff-vote" data-id="${id}" aria-label="${label}">${label}</button>` : '';
   const prompt = `<p class="bluff-prompt">${escape(party.prompt)}</p>`;
 
   let body;
@@ -84,17 +84,17 @@ function socialView(state, { host, canControl, escape, reply, icons }) {
     const votes = party.trackVotes;
     const leader = votes && votes[0] !== votes[1] ? (votes[0] > votes[1] ? 'Track A' : 'Track B') : '';
     body = `<h1>${voting ? tracks ? 'Which track?' : 'Vote for your favourite' : tracks ? leader ? leader + ' wins the vote' : 'The vote is tied' : 'The votes are in'}</h1>
-      ${prompt}<div class="bluff-replies ${tracks ? 'tracks-grid' : ''}">
-      ${tracks ? party.tracks.map((track, i) => `<article class="bluff-card"><small>Track ${'AB'[i]}</small><p>${escape(track)}</p>
+      ${prompt}<div class="bluff-replies party-vote-list ${tracks ? 'tracks-grid' : ''}" role="list" aria-label="${voting ? 'Choose an entry to vote for' : 'Voting results'}">
+      ${tracks ? party.tracks.map((track, i) => `<article class="bluff-card party-vote-card" role="listitem"><small>Track ${'AB'[i]}</small><p>${escape(track)}</p>
         ${voting ? vote(i, 'Vote Track ' + 'AB'[i]) : `<strong>${votes[i]} ${votes[i] === 1 ? 'vote' : 'votes'}</strong>`}</article>`).join('')
-        : party.ballot.map((entry, i) => `<article class="bluff-card"><small>${voting ? 'Entry ' + (i + 1) : escape(entry.name)}</small>
+        : party.ballot.map((entry, i) => `<article class="bluff-card party-vote-card" role="listitem"><small>${voting ? 'Entry ' + (i + 1) : escape(entry.name)}</small>
           <p>${escape(entry.text)}</p>${voting ? entry.yours ? '<small>Your entry</small>' : vote(entry.id, 'Vote for entry ' + (i + 1))
             : `<strong>${entry.votes} ${entry.votes === 1 ? 'vote' : 'votes'} · ${entry.votes * 100} pts</strong>`}</article>`).join('')}
       </div>
       ${!tracks && party.shortlisted ? `<p class="shortlist-note">The room submitted ${party.ballot.length + party.shortlisted} entries. Six were drawn at random for the ballot.</p>` : ''}
       ${voting && !tracks && !party.ballot.length ? '<p>No entries were submitted.</p>' : ''}
       ${voting && host ? `<p role="status">${party.submissions} of ${party.responseTarget} voted</p>` : ''}
-      ${voting && !host && party.voted ? '<p role="status">Vote locked in.</p>' : ''}
+      ${voting && !host && party.voted ? '<div class="party-vote-confirmation" role="status"><strong>Vote locked in</strong><span>Your choice is saved. Watch for the results on the big screen.</span></div>' : ''}
       ${next(voting ? 'Reveal votes' : index + 1 < total ? 'Next round' : 'Final results')}`;
   }
   const teamScores = state.playStyle === 'teams' && state.teams.length && (finished || phase === 'party-reveal')

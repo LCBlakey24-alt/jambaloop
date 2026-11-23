@@ -1,0 +1,50 @@
+/*
+ * Jambaloop is a Rookie Quest Games product.
+ * Publisher attribution intentionally remains secondary to Jambaloop's own
+ * distinctive logo, palette and TV/phone game UI.
+ */
+.home-publisher {
+  color:#91ebd7;
+  letter-spacing:.14em;
+  white-space:nowrap;
+}
+.home-publisher i {
+  flex:none;
+  background:linear-gradient(135deg,#f4a4cc,#a489f8 55%,#78e6d1);
+  box-shadow:0 0 0 3px #8e89e928;
+}
+.home-bottom-tag {white-space:nowrap;}
+.publisher-footer {
+  display:flex;flex-direction:column;align-items:flex-start;gap:3px;
+  min-width:0;line-height:1.3;
+}
+.publisher-footer span {
+  font:750 11px/1.2 'House Sans',sans-serif;
+  color:inherit;
+}
+.publisher-footer small {
+  font:700 10px/1.3 'House Sans',sans-serif;
+  color:inherit;opacity:.76;
+}
+.host-screen .studio-publisher {
+  font:800 clamp(9px,1.15dvh,11px)/1.2 'House Sans',sans-serif;
+  letter-spacing:.075em;
+  color:#a8bad9;
+  border-left:1px solid #8c9dbb57;
+  padding-left:9px;
+  white-space:nowrap;
+}
+/* The game status and the player controls always take priority. */
+@media(max-width:900px) {
+  .host-screen .studio-publisher {display:none;}
+}
+@media(max-width:760px) {
+  .home-publisher {font-size:8px;letter-spacing:.08em;}
+  .publisher-footer {display:none;}
+}
+@media(max-width:360px) {
+  .home-publisher {font-size:7px;letter-spacing:.04em;}
+}
+@media(max-height:660px) {
+  .host-screen .studio-publisher {display:none;}
+}

@@ -1,11 +1,23 @@
 import { replayButtons } from './game-night.js';
 import { socialModes, modes } from './game-config.js';
+import {forkView} from './fork-view.js';
+import {samePageView} from './same-page-view.js';
+import {spotlightView} from './spotlight-view.js';
+import {brainLadderView} from './brain-ladder-view.js';
+import {topAnswersView} from './top-answers-view.js';
+import {rareFindView} from './rare-find-view.js';
 export function avatarView(player, escape) {
-  return player.avatar ? `<img class="player-avatar" src="${escape(player.avatar)}" alt="" loading="lazy">`
-    : `<span class="player-avatar avatar-initial" aria-hidden="true">${escape(Array.from(player.name)[0]?.toUpperCase() ?? '?')}</span>`;
+  const photo = player.avatar ? ` data-room-avatar="${escape(player.avatar)}"` : '';
+  return `<span class="player-avatar avatar-initial" aria-hidden="true"${photo}>${escape(Array.from(player.name)[0]?.toUpperCase() ?? '?')}</span>`;
 }
 
 export function partyView(state, { host, canControl, escape, reply, icons }) {
+  if (state.mode === 'rare') return rareFindView(state,{host,canControl,escape,icons,reply});
+  if (state.mode === 'topanswers') return topAnswersView(state,{host,canControl,escape,icons});
+  if (state.mode === 'brain') return brainLadderView(state,{host,canControl,escape,icons});
+  if (state.mode === 'spotlight') return spotlightView(state,{host,canControl,escape,icons});
+  if (state.mode === 'samepage') return samePageView(state,{host,canControl,escape,icons,reply});
+  if (state.mode === 'tracks') return forkView(state,{host,canControl,escape,icons,replayButtons});
   if (socialModes.includes(state.mode)) return socialView(state, { host, canControl, escape, reply, icons });
   const party = state.party;
   const finished = state.phase === 'finished';
@@ -94,6 +106,12 @@ function socialView(state, { host, canControl, escape, reply, icons }) {
       ${voting && !host && party.voted ? '<p role="status">Vote locked in.</p>' : ''}
       ${next(voting ? 'Reveal votes' : index + 1 < total ? 'Next round' : 'Final results')}`;
   }
+  const teamScores = state.playStyle === 'teams' && state.teams.length && (finished || phase === 'party-reveal')
+    ? `<div class="party-team-scores" aria-label="Team standings">${[...state.teams].sort((a,b)=>b.score-a.score).map(team=>
+      `<div style="--team:${team.color}"><strong>Team ${escape(team.name)}</strong><span>${team.score.toLocaleString()} pts</span></div>`).join('')}</div>`
+    : '';
+  const winner = finished && state.playStyle === 'teams' && state.teamWinners?.length === 1
+    ? `<p class="party-team-winner">Team ${escape(state.teams.find(t=>t.id===state.teamWinners[0])?.name)} wins!</p>` : '';
   return `<section class="game-panel party-panel ${finished ? 'results' : ''}">
-    <div class="eyebrow">${title} · Round ${index + 1} of ${total}</div>${body}</section>`;
+    <div class="eyebrow">${title} · Round ${index + 1} of ${total}</div>${winner}${teamScores}${body}</section>`;
 }

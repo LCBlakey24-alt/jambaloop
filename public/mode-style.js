@@ -1,5 +1,6 @@
 // Display fonts and scene colours share the same palette on every device.
 const styles = {
+  quizrace: { font: 'Club Race', weight: 700, accent: '#1dd9be', backdrop: '#131a33', panel: '#222d4a', edge: '#4a5a83', motif: 'orbit', notes: [523, 622, 784], wave: 'triangle' },
   classic: { font: 'Club Classic', weight: 700, accent: '#aabaff', backdrop: '#141831', panel: '#232b4a', edge: '#414e76', motif: 'stars', notes: [523, 659, 784], wave: 'sine' },
   wheel: { font: 'Club Wheel', weight: 700, accent: '#dfbbff', backdrop: '#201333', panel: '#34204a', edge: '#584075', motif: 'orbit', notes: [440, 622, 831], wave: 'triangle' },
   board: { font: 'Club Race', weight: 700, accent: '#e8c591', backdrop: '#141f1a', panel: '#23352b', edge: '#49634d', motif: 'tiles', notes: [392, 523, 659], wave: 'triangle' },
@@ -11,6 +12,11 @@ const styles = {
   tracks: { font: 'Club Tracks', weight: 700, accent: '#c1e88d', backdrop: '#17251a', panel: '#273c29', edge: '#4a6247', motif: 'rails', notes: [262, 392, 523], wave: 'triangle' },
   potato: { font: 'Club Potato', weight: 400, accent: '#ffd176', backdrop: '#301918', panel: '#4c2924', edge: '#7a503b', motif: 'sparks', notes: [330, 440, 660], wave: 'triangle' },
   showdown: { font: 'Club Teams', weight: 700, accent: '#9be9f3', backdrop: '#101d38', panel: '#1c3050', edge: '#3f5e84', motif: 'flags', notes: [440, 660, 880], wave: 'sine' },
+  samepage: { font: 'Club Classic', weight: 800, accent: '#77efdc', backdrop: '#102939', panel: '#1c3447', edge: '#4a8b94', motif: 'bubbles', notes: [349, 523, 659], wave: 'sine' },
+  spotlight: { font: 'Club Wheel', weight: 800, accent: '#ffc88d', backdrop: '#20182c', panel: '#34233f', edge: '#7a5577', motif: 'orbit', notes: [330, 440, 659], wave: 'sine' },
+  brain: {font:'Club Classic',weight:800,accent:'#86e7fa',backdrop:'#0c2232',panel:'#19364c',edge:'#45738a',motif:'tiles',notes:[392,523,784],wave:'sine'},
+  topanswers: {font:'Club Classic',weight:850,accent:'#ffca83',backdrop:'#221932',panel:'#342a43',edge:'#785c7e',motif:'bubbles',notes:[330,494,659],wave:'triangle'},
+  rare: {font:'Club Classic',weight:900,accent:'#a2f4cd',backdrop:'#0f2630',panel:'#1b3c47',edge:'#428078',motif:'glints',notes:[392,523,659],wave:'sine'},
 };
 
 export function modeStyle(mode) {

@@ -1,0 +1,39 @@
+name: Jambaloop gameplay and question QA
+on:
+  pull_request:
+    paths:
+      - 'server.js'
+      - 'questions.js'
+      - 'verified-questions.js'
+      - 'quiz-race.js'
+      - 'fork-game.js'
+      - 'public/**'
+      - 'test/**'
+      - '.github/workflows/gameplay-and-content.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gameplay-and-question-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Syntax-check changed game modules
+        run: |
+          for file in server.js questions.js verified-questions.js quiz-race.js fork-game.js public/question-history.js public/fork-view.js public/app.js; do
+            node --check "$file"
+          done
+      - name: Check every newly sourced question is structurally reviewed
+        run: |
+          node --input-type=module -e "import {questionAudit} from './verified-questions.js'; const errors=questionAudit(); if(errors.length){console.error(errors);process.exit(1)}"
+      - name: Run full multiplayer and content regression suite
+        run: npm test

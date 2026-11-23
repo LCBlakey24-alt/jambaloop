@@ -1,12 +1,19 @@
 import { scoreBreakView, updateScoreBreak } from './score-break.js';
+import { quizRaceView } from './quiz-race-view.js';
+import { mountQuizRaceTrack } from './quiz-race-track.js';
 import { mobileDeck } from './mobile-deck.js';
 import { awardView, currentFrame, frameView, revealFrames, scoreReveal } from './ceremony.js';
 import { boardSpeedValues, bonusValues, canSetScore, defaultScoring, doubleSchedules, pointValues } from './scoring.js';
 import { gameNightPresets, gameNightView, playlistEditor, playlistLimit, replayButtons } from './game-night.js';
-import { forgetPlayer, parseRoomCode, recentRooms, rememberPlayer, rememberedPlayer } from './room-session.js';
+import { clearRoomSession, forgetPlayer, parseRoomCode, recentRooms, rememberPlayer, rememberedPlayer, restoreRoomSession, saveRoomSession } from './room-session.js';
+import { bindRoomAvatars } from './room-avatars.js';
+import {readQuestionHistory, rememberQuestion} from './question-history.js';
 import { modeVariables, sceneBackdrop } from './mode-style.js';
+import { launcherTile, launcherPreview, launcherModes, launcherSetupArtwork, LAUNCHER_PAGE_SIZE } from './home-launcher.js';
+import { stopNarration, toggleNarration } from './narrator.js';
 import { playCue, playTowerImpact } from './sound-cues.js';
-import { boardLengths, boardRoute, boardDuration, durationLabel, suggestedTurnCap } from './board-route.js';
+import { boardLengths, boardRoute, boardDuration, durationLabel, suggestedTurnCap, boardRequiresChoice, boardPathChoices } from './board-route.js';
+import {teamPlayModes, defaultPlayStyle} from './team-play.js';
 import { avatarView, partyView } from './party-views.js';
 import { openLibrary, savedQuizzes } from './quiz-editor.js';
 import { answerGuide, helpTypes, closestStep, createDraft, formatNumber, orderedItems, specialAnswer } from './answer-controls.js';
@@ -17,6 +24,7 @@ import { boardView, diceView, lobbyView, reviewView, rollRecap, teamList, teamSc
 const icons = (name, css = '') => `<img class="${css}" src="/icons/${name}.svg" alt="">`;
 const modeName = id => modes.find(mode => mode[0] === id)?.[1] ?? '';
 const app = document.querySelector('#app');
+const switchAvatarSession = bindRoomAvatars(app);
 const home = app.innerHTML;
 const dialog = document.querySelector('#dialog');
 const content = document.querySelector('#dialog-content');
@@ -34,6 +42,10 @@ let streamReady = false;
 let nextConnect = 0;
 let offset = 0;
 let submittingAnswer;
+let raceSending = false;
+let raceTrackView;
+let raceAnimationFrame = 0;
+let raceSnapshotLocal = 0;
 let sound;
 let soundEnabled = false;
 let draftKey;
@@ -44,6 +56,10 @@ let boardDisplay;
 let boardModule;
 let renderedPhase;
 let categoryGroup = 0;
+let homeFilter = 'all';
+let homePage = 0;
+let homeSelected;
+let homeTab = 'games';
 let tvFocus = false;
 let partyReply = '';
 let joinAvatar;
@@ -92,16 +108,57 @@ function renderGraphics(s, previous, animateRoll) {
   });
 }
 
+
+function updateQuizRaceVisuals() {
+  raceAnimationFrame = 0;
+  if(!session || !state?.race || !['race-countdown','race','finished'].includes(state.phase)) return;
+  const snapshot=state.race;
+  const elapsed=snapshot.paused ? 0 : Math.min(320,Math.max(0, Date.now()-raceSnapshotLocal));
+  const sim=snapshot.time+(snapshot.paused?0:Math.max(0,Date.now()-raceSnapshotLocal));
+  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  raceTrackView?.update(snapshot.racers,snapshot.length,reduced?0:elapsed,reduced);
+  const set=(selector,text)=>{const item=app.querySelector(selector);if(item&&item.textContent!==String(text))item.textContent=String(text);};
+  set('[data-race-clock]',`${Math.floor(Math.max(0,sim-3000)/60000)}:${String(Math.floor(Math.max(0,sim-3000)/1000)%60).padStart(2,'0')}`);
+  set('[data-race-countdown]',Math.max(1,Math.ceil((3000-sim)/1000)));
+  const own=snapshot.own;
+  if(own){
+    const current=snapshot.racers.find(p=>p.id===state.player?.id);
+    const ratio=Math.round(100*(own.distance+(reduced?0:(current?.speed??1)*elapsed/1000))/Math.max(1,snapshot.length));
+    const progress=app.querySelector('[data-race-progress]');if(progress)progress.style.width=Math.min(100,ratio)+'%';
+    set('[data-race-progress-text]',Math.min(100,ratio)+'%');
+    set('[data-race-speed-value]',(current?.speed??1).toFixed(2)+'×');
+    set('[data-race-position]',own.position+' / '+state.playerCount);
+    set('[data-race-speed]',(current?.speed??1)>1.04?'BOOSTING':(current?.speed??1)<.96?'SLOWED':'CRUISING');
+    if(own.question)set('[data-race-deadline]',Math.max(0,Math.ceil((own.question.deadline-sim)/1000))+'s');
+  }
+  snapshot.racers.forEach(r=>{const row=[...app.querySelectorAll('[data-race-rank]')].find(node=>node.dataset.raceRank===r.id);if(!row)return;
+    const rank=row.querySelector('.race-position');if(rank)rank.textContent=r.position;
+    const percent=Math.min(100,Math.round(100*r.distance/snapshot.length));
+    const text=row.querySelector('.race-rank-percent');if(text)text.textContent=percent+'%';
+    const meter=row.querySelector('.race-mini-track i');if(meter)meter.style.width=percent+'%';
+  });
+  raceAnimationFrame=requestAnimationFrame(updateQuizRaceVisuals);
+}
+
 function renderHome() {
+  stopNarration();
   boardDisplay?.dispose();
   boardDisplay = undefined;
+  raceTrackView?.dispose(); raceTrackView = undefined;
+  cancelAnimationFrame(raceAnimationFrame); raceAnimationFrame = 0;
   setTheme(previewTheme);
   app.innerHTML = home;
   renderedPhase = undefined;
   announcement.textContent = '';
   partyReply = '';
   footer.hidden = false;
-  app.querySelector('[data-action="recent-rooms"]').hidden = recentRooms().length === 0;
+  const recent = app.querySelector('[data-action="recent-rooms"]');
+  if (recent) recent.hidden = recentRooms().length === 0;
+  homeFilter = 'all';
+  homePage = 0;
+  homeSelected = undefined;
+  homeTab = 'games';
+  showHomeTab('games');
   renderModeCards('all');
   categoryGroup = 0;
   document.querySelector('#category-filters').innerHTML = categoryGroups.map(([name], index) => `
@@ -109,24 +166,61 @@ function renderHome() {
   renderCategories();
 }
 
-function renderModeCards(group) {
-  const list = document.querySelector('#mode-list');
-  list.dataset.filter = group;
-  list.innerHTML = modes.filter(([id]) =>
-    group === 'all' || partyModes.includes(id) === (group === 'party'))
-    .map(([id, name, description, icon], index) => {
-      const minimum = minimumPlayers(id);
-      return `<button class="mode-card mode-with-art" data-action="host" data-mode="${id}" style="--entry:${Math.min(index, 7)};${modeVariables(id)}">
-        <img class="mode-cover" src="/mode-${id}.webp" alt="" loading="lazy" decoding="async">
-        <span class="mode-icon" style="--icon:url('/icons/${icon}.svg')"><i></i></span>
-        <span class="mode-description"><strong>${name}</strong><small>${description}</small><small class="mode-minimum">${minimum}+${minimum === 1 ? ' player' : ' players'}</small></span>
-        ${icons('arrow-up-right', 'arrow')}</button>`;
-    }).join('');
+function showHomeTab(tab) {
+  if (!['games','topics'].includes(tab)) return;
+  stopNarration();
+  homeTab = tab;
+  app.querySelectorAll('[data-home-panel]').forEach(panel => {
+    panel.hidden = panel.dataset.homePanel !== tab;
+  });
+  document.querySelectorAll('[data-action="home-tab"]').forEach(button => {
+    button.setAttribute('aria-pressed', String(button.dataset.tab === tab));
+  });
+  const heading = app.querySelector(tab === 'games' ? '#mode-heading' : '#category-heading');
+  if (heading && tab === 'topics') heading.setAttribute('tabindex','-1');
+}
+
+function homePageSize() {
+  if (matchMedia('(max-width: 760px)').matches) return 4;
+  if (matchMedia('(max-width: 900px)').matches) return 6;
+  return LAUNCHER_PAGE_SIZE;
+}
+
+function renderModeCards(group = homeFilter) {
+  stopNarration();
+  const list = app.querySelector('#mode-list');
+  if (!list) return;
+  homeFilter = group;
+  const matches = launcherModes(homeFilter);
+  const size = homePageSize();
+  const pages = Math.max(1, Math.ceil(matches.length / size));
+  homePage = Math.max(0, Math.min(homePage, pages - 1));
+  list.innerHTML = matches.slice(homePage * size, (homePage + 1) * size).map(launcherTile).join('');
+  const preview = app.querySelector('#game-preview');
+  if (homeSelected && matches.some(([id]) => id === homeSelected)) {
+    preview.innerHTML = launcherPreview(homeSelected);
+    preview.hidden = false;
+    list.hidden = true;
+  } else {
+    homeSelected = undefined;
+    preview.innerHTML = '';
+    preview.hidden = true;
+    list.hidden = false;
+  }
+  const pager = app.querySelector('#mode-pager');
+  pager.hidden = Boolean(homeSelected);
+  const previous = pager.querySelector('[data-direction="-1"]');
+  const next = pager.querySelector('[data-direction="1"]');
+  previous.disabled = homePage === 0;
+  next.disabled = homePage >= pages - 1;
+  pager.querySelector('#mode-page-output').textContent = `Page ${homePage + 1} of ${pages} · ${matches.length} games`;
+  const count = app.querySelector('#mode-count');
+  if (count) count.textContent = homeSelected ? 'How to play and game setup' : 'Select a tile to see how it works';
 }
 
 function setupPreview(mode, play = false) {
   return `<div class="setup-look" style="${modeVariables(mode)}">
-    <img class="setup-mode-still" src="/mode-${mode}.webp" alt="" decoding="async">
+    ${launcherSetupArtwork(mode)}
     ${explainer(mode, play)}</div>`;
 }
 
@@ -144,12 +238,14 @@ function renderCategories() {
 }
 
 function openDialog(mode, value, gameMode, quizId) {
+  stopNarration();
   practice = undefined;
   dialog.classList.toggle('setup-dialog', ['host', 'configure', 'rematch', 'practice', 'library', 'night'].includes(mode));
   if (['host', 'configure', 'rematch'].includes(mode)) {
     const configured = mode !== 'host';
     const rematch = mode === 'rematch';
     const selectedMode = quizId ? 'classic' : configured ? state.mode : gameMode ?? 'classic';
+    const raceSetup = configured && state.mode === 'quizrace' ? state : {}; 
     const seconds = configured ? state.seconds : 20;
     const scoring = configured && state.scoring ? state.scoring : defaultScoring(seconds);
     const interval = configured ? state.scoreInterval ?? defaultScoreInterval : defaultScoreInterval;
@@ -177,6 +273,11 @@ function openDialog(mode, value, gameMode, quizId) {
     <label>Question format<select name="format">${selected(formats, configured ? state.format : 'mixed')}</select></label>
     <label><span id="count-label">Questions</span><select name="count" aria-labelledby="count-label"></select></label>
     <label>Time per question<select name="seconds">${selected([15, 20, 30, 45, 0].map(value => [value, value ? value + ' seconds' : 'No timer']), seconds)}</select></label></div>
+    <fieldset id="race-setup" class="race-setup"><legend>Quiz Race</legend><div class="form-row">
+      <label>Race length<select name="raceLength">${selected([['short','Short · ~1 min'],['medium','Medium · ~2 min'],['long','Long · ~3 min']],raceSetup.raceLength ?? 'medium')}</select></label>
+      <label>Track theme<select name="raceTrack">${selected([['neon','Neon Circuit'],['desert','Desert Run'],['snow','Snow Circuit'],['jungle','Jungle Trail'],['space','Space Route']],raceSetup.raceTrack ?? 'neon')}</select></label>
+      <label>Difficulty<select name="raceDifficulty">${selected([['easy','Easy'],['medium','Medium'],['hard','Hard'],['mixed','Mixed']],raceSetup.raceDifficulty ?? 'mixed')}</select></label></div>
+      <small>2–12 racers. Multiple-choice questions appear privately on phones. Fast correct answers boost speed. Easy/Hard use curated questions where available, supplemented by standard questions.</small></fieldset>
     <label id="score-interval-field">Leaderboard reveal<select name="scoreInterval" aria-label="Leaderboard reveal" aria-describedby="score-interval-help">${selected(scoreIntervals.map(value => [value, intervalLabels[value]]), interval)}</select>
       <small id="score-interval-help">Correct answers are still revealed after each question.</small></label>
     <div class="setup-presets" aria-label="Timing presets"><button type="button" class="button outline small" data-preset="quick">Quick game</button>
@@ -186,14 +287,23 @@ function openDialog(mode, value, gameMode, quizId) {
       <label>Max speed bonus<select name="speedPoints">${selected(bonusValues.map(value => [value, value ? '+' + value + ' points' : 'Off']), scoring.bonus)}</select></label>
       <label>Double points<select name="doublePoints">${selected(doubleSchedules, scoring.doubles)}</select></label></div>
       <small>Double points apply to correct answers and their speed bonus. Dice Rally also applies its dice multiplier.</small></fieldset>
+    <fieldset class="team-play-setup" id="team-play-setup"><legend>How are you playing?</legend>
+      <div class="play-style-options" role="group" aria-label="Play style">
+        <label><input type="radio" name="playStyle" value="individual" ${(configured ? state.playStyle : defaultPlayStyle(selectedMode)) === 'individual' ? 'checked' : ''}><span><b>Individual</b><small>Everyone plays for themselves</small></span></label>
+        <label><input type="radio" name="playStyle" value="teams" ${(configured ? state.playStyle : defaultPlayStyle(selectedMode)) === 'teams' ? 'checked' : ''}><span><b>Teams</b><small>Balanced groups compete together</small></span></label>
+      </div>
+      <p id="team-play-help" class="team-play-help" aria-live="polite">Players will be assigned automatically when the game starts.</p>
+    </fieldset>
     <label class="switch-row" id="private-field"><input type="checkbox" name="privateQuestions" ${!configured || state.privateQuestions || state.mode !== 'showdown' ? 'checked' : ''}>
       <span><strong>Private questions</strong><small>Deal a different question to each phone. The TV shows team scores.</small></span></label>
-    <label id="team-count-field"><span id="team-count-label">Number of teams</span><select name="teamCount" aria-labelledby="team-count-label">${selected([[2, '2 teams'], [3, '3 teams'], [4, '4 teams']], configured ? state.teamCount : 4)}</select></label>
+    <label id="team-count-field"><span id="team-count-label">Number of teams</span><select name="teamCount" aria-labelledby="team-count-label">${selected([[2, '2 teams'], [3, '3 teams'], [4, '4 teams']], configured ? state.teamCount : 2)}</select></label>
     <fieldset class="board-planner" id="board-planner" hidden><legend>Board &amp; timing</legend>
       <div class="form-row"><label>Board spaces<select name="boardLength">${selected(boardLengths.map(length => [length, length + ' spaces']), configured ? state.boardLength : 16)}</select></label>
       <label>Expected players<input name="plannedPlayers" type="number" min="1" max="300" value="${configured ? state.playerCount || state.teamCount : 4}"></label></div>
       <label id="board-speed-field">Max speed bonus<select name="boardSpeed">${selected(boardSpeedValues.map(value => [value, value ? '+' + value + '% of the die roll' : 'Off']), speed)}</select></label>
-      <div class="route-preview" aria-hidden="true"></div><output class="duration-preview" aria-live="polite"></output>
+      <div class="route-preview" aria-hidden="true"></div>
+      <p class="board-path-setup-note"><strong>Two paths at the fork:</strong> Power Lane = fewer spaces and ×2 points for the active team on its special tiles; Question Trail = four extra spaces and more turns to earn points.</p>
+      <output class="duration-preview" aria-live="polite"></output>
       <small>Estimates use dice odds, question time and time between turns.</small>
     </fieldset>
     <label>Phone display<select name="phoneView">${selected([['full', 'Show question and answers'], ['answers', 'Answer controls only · read the TV']], configured ? state.phoneView : 'full')}</select></label>
@@ -203,6 +313,10 @@ function openDialog(mode, value, gameMode, quizId) {
     <p class="settings-note" id="scoring-note" aria-live="polite"></p>
     <p class="error" role="alert"></p><button class="button primary" type="submit">${rematch ? 'Set up rematch' : configured ? 'Apply to lobby' : 'Create room'} ${icons('arrow-up-right')}</button></form>`;
     const form = content.querySelector('form');
+    if (configured) {
+      form.dataset.game = state.game;
+      form.dataset.lobbyVersion = state.lobbyVersion;
+    }
     let explained = selectedMode;
     let boardCapEdited = configured && state.mode === 'board';
     let scoringEdited = Boolean(configured && state.scoring);
@@ -210,6 +324,10 @@ function openDialog(mode, value, gameMode, quizId) {
       const game = form.elements.mode.value;
       if (explained !== game) {
         form.querySelector('.explainer-slot').innerHTML = setupPreview(game, true);
+        if (event?.target?.name === 'mode') {
+          const preferred = defaultPlayStyle(game);
+          form.querySelector('[name="playStyle"][value="' + preferred + '"]').checked = true;
+        }
         explained = game;
       }
       const party = partyModes.includes(game);
@@ -218,6 +336,10 @@ function openDialog(mode, value, gameMode, quizId) {
       const privateQuiz = game === 'showdown' && form.elements.privateQuestions.checked;
       form.elements.privateQuestions.disabled = game !== 'showdown';
       const board = game === 'board';
+      const race = game === 'quizrace';
+      form.querySelector('#race-setup').hidden = !race;
+      form.querySelector('#race-setup').disabled = !race;
+      if(race){form.elements.format.value='choice';form.elements.seconds.value='0';form.elements.difficulty.value='standard';}
       const timed = form.elements.seconds.value !== '0';
       const scoreFields = form.querySelector('#quiz-scoring');
       scoreFields.hidden = !canSetScore(game);
@@ -232,38 +354,67 @@ function openDialog(mode, value, gameMode, quizId) {
       }
       const categoryField = form.querySelector('#category-field');
       const supportsCustom = fixedQuestionModes.includes(game) && !privateQuiz;
-      form.querySelector('#team-count-field').hidden = !board && game !== 'showdown';
-      form.querySelector('#team-count-label').textContent = board ? 'Board pieces' : 'Number of teams';
-      for (const option of form.elements.teamCount.options) option.textContent = option.value + (board ? ' pieces' : ' teams');
+      const trolley = game === 'tracks';
+      const matching = game === 'samepage';
+      const spotlight = game === 'spotlight';
+      const brain = game === 'brain';
+      const topAnswers = game === 'topanswers';
+      const rare = game === 'rare';
+      const allowsTeams = teamPlayModes.includes(game);
+      const teamOption = form.querySelector('input[name="playStyle"][value="teams"]');
+      const soloOption = form.querySelector('input[name="playStyle"][value="individual"]');
+      soloOption.disabled = trolley;
+      teamOption.disabled = !allowsTeams;
+      if (trolley) {
+        teamOption.checked = true;
+        form.elements.teamCount.value = '2';
+      }
+      for (const option of form.elements.teamCount.options) {
+        option.disabled = trolley && option.value !== '2';
+      }
+      if (!allowsTeams && teamOption.checked) {
+        form.querySelector('input[name="playStyle"][value="individual"]').checked = true;
+      }
+      const style = form.querySelector('input[name="playStyle"]:checked').value;
+      form.querySelector('#team-count-field').hidden = style !== 'teams';
+      form.querySelector('#team-count-label').textContent = trolley ? 'Exactly two teams' : 'Number of teams';
+      const help = form.querySelector('#team-play-help');
+      help.textContent = trolley ? 'One player becomes the Trolley Driver each round. Everyone else is reshuffled into two teams and votes for one of three cards per phase.'
+        : matching ? 'Everyone writes a secret answer individually. Matching answers score points; there are no teams or predetermined correct answers.'
+        : !allowsTeams ? 'This game has a shared vote or one-holder outcome, so it currently plays individually.'
+        : style === 'teams' ? 'Choose 2–4 teams. Everyone who joins is assigned evenly when play starts; team scores use the average member score so a larger team has no advantage.'
+        : board ? 'Every person races their own board piece, up to four racers.'
+        : race ? 'Each person races independently for first place.' : 'Every player competes individually.';
+      for (const option of form.elements.teamCount.options) option.textContent = option.value + ' teams';
       form.querySelector('#board-planner').hidden = !board;
       if (board && event?.target === form.elements.count) boardCapEdited = true;
       form.querySelector('#quiz-source').hidden = !supportsCustom;
       form.elements.quiz.disabled = !supportsCustom;
       const custom = supportsCustom && Boolean(form.elements.quiz.value);
-      form.elements.difficulty.disabled = !supportsCustom || custom;
+      form.elements.difficulty.disabled = !supportsCustom || custom || race;
       form.querySelector('#difficulty-field').hidden = form.elements.difficulty.disabled;
       const curated = !form.elements.difficulty.disabled && form.elements.difficulty.value !== 'standard';
-      categoryField.hidden = !supportsCustom || custom || curated;
-      form.elements.format.closest('label').hidden = custom || party || privateQuiz || curated;
-      form.elements.count.closest('label').hidden = custom || party;
-      form.elements.seconds.closest('label').hidden = party;
-      form.elements.autoReveal.closest('label').hidden = party;
-      form.elements.phoneView.closest('label').hidden = party || privateQuiz;
-      form.querySelector('.setup-presets').hidden = party;
+      categoryField.hidden = (!supportsCustom && !race) || custom || curated;
+      form.elements.format.closest('label').hidden = custom || party || privateQuiz || curated || race;
+      form.elements.count.closest('label').hidden = custom || (party && !matching && !spotlight && !brain && !topAnswers && !rare) || race;
+      form.elements.seconds.closest('label').hidden = party || race;
+      form.elements.autoReveal.closest('label').hidden = party || race;
+      form.elements.phoneView.closest('label').hidden = party || privateQuiz || race;
+      form.querySelector('.setup-presets').hidden = party || race;
       const scoreInterval = form.elements.scoreInterval;
       scoreInterval.disabled = !supportsScoreCheckpoints(game);
       scoreInterval.closest('label').hidden = scoreInterval.disabled;
       const christmasField = form.querySelector('#christmas-field');
       christmasField.hidden = (party && game !== 'potato') || custom || curated || (!categoryField.hidden && form.elements.category.value !== 'mixed');
       form.elements.includeChristmas.disabled = christmasField.hidden;
-      form.querySelector('#count-label').textContent = board ? 'Maximum turns' : 'Questions';
+      form.querySelector('#count-label').textContent = board ? 'Maximum turns' : rare ? 'Rarity rounds' : topAnswers ? 'Room poll rounds' : brain ? 'Ladder height' : spotlight ? 'Turns per contestant' : trolley || matching ? 'Rounds' : 'Questions';
       const counts = questionCounts(game, privateQuiz || curated ? 'choice' : form.elements.format.value, privateQuiz || curated ? 'mixed' : form.elements.category.value);
       const previous = Number(form.elements.count.value) || (configured ? state.total : 0);
       const spaces = Number(form.elements.boardLength.value);
-      const pieces = Number(form.elements.teamCount.value);
+      const pieces = style === 'individual' ? Math.min(4,Math.max(1,Number(form.elements.plannedPlayers.value)||1)) : Number(form.elements.teamCount.value);
       const players = Math.min(300, Math.max(1, Number(form.elements.plannedPlayers.value) || pieces));
       const preferred = board && !boardCapEdited ? suggestedTurnCap(spaces, Math.min(pieces, players)) : previous;
-      form.elements.count.innerHTML = selected(counts.map(count => [count, count]), counts.includes(preferred) ? preferred : counts[1] ?? counts[0]);
+      form.elements.count.innerHTML = selected(counts.map(count => [count, brain ? count + ' levels' : spotlight ? count + ' ' + (count === 1 ? 'turn' : 'turns') + ' each' : count]), counts.includes(preferred) ? preferred : spotlight ? counts[0] : counts[1] ?? counts[0]);
       if (board) {
         const plan = boardDuration({ spaces, pieces, players, cap: Number(form.elements.count.value),
           seconds: Number(form.elements.seconds.value), autoReveal: form.elements.autoReveal.checked });
@@ -279,11 +430,11 @@ function openDialog(mode, value, gameMode, quizId) {
         : form.elements.seconds.value === '0' ? 'No speed bonus.'
         : format === 'mixed' ? 'Timed correct answers can earn a speed bonus. Closest guesses receive equal base points.'
         : 'Faster correct answers earn more.';
-      form.querySelector('#scoring-note').textContent = party ? (game === 'bluff' ? 'Three or more players. Write a reply, then vote for the bluff.' : game === 'potato' ? 'Two or more players. The potato has one shared two-minute timer.' : 'Three rounds. Players use their phones to enter or vote.')
+      form.querySelector('#scoring-note').textContent = race ? 'You steer your speed with answers. Correct boosts you, Pass and wrong answers slow you down. First to finish wins.' : party ? (rare ? 'Everyone secretly enters a valid answer that the other players might not think of. A verified unique answer earns 200 points, a pair earns 100 each, three or more matches earn 50 each. Unrecognised answers need the TV host to review them before reveal. Choose 3, 5 or 7 rounds.' : topAnswers ? 'Everyone privately votes for their genuine favourite among four options. Then secretly predicts the room’s most popular answer. The TV reveals real room vote counts (never invented surveys). Score 20 per vote for your prediction, plus 100 when you predict a top-ranked option. Choose 3, 5 or 7 rounds.' : brain ? 'Climb 5, 7 or 10 original reasoning puzzles. Start with 2 lives; a missed or wrong answer costs 1 life. Each higher level earns more points, and eliminated players can watch the remaining climb.' : spotlight ? 'Everyone takes one contestant turn. A randomly selected expert suggests an answer first. Contestants earn 100 points for a correct answer; experts earn 40 for a correct suggestion. Choose one, two or three turns each, for up to twenty players.' : matching ? 'Write a short answer privately. Each other player who matches it earns you 100 points. Choose 3, 5 or 7 rounds.' : trolley ? 'Each round: two teams choose one of three cards in each phase (defend, sabotage, reinforce). The Trolley Driver pulls the lever. One round per player.' : game === 'bluff' ? 'Three or more players. Write a reply, then vote for the bluff.' : game === 'potato' ? 'Two or more players. The potato has one shared two-minute timer.' : 'Three rounds. Players use their phones to enter or vote.')
         : privateQuiz ? 'Each player gets a unique multiple-choice or True or False question in each round.'
         : custom ? 'Uses every question in the saved quiz in its authored order.'
         : curated ? 'A curated mixed-topic pack with multiple-choice questions.' : board
-        ? 'The roll sets the move, the base points and the question level. The landing space picks the genre.'
+        ? 'Choose Power Lane for double points on its special tiles, or Question Trail for four extra question spaces. The dice set movement and question level.'
         : game === 'wheel' ? 'The wheel picks a different category until it has used them all. ' + scoringNote
         : game === 'dice' ? 'Two dice set the points multiplier for each question. ' + scoringNote
         : game === 'knockout' ? 'Wrong or missed answers cost a life. The last player standing wins.'
@@ -332,6 +483,7 @@ function openDialog(mode, value, gameMode, quizId) {
     <div class="selfie-picker"><img id="selfie-preview" class="player-avatar" alt="Your avatar preview" hidden>
       <label class="button outline small file-button">Take a selfie<input data-selfie type="file" accept="image/*" capture="user" aria-label="Take a selfie"></label>
       <label class="button outline small file-button">Choose photo<input data-selfie type="file" accept="image/*" aria-label="Choose photo"></label><button type="button" class="button outline small" data-action="clear-selfie" hidden>Remove photo</button></div>
+    <small class="photo-privacy">Optional photos are visible only to people who have joined this room.</small>
     <p class="error" role="alert"></p><button class="button primary">Join game ${icons('arrow-up-right')}</button></form>
     ${recentRooms().length ? '<button class="text-button" data-action="recent-rooms">Resume a recent room</button>' : ''}`;
   } else {
@@ -369,18 +521,21 @@ function startSession(next) {
   reconnecting = false;
   nextConnect = 0;
   session = next;
+  switchAvatarSession(next);
   tvFocus = false;
   state = undefined;
   draftKey = undefined;
   submittingAnswer = undefined;
   document.body.classList.add('playing');
   signature = undefined;
-  sessionStorage.setItem('quizmas-session', JSON.stringify(next));
+  saveRoomSession(next);
   rememberPlayer(next);
   history.replaceState(null, '', '/');
   dialog.close();
   boardDisplay?.dispose();
   boardDisplay = undefined;
+  raceTrackView?.dispose(); raceTrackView = undefined;
+  cancelAnimationFrame(raceAnimationFrame); raceAnimationFrame = 0;
   app.innerHTML = `<section class="game connection-screen"><div class="game-panel">
     <div class="eyebrow">ROOM ${escape(next.code)}</div><h1>Joining the lobby<span class="brand-dot">.</span></h1>
     <p role="status"><span class="connection-indicator" aria-hidden="true"></span>Connecting to the room…</p>
@@ -393,10 +548,13 @@ function leave() {
   stream?.abort();
   stream = undefined;
   session = undefined;
+  switchAvatarSession();
   tvFocus = false;
   submittingAnswer = undefined;
+  raceSending = false; raceTrackView?.dispose(); raceTrackView = undefined;
+  cancelAnimationFrame(raceAnimationFrame);raceAnimationFrame=0;
   document.body.classList.remove('playing');
-  sessionStorage.removeItem('quizmas-session');
+  clearRoomSession();
   history.replaceState(null, '', '/');
   renderHome();
 }
@@ -451,15 +609,15 @@ document.addEventListener('submit', async event => {
   event.preventDefault();
   const button = form.querySelector('button:not([type="button"])');
   button.disabled = true;
-  const { mode, theme, format, category, count, seconds, code, name, autoReveal, includeChristmas, phoneView, quiz, teamCount, boardLength, privateQuestions, difficulty, basePoints, speedPoints, doublePoints, boardSpeed, scoreInterval } = Object.fromEntries(new FormData(form));
+  const { mode, theme, format, category, count, seconds, code, name, autoReveal, includeChristmas, phoneView, quiz, teamCount, boardLength, playStyle, privateQuestions, difficulty, basePoints, speedPoints, doublePoints, boardSpeed, scoreInterval, raceLength, raceTrack, raceDifficulty } = Object.fromEntries(new FormData(form));
   try {
     const customQuiz = quiz && quiz !== 'current' ? savedQuizzes().find(entry => entry.id === quiz) : undefined;
     const curated = difficulty && difficulty !== 'standard';
     const scoring = basePoints ? { base: Number(basePoints), bonus: Number(speedPoints), doubles: doublePoints } : undefined;
-    const settings = { mode, theme, difficulty, scoring, scoreInterval: scoreInterval === undefined ? undefined : Number(scoreInterval), boardSpeed: boardSpeed === undefined ? undefined : Number(boardSpeed), format: curated ? 'choice' : format, category: curated ? 'mixed' : category, phoneView, teamCount: Number(teamCount), boardLength: Number(boardLength), customQuiz, useRoomQuiz: quiz === 'current', count: Number(count), privateQuestions: privateQuestions === 'on', seconds: Number(seconds), autoReveal: autoReveal === 'on', includeChristmas: includeChristmas === 'on' };
+    const settings = { mode, playStyle, theme, difficulty, raceLength, raceTrack, raceDifficulty, scoring, scoreInterval: scoreInterval === undefined ? undefined : Number(scoreInterval), boardSpeed: boardSpeed === undefined ? undefined : Number(boardSpeed), format: curated ? 'choice' : format, category: curated ? 'mixed' : category, phoneView, teamCount: Number(teamCount), boardLength: Number(boardLength), customQuiz, useRoomQuiz: quiz === 'current', count: Number(count), privateQuestions: privateQuestions === 'on', seconds: Number(seconds), autoReveal: autoReveal === 'on', includeChristmas: includeChristmas === 'on' };
     if (form.id === 'rematch-form' || form.id === 'configure-form') {
       const action = form.id === 'rematch-form' ? 'rematch' : 'configure';
-      await api('/' + session.code + '/' + action, { ...settings, game: state.game });
+      await api('/' + session.code + '/' + action, { ...settings, game: Number(form.dataset.game), lobbyVersion: Number(form.dataset.lobbyVersion) });
       dialog.close();
       await refresh();
     } else if (form.id === 'host-form') {
@@ -471,7 +629,7 @@ document.addEventListener('submit', async event => {
         startSession(known);
         return;
       }
-      const player = await api('/' + code + '/join', { name, avatar: joinAvatar });
+      const player = await api('/' + code + '/join', { name, avatar: joinAvatar, seenQuestions: readQuestionHistory() });
       startSession({ code, key: player.key, host: false });
     }
   } catch (error) {
@@ -529,14 +687,14 @@ function tvRoundHud(s, timer, progress, host) {
   if (!host) return '';
   const revealed = s.phase === 'reveal';
   const leaders = revealed && showsScoresEachQuestion(s) && !s.teams.length ? s.players.slice(0, 3) : [];
-  const showdown = showsScoresEachQuestion(s) && s.mode === 'showdown';
+  const groupPlay = showsScoresEachQuestion(s) && s.teams.length && s.mode !== 'board';
   return `<aside class="tv-round-hud">
     <section class="game-panel tv-status">
       <div class="eyebrow">${revealed ? 'ROUND COMPLETE' : 'LIVE ROUND'}</div>
       ${timer || `<strong class="tv-status-title">${revealed ? 'Answer revealed' : 'No timer'}</strong>`}
       <p class="status" id="host-answer-count" role="status">${answerCount(s)}</p>${progress}
     </section>
-    ${showdown ? `<section class="game-panel tv-leaders"><div class="eyebrow">TEAM SCORES</div>${teamScoreboard(s.teams)}</section>` : ''}
+    ${groupPlay ? `<section class="game-panel tv-leaders"><div class="eyebrow">TEAM SCORES</div>${teamScoreboard(s.teams)}</section>` : ''}
     ${leaders.length ? `<section class="game-panel tv-leaders"><div class="eyebrow">TOP SCORES</div>${leaderboard(leaders)}</section>` : ''}
   </aside>`;
 }
@@ -551,10 +709,26 @@ function phaseCaption(s) {
     question: 'Question live',
     reveal: 'Answer revealed',
     'score-break': 'Leaderboard checkpoint',
-    'party-write': s.mode === 'cards' ? 'Choose a card' : 'Write a reply',
+    'party-build': 'Build your track',
+    'party-judge': 'Judge chooses track',
+    'party-write': s.mode === 'cards' ? 'Choose a card' : s.mode === 'samepage' ? 'Write your matching answer' : 'Write a reply',
     'party-vote': 'Voting open',
-    'party-reveal': 'Votes revealed',
+    'party-reveal': s.mode === 'samepage' ? 'Matching answers revealed' : 'Votes revealed',
+    'spotlight-ready': 'Contestant enters the spotlight',
+    'spotlight-expert': 'Expert advice in progress',
+    'spotlight-answer': 'Contestant final answer',
+    'spotlight-reveal': 'Spotlight answer and scores',
+    'brain-question': 'Brain Ladder challenge',
+    'brain-reveal': 'Brain Ladder solution',
+    'top-poll': 'Live room poll',
+    'top-guess': 'Predict the most popular choice',
+    'top-reveal': 'Real room vote reveal',
+    'rare-write': 'Rare Find entries open',
+    'rare-review': 'Host reviewing unusual Rare Find answers',
+    'rare-reveal': 'Real Rare Find answer reveal',
     'party-potato': 'Potato in play',
+    'race-countdown': 'Race about to start',
+    race: 'Quiz Race in progress',
     finished: 'Final results',
   }[s.phase];
 }
@@ -565,7 +739,7 @@ function render(s) {
   const won = s.answerCorrect ?? Boolean(s.earned);
   const canControl = host || s.isCaptain;
   const controllerOnly = !host && s.phoneView === 'answers';
-  const canPause = canControl && s.ends && ['question', 'party-potato'].includes(s.phase);
+  const canPause = canControl && ((s.ends && ['question', 'party-potato'].includes(s.phase)) || (s.mode === 'quizrace' && ['race','race-countdown'].includes(s.phase)));
   const pauseButton = canPause ? `<button class="button outline small" data-action="clock">
     ${icons('pause')} Pause timer</button>` : '';
   setTheme(s.theme);
@@ -583,6 +757,8 @@ function render(s) {
       <h1>You’re on the list, ${escape(s.player.name)}<span class="brand-dot">.</span></h1>
       <p>The current game is underway. Keep this open and you’ll join the next lobby automatically.</p>
     </section>`;
+  } else if (s.mode === 'quizrace' && s.race && ['race-countdown', 'race', 'finished'].includes(s.phase)) {
+    body = quizRaceView({...s, categoryName: categoryName(s.category)}, {host,canControl,icons,replayButtons,sending:raceSending});
   } else if (s.pausedAt) {
     body = `<section class="game-panel round-break">
       <span class="pause-mark">${icons('pause')}</span><div class="eyebrow">ROUND ON HOLD</div><h1>Timer paused<span class="brand-dot">.</span></h1>
@@ -604,10 +780,11 @@ function render(s) {
   } else if (s.phase === 'ready' || s.phase === 'rolling') {
     const rolling = s.phase === 'rolling';
     const canRoll = board ? host || ownTeam?.id === team.id : canControl;
+    const needsPath = board && !rolling && boardRequiresChoice(s.boardLength,team.position,team.pathChoice);
     const action = board || rally ? 'Roll the dice' : 'Spin the wheel';
-    const title = board ? `${team.name}’s turn` : rally ? (rolling ? 'Dice in motion' : 'Roll for points') : rolling ? 'Spinning the wheel' : 'Spin for a category';
+    const title = board ? `${escape(team.name)}’s turn` : rally ? (rolling ? 'Dice in motion' : 'Roll for points') : rolling ? 'Spinning the wheel' : 'Spin for a category';
     const status = rolling ? (board ? 'Watch the die drop through the tower.' : rally ? 'Rolling the dice…' : 'Choosing a category…')
-      : board ? 'The die sets the move, base points, and question level. Every team answers the landing square’s genre.' : rally ? 'The dice set the multiplier for everyone’s correct answers.' : 'The wheel picks the next topic.';
+      : board ? needsPath ? 'Your team has reached a fork. Choose a path before rolling.' : 'The die sets the move, base points, and question level. Every team answers the landing square’s genre.' : rally ? 'The dice set the multiplier for everyone’s correct answers.' : 'The wheel picks the next topic.';
     body = `<div class="game-panel turn-panel ${board || rally ? 'board-turn' : 'wheel-turn'}">
       ${host ? board ? boardView(s) : rally ? diceView(s) : wheelView(s) : ''}
       <div class="turn-copy"><div class="eyebrow">${board ? 'TURN' : 'QUESTION'} ${s.index + 1} OF ${s.total}</div>
@@ -616,20 +793,26 @@ function render(s) {
         <p role="status">${status}</p>
         ${board ? teamList(rolling ? { ...s, teams: s.teams.map(entry => entry.id === s.activeTeam ? { ...entry, position: s.motion.from } : entry) } : s, ownTeam?.id) : ''}
         ${rally ? '<div class="dice-rules"><span>2–6 <b>×1</b></span><span>7–10 <b>×2</b></span><span>11–12 <b>×3</b></span></div>' : ''}
-        ${!rolling && canRoll ? `<button class="button primary" data-action="roll">${icons(board ? 'dice-5' : rally ? 'dices' : 'disc-3')} ${action}</button>` : ''}
+        ${needsPath ? `<div class="board-path-picker"><h2>Choose your route</h2><p>Both lanes rejoin before the finish. Which will you take?</p>
+          <div class="board-path-options">${boardPathChoices.map(option => `<button class="board-path-option ${option.id}" type="button" data-action="board-path" data-path="${option.id}"
+          ${!canRoll ? 'disabled' : ''}><b>${option.name}</b><small>${option.detail}</small></button>`).join('')}</div></div>` : ''}
+        ${board && team.pathChoice && !rolling ? `<p class="board-route-selected">Route chosen: <strong>${team.pathChoice === 'power' ? 'Power Lane · ×2 points' : 'Question Trail · +4 spaces'}</strong></p>` : ''}
+        ${!rolling && canRoll && !needsPath ? `<button class="button primary" data-action="roll">${icons(board ? 'dice-5' : rally ? 'dices' : 'disc-3')} ${action}</button>` : ''}
         ${board ? boardPrediction(s, host) : ''}
-        ${!rolling && !canRoll ? `<p class="turn-wait">${board ? 'Waiting for Team ' + team.name + ' to roll.' : rally ? 'Waiting for the captain to roll.' : 'Waiting for the captain to spin.'}</p>` : ''}
+        ${!rolling && !canRoll ? `<p class="turn-wait">${board ? 'Waiting for ' + (s.playStyle === 'individual' ? '' : 'Team ') + escape(team.name) + ' to roll.' : rally ? 'Waiting for the captain to roll.' : 'Waiting for the captain to spin.'}</p>` : ''}
       </div></div>`;
   } else if (s.phase === 'score-break') {
     body = scoreBreakView(s, { host, canControl, escape, icons });
   } else if (s.phase === 'finished') {
     const winners = s.players.filter(player => sameRank(player, s.players[0]));
     const winningTeams = s.teams.length ? s.teams.filter(team => s.teamWinners.includes(team.id)) : [];
-    const title = board ? winningTeams.length === 1 ? `Team ${winningTeams[0].name} wins the race!` : 'The race ends in a tie!'
-      : showdown ? winningTeams.length === 1 ? `Team ${winningTeams[0].name} wins!` : 'The teams are tied!'
+    const title = board ? winningTeams.length === 1
+        ? (s.playStyle === 'individual' ? escape(winningTeams[0].name) : 'Team ' + escape(winningTeams[0].name)) + ' wins the race!'
+        : 'The race ends in a tie!'
+      : s.playStyle === 'teams' ? winningTeams.length === 1 ? 'Team ' + escape(winningTeams[0].name) + ' wins!' : 'The teams are tied!'
       : winners.length === 1 ? escape(winners[0].name) + ' takes the crown!' : 'It’s a tie!';
     body = `<div class="game-panel results"><div class="eyebrow">FINAL RESULTS</div><h1>${title}</h1>
-      ${board ? teamList(s, ownTeam?.id, true) : showdown ? teamScoreboard(s.teams, ownTeam?.id) : ''}
+      ${board ? teamList(s, ownTeam?.id, true) : s.teams.length ? teamScoreboard(s.teams, ownTeam?.id) : ''}
       ${s.teams.length ? '<h2>Individual scores</h2>' : ''}
       ${host ? `<div class="podium">${standings(s.players)}</div>` : `<p>You placed <strong>#${s.rank} of ${s.playerCount}</strong> with <strong>${s.player.score.toLocaleString()} points</strong>.</p>`}
       ${!host ? `<dl class="personal-scorecard"><div><dt>Rounds won</dt><dd>${s.player.wins} / ${s.index + 1}</dd></div><div><dt>Best streak</dt><dd>${s.player.bestStreak}</dd></div><div><dt>Final rank</dt><dd>#${s.rank}</dd></div></dl>` : ''}
@@ -679,7 +862,7 @@ function render(s) {
       <div class="eyebrow round-kicker"><span>${board ? 'TURN' : 'QUESTION'} ${s.index + 1} OF ${s.total}</span>
         <span>${escape(s.quizTitle || categoryName(question.category))}</span><span>${answerGuide(question.type)[0]}</span></div>
       ${board || rally ? rollRecap(s) : ''}${board ? boardPrediction(s, host) : ''}${scoringLine}${lifeInfo}
-      ${showdown && ownTeam ? `<p class="your-team" style="--team:${ownTeam.color}">Team ${ownTeam.name}${showLiveScores ? ' · ' + ownTeam.score.toLocaleString() + ' pts' : ''}</p>` : ''}
+      ${ownTeam && s.playStyle === 'teams' ? `<p class="your-team" style="--team:${ownTeam.color}">Team ${escape(ownTeam.name)}${showLiveScores ? ' · ' + ownTeam.score.toLocaleString() + ' pts' : ''}</p>` : ''}
       <h2>${controllerOnly ? (revealed ? 'Answer revealed' : 'Look at the TV') : escape(s.question.prompt)}</h2>
       ${timer && !host ? '<div class="time-track" aria-hidden="true"><div id="time-fill"></div></div>' : ''}
       ${promptHelp}
@@ -687,11 +870,12 @@ function render(s) {
        data-dim="${revealed ? s.question.correct !== index : !host && selection !== undefined && selection !== index}" data-action="answer" data-option="${index}" ${host || revealed || locked || sending || eliminated ? 'disabled' : ''}>
       <strong>${'ABCD'[index]}</strong><span>${escape(option)}${revealed && s.question.correct === index ? ' ✓' : ''}</span>
       ${s.breakdown ? `<small class="answer-count"><b class="vote-share">${s.answered ? Math.round(100 * s.breakdown[index] / s.answered) : 0}%</b><span>${s.breakdown[index]} ${s.breakdown[index] === 1 ? 'vote' : 'votes'}</span></small>` : ''}</button>`).join('')}</div>`}
-      ${checkpointNote(s)}<div class="round-footer">${host ? '' : `<div class="round-status"><p class="status" role="status">${revealed ? revealStatus + (showLiveScores ? ' Total: ' + s.player.score.toLocaleString() + ' pts.' : '') : answerStatus}</p>${revealed && s.player.streak >= 2 ? `<span class="streak-tag">${s.player.streak} in a row</span>` : ''}</div>`}
+      ${revealed && s.question.source ? `<a class="question-source" href="${escape(s.question.source)}" target="_blank" rel="noopener noreferrer">Verified answer source</a>` : ''}
+       ${checkpointNote(s)}<div class="round-footer">${host ? '' : `<div class="round-status"><p class="status" role="status">${revealed ? revealStatus + (showLiveScores ? ' Total: ' + s.player.score.toLocaleString() + ' pts.' : '') : answerStatus}</p>${revealed && s.player.streak >= 2 ? `<span class="streak-tag">${s.player.streak} in a row</span>` : ''}</div>`}
       ${pauseButton}
       ${canControl ? `<button class="button primary captain-next" data-action="advance">${nextQuestionLabel(s)} ${icons('arrow-right')}</button>` : ''}</div>
       </div>${tvRoundHud(s, timer, response, host)}${host ? '</div>' : ''}${revealed && board && showLiveScores ? `<div class="game-panel round-leaders"><h2>Race standings</h2>${teamList(s, ownTeam?.id, true)}</div>` : ''}
-      ${host && revealed && showLiveScores && !board && !showdown ? `<div class="game-panel round-leaders"><h2>Leaderboard</h2>${fullLeaderboard(s.players, 'View full leaderboard')}</div>` : ''}`;
+      ${host && revealed && showLiveScores && !board && !s.teams.length ? `<div class="game-panel round-leaders"><h2>Leaderboard</h2>${fullLeaderboard(s.players, 'View full leaderboard')}</div>` : ''}`;
   }
   if (s.phase === 'finished') {
     const nextUp = gameNightView(s, { canControl, escape, icons });
@@ -705,7 +889,7 @@ function render(s) {
       body = (s.night.queue.length ? nextUp : '') + body + awardView(s.awards, escape, icons) + (s.night.queue.length ? '' : nextUp);
     }
   } else if (['lobby', 'waiting'].includes(s.phase)) body += gameNightView(s, { canControl, escape, icons });
-  const phaseKey = `${s.code}/${s.game}/${s.index}/${s.phase}${s.pausedAt ? '/paused' : ''}${s.party?.holding ? '/' + s.party.step : ''}`;
+  const phaseKey = `${s.code}/${s.game}/${s.index}/${s.phase}${s.pausedAt ? '/paused' : ''}${s.party?.holding || s.party?.type === 'fork' ? '/' + s.party.step : ''}`;
   const enter = renderedPhase !== phaseKey;
   const animateRoll = Boolean(boardDisplay && s.phase === 'rolling' && renderedPhase === `${s.code}/${s.game}/${s.index}/ready`);
   renderedPhase = phaseKey;
@@ -713,10 +897,11 @@ function render(s) {
   const backdrop = enter ? null : app.querySelector('.scene-backdrop');
   const focused = document.activeElement;
   const rosterScroll = enter ? 0 : app.querySelector('.players')?.scrollTop;
+  const lobbyAction = !enter && s.phase === 'lobby' && app.contains(focused) && focused.matches('button[data-action]') ? focused.dataset.action : undefined;
   const captainSelect = !enter && focused?.matches('#captain-form select') ? focused.value : undefined;
   const writing = !enter && focused?.matches('#bluff-form textarea')
     ? [focused.selectionStart, focused.selectionEnd] : undefined;
-  const showProgress = ['ready', 'rolling', 'question', 'reveal', 'score-break', 'party-write', 'party-vote', 'party-reveal'].includes(s.phase) && s.total > 1;
+  const showProgress = ['ready', 'rolling', 'question', 'reveal', 'score-break', 'party-build', 'party-judge', 'party-write', 'party-vote', 'party-reveal', 'spotlight-ready', 'spotlight-expert', 'spotlight-answer', 'spotlight-reveal', 'brain-question', 'brain-reveal', 'top-poll', 'top-guess', 'top-reveal', 'rare-write', 'rare-review', 'rare-reveal'].includes(s.phase) && s.total > 1;
   const caption = phaseCaption(s);
   const boost = s.boost > 1 && ['ready', 'rolling', 'question', 'reveal'].includes(s.phase)
     ? `<span class="score-boost">${icons('zap')} Double points</span>` : '';
@@ -730,7 +915,9 @@ function render(s) {
     <div class="screen-identity"><span class="screen-mode-icon" aria-hidden="true">${icons(mode[3])}</span>
       <div><div class="screen-mode-title">${escape(s.quizTitle || (s.mode === 'classic' ? categoryName(s.category) : modeName(s.mode)))}</div>
       <div class="screen-status"><span class="phase-caption">${caption}</span>
-      ${s.isCaptain && s.phase !== 'lobby' ? '<span class="captain-tag">★ Captain</span>' : ''}${boost}</div></div></div>${track}
+      ${s.isCaptain && s.phase !== 'lobby' ? '<span class="captain-tag">★ Captain</span>' : ''}${boost}
+      ${host && ['lobby','finished'].includes(s.phase) ? '<span class="studio-publisher">A ROOKIE QUEST GAMES PRODUCTION</span>' : ''}
+      ${host && !['lobby','waiting'].includes(s.phase) ? `<span class="tv-live-pill"><i aria-hidden="true"></i>JAMBALOOP LIVE · <span data-tv-connected>${s.connected}</span> PLAYERS</span>` : ''}</div></div></div>${track}
       <div class="game-controls">${host ? '' : timer}
     ${host ? `<button class="button outline small tv-focus-toggle" data-action="tv-focus" title="Hide TV host controls while the captain runs the game" aria-pressed="${tvFocus}" aria-label="${tvFocus ? 'Exit TV focus' : 'TV focus'}">${icons('monitor-play', 'host-compact-icon')} <span>${tvFocus ? 'Exit TV focus' : 'TV focus'}</span></button>` : ''}
     ${host && s.phase !== 'lobby' ? `<button class="button outline small room-link" data-action="show-join" aria-label="Room ${s.code}">${icons('qr-code')} <span>Room ${s.code}</span></button>` : ''}
@@ -744,11 +931,17 @@ function render(s) {
     ${body}<p class="error" id="game-error" role="alert"></p></section>`;
   if (backdrop) app.querySelector('.scene-backdrop').replaceWith(backdrop);
   renderGraphics(s, stage, animateRoll);
+  if(s.mode==='quizrace' && s.race){
+    raceTrackView?.dispose(); raceTrackView=mountQuizRaceTrack(app);
+    raceSnapshotLocal=Date.now();
+    if(!raceAnimationFrame) raceAnimationFrame=requestAnimationFrame(updateQuizRaceVisuals);
+  }
   updateCeremony();
   updateScoreBreak(app, Date.now() + offset);
   if (enter) announcement.textContent = caption + (showProgress ? ' · ' + (s.index + 1) + ' of ' + s.total : '');
   const roster = rosterScroll && app.querySelector('.players');
   if (roster) roster.scrollTop = rosterScroll;
+  if (lobbyAction) app.querySelector(`button[data-action="${CSS.escape(lobbyAction)}"]:enabled`)?.focus({preventScroll:true});
   if (captainSelect) {
     const select = app.querySelector('#captain-form select');
     if (select && Array.from(select.options).some(item => item.value === captainSelect)) {
@@ -814,6 +1007,8 @@ function boardPrediction(state, host) {
 }
 
 function updatePresence(s) {
+  const tvConnected=document.querySelector('[data-tv-connected]');
+  if (tvConnected && tvConnected.textContent !== String(s.connected)) tvConnected.textContent=String(s.connected);
   const presence = document.querySelector('#stage-presence');
   if (presence) {
     const label = `${s.connected} connected${s.waitingCount ? ' · ' + s.waitingCount + ' joining next game' : ''}`;
@@ -850,13 +1045,26 @@ function receive(next, current) {
   if (dialog.open && state && (state.game !== next.game || state.phase === 'lobby' && next.phase !== 'lobby')) dialog.close();
   if (state?.game !== next.game || state?.index !== next.index || next.phase === 'lobby') partyReply = '';
   state = next;
+  // Store only opaque question IDs, never answer keys or other players' data.
+  if (!current.host) {
+    rememberQuestion(next.question?.historyId);
+    rememberQuestion(next.race?.own?.question?.historyId);
+    if (next.party?.type === 'samepage') rememberQuestion(next.party.historyId);
+    if (next.party?.type === 'spotlight') rememberQuestion(next.party.question?.historyId);
+    if (next.party?.type === 'brain') rememberQuestion(next.party.question?.historyId);
+    if (next.party?.type === 'topanswers') rememberQuestion(next.party.historyId);
+    if (next.party?.type === 'rare') rememberQuestion(next.party.historyId);
+  }
+  if(next.race) raceSnapshotLocal=Date.now();
   if (!current.host && next.player && (current.name !== next.player.name || current.mode !== next.mode)) {
     Object.assign(current, { name: next.player.name, mode: next.mode });
     rememberPlayer(current);
   }
-  const { now, revision, answered, connected, waitingCount, responseTarget, ...stable } = next;
+  const { now, revision, answered, connected, waitingCount, responseTarget, race, ...stable } = next;
+  const raceSignature = race && { question:race.own?.question?.id, feedback:race.own?.feedback?.outcome, paused:race.paused, finished:race.finished };
   const lobbyStatus = next.phase === 'lobby' ? { connected } : undefined;
-  const nextSignature = JSON.stringify({ ...stable, lobbyStatus,
+  const raceStable = next.mode==='quizrace' ? { ...stable, players: next.phase==='finished' ? stable.players : undefined, player: stable.player ? {...stable.player, score: undefined} : undefined } : stable;
+  const nextSignature = JSON.stringify({ ...raceStable, raceSignature, lobbyStatus,
     prediction: next.phase === 'ready' && current.host ? undefined : next.prediction });
   if (signature !== nextSignature) {
     signature = nextSignature;
@@ -908,6 +1116,7 @@ async function connect() {
   if (!session || stream) return;
   const current = session;
   const controller = new AbortController();
+  let pollOnlyUntil = 0;
   stream = controller;
   streamReady = false;
   lastUpdate = Date.now();
@@ -917,6 +1126,11 @@ async function connect() {
       signal: controller.signal,
     });
     if (!response.ok || !response.body) {
+      if (response.status === 409) {
+        const seconds = Number(response.headers.get('retry-after'));
+        pollOnlyUntil = Date.now() + (seconds > 0 ? seconds : 5) * 1000;
+      }
+      await response.body?.cancel();
       await refresh();
       return;
     }
@@ -945,8 +1159,8 @@ async function connect() {
     if (stream === controller) {
       controller.abort();
       stream = undefined;
-      if (current === session) setConnectionStatus(true);
-      nextConnect = Date.now() + 800 + Math.random() * 1200;
+      if (current === session && !pollOnlyUntil) setConnectionStatus(true);
+      nextConnect = pollOnlyUntil || Date.now() + 800 + Math.random() * 1200;
     }
   }
 }
@@ -1022,6 +1236,23 @@ function checkPractice(value) {
 
 document.addEventListener('change', async event => {
   const input = event.target;
+  if (input.matches('[data-join-origin]')) {
+    const current = session;
+    if (!current?.host || !state?.joinUrl || input.value === new URL(state.joinUrl).origin) return;
+    const previous = new URL(state.joinUrl).origin;
+    input.disabled = true;
+    try {
+      await api('/' + current.code + '/invite', { origin: input.value });
+      if (session === current) await refresh();
+    } catch (error) {
+      if (input.isConnected) input.value = previous;
+      const message = document.querySelector('#game-error');
+      if (message) message.textContent = error.message || 'Could not change the phone connection address.';
+    } finally {
+      if (input.isConnected) input.disabled = false;
+    }
+    return;
+  }
   if (!input.matches('[data-selfie]') || !input.files[0]) return;
   const form = input.closest('form');
   const submit = form.querySelector('button:not([type="button"])');
@@ -1109,6 +1340,10 @@ document.addEventListener('click', async event => {
   const button = event.target.closest('[data-action]');
   if (!button) return;
   const action = button.dataset.action;
+  if (action === 'narrator-toggle') {
+    toggleNarration(button.dataset.mode);
+    return;
+  }
   if (action === 'clear-selfie') {
     joinAvatar = undefined;
     const preview = content.querySelector('#selfie-preview');
@@ -1117,12 +1352,61 @@ document.addEventListener('click', async event => {
     button.hidden = true;
     return;
   }
+  if (action === 'home-tab') {
+    if (!session) showHomeTab(button.dataset.tab);
+    return;
+  }
   if (action === 'filter-modes') {
     document.querySelectorAll('.mode-filters button').forEach(filter =>
       filter.setAttribute('aria-pressed', String(filter === button)));
+    homePage = 0;
+    homeSelected = undefined;
     renderModeCards(button.dataset.group);
     return;
   }
+  if (action === 'mode-page') {
+    homePage += Number(button.dataset.direction);
+    renderModeCards(homeFilter);
+    return;
+  }
+  if (action === 'preview-mode') {
+    const id = button.dataset.mode;
+    if (!modes.some(([mode]) => mode === id)) return;
+    homeSelected = id;
+    renderModeCards(homeFilter);
+    app.querySelector('[data-action="close-preview"]')?.focus({preventScroll:true});
+    return;
+  }
+  if (action === 'close-preview') {
+    const id = homeSelected;
+    homeSelected = undefined;
+    renderModeCards(homeFilter);
+    app.querySelector(`[data-action="preview-mode"][data-mode="${id}"]`)?.focus({preventScroll:true});
+    return;
+  }
+  if (action === 'race-answer' || action === 'race-pass') {
+    if (raceSending || !state.race?.own?.question) return;
+    raceSending = true;
+    const qid = state.race.own.question.id;
+    const controls = document.querySelectorAll('[data-action="race-answer"], [data-action="race-pass"]');
+    controls.forEach(control => control.disabled=true);
+    try {
+      await api('/' + session.code + '/race-answer', {game:state.game,questionId:qid,...(action==='race-pass'?{pass:true}:{option:Number(button.dataset.raceOption)})});
+      await refresh();
+    } catch(error){const err=document.querySelector('#game-error');if(err)err.textContent=error.message;}
+    finally {raceSending=false;controls.forEach(control=>control.disabled=false);if(state?.race){signature=undefined;render(state);}} 
+    return;
+  }
+  if (action === 'fork-card') return sendParty({ action: 'card', step: Number(button.dataset.forkStep), option: Number(button.dataset.option) }, button);
+  if (action === 'fork-judge') return sendParty({ action: 'judge', track: Number(button.dataset.track) }, button);
+  if (action === 'rare-review-approve' || action === 'rare-review-reject') return sendParty({
+    action:'review',decision:action === 'rare-review-approve'?'approve':'reject',
+    token:button.dataset.reviewToken,
+    canonical:action === 'rare-review-approve' ? button.closest('.rare-review-row')?.querySelector('select[data-review-select]')?.value ?? '' : '',
+  },button);
+  if (action === 'top-poll' || action === 'top-guess') return sendParty({ action: action === 'top-poll' ? 'poll' : 'guess', option: Number(button.dataset.option) }, button);
+  if (action === 'brain-answer') return sendParty({ action: 'answer', option: Number(button.dataset.option) }, button);
+  if (action === 'spotlight-advice' || action === 'spotlight-answer') return sendParty({ action: action === 'spotlight-advice' ? 'advice' : 'answer', option: Number(button.dataset.option) }, button);
   if (action === 'social-card') return sendParty({ action: 'card', option: Number(button.dataset.option) }, button);
   if (action === 'bluff-vote') return sendParty({ action: 'vote', id: button.dataset.id }, button);
   if (action === 'potato-skip' || action === 'potato-answer') {
@@ -1130,7 +1414,7 @@ document.addEventListener('click', async event => {
   }
   if (action === 'filter-topics') {
     categoryGroup = Number(button.dataset.group);
-    document.querySelectorAll('.topic-filter').forEach(filter =>
+    document.querySelectorAll('#category-filters .topic-filter').forEach(filter =>
       filter.setAttribute('aria-pressed', String(filter === button)));
     renderCategories();
     return;
@@ -1144,6 +1428,7 @@ document.addEventListener('click', async event => {
   if (action === 'demo-answer') {
     const { mode, step } = practice;
     const option = Number(button.dataset.option);
+    if (mode === 'brain' && step === 0 && option !== 0) return showDemo(mode,0,'Not quite. The sequence increases by two. Try again; the correct next number is 10.');
     if (mode === 'potato' && option !== 1) {
       return showDemo(mode, 0, option === 2 ? 'You still have the potato. In a game a skip deals a fresh question. Try this sample again.' : 'Keep the potato and try again. Beavers are known for building dams.');
     }
@@ -1215,10 +1500,12 @@ document.addEventListener('click', async event => {
       if (document.fullscreenElement) await document.exitFullscreen();
       else await document.documentElement.requestFullscreen();
     } else if (action === 'show-join') {
-      content.innerHTML = `<div class="eyebrow">JOIN QUIZ CLUB</div><h2 id="dialog-title">Room ${state.code}</h2>
-        <p>Scan to join the next game in this room.</p><img class="qr join-dialog-qr" src="${state.qr}" alt="QR code to join room ${state.code}">
+      content.innerHTML = `<div class="eyebrow">JOIN JAMBALOOP</div><h2 id="dialog-title">Room ${state.code}</h2>
+        <p>Scan from a phone on the same Wi-Fi. If the link fails, return to the lobby and choose a different phone address.</p>
+        <img class="qr join-dialog-qr" src="${state.qr}" alt="QR code to join room ${state.code}">
+        <p class="join-url">${escape(state.joinUrl)}</p>
         <button class="button outline" data-action="copy">${icons('link')} Copy join link</button>`;
-      dialog.showModal();
+            dialog.showModal();
     } else if (action === 'copy') {
       try {
         await navigator.clipboard.writeText(state.joinUrl);
@@ -1247,11 +1534,14 @@ document.addEventListener('click', async event => {
     } else if (action === 'predict') {
       await api('/' + current.code + '/predict', { game: state.game, index: state.index, guess: button.dataset.guess });
       await refresh();
+    } else if (action === 'board-path') {
+      await api('/' + current.code + '/board-path', { index: state.index, game: state.game, path: button.dataset.path });
+      await refresh();
     } else if (action === 'roll') {
       await api('/' + current.code + '/roll', { index: state.index, game: state.game });
       await refresh();
     } else if (action === 'advance') {
-      await api('/' + current.code + '/advance', { phase: state.phase, index: state.index, game: state.game });
+      await api('/' + current.code + '/advance', { phase: state.phase, index: state.index, game: state.game, lobbyVersion: state.lobbyVersion });
       await refresh();
     } else if (['answer', 'submit-special'].includes(action) && !submittingAnswer && state.phase === 'question' && state.selection === undefined) {
       const answer = { index: state.index, option: action === 'answer' ? Number(button.dataset.option) : specialValue, game: state.game };
@@ -1282,11 +1572,30 @@ document.addEventListener('click', async event => {
 });
 
 dialog.addEventListener('close', () => content.querySelector('video')?.pause());
+document.addEventListener('keydown', event => {
+  if (event.key !== 'Escape' || dialog.open || session || !homeSelected) return;
+  const id = homeSelected;
+  homeSelected = undefined;
+  renderModeCards(homeFilter);
+  app.querySelector(`[data-action="preview-mode"][data-mode="${id}"]`)?.focus({preventScroll:true});
+});
+matchMedia('(max-width: 900px)').addEventListener('change', () => {
+  if (session || !app.querySelector('[data-home-shell]')) return;
+  homePage = 0;
+  homeSelected = undefined;
+  renderModeCards(homeFilter);
+});
+matchMedia('(max-width: 760px)').addEventListener('change', () => {
+  if (session || !app.querySelector('[data-home-shell]')) return;
+  homePage = 0;
+  homeSelected = undefined;
+  renderModeCards(homeFilter);
+});
 
 renderHome();
 mobileDeck(app, dialog, content);
 const code = new URLSearchParams(location.search).get('join');
-const saved = JSON.parse(sessionStorage.getItem('quizmas-session') ?? 'null');
+const saved = restoreRoomSession();
 if (saved && (!code || saved.code === code && !saved.host)) startSession(saved);
 else if (code) {
   const remembered = rememberedPlayer(code);

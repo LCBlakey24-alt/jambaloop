@@ -1,4 +1,4 @@
-import { boardRoute } from './board-route.js';
+import { boardPath, boardFork } from './board-route.js';
 import * as THREE from '/vendor/three.module.js';
 import { boardRollDuration, categories } from './game-config.js';
 import { tableSurface, towerDieScale, towerExit, towerImpacts, towerOrigin, towerPose, towerRamps, towerSettle } from './tower-motion.js';
@@ -215,35 +215,61 @@ function buildBoard(scene, state, shadowMap) {
   plaque.position.set(0, -.17, 3.183);
   board.add(plaque);
   scene.add(board);
-  const route = boardRoute(state.boardLength, state.includeChristmas);
+  const paths = {
+    power: boardPath(state.boardLength, state.includeChristmas, 'power'),
+    questions: boardPath(state.boardLength, state.includeChristmas, 'questions'),
+  };
+  const fork = boardFork(state.boardLength);
   const scale = 4.68 / (state.boardLength / 4);
   const categoryById = new Map(categories.map(row => [row[0], row]));
 
-  function tilePosition(index) {
-    const { x, z, finish } = route[index];
+  function tilePosition(index, choice = 'power') {
+    const route = paths[choice] ?? paths.power;
+    const {x,z,finish} = route[Math.max(0,Math.min(route.length-1,index))];
     return new THREE.Vector3(x * scale, finish ? .434 : .36, z * scale);
   }
 
-  const path = new THREE.CatmullRomCurve3(route.map((_, index) => {
-    const point = tilePosition(index);
-    point.y = .199;
-    return point;
-  }), false, 'centripetal');
-  board.add(new THREE.Mesh(new THREE.TubeGeometry(path, state.boardLength * 6, .026, 8, false), coated('#e4b66c', .35, .4)));
+  // The entire shared perimeter is one track; two visibly distinct lanes fork
+  // at the first bend and rejoin at the next. Each pawn follows its own path.
+  function addTrack(choice, begin, end, tint) {
+    const route = paths[choice];
+    const points = route.slice(begin,end+1).map(tile => {
+      const position = tilePosition(tile.index,choice);
+      position.y = .199;
+      return position;
+    });
+    const curve = new THREE.CatmullRomCurve3(points,false,'centripetal');
+    const geometry = new THREE.TubeGeometry(curve,Math.max(16,points.length*6),.024,8,false);
+    board.add(new THREE.Mesh(geometry,coated(tint,.35,.4)));
+  }
+  addTrack('power',0,state.boardLength,'#e4b66c');
+  addTrack('questions',fork.start,fork.rejoin+fork.extra,'#49e3d0');
 
-  for (const { index: i, category: id, finish } of route) {
-    const color = id ? categoryById.get(id)[4] : '#fff0d4';
-    const width = scale * (finish ? .95 : .93);
-    const tile = roundedBox(width, finish ? .24 : .19, width, .048, 9, coated(color, .35));
-    tile.position.copy(tilePosition(i));
+  const allTiles = [
+    ...paths.power.filter(tile => !tile.lane),
+    ...paths.power.filter(tile => tile.lane === 'power'),
+    ...paths.questions.filter(tile => tile.lane === 'questions'),
+  ];
+  for (const tileInfo of allTiles) {
+    const {index:i,category:id,finish,lane} = tileInfo;
+    const original = id ? categoryById.get(id)?.[4] : '#fff0d4';
+    const color = lane === 'power' ? '#f9c45d' : lane === 'questions' ? '#54dccc' : original;
+    const width = scale * (finish ? .95 : lane === 'power' ? .60 : lane === 'questions' ? .45 : .93);
+    const tile = roundedBox(width,finish ? .24 : .19,width,.042,8,coated(color,.35));
+    const choice = lane === 'questions' ? 'questions' : 'power';
+    tile.position.copy(tilePosition(i,choice));
     tile.position.y = finish ? .31 : .271;
-    const printed = new THREE.Mesh(new THREE.PlaneGeometry(width * .95, width * .95), new THREE.MeshBasicMaterial({
-      map: tileFace(i, color, finish ? 'Finish' : id ? categoryById.get(id)[5] : 'Start', finish ? '⚑' : !i ? '✦' : undefined),
-      transparent: true,
+    const labelText = lane === 'power' ? '×2 POWER' : lane === 'questions' ? 'QUIZ TRAIL' :
+      id ? categoryById.get(id)?.[5] : 'Start';
+    const displayNumber = lane === 'power' ? 'P'+(i-fork.start) :
+      lane === 'questions' ? 'Q'+(i-fork.start) : i;
+    const printed = new THREE.Mesh(new THREE.PlaneGeometry(width*.95,width*.95),new THREE.MeshBasicMaterial({
+      map:tileFace(displayNumber,color,finish ? 'Finish' : labelText,finish ? '⚑' : !i ? '✦' : undefined),
+      transparent:true,
     }));
-    printed.position.set(tile.position.x, tile.position.y + (finish ? .122 : .097), tile.position.z);
-    printed.rotation.x = -Math.PI / 2;
-    board.add(tile, printed);
+    printed.position.set(tile.position.x,tile.position.y+(finish?.122:.097),tile.position.z);
+    printed.rotation.x=-Math.PI/2;
+    board.add(tile,printed);
   }
   const finish = tilePosition(state.boardLength);
   const poleHeight = scale * .55;
@@ -261,7 +287,7 @@ function buildBoard(scene, state, shadowMap) {
   finial.position.set(pole.position.x, pole.position.y + poleHeight / 2, pole.position.z);
   board.add(flag, finial);
   const center = new THREE.Mesh(new THREE.PlaneGeometry(2.18, 2.18), new THREE.MeshBasicMaterial({
-    map: label('QUIZ CLUB', tableColor, accent, 'Board Race'), transparent: true,
+    map: label('JAMBALOOP', tableColor, accent, 'Board Race'), transparent: true,
   }));
   center.position.set(.21, .19, -.14);
   center.rotation.x = -Math.PI / 2;
@@ -321,7 +347,9 @@ function buildBoard(scene, state, shadowMap) {
 
   function positionPawn(pawn, team, step) {
     const lower = Math.floor(step);
-    const position = tilePosition(lower).lerp(tilePosition(Math.min(state.boardLength, lower + 1)), step - lower);
+    const route = paths[team.pathChoice || 'power'];
+    const position = tilePosition(lower,team.pathChoice).lerp(
+      tilePosition(Math.min(route.length-1,lower+1),team.pathChoice),step-lower);
     position.x += (team.id % 2 ? .19 : -.19) * scale;
     position.z += (team.id >= 2 ? .19 : -.19) * scale;
     const ground = position.y + .016;
@@ -337,7 +365,7 @@ function buildBoard(scene, state, shadowMap) {
     const burst = THREE.MathUtils.clamp((progress - .79) / .21, 0, 1);
     ripple.visible = sparks.visible = Boolean(motion && burst > 0 && burst < 1);
     if (halo.visible) {
-      halo.position.copy(tilePosition(motion.to));
+      halo.position.copy(tilePosition(motion.to,motion.pathChoice));
       halo.position.y += .020;
       ripple.position.copy(halo.position);
       sparks.position.copy(halo.position);
@@ -368,7 +396,7 @@ function buildBoard(scene, state, shadowMap) {
           const pos = (motion?.from ?? 0) + index + 1;
           marker.visible = Boolean(motion && pos < motion.to && pos <= step);
           if (marker.visible) {
-            marker.position.copy(tilePosition(pos));
+            marker.position.copy(tilePosition(pos,team.pathChoice));
             marker.position.y += .018;
           }
         }

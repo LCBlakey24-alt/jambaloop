@@ -4,13 +4,14 @@ export const playlistLimit = 12;
 
 export const gameNightPresets = {
   15: ['classic', 'punchline', 'potato'],
-  30: ['classic', 'wheel', 'punchline', 'tracks', 'potato', 'dice'],
-  60: ['classic', 'punchline', 'board', 'cards', 'potato', 'wheel', 'bluff', 'showdown', 'tracks', 'dice', 'knockout'],
+  30: ['classic', 'wheel', 'samepage', 'punchline', 'tracks', 'potato', 'dice'],
+  // Brain Ladder is also available in custom playlists (5, 7 or 10 levels).
+  60: ['classic', 'samepage', 'punchline', 'board', 'cards', 'potato', 'wheel', 'bluff', 'showdown', 'tracks', 'dice', 'knockout'],
 };
 
 export function queuedSettings(mode, theme) {
   return {
-    mode, theme, count: mode === 'board' ? 12 : 5, category: 'mixed', seconds: 20,
+    mode, theme, count: mode === 'board' ? 12 : mode === 'spotlight' ? 1 : mode === 'topanswers' ? 3 : mode === 'rare' ? 3 : 5, category: 'mixed', seconds: 20,
     format: 'choice', autoReveal: true,
     scoreInterval: supportsScoreCheckpoints(mode) ? defaultScoreInterval : undefined,
     privateQuestions: mode === 'showdown',

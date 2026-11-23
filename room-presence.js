@@ -1,7 +1,12 @@
 export const reconnectWindow = 18_000;
 
+export function liveConnection(room, key) {
+  const response = room.liveConnections.get(key);
+  return response && !response.destroyed && !response.writableEnded ? response : undefined;
+}
+
 export function isConnected(room, key, now = Date.now()) {
-  return room.livePlayers.has(key) || (room.lastSeen.get(key) ?? 0) + reconnectWindow > now;
+  return Boolean(liveConnection(room, key)) || (room.lastSeen.get(key) ?? 0) + reconnectWindow > now;
 }
 
 export function connectedPlayers(room) {
@@ -22,12 +27,10 @@ export function touchPlayer(room, key) {
 }
 
 export function trackConnection(room, key, response) {
-  if (!room.players.has(key) && !room.waiting.has(key)) return;
-  room.livePlayers.set(key, (room.livePlayers.get(key) ?? 0) + 1);
-  response.on('close', () => {
-    const count = room.livePlayers.get(key) - 1;
-    if (count) room.livePlayers.set(key, count);
-    else room.livePlayers.delete(key);
+  room.liveConnections.set(key, response);
+  response.once('close', () => {
+    if (room.liveConnections.get(key) !== response) return;
+    room.liveConnections.delete(key);
     touchPlayer(room, key);
   });
 }

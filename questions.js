@@ -1,4 +1,6 @@
 import { boardExpert, boardQuestionOrder } from './board-questions.js';
+import { questionHistoryId } from './public/question-history.js';
+import { verifiedChoiceQuestions } from './verified-questions.js';
 import { difficultyQuestions } from './difficulty-questions.js';
 import { estimates, orders } from './extra-questions.js';
 
@@ -481,12 +483,20 @@ function shuffle(items) {
   return copy;
 }
 
+for (const [category, items] of Object.entries(verifiedChoiceQuestions)) {
+  banks[category] ??= [];
+  banks[category].push(...items.map(({prompt,answer,distractors}) => [prompt, answer, ...distractors]));
+}
+
+const hasSeen = (seen, prompt) => seen.has(prompt) || seen.has(questionHistoryId(prompt));
+const verifiedSources = new Map(Object.values(verifiedChoiceQuestions).flat().map(({prompt,source})=>[prompt,source]));
+export const verifiedSourceFor = prompt => verifiedSources.get(prompt);
 export const questionCategories = Object.keys(banks);
 
 export function makeQuestions(category, count, seen = new Set(), format = 'choice', includeChristmas = true, difficulty = 'standard') {
   const curated = difficultyQuestions[difficulty];
   if (curated) {
-    const pool = shuffle(curated).sort((a, b) => Number(seen.has(a[1])) - Number(seen.has(b[1])));
+    const pool = shuffle(curated).sort((a, b) => Number(hasSeen(seen,a[1])) - Number(hasSeen(seen,b[1])));
     return pool.slice(0, count).map(([id, prompt, correct, ...rest]) => {
       const options = shuffle([correct, ...rest]);
       return { category: id, prompt, type: 'choice', options, correct: options.indexOf(correct) };
@@ -504,8 +514,8 @@ export function makeQuestions(category, count, seen = new Set(), format = 'choic
     const pool = { boolean: binary, estimate: estimates[id], order: orders[id] }[format] ?? banks[id];
     const rows = shuffle(pool).map(row => ({ id, row }));
     return {
-      fresh: rows.filter(({ row }) => !seen.has(row[0])),
-      used: rows.filter(({ row }) => seen.has(row[0])),
+      fresh: rows.filter(({ row }) => !hasSeen(seen,row[0])),
+      used: rows.filter(({ row }) => hasSeen(seen,row[0])),
     };
   });
   const selected = [];
@@ -547,7 +557,7 @@ export function boardQuestion(category, format, level, seen) {
     ? [boardExpert[category][format], ...(format === 'choice' ? difficultyQuestions.challenge.filter(([id]) => id === category).map(([, ...row]) => row) : [])]
     : ranks.filter((_, index) => Math.floor(index * 5 / ranks.length) + 1 === level).map(index => bank[index]);
   const shuffled = shuffle(candidates);
-  const row = shuffled.find(([prompt]) => !seen.has(prompt)) ?? shuffled[0];
+  const row = shuffled.find(([prompt]) => !hasSeen(seen,prompt)) ?? shuffled[0];
   const question = formatQuestion(category, format, format === 'boolean' ? [row[0], row[1] ? 'True' : 'False'] : row);
   return { ...question, difficulty: level };
 }

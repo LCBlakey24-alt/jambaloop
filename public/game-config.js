@@ -26,16 +26,22 @@ export const modes = [
   ['knockout', 'Knockout', 'Start with three lives and try to stay in.', 'heart', '#f0a8a9'],
   ['punchline', 'Punchline Party', 'Write a funny reply, then vote for your favourite.', 'message-circle', '#f6c9ac'],
   ['cards', 'Fill the Blank', 'Play a silly phrase from your private hand.', 'layers', '#c9dcf5'],
-  ['tracks', 'Fork in the Tracks', 'Pick a side in ridiculous family dilemmas.', 'git-fork', '#c4e7ce'],
+  ['tracks', 'Fork in the Tracks', 'Two teams build ridiculous tracks; every player gets a turn driving the trolley.', 'git-fork', '#c4e7ce'],
   ['bluff', 'Spot the Bluff', 'One player never sees the prompt. Vote for the bluff.', 'venetian-mask', '#f2d4ae'],
   ['potato', 'Hot Potato', 'Answer correctly to pass it before two minutes run out.', 'timer', '#f5c1af'],
+  ['quizrace', 'Quiz Race', 'Answer fast to accelerate along a winding track.', 'flag-triangle-right', '#1dd9be'],
   ['showdown', 'Team Showdown', 'Play together in two to four teams.', 'users-round', '#c1e3ec'],
+  ['samepage', 'Same Page', 'Secretly write matching answers and score for thinking alike.', 'messages-square', '#77efdc'],
+  ['spotlight', 'Spotlight Wheel', 'Take turns as contestant with an expert chosen by the wheel.', 'aperture', '#ffc88d'],
+  ['brain', 'Brain Ladder', 'Solve fresh original logic puzzles, protect your two lives and climb ten levels.', 'brain-circuit', '#86e7fa'],
+  ['topanswers', 'Top Answers', 'Vote for your favourite, predict the room’s most popular choice, and reveal the real results.', 'chart-no-axes-column-increasing', '#ffca83'],
+  ['rare', 'Rare Find', 'Find the correct answer nobody else picks. Unusual valid answers earn the most.', 'gem', '#a2f4cd'],
 ];
 
 export const defaultTheme = 'club';
 
 export const themes = [
-  [defaultTheme, 'Quiz Club', '#3550cb', '#f8f2e6'],
+  [defaultTheme, 'Jambaloop Classic', '#3550cb', '#f8f2e6'],
   ['christmas', 'Christmas', '#f4a9c7', '#1c1a1e'],
   ['arcade', 'Neon Arcade', '#b8afff', '#1c1934'],
   ['lodge', 'Winter Lodge', '#f6cc8b', '#252422'],
@@ -67,6 +73,11 @@ export const wheelCategories = includeChristmas => categories.filter(([id]) =>
 export const categoryName = id => categories.find(category => category[0] === id)?.[1] ?? '';
 
 export function questionCounts(mode, format, category) {
+  if (mode === 'brain') return [5, 7, 10];
+  if (mode === 'topanswers') return [3, 5, 7];
+  if (mode === 'rare') return [3, 5, 7];
+  if (mode === 'spotlight') return [1, 2, 3];
+  if (['tracks','samepage'].includes(mode)) return [3, 5, 7];
   if (mode === 'board') return [12, 18, 24, 36, 48, 60];
   const singleTopic = mode !== 'wheel' && category !== 'mixed';
   const shortTopic = ['art', 'games', 'animals', 'space'].includes(category);
@@ -84,10 +95,11 @@ export const categoryGroups = [
 export const fixedQuestionModes = ['classic', 'dice', 'knockout', 'showdown'];
 
 export const socialModes = ['punchline', 'cards', 'tracks'];
-export const partyModes = ['bluff', 'potato', ...socialModes];
+export const partyModes = ['bluff', 'potato', 'samepage', 'spotlight', 'brain', 'topanswers', 'rare', ...socialModes];
 export const scoreIntervals = [0, 1, 3, 5];
 export const defaultScoreInterval = 3;
-export const supportsScoreCheckpoints = mode => modes.some(([id]) => id === mode) && !partyModes.includes(mode);
-export const minimumPlayers = mode => ['bluff', 'punchline', 'cards'].includes(mode) ? 3
-  : ['potato', 'tracks', 'showdown'].includes(mode) ? 2 : 1;
+export const supportsScoreCheckpoints = mode => mode !== 'quizrace' && modes.some(([id]) => id === mode) && !partyModes.includes(mode);
+export const minimumPlayers = mode => mode === 'quizrace' ? 2 : ['bluff', 'punchline', 'cards', 'samepage', 'spotlight', 'topanswers', 'rare'].includes(mode) ? 3
+  : mode === 'brain' ? 2
+  : mode === 'tracks' ? 3 : ['potato', 'showdown'].includes(mode) ? 2 : 1;
 export const boardRollDuration = 5400;

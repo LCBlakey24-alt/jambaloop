@@ -13,10 +13,17 @@ const summaries = {
   potato: 'One phone at a time has the potato. Get a question right to pass it. Whoever holds it when the shared two-minute timer ends loses.',
   showdown: 'Join a balanced team and answer on your own phone. Each team scores the average of its players’ points. The highest team score wins.',
   knockout: 'Start with three lives. Wrong or missed answers cost a life. For number questions, the closest guesses keep their lives.',
+  quizrace: 'Everyone races on a curving track. Correct answers boost your speed; quick answers boost more. Wrong answers and Pass slow you down. First to finish wins.',
+  brain: 'Start with two lives, solve fresh logic puzzles, and climb five, seven or ten increasingly difficult levels. Every wrong or missed answer costs a life. Correct answers are worth more points on higher levels.',
+  samepage: 'Everyone privately types an answer to a prompt. Matching answers earn points when revealed together.',
+  spotlight: 'The wheel chooses a topic and a player expert. The expert suggests an answer privately, then the contestant makes the final choice. Everyone takes a turn.',
+  topanswers: 'First choose the option you truly prefer. Your room anonymously votes to create real popularity data. Then secretly predict the top choice. Earn 20 points per real vote for that answer, plus 100 for choosing an option tied for most votes.',
+  rare: 'Each player privately types a valid answer to the same prompt. Rare valid answers win: 200 points if unique, 100 each for an answer chosen by exactly two, 50 each for answers shared by three or more, zero for invalid. The TV host reviews any missing catalogue entries before reveal.',
 };
 
 export function explainer(mode, play) {
   const title = modes.find(([id]) => id === mode)[1];
+  if(['quizrace','brain','samepage','spotlight','topanswers','rare'].includes(mode))return `<details class="mode-explainer" ${play?'open':''}><summary>How to play ${title}</summary><p>${summaries[mode]}</p></details>`;
   return `<details class="mode-explainer" ${play ? 'open' : ''}><summary>Watch how to play ${title}</summary>
     <video aria-label="How to play ${title}" controls playsinline muted preload="none" poster="/videos/${mode}.jpg"
       ${play && !matchMedia('(prefers-reduced-motion: reduce)').matches ? 'autoplay' : ''}>
@@ -73,6 +80,19 @@ const demonstrations = {
   tracks: [
     ['Choose a track', 'What should the town’s new festival be?', ['A parade with floats made of cake', 'A silent disco in the supermarket']],
     ['Vote locked in', 'The TV reveals how many people chose each track after voting ends.', []],
+  ],
+  rare: [
+    ['Find a rare valid answer', 'Name one of the eight planets in our Solar System. In the real game you type any correct answer. Try one of these samples.', ['Mercury','Venus','Earth','Neptune']],
+    ['Keep it uncommon', 'Imagine you chose Neptune while your friends chose Mercury and Earth. You could earn 200 points because nobody else chose Neptune — this is only an example, not real survey data.', []],
+  ],
+  topanswers: [
+    ['Cast your secret vote', 'Which snack would you choose tonight? Everyone privately selects the option they truly prefer.', ['Popcorn','Crisps','Chocolate','Biscuits']],
+    ['Make your prediction', 'Now predict which of those four snacks the most people in your room will choose. You cannot see their votes yet.', ['Popcorn','Crisps','Chocolate','Biscuits']],
+    ['Real votes revealed', 'In a real game, only the actual votes submitted by your room produce the TV percentages. There are no real poll results in this practice, and no points are awarded here.', []],
+  ],
+  brain: [
+    ['Your first rung', 'Which number comes next? 2, 4, 6, 8, ?', ['10', '12', '16', '18']],
+    ['You climbed!', '10 is correct: the pattern adds two each time. Correct answers earn points; two wrong or missed answers eliminate you, but you can still spectate.', []],
   ],
   potato: [
     ['You have the potato!', 'Which animal builds dams? A skip gives you a new question while you keep the potato.', ['Otter', 'Beaver', 'Skip question']],

@@ -2,24 +2,36 @@ import { clockExpired, setClockPaused, stopDeadline, watchDeadline } from './roo
 import { deskAwards } from './awards.js';
 import { answerValue, boardSpeedValues, bonusValues, canSetScore, defaultScoring, doubleSchedules, pointValues, roundMultiplier } from './public/scoring.js';
 import { playlistLimit, queuedSettings } from './public/game-night.js';
-import { isConnected, responseTarget, touchPlayer, trackConnection } from './room-presence.js';
-import { boardLengths, boardRoute } from './public/board-route.js';
+import { isConnected, liveConnection, responseTarget, touchPlayer, trackConnection } from './room-presence.js';
+import { boardLengths, boardRoute, boardPath, boardPathChoices, boardFork, boardFinish, boardMappedPosition, boardRequiresChoice } from './public/board-route.js';
+import { teamPlayModes, defaultPlayStyle, validPlayStyle, requiredPlayers, teamAssignments } from './public/team-play.js';
 import { partyModes, startParty, advanceParty, advancePartyWhenReady, expireParty, submitParty, publicParty } from './party-games.js';
 import express from 'express';
 import QRCode from 'qrcode';
 import { randomBytes, randomInt } from 'node:crypto';
+import { performance } from 'node:perf_hooks';
+import { difficultyQuestions } from './difficulty-questions.js';
+import { advanceQuizRace, createQuizRace, publicRaceState, raceDifficulties, raceLengths, racePlacings, raceTracks, setRacePaused, submitRaceAnswer } from './quiz-race.js';
 import { networkInterfaces } from 'node:os';
+import { inviteOriginOptions, qrJoinUrl } from './room-invite.js';
+import {isRoomMember,normaliseNickname,positiveSetting,readAvatar,requestBudget} from './room-safety.js';
 import { fileURLToPath } from 'node:url';
 import { validateQuiz, prepareCustomQuiz } from './public/custom-quiz.js';
-import { boardQuestion, makeQuestions, questionCategories } from './questions.js';
+import { boardQuestion, makeQuestions, questionCategories, verifiedSourceFor } from './questions.js';
+import {questionHistoryId, questionHistoryLimit, validQuestionHistoryId} from './public/question-history.js';
 import { modes, themes, formats, difficulties, teams, socialModes, minimumPlayers, boardRollDuration, defaultTheme, fixedQuestionModes, questionCounts, wheelCategories, scoreIntervals, supportsScoreCheckpoints } from './public/game-config.js';
 
 const app = express();
 const rooms = new Map();
 const port = process.env.PORT || 3000;
 const maxPlayers = 300;
+const maxRooms = positiveSetting('MAX_ROOMS',128);
+const idleRoomMs = positiveSetting('ROOM_IDLE_MS',4*60*60*1000);
+const creationBudget=requestBudget(positiveSetting('ROOMS_PER_MINUTE',60));
+const joinBudget=requestBudget(positiveSetting('JOINS_PER_ROOM_PER_MINUTE',360));
 const categories = [...questionCategories, 'mixed'];
 const token = () => randomBytes(18).toString('hex');
+if(process.env.TRUST_PROXY)app.set('trust proxy',process.env.TRUST_PROXY);
 app.use(express.json({ limit: '128kb' }));
 app.use('/vendor', express.static(fileURLToPath(new URL('./node_modules/three/build/', import.meta.url))));
 app.use('/icons', express.static(fileURLToPath(new URL('./node_modules/lucide-static/icons/', import.meta.url))));
@@ -30,8 +42,9 @@ app.use('/api', (_req, res, next) => {
 });
 
 function readSettings(body = {}) {
-  const { mode = 'classic', theme = defaultTheme, format = 'choice', category, count, seconds, autoReveal = false, includeChristmas = false, teamCount = 4, boardLength = 16, privateQuestions = false, phoneView = 'full', difficulty = 'standard', scoring, boardSpeed = 50, scoreInterval = 1, customQuiz = null } = body ?? {};
-  if (typeof privateQuestions !== 'boolean') return;
+  const { mode = 'classic', theme = defaultTheme, format = 'choice', category, count, seconds, autoReveal = false, includeChristmas = false, teamCount = mode === 'tracks' ? 2 : 4, boardLength = 16, playStyle = defaultPlayStyle(mode), privateQuestions = false, phoneView = 'full', difficulty = 'standard', scoring, boardSpeed = 50, scoreInterval = 1, customQuiz = null, raceLength = 'medium', raceTrack = 'neon', raceDifficulty = 'mixed' } = body ?? {};
+  if (typeof privateQuestions !== 'boolean' || !validPlayStyle(mode,playStyle) || (mode === 'tracks' && teamCount !== 2)) return;
+  if (mode === 'quizrace' && (!raceLengths[raceLength] || !raceTracks.includes(raceTrack) || !raceDifficulties.includes(raceDifficulty) || format !== 'choice' || customQuiz !== null)) return;
   const privateTeam = mode === 'showdown' && privateQuestions;
   if (privateTeam && customQuiz !== null) return;
   if (!boardLengths.includes(boardLength) || !['full', 'answers'].includes(phoneView) || ![2, 3, 4].includes(teamCount)) return;
@@ -52,9 +65,9 @@ function readSettings(body = {}) {
   const scores = canSetScore(mode) ? (scoring
     ? { base: scoring.base, bonus: seconds ? scoring.bonus : 0, doubles: scoring.doubles }
     : defaultScoring(seconds)) : undefined;
-  return { mode, theme, difficulty, scoring: scores, boardSpeed: seconds ? boardSpeed : 0, legacyScoring: scoring === undefined, format: privateTeam ? 'choice' : format, category: fixedQuestionModes.includes(mode) && !privateTeam ? category : 'mixed', count: socialModes.includes(mode) ? 3 : partyModes.includes(mode) ? 1 : quiz?.questions.length ?? count,
+  return { mode, theme, difficulty, raceLength, raceTrack, raceDifficulty, scoring: scores, boardSpeed: seconds ? boardSpeed : 0, legacyScoring: scoring === undefined, format: privateTeam ? 'choice' : format, category: fixedQuestionModes.includes(mode) && !privateTeam ? category : 'mixed', count: ['tracks', 'samepage', 'spotlight', 'brain', 'topanswers', 'rare'].includes(mode) ? count : socialModes.includes(mode) ? 3 : partyModes.includes(mode) ? 1 : quiz?.questions.length ?? count,
     seconds, autoReveal, includeChristmas, phoneView: privateTeam ? 'full' : phoneView, privateQuestions: privateTeam,
-    teamCount, boardLength, scoreInterval: supportsScoreCheckpoints(mode) ? scoreInterval : 1, customQuiz: quiz };
+    teamCount, boardLength, playStyle, scoreInterval: supportsScoreCheckpoints(mode) ? scoreInterval : 1, customQuiz: quiz };
 }
 
 function resetPlayer(player) {
@@ -62,13 +75,15 @@ function resetPlayer(player) {
 }
 
 function resetGame(room, settings) {
+  // Carry already seen race prompts into the shared per-room history before replaying.
+  if (room.race?.issued) for (const prompt of room.race.issued) room.seen.add(prompt);
   for (const [key, player] of room.waiting) room.players.set(key, player);
   room.waiting.clear();
   stopDeadline(room);
   Object.assign(room, settings, {
     settings, lobbyVersion: (room.lobbyVersion ?? 0) + 1, clockVersion: 0, pausedAt: 0,
     scoreBreak: undefined, lastScoreBreak: new Map(),
-    phase: 'lobby', index: 0, opened: 0, ends: 0, ceremony: undefined, awards: [], motion: null, predictions: new Map(), wheelRemaining: [], teams: [], roundReview: [], party: undefined, privateReview: new Map(), privateRound: undefined, remaining: room.players.size,
+    phase: 'lobby', index: 0, opened: 0, ends: 0, ceremony: undefined, awards: [], motion: null, predictions: new Map(), wheelRemaining: [], teams: [], roundReview: [], party: undefined, privateReview: new Map(), privateRound: undefined, remaining: room.players.size, race: undefined,
     route: settings.mode === 'board' ? boardRoute(settings.boardLength, settings.includeChristmas) : undefined,
     quizTypes: settings.privateQuestions ? ['choice', 'boolean'] : settings.customQuiz ? [...new Set(settings.customQuiz.questions.map(item => item.type))] : undefined,
     questions: settings.customQuiz ? prepareCustomQuiz(settings.customQuiz) : fixedQuestionModes.includes(settings.mode) ? makeQuestions(settings.category, settings.count, room.seen, settings.format, settings.includeChristmas, settings.difficulty) : [],
@@ -83,19 +98,24 @@ function resetGame(room, settings) {
 }
 
 app.post('/api/rooms', async (req, res) => {
+  const retry=creationBudget.retryIn(req.ip);
+  if(retry)return res.set('Retry-After',String(retry)).status(429).json({error:'Too many room creation attempts. Try again shortly.'});
+  if(rooms.size>=maxRooms)return res.set('Retry-After','60').status(503).json({error:'All game rooms are currently in use.'});
   const settings = readSettings(req.body);
   if (!settings) return res.status(400).json({ error: 'Choose a game mode, category, question count and timer.' });
   let code;
   do { code = String(randomInt(100000, 1000000)); } while (rooms.has(code));
   const host = token();
-  const room = { code, host, game: 1, revision: 0, clients: new Map(), seen: new Set(), players: new Map(), waiting: new Map(), livePlayers: new Map(), lastSeen: new Map(), night: { queue: [], played: 0, version: 0 }, answers: new Map(), updated: Date.now() };
+  const room = { code, host, game: 1, revision: 0, clients: new Map(), seen: new Set(), players: new Map(), waiting: new Map(), liveConnections: new Map(), lastSeen: new Map(), night: { queue: [], played: 0, version: 0 }, answers: new Map(), updated: Date.now() };
   resetGame(room, settings);
-  const hostHeader = req.get('x-forwarded-host')?.split(',')[0].trim() || req.get('host');
-  const protocol = req.get('x-forwarded-proto')?.split(',')[0].trim() || req.protocol;
-  const lan = Object.values(networkInterfaces()).flat().find(entry => entry.family === 'IPv4' && !entry.internal);
-  const origin = process.env.PUBLIC_URL || (/^(localhost|127\.0\.0\.1)(:|$)/.test(hostHeader) && lan
-    ? `http://${lan.address}:${server.address().port}` : `${protocol}://${hostHeader}`);
-  room.joinUrl = new URL('/?join=' + code, origin).href;
+  // Prefer a real Wi-Fi/LAN address over localhost or virtual adapters.
+  // Hosts can switch adapters from the lobby if the recommended one is unreachable.
+  // Do not use x-forwarded-host/proto when generating invite links.
+  room.joinOptions = inviteOriginOptions({
+    publicUrl: process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL, host: req.get('host'), protocol: req.protocol,
+    port: server.address().port, interfaces: networkInterfaces()
+  });
+  room.joinUrl = qrJoinUrl(room.joinOptions[0].origin, code);
   rooms.set(code, room);
   try {
     room.qr = await QRCode.toDataURL(room.joinUrl, { margin: 2, width: 220 });
@@ -109,18 +129,23 @@ app.post('/api/rooms', async (req, res) => {
 app.use('/api/rooms/:code', (req, res, next) => {
   const room = rooms.get(req.params.code);
   if (!room) return res.status(404).json({ error: 'Room not found. Check the code and try again.' });
-  room.updated = Date.now();
-  expireParty(room, publish);
-  if (room.phase === 'question' && clockExpired(room)) reveal(room);
-  res.locals.room = room;
-  res.locals.key = req.get('x-game-key');
-  touchPlayer(room, res.locals.key);
+  const key=req.get('x-game-key');
+  const member=isRoomMember(room,key);
+  res.locals.room=room;
+  res.locals.key=key;
+  res.locals.member=member;
+  if(member){
+    room.updated=Date.now();
+    expireParty(room,publish);
+    if(room.phase==='question'&&clockExpired(room))reveal(room);
+    touchPlayer(room,key);
+  }
   next();
 });
 
 app.get('/api/rooms/:code', (_req, res) => {
   const { room, key } = res.locals;
-  if (key !== room.host && !room.players.has(key) && !room.waiting.has(key)) return res.status(403).json({ error: 'Join the room to continue.' });
+  if (!res.locals.member) return res.status(403).json({ error: 'Join the room to continue.' });
   res.json(roomState(room, key));
 });
 
@@ -143,7 +168,7 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
   const revealed = phase === 'reveal';
   const answer = answers.get(key);
   const { correct, ...publicQuestion } = question ?? {};
-  const activeTeam = room.teams.length ? index % room.teams.length : undefined;
+  const activeTeam = room.mode === 'board' && room.teams.length ? index % room.teams.length : undefined;
   const scoreBreak = phase === 'score-break' && !waiting ? room.scoreBreak : undefined;
   const ownCheckpoint = scoreBreak && player ? room.lastScoreBreak.get(room.teams.length ? player.team : player.id)?.row : undefined;
   const scoresPublished = room.scoreInterval === 1 || phase === 'finished';
@@ -162,11 +187,22 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
     } : undefined,
     ceremony: isHost && phase === 'finished' ? room.ceremony : undefined,
     awards: !waiting && phase === 'finished' ? room.awards : undefined,
-    mode: room.mode, privateQuestions: room.privateQuestions, party: waiting ? undefined : publicParty(room, key), phoneView: room.phoneView, isCaptain: key === room.captain, captainId: captain?.id, captainName: captain?.name,
+    mode: room.mode, playStyle: room.playStyle, privateQuestions: room.privateQuestions, party: waiting ? undefined : publicParty(room, key), race: room.mode === 'quizrace' && room.race ? publicRaceState(room.race, key, isHost) : undefined, raceLength: room.raceLength, raceTrack: room.raceTrack, raceDifficulty: room.raceDifficulty, phoneView: room.phoneView, isCaptain: key === room.captain, captainId: captain?.id, captainName: captain?.name,
     quizTitle: room.customQuiz?.title, quizTypes: room.quizTypes,
     includeChristmas: room.includeChristmas, autoReveal: room.autoReveal, theme: room.theme, format: room.format, motion: room.motion, activeTeam,
     teams: hiddenScores ? room.teams.map(team => ({ ...team, score: room.lastScoreBreak.get(team.id)?.row.score ?? 0, roundPoints: undefined })) : room.teams,
     lastTurn: revealed && finalTurn(room), teamWinners: phase === 'finished' && room.teams.length ? winningTeams(room) : undefined, teamCount: room.teamCount, boardLength: room.boardLength,
+    teamPreview: phase === 'lobby' && room.players.size &&
+      (room.playStyle === 'teams' || (room.mode === 'board' && room.players.size <= 4)) ?
+      teamAssignments(room.players,room.mode,room.playStyle,room.teamCount,{allowUnfilled:true}).groups : undefined,
+    raceTeams: room.mode === 'quizrace' && room.teams.length && room.race ?
+      room.teams.map(team => {
+        const racers = [...room.race.racers.values()].filter(racer => team.members.some(member => member.id === racer.id));
+        return {id:team.id,name:team.name,color:team.color,size:team.size,
+          distance:Math.max(0,...racers.map(racer => racer.distance)),
+          finishedAt:Math.min(Infinity,...racers.map(racer => racer.finishedAt ?? Infinity))};
+      }).sort((a,b)=>a.finishedAt-b.finishedAt || b.distance-a.distance) : undefined,
+    boardFork: room.mode === 'board' ? boardFork(room.boardLength) : undefined,
     players: leaderboard, playerCount: players.size, player: player ? { ...publicPlayer(player), score: scoresPublished ? player.score : playerScore } : undefined,
     review: !waiting && phase === 'finished' ? (room.privateQuestions ? room.privateReview.get(key) ?? [] : room.roundReview).map((review, i) => ({
       ...review,
@@ -180,15 +216,17 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
     closest: revealed && question?.type === 'estimate' ? room.closest : undefined,
     breakdown: revealed && isHost && !room.privateQuestions && ['choice', 'boolean'].includes(question.type) ? question.options.map((_, option) =>
       [...answers.values()].filter(entry => entry.option === option).length) : undefined,
-    question: visible && question ? { ...publicQuestion, basePoints: room.motion?.points ?? (question.type === 'estimate' && room.legacyScoring ? 1000 : room.scoring?.base), prompt: isHost || room.phoneView === 'full' ? publicQuestion.prompt : undefined, correct: revealed ? correct : undefined } : undefined,
-    qr: isHost ? qr : undefined, joinUrl: isHost ? joinUrl : undefined };
+    question: visible && question ? { ...publicQuestion, historyId:questionHistoryId(question.prompt), basePoints: room.motion?.points ?? (question.type === 'estimate' && room.legacyScoring ? 1000 : room.scoring?.base), prompt: isHost || room.phoneView === 'full' ? publicQuestion.prompt : undefined, correct: revealed ? correct : undefined, source: revealed ? verifiedSourceFor(question.prompt) : undefined } : undefined,
+    qr: isHost ? qr : undefined, joinUrl: isHost ? joinUrl : undefined,
+    joinOptions: isHost ? room.joinOptions : undefined };
 }
 
 const comparePlayers = (a, b) => (b.lives ?? 0) - (a.lives ?? 0) || b.score - a.score;
-const compareTeams = mode => (a, b) => (mode === 'board' ? b.position - a.position : 0) || b.score - a.score;
+const compareTeams = (mode, spaces) => (a, b) => (mode === 'board'
+  ? boardMappedPosition(spaces, b.position, b.pathChoice) - boardMappedPosition(spaces, a.position, a.pathChoice) : 0) || b.score - a.score;
 
 function rankings(room) {
-  return [...room.players.values()].sort(comparePlayers);
+  return room.mode === 'quizrace' && room.race ? racePlacings(room.race).map(r => [...room.players.values()].find(p => p.id === r.id)) : [...room.players.values()].sort(comparePlayers);
 }
 
 function liveCounts(room) {
@@ -232,35 +270,62 @@ function publish(room, hostOnly = false) {
   }
 }
 
+// Let the TV host switch to a reachable network adapter. Do not allow arbitrary external URLs.
+app.post('/api/rooms/:code/invite', async (req, res) => {
+  const {room, key} = res.locals;
+  if (key !== room.host) return res.status(403).json({error: 'Only the TV host can change the join address.'});
+  const option = room.joinOptions?.find(entry => entry.origin === req.body?.origin);
+  if (!option) return res.status(400).json({error: 'Choose one of the listed connection addresses.'});
+  const url = qrJoinUrl(option.origin, room.code);
+  try {
+    const qr = await QRCode.toDataURL(url, {margin: 2, width: 220});
+    room.joinUrl = url;
+    room.qr = qr;
+    publish(room);
+    res.sendStatus(204);
+  } catch {
+    res.status(500).json({error: 'Could not generate the new QR code. Try again.'});
+  }
+});
+
 app.get('/api/rooms/:code/live', (req, res) => {
   const { room, key } = res.locals;
-  if (key !== room.host && !room.players.has(key) && !room.waiting.has(key)) return res.status(403).json({ error: 'Join the room to continue.' });
+  if(!res.locals.member)return res.status(403).json({error:'Join the room to receive updates.'});
+  if(liveConnection(room,key))return res.set('Retry-After','5').status(409).json({error:'This session already has a live stream. Wait for it to reconnect.'});
   res.set({ 'Content-Type': 'application/x-ndjson', 'X-Accel-Buffering': 'no', 'Cache-Control': 'no-store, no-transform' });
   res.flushHeaders();
   room.clients.set(res, key);
-  res.on('close', () => room.clients.delete(res));
+  res.once('close', () => {room.clients.delete(res);room.updated=Date.now();});
   trackConnection(room, key, res);
   sendState(room, key, res);
 });
 
 app.post('/api/rooms/:code/join', (req, res) => {
   const { room } = res.locals;
-  const name = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
-  if (!name || name.length > 24) return res.status(400).json({ error: 'Enter a nickname of up to 24 characters.' });
-  if (room.players.size + room.waiting.size >= maxPlayers) return res.status(409).json({ error: 'This room is full.' });
+  const retry=joinBudget.retryIn(room.code+'/'+req.ip);
+  if(retry)return res.set('Retry-After',String(retry)).status(429).json({error:'Too many join attempts. Try again shortly.'});
+  const name=normaliseNickname(req.body?.name);
+  if(!name)return res.status(400).json({error:'Enter a nickname up to 24 characters without control characters.'});
+  if (room.players.size + room.waiting.size >= (room.mode === 'quizrace' ? 12 : room.mode === 'spotlight' ? 20 : ['brain','topanswers','rare'].includes(room.mode) ? 30 : maxPlayers)) return res.status(409).json({ error: 'This room is full.' });
   if ([...room.players.values(), ...room.waiting.values()].some(player => player.name.toLowerCase() === name.toLowerCase())) {
     return res.status(409).json({ error: 'That nickname is taken.' });
   }
   const key = token();
-  const avatar = req.body?.avatar;
-  if (avatar !== undefined && (typeof avatar !== 'string' || avatar.length > 14000 || !/^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(avatar))) {
+  const avatar = readAvatar(req.body?.avatar);
+  if (req.body?.avatar !== undefined && !avatar) {
     return res.status(400).json({ error: 'Use a smaller selfie or join without a photo.' });
   }
   const id = token();
+  const seenQuestions = req.body?.seenQuestions ?? [];
+  if (!Array.isArray(seenQuestions) || seenQuestions.length > questionHistoryLimit ||
+      seenQuestions.some(id => !validQuestionHistoryId(id)))
+    return res.status(400).json({ error: 'Your question history could not be loaded. Clear local game history and retry.' });
   const player = { id, name, ready: false, avatar: avatar ? '/api/rooms/' + room.code + '/avatar/' + id : undefined };
+  // Each player's optional device history influences the next question selection.
+  for (const id of seenQuestions) room.seen.add(id);
   if (avatar) {
     room.avatars ??= new Map();
-    room.avatars.set(id, Buffer.from(avatar.split(',')[1], 'base64'));
+    room.avatars.set(id, avatar);
   }
   resetPlayer(player);
   if (room.phase === 'lobby') {
@@ -268,6 +333,7 @@ app.post('/api/rooms/:code/join', (req, res) => {
     room.captain ??= key;
   } else room.waiting.set(key, player);
   touchPlayer(room, key);
+  room.updated=Date.now();
   res.status(201).json({ key });
   publish(room, true);
 });
@@ -287,9 +353,10 @@ app.post('/api/rooms/:code/ready', (req, res) => {
 });
 
 app.get('/api/rooms/:code/avatar/:id', (req, res) => {
+  if(!res.locals.member)return res.status(403).json({error:'Join this room to view its photos.'});
   const avatar = res.locals.room.avatars?.get(req.params.id);
   if (!avatar) return res.sendStatus(404);
-  res.type('jpeg').set('X-Content-Type-Options', 'nosniff').send(avatar);
+  res.type('jpeg').set({'X-Content-Type-Options':'nosniff','Cross-Origin-Resource-Policy':'same-origin'}).send(avatar);
 });
 
 app.post('/api/rooms/:code/party', (req, res) => {
@@ -304,14 +371,26 @@ app.post('/api/rooms/:code/party', (req, res) => {
 });
 
 function winningTeams(room) {
-  const compare = compareTeams(room.mode);
+  if (room.mode === 'quizrace' && room.race) {
+    const winner = racePlacings(room.race)[0]?.id;
+    return room.teams.filter(team => team.members.some(member => member.id === winner)).map(team => team.id);
+  }
+  if (room.mode === 'knockout') {
+    const living = team => team.members.filter(member =>
+      [...room.players.values()].some(player => player.id === member.id && player.lives > 0)).length;
+    const count = Math.max(...room.teams.map(living));
+    if (count > 0) return room.teams.filter(team => living(team) === count).map(team => team.id);
+  }
+  const compare = compareTeams(room.mode,room.boardLength);
   const ordered = [...room.teams].sort(compare);
   return ordered.filter(team => compare(team, ordered[0]) === 0).map(team => team.id);
 }
 
 function finalTurn(room) {
   return room.index + 1 >= room.count
-    || (room.mode === 'knockout' && room.remaining <= (room.players.size > 1 ? 1 : 0)) || (room.mode === 'board' && room.teams.some(team => team.position >= room.boardLength));
+    || (room.mode === 'knockout' && (room.teams.length
+      ? new Set([...room.players.values()].filter(player=>player.lives>0).map(player=>player.team)).size <= 1
+      : room.remaining <= (room.players.size > 1 ? 1 : 0))) || (room.mode === 'board' && room.teams.some(team => team.position >= boardFinish(room.boardLength,team.pathChoice)));
 }
 
 function scoreCheckpointDue(room) {
@@ -320,7 +399,7 @@ function scoreCheckpointDue(room) {
 
 function openScoreBreak(room) {
   const board = room.mode === 'board';
-  const compare = room.teams.length ? compareTeams(room.mode) : comparePlayers;
+  const compare = room.teams.length ? compareTeams(room.mode,room.boardLength) : comparePlayers;
   const rows = room.teams.length ? room.teams : [...room.players.values()];
   const initialOrder = new Map(rows.map(({ id }, index) => [id, index]));
   const previous = room.lastScoreBreak;
@@ -364,6 +443,12 @@ function reveal(room) {
     if (!won) continue;
     answer.won = true;
     const player = room.players.get(key);
+    // Only the active team's correct answers earn the Power Lane multiplier.
+    // Other teams still answer the shared question at its normal value.
+    if (room.mode === 'board' && room.motion?.pathMultiplier === 2 &&
+        player.team === room.index % room.teams.length) {
+      answer.points = Math.round(answer.points * 2 * 100) / 100;
+    }
     player.score += answer.points;
     if (room.mode === 'board') player.score = Math.round(player.score * 100) / 100;
     if (room.teams.length) tallies[player.team] += answer.points;
@@ -378,7 +463,7 @@ function reveal(room) {
   const correct = question.type === 'estimate' ? question.correct
     : question.type === 'order' ? question.correct.map(index => question.options[index])
     : question.options[question.correct];
-  if (!room.privateQuestions) room.roundReview.push({ prompt: question.prompt, type: question.type, correct, unit: question.unit });
+  if (!room.privateQuestions) room.roundReview.push({ prompt: question.prompt, type: question.type, correct, unit: question.unit, source: verifiedSourceFor(question.prompt) });
   for (const [key, player] of room.players) {
     const answer = room.answers.get(key);
     if (answer) {
@@ -446,35 +531,100 @@ function readyTurn(room) {
   publish(room);
 }
 
+function raceQuestionPool(category, difficulty, includeChristmas, history = new Set()) {
+  // The source bank has uneven Easy/Hard coverage. Supplement in-category curated items
+  // with standard questions; the UI labels this limitation rather than changing topics.
+  const standard = makeQuestions(category, 160, history, 'choice', includeChristmas, 'standard');
+  const levels = difficulty === 'mixed' ? ['family', 'challenge'] : difficulty === 'easy' ? ['family'] : difficulty === 'hard' ? ['challenge'] : [];
+  const curated = levels.flatMap(level => difficultyQuestions[level]
+    .filter(([genre]) => category === 'mixed' ? (includeChristmas || genre !== 'christmas') : genre === category)
+    .map(([genre, prompt, correct, ...other]) => {
+      const options = [correct, ...other].sort(() => Math.random() - .5);
+      return {category: genre, prompt, options, correct: options.indexOf(correct), type: 'choice'};
+    }));
+  const seen = new Set();
+  const pool = [];
+  for (const item of [...curated, ...standard]) if (!seen.has(item.prompt)) {
+    seen.add(item.prompt);
+    pool.push(item);
+  }
+  // Returning players receive unseen prompts first, even on Quiz Race.
+  return pool.sort((a,b) => Number(history.has(a.prompt) || history.has(questionHistoryId(a.prompt))) -
+    Number(history.has(b.prompt) || history.has(questionHistoryId(b.prompt))));
+}
+
+function startRace(room) {
+  const pool = raceQuestionPool(room.category, room.raceDifficulty, room.includeChristmas, room.seen);
+  if (!pool.length) throw new Error('No questions available for Quiz Race.');
+  room.race = createQuizRace([...room.players], pool, { length: room.raceLength, track: room.raceTrack, difficulty: room.raceDifficulty }, performance.now());
+  room.phase = 'race-countdown';
+  room.opened = Date.now();
+  publish(room);
+}
+
 function startGame(room) {
+  // The first quiz is selected only after everyone has joined and supplied
+  // their previous question history, not when the TV room is first created.
+  if (fixedQuestionModes.includes(room.mode) && !room.customQuiz && !room.privateQuestions) {
+    room.questions = makeQuestions(room.category, room.count, room.seen, room.format, room.includeChristmas, room.difficulty);
+  }
+  if (room.mode === 'tracks') {
+    // Exactly one round per joined player; every player drives once.
+    room.count = room.players.size;
+    room.forkDriverOrder = [...room.players.keys()];
+  }
+  const allocation = teamAssignments(room.players,room.mode,room.playStyle,room.teamCount);
+  room.teams = allocation.groups;
+  for(const [key,player] of room.players) {
+    if (allocation.ids.has(key)) player.team = allocation.ids.get(key);
+    else delete player.team;
+  }
+  if (room.mode === 'quizrace') return startRace(room);
   if (partyModes.includes(room.mode)) return startParty(room, publish);
   if (room.privateQuestions) for (const key of room.players.keys()) room.privateReview.set(key, []);
   if (room.mode === 'knockout') {
     room.remaining = room.players.size;
     for (const player of room.players.values()) player.lives = 3;
   }
-  if (['board', 'showdown'].includes(room.mode)) {
-    const size = Math.min(room.teamCount, room.players.size);
-    room.teams = teams.slice(0, size).map(([name, color], id) => ({ id, name, color, size: 0, position: 0, score: 0 }));
-    let index = 0;
-    for (const player of room.players.values()) {
-      player.team = index++ % size;
-      room.teams[player.team].size++;
-    }
-  }
   if (fixedQuestionModes.includes(room.mode) && room.mode !== 'dice') return openQuestion(room);
   readyTurn(room);
 }
 
+// Host or the active team chooses the branch before their roll can cross the fork.
+app.post('/api/rooms/:code/board-path', (req, res) => {
+  const {room,key} = res.locals;
+  if (room.mode !== 'board') return res.status(400).json({error:'Path choices are for Board Race.'});
+  const team = room.teams[room.index % room.teams.length];
+  if (!team || !(key === room.host || room.players.get(key)?.team === team.id)) {
+    return res.status(403).json({error:'Only the active team or TV host can choose the path.'});
+  }
+  if (room.phase !== 'ready' || req.body?.game !== room.game || req.body?.index !== room.index) {
+    return res.status(409).json({error:'Choose a path during your team’s turn.'});
+  }
+  if (!boardPathChoices.some(option => option.id === req.body?.path)) {
+    return res.status(400).json({error:'Choose Power Lane or Question Trail.'});
+  }
+  if (team.position > boardFork(room.boardLength).start) {
+    return res.status(409).json({error:'Your team has already passed the fork.'});
+  }
+  team.pathChoice = req.body.path;
+  publish(room);
+  res.sendStatus(204);
+});
+
 app.post('/api/rooms/:code/roll', (req, res) => {
   const { room, key } = res.locals;
-  const activeTeam = room.teams[room.index % room.teams.length];
+  const activeTeam = room.mode === 'board' ? room.teams[room.index % room.teams.length] : undefined;
   const allowed = room.mode === 'board' ? key === room.host || (activeTeam && room.players.get(key)?.team === activeTeam.id)
     : controlsRoom(room, key);
   if (!allowed) {
     return res.status(403).json({ error: 'Wait for your team’s turn to roll.' });
   }
   if (room.phase !== 'ready' || req.body?.game !== room.game || req.body?.index !== room.index) return res.sendStatus(204);
+  if (room.mode === 'board' && activeTeam &&
+      boardRequiresChoice(room.boardLength, activeTeam.position, activeTeam.pathChoice)) {
+    return res.status(409).json({error:'Choose the Power Lane or Question Trail before rolling.'});
+  }
   if (room.mode === 'dice') {
     const dice = [randomInt(1, 7), randomInt(1, 7)];
     const sum = dice[0] + dice[1];
@@ -482,9 +632,14 @@ app.post('/api/rooms/:code/roll', (req, res) => {
   } else if (activeTeam) {
     const die = randomInt(1, 7);
     const from = activeTeam.position;
-    const to = Math.min(room.boardLength, from + die);
+    const path = boardPath(room.boardLength, room.includeChristmas, activeTeam.pathChoice || 'power');
+    const to = Math.min(path.length - 1, from + die);
     activeTeam.position = to;
-    room.motion = { die, from, to, points: die, difficulty: die, category: room.route[to].category };
+    const landed = path[to];
+    room.motion = { die, from, to, points: die, difficulty: die,
+      category: landed.category, pathChoice: activeTeam.pathChoice || 'power',
+      pathMultiplier: landed.lane === 'power' ? 2 : 1,
+      pathName: boardPathChoices.find(option => option.id === activeTeam.pathChoice)?.name ?? 'Board Race' };
   } else {
     if (!room.wheelRemaining.length) room.wheelRemaining = wheelCategories(room.includeChristmas).map(([id]) => id);
     const [category] = room.wheelRemaining.splice(randomInt(room.wheelRemaining.length), 1);
@@ -512,6 +667,15 @@ app.post('/api/rooms/:code/pause', (req, res) => {
   if (!controlsRoom(room, key)) return res.status(403).json({ error: 'Only the captain or TV host can pause the timer.' });
   const { phase, game, index, paused, clockVersion } = req.body ?? {};
   if (typeof paused !== 'boolean') return res.status(400).json({ error: 'Choose pause or resume.' });
+  if (room.mode === 'quizrace' && room.race && ['race-countdown', 'race'].includes(room.phase)) {
+    if (game !== room.game || phase !== room.phase || index !== room.index || clockVersion !== room.clockVersion) return res.status(409).json({error:'The race has changed.'});
+    if (Boolean(room.race.paused) === paused) return res.sendStatus(204);
+    setRacePaused(room.race, paused, performance.now());
+    room.pausedAt = paused ? Date.now() : 0;
+    room.clockVersion++;
+    publish(room);
+    return res.sendStatus(204);
+  }
   if (!room.ends || !['question', 'party-potato'].includes(room.phase)
     || phase !== room.phase || game !== room.game || index !== room.index || clockVersion !== room.clockVersion) {
     return res.status(409).json({ error: 'The timer has changed.' });
@@ -531,11 +695,19 @@ app.post('/api/rooms/:code/pause', (req, res) => {
 app.post('/api/rooms/:code/advance', (req, res) => {
   const { room, key } = res.locals;
   if (!controlsRoom(room, key)) return res.status(403).json({ error: 'Only the captain or TV host can advance the game.' });
+  if (['tracks','spotlight','rare'].includes(room.mode) && room.phase !== 'lobby' && key !== room.host)
+    return res.status(403).json({error:'Only the TV host advances rounds in this game; contestants and experts answer on their phones.'});
   if (req.body?.game !== room.game || req.body?.phase !== room.phase || req.body?.index !== room.index) return res.sendStatus(204);
   if (room.pausedAt) return res.status(409).json({ error: 'Resume the timer before advancing.' });
   if (room.phase === 'lobby') {
-    const minimum = minimumPlayers(room.mode);
+    if(req.body?.lobbyVersion!==undefined&&req.body.lobbyVersion!==room.lobbyVersion)
+      return res.status(409).json({error:'Lobby settings changed. Review them before starting.'});
+    const minimum = requiredPlayers(room.mode,room.playStyle,room.teamCount,minimumPlayers(room.mode));
     if (liveCounts(room).connected < minimum) return res.status(409).json({ error: `You need at least ${minimum} connected ${minimum === 1 ? 'player' : 'players'} to start.` });
+    if (room.mode === 'board' && room.playStyle === 'individual' && room.players.size > 4) {
+      return res.status(409).json({error:'Individual Board Race supports up to four racers. Choose Teams for larger groups.'});
+    }
+    if (room.mode === 'quizrace' && room.players.size > 12) return res.status(409).json({error:'Quiz Race supports up to twelve racers. Please choose another mode or a smaller group.'});
     startGame(room);
   } else if (partyModes.includes(room.mode)) {
     advanceParty(room, publish);
@@ -553,6 +725,17 @@ app.post('/api/rooms/:code/advance', (req, res) => {
   } else if (room.phase === 'score-break') {
     nextTurn(room);
   }
+  res.sendStatus(204);
+});
+
+app.post('/api/rooms/:code/race-answer', (req, res) => {
+  const {room, key} = res.locals;
+  if (!room.players.has(key) || room.mode !== 'quizrace' || !room.race) return res.status(403).json({error:'Join an active Quiz Race to answer.'});
+  if (req.body?.game !== room.game || !['race', 'race-countdown'].includes(room.phase)) return res.status(409).json({error:'This race is no longer active.'});
+  advanceQuizRace(room.race, performance.now());
+  const result = submitRaceAnswer(room.race, key, {questionId:req.body?.questionId, option:req.body?.option, pass:req.body?.pass}, room.race.time);
+  if (result.status !== 204) return res.status(result.status).json({error: result.error});
+  publish(room);
   res.sendStatus(204);
 });
 
@@ -656,9 +839,12 @@ app.post('/api/rooms/:code/configure', (req, res) => {
   const { room, key } = res.locals;
   if (!controlsRoom(room, key)) return res.status(403).json({ error: 'Only the captain or TV host can change the game.' });
   if (room.phase !== 'lobby' || req.body?.game !== room.game) return res.status(409).json({ error: 'The lobby has closed.' });
+  if(req.body?.lobbyVersion!==undefined&&req.body.lobbyVersion!==room.lobbyVersion)
+    return res.status(409).json({error:'Lobby settings changed. Reopen setup to review the current choices.'});
   const body = req.body?.useRoomQuiz === true && room.customQuiz ? { ...req.body, customQuiz: room.customQuiz } : req.body;
   const settings = readSettings(body);
   if (!settings) return res.status(400).json({ error: 'Check the game settings or saved quiz.' });
+  if (settings.mode === 'quizrace' && room.players.size > 12) return res.status(409).json({error:'Quiz Race supports up to twelve racers.'});
   resetGame(room, settings);
   publish(room);
   res.sendStatus(204);
@@ -691,12 +877,50 @@ app.post('/api/rooms/:code/rematch', (req, res) => {
 });
 
 setInterval(() => {
+  for (const room of rooms.values()) {
+    if (!room.race || !['race-countdown', 'race'].includes(room.phase)) continue;
+    const phaseWas = room.phase;
+    const event = advanceQuizRace(room.race, performance.now());
+    if (room.race.finished) {
+      room.phase = 'finished';
+      room.ceremony = undefined;
+      room.awards = [];
+    } else if (room.race.time >= 3000) room.phase = 'race';
+    for (const [key, racer] of room.race.racers) {
+      const player = room.players.get(key);
+      if (player) player.score = Math.round(100 * racer.distance / room.race.length);
+    }
+    const now = Date.now();
+    if (event || room.phase !== phaseWas || now - (room.race.lastBroadcast || 0) >= 250) {
+      room.race.lastBroadcast = now;
+      publish(room);
+    }
+  }
+}, 100).unref();
+
+app.use('/api',(error,req,res,next)=>{
+  if(res.headersSent)return next(error);
+  res.set('Cache-Control','no-store');
+  if(error.type==='entity.too.large')return res.status(413).json({error:'Request is too large.'});
+  if(error.type==='entity.parse.failed')return res.status(400).json({error:'Invalid request format.'});
+  console.error('Room request failed:',error.name);
+  return res.status(500).json({error:'Something went wrong. Try again.'});
+});
+
+setInterval(() => {
+  const now=Date.now();
   for (const [code, room] of rooms) {
-    if (!room.clients.size && Date.now() - room.updated > 4 * 60 * 60 * 1000) {
+    if (!room.clients.size && now-room.updated >= idleRoomMs) {
+      stopDeadline(room);
+      clearTimeout(room.hostUpdate);
+      clearTimeout(room.timer);
+      clearTimeout(room.autoTimer);
       rooms.delete(code);
     }
   }
-}, 60_000).unref();
+  creationBudget.sweep(now);
+  joinBudget.sweep(now);
+}, Math.min(60_000,idleRoomMs)).unref();
 setInterval(() => {
   for (const room of rooms.values()) {
     if (!room.clients.size && Date.now() - room.updated > 60000) continue;

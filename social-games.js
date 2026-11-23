@@ -1,6 +1,7 @@
 import { isConnected, responseTarget } from './room-presence.js';
 import { randomBytes, randomInt } from 'node:crypto';
 import { socialModes } from './public/game-config.js';
+import {refreshGroupScores} from './public/team-play.js';
 
 const punchlines = [
   'What is the worst name for a very fancy restaurant?',
@@ -86,6 +87,7 @@ export function advanceSocial(room, publish) {
     party.totals = new Map();
     for (const vote of party.votes.values()) party.totals.set(vote, (party.totals.get(vote) ?? 0) + 1);
     for (const entry of party.entries.values()) room.players.get(entry.key).score += 100 * (party.totals.get(entry.id) ?? 0);
+    refreshGroupScores(room);
     room.phase = 'party-reveal';
   } else if (room.phase === 'party-reveal') {
     if (room.index + 1 < room.count) {

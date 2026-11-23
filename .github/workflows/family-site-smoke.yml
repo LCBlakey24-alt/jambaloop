@@ -1,0 +1,92 @@
+name: Family site HTTPS smoke test
+
+on:
+  push:
+    branches: [feature/04-quiz-race-mvp]
+    paths: [.github/workflows/family-site-smoke.yml]
+  workflow_dispatch:
+
+jobs:
+  live-site:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify public HTTPS site, QR invitations and phone join API
+        env:
+          SITE: https://jambaloop-family-test.onrender.com
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          const base = process.env.SITE;
+          const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
+          let home;
+          for (let attempt = 0; attempt < 20; attempt++) {
+            try {
+              const response = await fetch(base, {signal: AbortSignal.timeout(15000)});
+              const body = await response.text();
+              if (response.ok && /Jambaloop/i.test(body) && /app\.js/.test(body)) {
+                home = body;
+                break;
+              }
+            } catch (error) {
+              if (attempt === 19) throw error;
+            }
+            await pause(5000);
+          }
+          assert.ok(home, 'Hosted home page did not wake or return Jambaloop HTML');
+          console.log('PASS: public site serves HTML over HTTPS');
+
+          const app = await fetch(base + '/app.js', {signal: AbortSignal.timeout(15000)});
+          assert.equal(app.status, 200, 'app.js missing');
+          assert.match(await app.text(), /quizrace/, 'Quiz Race missing from deployed frontend');
+          console.log('PASS: deployed JavaScript includes Quiz Race');
+
+          const post = async (path, body, key) => {
+            return fetch(base + path, {
+              method:'POST',
+              headers:{'content-type':'application/json',...(key ? {'x-game-key':key} : {})},
+              body:JSON.stringify(body),
+              signal:AbortSignal.timeout(20000)
+            });
+          };
+          const hostRoom = await post('/api/rooms', {mode:'classic',category:'general',count:5,seconds:0,format:'choice'});
+          assert.equal(hostRoom.status,201,await hostRoom.clone().text());
+          const {code,host} = await hostRoom.json();
+          const stateResponse = await fetch(base+'/api/rooms/'+code,{
+            headers:{'x-game-key':host},signal:AbortSignal.timeout(15000)
+          });
+          assert.equal(stateResponse.status,200);
+          const state = await stateResponse.json();
+          assert.equal(new URL(state.joinUrl).origin,base);
+          assert.equal(new URL(state.joinUrl).searchParams.get('join'),code);
+          assert.match(state.qr,/^data:image\/png;base64,/);
+          assert.deepEqual(state.joinOptions,[{label:'Public website',origin:base}]);
+          console.log('PASS: QR encodes a public HTTPS invitation rather than localhost/LAN');
+
+          const phone = await fetch(state.joinUrl,{signal:AbortSignal.timeout(15000)});
+          assert.equal(phone.status,200,'Phone invitation URL is not reachable');
+          assert.match(await phone.text(),/Jambaloop/i);
+          const join = await post('/api/rooms/'+code+'/join',{name:'CloudSmoke'});
+          assert.equal(join.status,201,await join.clone().text());
+          const {key} = await join.json();
+          const phoneState = await fetch(base+'/api/rooms/'+code,{
+            headers:{'x-game-key':key},signal:AbortSignal.timeout(15000)
+          });
+          assert.equal(phoneState.status,200);
+          const joined = await phoneState.json();
+          assert.equal(joined.player?.name,'CloudSmoke');
+          console.log('PASS: simulated phone joins the same server from its public URL');
+
+          const race = await post('/api/rooms',{
+            mode:'quizrace',category:'general',format:'choice',count:5,seconds:0,
+            raceLength:'short',raceTrack:'neon',raceDifficulty:'mixed'
+          });
+          assert.equal(race.status,201,await race.clone().text());
+          const {code:raceCode,host:raceHost} = await race.json();
+          const raceRoom = await fetch(base+'/api/rooms/'+raceCode,{
+            headers:{'x-game-key':raceHost},signal:AbortSignal.timeout(15000)
+          });
+          assert.equal(raceRoom.status,200);
+          assert.equal((await raceRoom.json()).mode,'quizrace');
+          console.log('PASS: cloud server creates Quiz Race rooms');
+          NODE

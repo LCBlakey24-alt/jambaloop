@@ -1,0 +1,108 @@
+/* Fork in the Tracks: compact game-show board, large TV sentence cards and thumb-friendly phone choices. */
+body.playing .fork-game { display:grid; grid-template-rows:auto auto minmax(0,1fr) auto auto;
+  gap:clamp(6px,1.1dvh,13px); padding:clamp(10px,1.6dvh,20px); min-height:0; overflow:hidden;
+  background:radial-gradient(ellipse at 55% 8%,#229b8c13,transparent 60%),var(--panel); }
+.fork-intro {display:flex;justify-content:space-between;align-items:start;gap:12px;min-height:0;}
+.fork-intro > div {min-width:0;}
+.fork-intro .eyebrow {font-size:clamp(10px,1.4dvh,13px);color:var(--pink);letter-spacing:.07em;}
+.fork-game .fork-intro h1 {margin:3px 0;font:800 clamp(20px,3.4dvh,39px)/1.05 'Club Classic','House Sans',sans-serif;}
+.fork-intro p {margin:3px 0;color:var(--muted);font-size:clamp(11px,1.6dvh,15px);}
+.fork-judge-label {padding:5px 8px;border:1px solid var(--edge);border-radius:8px;color:var(--muted);
+ font:750 clamp(9px,1.3dvh,12px)/1.2 'House Sans',sans-serif;white-space:nowrap;}
+.fork-your-role {display:block;font-size:11px;color:var(--pink);margin-top:4px;}
+.fork-score-strip {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;min-height:0;}
+.fork-score-strip > div {display:flex;align-items:center;justify-content:space-between;gap:6px;
+  padding:clamp(6px,1dvh,10px) clamp(8px,1vw,12px);border:1px solid var(--fork-team);
+  border-left:5px solid var(--fork-team);border-radius:10px;background:color-mix(in srgb,var(--fork-team) 14%,var(--panel));min-width:0;}
+.fork-score-strip span {font:850 clamp(10px,1.5dvh,15px)/1.1 'House Sans',sans-serif;}
+.fork-score-strip strong {font:850 clamp(12px,1.7dvh,18px)/1.1 'House Sans',sans-serif;white-space:nowrap;}
+.fork-tracks {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(7px,1vw,14px);min-height:0;align-items:stretch;overflow:hidden;}
+.fork-track {border:1px solid color-mix(in srgb,var(--fork-team) 70%,var(--edge));border-radius:15px;
+  background:linear-gradient(152deg,color-mix(in srgb,var(--fork-team) 13%,#122238),#132038 80%);
+  padding:clamp(8px,1.35dvh,15px);min-height:0;min-width:0;display:grid;grid-template-rows:auto minmax(0,1fr) auto;gap:7px;overflow:hidden;}
+.fork-track header {display:flex;align-items:center;gap:9px;border-bottom:1px solid #ffffff19;padding-bottom:6px;min-height:0;}
+.fork-track header strong {font:900 clamp(15px,2.7dvh,28px)/1 'Club Classic',sans-serif;color:var(--fork-team);}
+.fork-track header span:last-child {margin-left:auto;font-size:clamp(10px,1.5dvh,13px);font-weight:800;color:#d6e5fa;}
+.fork-rail-icon {font-size:clamp(19px,3dvh,30px);color:var(--fork-team);font-weight:800;}
+.fork-track-sentence {align-self:center;margin:0;color:#e2eaf5;font:600 clamp(12px,1.75dvh,19px)/1.53 'House Sans',sans-serif;min-width:0;overflow:auto;scrollbar-width:thin;}
+.fork-tile {display:inline;color:#f3f7ff;vertical-align:baseline;white-space:normal;}
+.fork-tile small {display:none;}
+.fork-tile strong {color:#8fe6d0;font-weight:850;overflow-wrap:anywhere;}
+.fork-tile.sabotage strong {color:#ffad86;}
+.fork-tile.empty strong {color:#8594b2;font-style:italic;font-weight:550;}
+.fork-track footer {display:flex;align-items:center;flex-wrap:wrap;gap:7px;justify-content:space-between;color:#aec0d7;font:750 10px/1.2 'House Sans',sans-serif;}
+.fork-hit {color:#ffb69d;}
+.fork-saved {color:#9df1bc;}
+.fork-vote-status {text-align:center;color:var(--muted);font-size:clamp(11px,1.4dvh,14px);}
+.fork-controls,.fork-outcome,.fork-locked {display:flex;align-items:center;justify-content:center;gap:12px;min-height:0;}
+.fork-controls small {font-size:11px;color:var(--muted);}
+.fork-controls .button {min-height:38px;}
+.fork-judge-controls {flex-wrap:wrap;gap:6px 15px;}
+.fork-judge-controls h2,.fork-outcome h2 {font:800 clamp(15px,2.2dvh,22px)/1.15 'Club Classic',sans-serif;margin:0;}
+.fork-judge-controls p,.fork-outcome p {font-size:clamp(11px,1.4dvh,14px);margin:0;color:var(--muted);}
+.fork-choice-buttons {display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+.fork-judge-choice {cursor:pointer;display:grid;gap:3px;min-width:160px;border-radius:9px;padding:8px 12px;
+ border:2px solid var(--fork-team);background:color-mix(in srgb,var(--fork-team) 14%,#142338);color:#f5f9ff;text-align:center;}
+.fork-judge-choice:hover,.fork-judge-choice:focus-visible {outline:2px solid #fff;outline-offset:2px;}
+.fork-judge-choice b {font-size:clamp(12px,1.7dvh,16px);color:var(--fork-team);}
+.fork-judge-choice small {font-size:10px;}
+.fork-outcome {flex-wrap:wrap;text-align:center;}
+.fork-outcome h2 {color:#ffd389;}
+.fork-final {display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:9px;text-align:center;}
+.fork-final h2 {margin:0;font:900 clamp(16px,3dvh,30px)/1.1 'Club Classic',sans-serif;}
+.fork-final p {margin:0;font-size:12px;}
+.fork-final .actions {display:flex;gap:8px;}
+
+/* On phones, keep the track story concise while offering three large choices per placement. */
+.fork-phone {grid-template-rows:auto auto auto auto minmax(0,1fr) !important;overflow:auto !important;scrollbar-width:thin;}
+.fork-phone .fork-intro {flex-wrap:wrap;gap:5px;}
+.fork-phone .fork-intro h1 {font-size:clamp(19px,6vw,27px);}
+.fork-phone .fork-judge-label {display:none;}
+.fork-phone .fork-score-strip {gap:4px;}
+.fork-phone .fork-score-strip > div {padding:5px 7px;border-left-width:3px;}
+.fork-phone .fork-score-strip span,.fork-phone .fork-score-strip strong {font-size:10px;}
+.fork-phone .fork-tracks {gap:6px;align-items:start;overflow:visible;}
+.fork-phone .fork-track {padding:6px;border-radius:9px;gap:5px;overflow:visible;}
+.fork-phone .fork-track header {flex-wrap:wrap;gap:3px;}
+.fork-phone .fork-track header strong {font-size:14px;}
+.fork-phone .fork-track header span:last-child {font-size:9px;}
+.fork-phone .fork-rail-icon {display:none;}
+.fork-phone .fork-track-sentence {font-size:10px;line-height:1.4;overflow:visible;}
+.fork-phone .fork-track footer {font-size:9px;}
+.fork-phone .fork-vote-status {font-size:10px;}
+.fork-locked {color:var(--muted);font-weight:750;font-size:13px;text-align:center;}
+.fork-hand {min-height:0;display:grid;grid-template-rows:auto auto minmax(0,1fr);gap:4px;overflow:hidden;}
+.fork-hand h2 {font-size:clamp(16px,4vw,22px);margin:0;}
+.fork-hand > p {font-size:11px;line-height:1.3;margin:0;}
+.fork-hand-options {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;min-height:0;overflow:auto;}
+.fork-card-pick {cursor:pointer;border:1px solid #62bda4;border-radius:9px;padding:9px;min-width:0;min-height:55px;
+  display:flex;flex-direction:column;gap:5px;text-align:left;background:#15312f;color:#f1fff9;}
+.fork-card-pick.bad {background:#382c2b;border-color:#da9b74;color:#ffe9db;}
+.fork-card-pick:hover,.fork-card-pick:focus-visible {outline:2px solid var(--pink);outline-offset:2px;}
+.fork-card-pick small {font:850 9px/1.2 'House Sans',sans-serif;opacity:.7;}
+.fork-card-pick span {font:750 clamp(11px,3.2vw,15px)/1.25 'House Sans',sans-serif;overflow-wrap:anywhere;}
+.fork-individual-results {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;max-height:150px;overflow:auto;width:min(100%,620px);}
+.fork-individual-results>div {display:flex;justify-content:space-between;gap:12px;padding:5px 9px;border:1px solid #41516d;border-radius:8px;background:#152238;min-width:0;}
+.fork-individual-results span {overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.fork-individual-results strong {white-space:nowrap;color:#9df1bc;}
+.fork-final {min-height:0;overflow:auto;}
+.fork-judge-label {border-color:#54ddc18c;color:#b4f8eb;}
+@media(max-width:760px) {
+ body.playing .fork-game {gap:7px;padding:9px;}
+ .fork-judge-controls {align-items:stretch;}
+ .fork-judge-choice {min-width:130px;}
+ .fork-phone .fork-tracks {grid-template-columns:repeat(2,minmax(0,1fr));}
+ .fork-phone .fork-hand-options {grid-template-columns:1fr;grid-template-rows:none;}
+ .fork-phone .fork-card-pick {min-height:67px;}
+ .fork-phone .fork-individual-results {grid-template-columns:1fr;}
+}
+@media(min-width:761px) and (max-height:700px) {
+ body.playing .fork-game {gap:5px;padding:8px 12px;}
+ .fork-track {padding:8px;}
+ .fork-track-sentence {font-size:clamp(12px,1.55dvh,16px);}
+ .fork-intro .eyebrow,.fork-intro p,.fork-score-strip span,.fork-score-strip strong {font-size:11px;}
+ .fork-track header strong {font-size:16px;}
+ .fork-judge-controls h2 {font-size:16px;}
+ .fork-judge-choice {padding:6px 9px;}
+}
+@media(prefers-reduced-motion:reduce) { .fork-track,.fork-card-pick {transition:none!important;animation:none!important;} }

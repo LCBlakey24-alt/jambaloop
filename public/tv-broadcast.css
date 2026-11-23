@@ -1,0 +1,141 @@
+/*
+ * Jambaloop broadcast TV polish, shared across all thirteen modes.
+ * This intentionally stays separate from phone interaction screens.
+ */
+.game.host-screen {
+  --tv-glow: color-mix(in srgb,var(--game-accent,#8de0d3) 22%,transparent);
+  --tv-glass: color-mix(in srgb,var(--mode-panel,#172b46) 87%,#0d1530);
+  background:
+    radial-gradient(ellipse at 48% -18%,var(--tv-glow),transparent 63%),
+    radial-gradient(ellipse at 5% 80%,color-mix(in srgb,var(--game-accent) 8%,transparent),transparent 55%),
+    var(--mode-backdrop,#101b31);
+}
+.host-screen .game-top {
+  isolation:isolate;position:relative;
+  border-bottom:1px solid color-mix(in srgb,var(--game-accent,#7dd) 45%,#111c33);
+  background:linear-gradient(110deg,#081226aa,color-mix(in srgb,var(--game-accent,#7dd) 9%,#0b1631ba),#101426aa);
+  box-shadow:0 6px 28px #040a18a1,inset 0 -1px 0 #ffffff09;
+}
+.host-screen .game-top::after {
+  content:'';position:absolute;bottom:-1px;left:0;height:2px;width:clamp(70px,20vw,280px);
+  background:linear-gradient(90deg,var(--game-accent),transparent);
+  pointer-events:none;box-shadow:0 0 13px var(--tv-glow);
+}
+.host-screen .screen-mode-icon {
+  color:var(--game-accent);filter:drop-shadow(0 0 10px var(--tv-glow));
+}
+.host-screen .screen-mode-title {
+  color:#f5f9ff;letter-spacing:.025em;
+  text-shadow:0 3px 8px #05091580;
+}
+.host-screen .screen-status {display:flex;align-items:center;flex-wrap:wrap;gap:6px;}
+.host-screen .phase-caption {
+  color:var(--game-accent);font-weight:850;
+  background:color-mix(in srgb,var(--game-accent) 13%,#0b1835);
+  border:1px solid color-mix(in srgb,var(--game-accent) 32%,transparent);
+  border-radius:999px;padding:3px 8px;
+}
+.host-screen .tv-live-pill {
+  display:inline-flex;align-items:center;gap:6px;border:1px solid #96a6bc5c;
+  border-radius:999px;padding:3px 8px;
+  color:#d8e6f7;background:#0d1838b3;
+  font:850 clamp(9px,1.3dvh,12px)/1.2 'House Sans',sans-serif;
+  letter-spacing:.075em;white-space:nowrap;
+}
+.host-screen .tv-live-pill i {
+  display:inline-block;width:6px;height:6px;border-radius:50%;
+  background:var(--game-accent);box-shadow:0 0 8px var(--game-accent);
+}
+.host-screen .game-panel:not(.samepage-game) {
+  border-color:color-mix(in srgb,var(--game-accent,#7dd) 23%,#425471);
+  background-image:linear-gradient(135deg,color-mix(in srgb,var(--game-accent,#7dd) 4%,transparent),transparent 60%);
+  box-shadow:0 10px 35px #03091745,inset 0 1px 0 #ffffff0b;
+}
+.host-screen .question-panel h2,
+.host-screen .turn-copy h1,
+.host-screen .round-break h1,
+.host-screen .results h1 {
+  text-wrap:balance;overflow-wrap:anywhere;
+  text-shadow:0 4px 14px #050a1666;
+}
+.host-screen .question-panel {
+  position:relative;isolation:isolate;
+  outline:1px solid color-mix(in srgb,var(--game-accent) 10%,transparent);
+  outline-offset:-5px;
+}
+.host-screen .question-panel .round-kicker,
+.host-screen .question-panel .eyebrow {
+  color:var(--game-accent);font-weight:900;letter-spacing:.07em;
+}
+.host-screen .question-panel .answer,
+.host-screen .fork-card-pick,
+.host-screen .bluff-card,
+.host-screen .board-team {
+  border-color:color-mix(in srgb,var(--game-accent) 18%,#6b7b97);
+}
+.host-screen .question-panel .answer.correct {
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--game-accent) 65%,transparent),0 0 20px var(--tv-glow);
+}
+.host-screen .round-track i.done {background:var(--game-accent);box-shadow:0 0 8px var(--tv-glow);}
+.host-screen .round-track i.current {border-color:var(--game-accent);box-shadow:0 0 0 1px var(--game-accent);}
+.host-screen .tv-leaders,
+.host-screen .round-leaders,
+.host-screen .night-panel {border-top:2px solid color-mix(in srgb,var(--game-accent) 48%,transparent);}
+.host-screen .ranking li,
+.host-screen .board-team,
+.host-screen .bluff-card {
+  border-radius:10px;
+  background:linear-gradient(105deg,#f6fbff08,#101c3140);
+}
+.host-screen .ranking li:first-child {
+  background:color-mix(in srgb,var(--game-accent) 13%,#111c34);
+  border-color:color-mix(in srgb,var(--game-accent) 38%,#394d68);
+}
+.host-screen .party-panel h1,
+.host-screen .party-panel h2,
+.host-screen .night-panel h2 {text-wrap:balance;}
+.host-screen .stage-presence,
+.host-screen .live-lineup {
+  color:#b6cadc;
+  background:color-mix(in srgb,var(--game-accent) 5%,#0b1931ce);
+  border:1px solid color-mix(in srgb,var(--game-accent) 19%,#324361);
+  border-radius:9px;
+}
+/* Mode-specific signature details, built from each game's existing palette. */
+.host-screen[data-mode="classic"] .question-panel {border-top:3px solid #aabaff;}
+.host-screen[data-mode="wheel"] .wheel-frame {filter:drop-shadow(0 0 14px #dfbbff38);}
+.host-screen[data-mode="board"] .board-stage {filter:drop-shadow(0 10px 20px #08170f8f);}
+.host-screen[data-mode="dice"] .dice-stage {filter:drop-shadow(0 8px 22px #ffb87c25);}
+.host-screen[data-mode="knockout"] .life-info {color:#ffb2c8;font-weight:900;}
+.host-screen[data-mode="punchline"] .bluff-card {border-left:3px solid #ffc0a5;}
+.host-screen[data-mode="cards"] .play-card {border-color:#f4c0de85;}
+.host-screen[data-mode="tracks"] .fork-track {box-shadow:0 9px 26px #020c1429,inset 0 1px 0 #ffffff12;}
+.host-screen[data-mode="bluff"] .bluff-card {border-left:3px solid #98e5cf;}
+.host-screen[data-mode="potato"] .potato-panel .party-holder {filter:drop-shadow(0 0 15px #ffd17633);}
+.host-screen[data-mode="quizrace"] .race-rank-row {background:linear-gradient(110deg,#1dd9be12,#0b193014);}
+.host-screen[data-mode="showdown"] .party-team-scores {border-color:#9be9f3aa;}
+.host-screen[data-mode="samepage"] .samepage-game {box-shadow:0 0 40px #77efdc10,inset 0 1px 0 #ffffff0d;}
+@media(max-width:1100px) {
+  .host-screen .tv-live-pill {font-size:9px;padding:2px 6px;}
+  .host-screen .phase-caption {padding:2px 6px;}
+}
+@media(max-height:700px) {
+  .host-screen .game-top {box-shadow:0 4px 12px #0006;}
+  .host-screen .screen-status {gap:3px;}
+  .host-screen .tv-live-pill {display:none;}
+  .host-screen .question-panel h2 {font-size:clamp(20px,4dvh,38px);}
+}
+@media(prefers-reduced-motion:no-preference) {
+  .host-screen.phase-enter[data-phase="party-reveal"] .bluff-card,
+  .host-screen.phase-enter[data-phase="reveal"] .ranking li,
+  .host-screen.phase-enter[data-phase="finished"] .results h1 {
+    animation:tv-broadcast-enter .48s ease-out both;
+  }
+}
+@keyframes tv-broadcast-enter {
+  from {opacity:.5;transform:translateY(7px);}
+  to {opacity:1;transform:none;}
+}
+@media(prefers-reduced-motion:reduce) {
+  .host-screen * {scroll-behavior:auto!important;}
+}

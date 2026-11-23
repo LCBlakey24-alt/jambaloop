@@ -1,0 +1,66 @@
+name: Family narrator live-site smoke
+
+on:
+  push:
+    branches: [feature/04-quiz-race-mvp]
+    paths:
+      - '.github/workflows/family-narrator-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check-live-website:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Verify deployed dark homepage and permanent game narration
+        env:
+          SITE: https://jambaloop-family-test.onrender.com
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          const site=process.env.SITE;
+          const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+          let html='';
+          for(let retry=0;retry<25;retry++) {
+            try{
+              const res=await fetch(site,{signal:AbortSignal.timeout(15000)});
+              html=await res.text();
+              if(res.ok && html.includes('home-shell') && html.includes('/home-arcade.css')) break;
+            }catch{}
+            await pause(4000);
+          }
+          assert.match(html,/home-shell/,'New dark homepage was not served');
+          console.log('PASS: Render serves the new full-screen Jambaloop homepage');
+          const css=await fetch(site+'/home-arcade.css');
+          assert.equal(css.status,200);
+          assert.match(await css.text(),/narrator-toggle/);
+          const scripts=await fetch(site+'/narration-scripts.js');
+          assert.equal(scripts.status,200);
+          const script=await scripts.text();
+          for(const id of ['classic','wheel','board','dice','knockout','punchline','cards','tracks','bluff','potato','quizrace','showdown']) {
+            assert.ok(script.includes(id+':'),'Transcript missing for '+id);
+          }
+          const host=await fetch(site+'/home-launcher.js');
+          assert.equal(host.status,200);
+          assert.match(await host.text(),/narrator-toggle/);
+          console.log('PASS: all twelve intro transcripts and Listen controls are deployed');
+          for(const mode of ['classic','board','quizrace']) {
+            const response=await fetch(site+'/audio/narrator/'+mode+'.mp3',{signal:AbortSignal.timeout(20000)});
+            assert.equal(response.status,200,'Recorded MP3 unavailable: '+mode);
+            const bytes=(await response.arrayBuffer()).byteLength;
+            assert.ok(bytes>6000,'Recorded MP3 empty: '+mode);
+            console.log('PASS: '+mode+' permanent ElevenLabs recording ('+bytes+' bytes)');
+          }
+          const room=await fetch(site+'/api/rooms',{method:'POST',headers:{'content-type':'application/json'},
+            body:JSON.stringify({mode:'quizrace',category:'general',count:5,seconds:0})});
+          assert.equal(room.status,201,'Quiz Race room creation regressed');
+          const {code,host:token}=await room.json();
+          const state=await fetch(site+'/api/rooms/'+code,{headers:{'x-game-key':token}});
+          assert.equal(state.status,200);
+          const data=await state.json();
+          assert.equal(new URL(data.joinUrl).origin,site,'QR no longer uses cloud HTTPS');
+          console.log('PASS: existing multiplayer room and HTTPS phone QR remain functional');
+          NODE

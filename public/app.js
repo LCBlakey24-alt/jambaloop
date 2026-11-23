@@ -15,6 +15,7 @@ import { playCue, playTowerImpact } from './sound-cues.js';
 import { boardLengths, boardRoute, boardDuration, durationLabel, suggestedTurnCap, boardRequiresChoice, boardPathChoices } from './board-route.js';
 import {teamPlayModes, defaultPlayStyle} from './team-play.js';
 import { avatarView, partyView } from './party-views.js';
+import {connectSketchPainter,paintSketchBoard} from './sketch-canvas.js';
 import { openLibrary, savedQuizzes } from './quiz-editor.js';
 import { answerGuide, helpTypes, closestStep, createDraft, formatNumber, orderedItems, specialAnswer } from './answer-controls.js';
 import { demoView, explainer, hasDemo, practiceView, samples } from './learning.js';
@@ -577,6 +578,11 @@ document.addEventListener('paste', event => {
 
 document.addEventListener('submit', async event => {
   const form = event.target;
+  if(form.id==='sketch-guess-form'){
+    event.preventDefault();
+    await sendParty({action:'guess',text:form.elements.guess.value},form.querySelector('button'));
+    return;
+  }
   if (form.id === 'night-form') {
     event.preventDefault();
     const submit = form.querySelector('[type="submit"]');
@@ -908,14 +914,14 @@ function render(s) {
   const captainSelect = !enter && focused?.matches('#captain-form select') ? focused.value : undefined;
   const writing = !enter && focused?.matches('#bluff-form textarea')
     ? [focused.selectionStart, focused.selectionEnd] : undefined;
-  const showProgress = ['ready', 'rolling', 'question', 'reveal', 'score-break', 'party-build', 'party-judge', 'party-write', 'party-vote', 'party-reveal', 'spotlight-ready', 'spotlight-expert', 'spotlight-answer', 'spotlight-reveal', 'brain-question', 'brain-reveal', 'top-poll', 'top-guess', 'top-reveal', 'rare-write', 'rare-review', 'rare-reveal'].includes(s.phase) && s.total > 1;
+  const showProgress = ['sketch-draw','sketch-reveal','ready', 'rolling', 'question', 'reveal', 'score-break', 'party-build', 'party-judge', 'party-write', 'party-vote', 'party-reveal', 'spotlight-ready', 'spotlight-expert', 'spotlight-answer', 'spotlight-reveal', 'brain-question', 'brain-reveal', 'top-poll', 'top-guess', 'top-reveal', 'rare-write', 'rare-review', 'rare-reveal'].includes(s.phase) && s.total > 1;
   const caption = phaseCaption(s);
   const boost = s.boost > 1 && ['ready', 'rolling', 'question', 'reveal'].includes(s.phase)
     ? `<span class="score-boost">${icons('zap')} Double points</span>` : '';
   const mode = modes.find(([id]) => id === s.mode);
   const result = !host && s.phase === 'reveal' ? won ? 'win' : s.selection !== undefined ? 'miss' : 'skip'
     : !host && s.phase === 'question' && s.selection !== undefined ? 'locked' : '';
-  const completed = ['reveal', 'score-break', 'party-reveal'].includes(s.phase) ? s.index + 1 : s.index;
+  const completed = ['reveal', 'score-break', 'party-reveal','sketch-reveal'].includes(s.phase) ? s.index + 1 : s.index;
   const track = showProgress ? `<div class="round-track" role="img" aria-label="${completed} of ${s.total} rounds completed">
     ${Array.from({ length: s.total }, (_, index) => `<i class="${index < completed ? 'done' : index === s.index ? 'current' : ''}"></i>`).join('')}</div>` : '';
   app.innerHTML = `<section class="game ${host ? 'host-screen' : 'player-only'} ${host && tvFocus ? 'tv-focus' : ''} ${enter ? 'phase-enter' : ''}" data-deck-key="${phaseKey}" data-phase="${s.phase}" data-paused="${Boolean(s.pausedAt)}" data-mode="${s.mode}" data-result="${result}" style="${modeVariables(s.mode)}">${sceneBackdrop(s.mode, enter && (s.phase === 'finished' || result === 'win'))}<div class="game-top">
@@ -939,6 +945,7 @@ function render(s) {
   switchAvatarSession.refresh();
   if (backdrop) app.querySelector('.scene-backdrop').replaceWith(backdrop);
   renderGraphics(s, stage, animateRoll);
+  if(s.mode==='sketch')paintSketchBoard(s.party);
   if(s.mode==='quizrace' && s.race){
     raceTrackView?.dispose(); raceTrackView=mountQuizRaceTrack(app);
     raceSnapshotLocal=Date.now();
@@ -1072,6 +1079,10 @@ function receive(next, current) {
   const raceSignature = race && { question:race.own?.question?.id, feedback:race.own?.feedback?.outcome, paused:race.paused, finished:race.finished };
   const lobbyStatus = next.phase === 'lobby' ? { connected } : undefined;
   const raceStable = next.mode==='quizrace' ? { ...stable, players: next.phase==='finished' ? stable.players : undefined, player: stable.player ? {...stable.player, score: undefined} : undefined } : stable;
+  // Stroke updates paint directly into the existing canvas, preserving in-progress finger gestures.
+  if(next.mode==='sketch'&&raceStable.party){
+    raceStable.party={...raceStable.party,strokes:undefined};
+  }
   const nextSignature = JSON.stringify({ ...raceStable, raceSignature, lobbyStatus,
     prediction: next.phase === 'ready' && current.host ? undefined : next.prediction });
   if (signature !== nextSignature) {
@@ -1087,6 +1098,7 @@ function receive(next, current) {
     responseProgress.value = next.answered;
   }
   updatePresence(next);
+  if(next.mode==='sketch')paintSketchBoard(next.party);
   updateTimer();
 }
 
@@ -1348,6 +1360,7 @@ document.addEventListener('click', async event => {
   const button = event.target.closest('[data-action]');
   if (!button) return;
   const action = button.dataset.action;
+  if(action==='sketch-clear')return sendParty({action:'clear'},button);
   if (action === 'narrator-toggle') {
     toggleNarration(button.dataset.mode);
     return;
@@ -1580,6 +1593,13 @@ document.addEventListener('click', async event => {
   } finally {
     button.disabled = false;
   }
+});
+
+// Sketch strokes are streamed without waiting for the full UI refresh, keeping the artist's pen steady.
+connectSketchPainter(async data=>{
+  if(!session||state?.mode!=='sketch'||!state.party?.drawing||state.phase!=='sketch-draw')return;
+  const game=state.game,index=state.index;
+  await api('/'+session.code+'/party',{...data,game,index});
 });
 
 dialog.addEventListener('close', () => content.querySelector('video')?.pause());

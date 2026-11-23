@@ -27,7 +27,9 @@ const port = process.env.PORT || 3000;
 const maxPlayers = 300;
 const maxRooms = positiveSetting('MAX_ROOMS', 128);
 const idleRoomMs = positiveSetting('ROOM_IDLE_MS', 4 * 60 * 60 * 1000);
-const createBudget = requestBudget(positiveSetting('ROOMS_PER_MINUTE', 30));
+// Full game-night and visual QA legitimately create more than 30 short-lived
+// rooms from one host. Keep abuse bounded without blocking the 17-mode suite.
+const createBudget = requestBudget(positiveSetting('ROOMS_PER_MINUTE', 60));
 const joinBudget = requestBudget(positiveSetting('JOINS_PER_ROOM_PER_MINUTE', 360));
 const categories = [...questionCategories, 'mixed'];
 const token = () => randomBytes(18).toString('hex');

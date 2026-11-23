@@ -1,6 +1,6 @@
 # Jambaloop — British ElevenLabs narrator recording kit
 
-Updated 23 November 2026 · 18 games, 3 existing recordings, **15 outstanding** (includes new Sketch Sprint).
+Updated 23 November 2026 · 18 games, 3 recordings committed, **15 additional MP3 exports supplied by the user in ChatGPT and awaiting repository upload** (includes Sketch Sprint).
 
 ## Recording and download
 
@@ -11,7 +11,7 @@ Updated 23 November 2026 · 18 games, 3 existing recordings, **15 outstanding** 
 - Upload the downloaded files to this ChatGPT conversation or add them to `public/audio/narrator/` in the Jambaloop repository. Once verified as real files, each game can be added to `recordedIntros` in `public/narration-scripts.js`.
 - Keep transcripts visible and narration **opt-in** so no phone-data or ElevenLabs credit charges occur during normal play. Until an MP3 exists, the browser's `en-GB` speech synthesis remains the fallback.
 
-**Important:** This document is only the recording script; the recorded ElevenLabs media have **not** been generated or uploaded. The first free-tier attempt on 23 November 2026 was rejected because the generation queue was busy; no credits were charged.
+**Important:** All 15 outstanding recordings were subsequently supplied by the user as MP3s on 23 November 2026. They have been renamed and packaged in ChatGPT, but **the binary MP3 files are NOT yet committed to GitHub**. No game may be registered in `recordedIntros` until its real MP3 exists in the repository. The original first attempt was queue-rejected without charge; later exports are present.
 
 ## Existing recordings (do not regenerate)
 
@@ -81,3 +81,27 @@ Updated 23 November 2026 · 18 games, 3 existing recordings, **15 outstanding** 
 
 > Welcome to Sketch Sprint! One player becomes the artist, with a secret picture to draw on their phone. Everyone else races to guess what appears on the big screen. Fast fingers, sharp eyes, and plenty of laughs. Ready, set, sketch!
 
+
+## Uploaded recordings — integration checklist (23 November 2026)
+
+These additional MP3 files have been uploaded to the ChatGPT conversation and packaged as `jambaloop-complete-narration.zip` with the correct `public/audio/narrator/` folder structure. This ZIP is a conversation artifact, **not a GitHub commit**. Extract the ZIP and upload the audio files to the PR development branch, avoiding any replacement of the three existing MP3s. The filename match follows the chronological recording/export order and should be checked by listening to each game title before release.
+
+| Game | MP3 file |
+| --- | --- |
+| Spin the Wheel | `wheel.mp3` |
+| Dice Rally | `dice.mp3` |
+| Knockout | `knockout.mp3` |
+| Punchline Party | `punchline.mp3` |
+| Fill the Blank | `cards.mp3` |
+| Fork in the Tracks | `tracks.mp3` |
+| Spot the Bluff | `bluff.mp3` |
+| Hot Potato | `potato.mp3` |
+| Team Showdown | `showdown.mp3` |
+| Same Page | `samepage.mp3` |
+| Spotlight Wheel | `spotlight.mp3` |
+| Brain Ladder | `brain.mp3` |
+| Top Answers | `topanswers.mp3` |
+| Rare Find | `rare.mp3` |
+| Sketch Sprint | `sketch.mp3` |
+
+After binary upload, update `recordedIntros` in `public/narration-scripts.js` to include all 18 mode IDs, update `test/narration.test.js` to assert the actual committed file set, and check every MP3 endpoint and click-to-play on desktop/tablet/phone. Keep the existing opt-in narration behaviour and readable transcript. For future fuller tutorials, use a separate optional How to Play narration after players open each game, rather than lengthening the short homepage intros.

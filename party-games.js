@@ -2,6 +2,7 @@ import { clockExpired, stopDeadline, watchDeadline } from './room-clock.js';
 import { connectedPlayers, isConnected, responseTarget } from './room-presence.js';
 import { randomInt } from 'node:crypto';
 import { makeQuestions } from './questions.js';
+import {v2Bluff} from './creative-expansion-v2.js';
 
 import { partyModes, socialModes } from './public/game-config.js';
 import { startSocialRound, advanceSocial, submitSocial, publicSocial, advanceSocialWhenReady } from './social-games.js';
@@ -41,6 +42,7 @@ const prompts = [
   'What would be an unusual object to find in a library?',
   'Name a terrible item to use as a bookmark.',
   'What might a superhero forget to take to work?',
+  ...v2Bluff,
 ];
 
 const random = list => list[randomInt(list.length)];

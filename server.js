@@ -750,6 +750,8 @@ app.post('/api/rooms/:code/pause', (req, res) => {
 app.post('/api/rooms/:code/advance', (req, res) => {
   const { room, key } = res.locals;
   if (!controlsRoom(room, key)) return res.status(403).json({ error: 'Only the captain or TV host can advance the game.' });
+  if (req.body?.lobbyVersion !== undefined && req.body.lobbyVersion !== room.lobbyVersion)
+    return res.status(409).json({error:'Lobby settings changed. Review them before starting.'});
   if (['tracks','spotlight','rare'].includes(room.mode) && room.phase !== 'lobby' && key !== room.host)
     return res.status(403).json({error:'Only the TV host advances rounds in this game; contestants and experts answer on their phones.'});
   if (req.body?.game !== room.game || req.body?.phase !== room.phase || req.body?.index !== room.index) return res.sendStatus(204);
@@ -892,6 +894,8 @@ app.post('/api/rooms/:code/configure', (req, res) => {
   const { room, key } = res.locals;
   if (!controlsRoom(room, key)) return res.status(403).json({ error: 'Only the captain or TV host can change the game.' });
   if (room.phase !== 'lobby' || req.body?.game !== room.game) return res.status(409).json({ error: 'The lobby has closed.' });
+  if (req.body?.lobbyVersion !== undefined && req.body.lobbyVersion !== room.lobbyVersion)
+    return res.status(409).json({error:'Lobby settings changed. Reopen setup to review the current choices.'});
   const body = req.body?.useRoomQuiz === true && room.customQuiz ? { ...req.body, customQuiz: room.customQuiz } : req.body;
   const settings = readSettings(body);
   if (!settings) return res.status(400).json({ error: 'Check the game settings or saved quiz.' });

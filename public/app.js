@@ -6,7 +6,7 @@ import { mobileDeck } from './mobile-deck.js';
 import { awardView, currentFrame, frameView, revealFrames, scoreReveal } from './ceremony.js';
 import { boardSpeedValues, bonusValues, canSetScore, defaultScoring, doubleSchedules, pointValues } from './scoring.js';
 import { gameNightPresets, gameNightView, playlistEditor, playlistLimit, replayButtons } from './game-night.js';
-import { forgetPlayer, parseRoomCode, recentRooms, rememberPlayer, rememberedPlayer } from './room-session.js';
+import { clearRoomSession, forgetPlayer, parseRoomCode, recentRooms, rememberPlayer, rememberedPlayer, restoreRoomSession, saveRoomSession } from './room-session.js';
 import {readQuestionHistory, rememberQuestion} from './question-history.js';
 import { modeVariables, sceneBackdrop } from './mode-style.js';
 import { launcherTile, launcherPreview, launcherModes, launcherSetupArtwork, LAUNCHER_PAGE_SIZE } from './home-launcher.js';
@@ -313,6 +313,10 @@ function openDialog(mode, value, gameMode, quizId) {
     <p class="settings-note" id="scoring-note" aria-live="polite"></p>
     <p class="error" role="alert"></p><button class="button primary" type="submit">${rematch ? 'Set up rematch' : configured ? 'Apply to lobby' : 'Create room'} ${icons('arrow-up-right')}</button></form>`;
     const form = content.querySelector('form');
+    if (configured) {
+      form.dataset.game = state.game;
+      form.dataset.lobbyVersion = state.lobbyVersion;
+    }
     let explained = selectedMode;
     let boardCapEdited = configured && state.mode === 'board';
     let scoringEdited = Boolean(configured && state.scoring);
@@ -479,6 +483,7 @@ function openDialog(mode, value, gameMode, quizId) {
     <div class="selfie-picker"><img id="selfie-preview" class="player-avatar" alt="Your avatar preview" hidden>
       <label class="button outline small file-button">Take a selfie<input data-selfie type="file" accept="image/*" capture="user" aria-label="Take a selfie"></label>
       <label class="button outline small file-button">Choose photo<input data-selfie type="file" accept="image/*" aria-label="Choose photo"></label><button type="button" class="button outline small" data-action="clear-selfie" hidden>Remove photo</button></div>
+    <small class="photo-privacy">Optional photos are visible only to people who have joined this room.</small>
     <p class="error" role="alert"></p><button class="button primary">Join game ${icons('arrow-up-right')}</button></form>
     ${recentRooms().length ? '<button class="text-button" data-action="recent-rooms">Resume a recent room</button>' : ''}`;
   } else {
@@ -523,7 +528,7 @@ function startSession(next) {
   submittingAnswer = undefined;
   document.body.classList.add('playing');
   signature = undefined;
-  sessionStorage.setItem('quizmas-session', JSON.stringify(next));
+  saveRoomSession(next);
   rememberPlayer(next);
   history.replaceState(null, '', '/');
   dialog.close();
@@ -549,7 +554,7 @@ function leave() {
   raceSending = false; raceTrackView?.dispose(); raceTrackView = undefined;
   cancelAnimationFrame(raceAnimationFrame);raceAnimationFrame=0;
   document.body.classList.remove('playing');
-  sessionStorage.removeItem('quizmas-session');
+  clearRoomSession();
   history.replaceState(null, '', '/');
   renderHome();
 }
@@ -612,7 +617,7 @@ document.addEventListener('submit', async event => {
     const settings = { mode, playStyle, theme, difficulty, raceLength, raceTrack, raceDifficulty, scoring, scoreInterval: scoreInterval === undefined ? undefined : Number(scoreInterval), boardSpeed: boardSpeed === undefined ? undefined : Number(boardSpeed), format: curated ? 'choice' : format, category: curated ? 'mixed' : category, phoneView, teamCount: Number(teamCount), boardLength: Number(boardLength), customQuiz, useRoomQuiz: quiz === 'current', count: Number(count), privateQuestions: privateQuestions === 'on', seconds: Number(seconds), autoReveal: autoReveal === 'on', includeChristmas: includeChristmas === 'on' };
     if (form.id === 'rematch-form' || form.id === 'configure-form') {
       const action = form.id === 'rematch-form' ? 'rematch' : 'configure';
-      await api('/' + session.code + '/' + action, { ...settings, game: state.game });
+      await api('/' + session.code + '/' + action, { ...settings, game: Number(form.dataset.game), lobbyVersion: Number(form.dataset.lobbyVersion) });
       dialog.close();
       await refresh();
     } else if (form.id === 'host-form') {
@@ -892,6 +897,7 @@ function render(s) {
   const backdrop = enter ? null : app.querySelector('.scene-backdrop');
   const focused = document.activeElement;
   const rosterScroll = enter ? 0 : app.querySelector('.players')?.scrollTop;
+  const lobbyAction = !enter && s.phase === 'lobby' && app.contains(focused) && focused.matches('button[data-action]') ? focused.dataset.action : undefined;
   const captainSelect = !enter && focused?.matches('#captain-form select') ? focused.value : undefined;
   const writing = !enter && focused?.matches('#bluff-form textarea')
     ? [focused.selectionStart, focused.selectionEnd] : undefined;
@@ -936,6 +942,7 @@ function render(s) {
   if (enter) announcement.textContent = caption + (showProgress ? ' · ' + (s.index + 1) + ' of ' + s.total : '');
   const roster = rosterScroll && app.querySelector('.players');
   if (roster) roster.scrollTop = rosterScroll;
+  if (lobbyAction) app.querySelector(`button[data-action="${CSS.escape(lobbyAction)}"]:enabled`)?.focus({preventScroll:true});
   if (captainSelect) {
     const select = app.querySelector('#captain-form select');
     if (select && Array.from(select.options).some(item => item.value === captainSelect)) {
@@ -1110,6 +1117,7 @@ async function connect() {
   if (!session || stream) return;
   const current = session;
   const controller = new AbortController();
+  let pollOnlyUntil = 0;
   stream = controller;
   streamReady = false;
   lastUpdate = Date.now();
@@ -1119,6 +1127,11 @@ async function connect() {
       signal: controller.signal,
     });
     if (!response.ok || !response.body) {
+      if (response.status === 409) {
+        const seconds = Number(response.headers.get('retry-after'));
+        pollOnlyUntil = Date.now() + (seconds > 0 ? seconds : 5) * 1000;
+      }
+      await response.body?.cancel();
       await refresh();
       return;
     }
@@ -1147,8 +1160,8 @@ async function connect() {
     if (stream === controller) {
       controller.abort();
       stream = undefined;
-      if (current === session) setConnectionStatus(true);
-      nextConnect = Date.now() + 800 + Math.random() * 1200;
+      if (current === session && !pollOnlyUntil) setConnectionStatus(true);
+      nextConnect = pollOnlyUntil || Date.now() + 800 + Math.random() * 1200;
     }
   }
 }
@@ -1529,7 +1542,7 @@ document.addEventListener('click', async event => {
       await api('/' + current.code + '/roll', { index: state.index, game: state.game });
       await refresh();
     } else if (action === 'advance') {
-      await api('/' + current.code + '/advance', { phase: state.phase, index: state.index, game: state.game });
+      await api('/' + current.code + '/advance', { phase: state.phase, index: state.index, game: state.game, lobbyVersion: state.lobbyVersion });
       await refresh();
     } else if (['answer', 'submit-special'].includes(action) && !submittingAnswer && state.phase === 'question' && state.selection === undefined) {
       const answer = { index: state.index, option: action === 'answer' ? Number(button.dataset.option) : specialValue, game: state.game };
@@ -1583,7 +1596,7 @@ matchMedia('(max-width: 760px)').addEventListener('change', () => {
 renderHome();
 mobileDeck(app, dialog, content);
 const code = new URLSearchParams(location.search).get('join');
-const saved = JSON.parse(sessionStorage.getItem('quizmas-session') ?? 'null');
+const saved = restoreRoomSession();
 if (saved && (!code || saved.code === code && !saved.host)) startSession(saved);
 else if (code) {
   const remembered = rememberedPlayer(code);

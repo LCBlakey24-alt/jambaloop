@@ -81,6 +81,9 @@ try {
   await writeFile('browser-screenshots/tv-all-modes-audit.json',JSON.stringify(report,null,2));
   await browser.close();
 }
+const sketch=report.filter(x=>x.mode==='sketch');
+assert.equal(sketch.length,2,'Sketch Sprint must be captured at both TV resolutions');
+assert.ok(sketch.every(x=>!x.warning.length),'Sketch Sprint TV must fit 720p and 1080p: '+JSON.stringify(sketch));
 const samePage=report.filter(x=>x.mode==='samepage');
 assert.equal(samePage.length,2);
 assert.ok(samePage.every(x=>!x.warning.length),

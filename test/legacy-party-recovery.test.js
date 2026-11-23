@@ -3,6 +3,7 @@ import {spawn} from 'node:child_process';
 import {once} from 'node:events';
 import {test} from 'node:test';
 import {expireParty,publicParty,rescuePotato} from '../party-games.js';
+import {questionCounts} from '../public/game-config.js';
 
 const sampleQuestion=prompt=>({
   prompt,type:'choice',options:['Left','Right','Middle','Pass'],correct:1,
@@ -157,6 +158,7 @@ test('Fill the Blank keeps every hand secret, completes five votes and gives gen
    await game.advance();
    for(let round=0;round<5;round++){
      const lobby=await game.state();
+     assert.equal(lobby.total,5,'Configured five-round match must not silently shorten');
      assert.equal(lobby.phase,'party-write');
      assert.equal(lobby.index,round);
      assert.equal(lobby.party.hand,undefined,'TV host must not see private cards');
@@ -190,5 +192,21 @@ test('Fill the Blank keeps every hand secret, completes five votes and gives gen
    assert.equal(finale.players.length,3);
    assert.equal(finale.players.reduce((n,p)=>n+p.score,0),1500,
      'Each of the 15 genuine player votes must award 100 points in total');
+ });
+});
+
+test('Punchline Party and Fill the Blank expose exactly three, five and seven valid round options',async()=>{
+ assert.deepEqual(questionCounts('punchline','choice','mixed'),[3,5,7]);
+ assert.deepEqual(questionCounts('cards','choice','mixed'),[3,5,7]);
+ await withServer(async({request})=>{
+   for(const mode of ['punchline','cards']){
+     for(const count of [3,7]){
+       const created=await request('',undefined,{mode,category:'mixed',format:'choice',count,seconds:0},201);
+       const snapshot=await request('/'+created.code,created.host);
+       assert.equal(snapshot.total,count,mode+' must keep the requested number of rounds');
+     }
+     const invalid=await request('',undefined,{mode,category:'mixed',format:'choice',count:8,seconds:0},400);
+     assert.match(invalid.error,/game mode|count|timer/i);
+   }
  });
 });

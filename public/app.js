@@ -1,4 +1,5 @@
 import { scoreBreakView, updateScoreBreak } from './score-break.js';
+import { winnerBanner, playerFinish } from './result-highlights.js';
 import { bindRoomAvatars } from './room-avatars.js';
 import { quizRaceView } from './quiz-race-view.js';
 import { mountQuizRaceTrack } from './quiz-race-track.js';
@@ -860,9 +861,10 @@ function render(s) {
       : s.playStyle === 'teams' ? winningTeams.length === 1 ? 'Team ' + escape(winningTeams[0].name) + ' wins!' : 'The teams are tied!'
       : winners.length === 1 ? escape(winners[0].name) + ' takes the crown!' : 'It’s a tie!';
     body = `<div class="game-panel results"><div class="eyebrow">FINAL RESULTS</div><h1>${title}</h1>
+      ${host ? winnerBanner(s, escape) : playerFinish(s)}
       ${board ? teamList(s, ownTeam?.id, true) : s.teams.length ? teamScoreboard(s.teams, ownTeam?.id) : ''}
       ${s.teams.length ? '<h2>Individual scores</h2>' : ''}
-      ${host ? `<div class="podium">${standings(s.players)}</div>` : `<p>You placed <strong>#${s.rank} of ${s.playerCount}</strong> with <strong>${s.player.score.toLocaleString()} points</strong>.</p>`}
+      ${host ? `<div class="podium">${standings(s.players)}</div>` : ''}
       ${!host ? `<dl class="personal-scorecard"><div><dt>Rounds won</dt><dd>${s.player.wins} / ${s.index + 1}</dd></div><div><dt>Best streak</dt><dd>${s.player.bestStreak}</dd></div><div><dt>Final rank</dt><dd>#${s.rank}</dd></div></dl>` : ''}
       ${!host && s.playerCount > s.players.length ? '<h2>Top 10</h2>' : ''}${fullLeaderboard(s.players, 'Full standings')}${s.review.length ? reviewView(s.review, escape, formatNumber) : ''}<div class="actions">${canControl ? replayButtons(s, icons) : `<button class="button outline" data-action="leave">Back to home ${icons('arrow-right')}</button>`}</div>
       ${host ? '' : '<p class="status">Stay here if the captain or host starts a rematch.</p>'}</div>`;
@@ -953,6 +955,7 @@ function render(s) {
   const focused = document.activeElement;
   const guideWasOpen = !enter && !host && s.phase === 'lobby' && Boolean(app.querySelector('.player-game-guide')?.open);
   const guideHadFocus = guideWasOpen && Boolean(focused?.closest('.player-game-guide'));
+  const ballotScroll = !enter && !host && ['party-vote', 'party-reveal', 'top-poll', 'top-guess', 'top-reveal'].includes(s.phase) ? app.scrollTop : null;
   const rosterScroll = enter ? 0 : app.querySelector('.players')?.scrollTop;
   const lobbyAction = !enter && s.phase === 'lobby' && app.contains(focused) && focused.matches('button[data-action]') ? focused.dataset.action : undefined;
   const captainSelect = !enter && focused?.matches('#captain-form select') ? focused.value : undefined;
@@ -993,6 +996,7 @@ function render(s) {
       if (guideHadFocus) guide.querySelector('summary')?.focus({ preventScroll: true });
     }
   }
+  if (ballotScroll !== null) app.scrollTop = ballotScroll;
   switchAvatarSession.refresh();
   if (backdrop) app.querySelector('.scene-backdrop').replaceWith(backdrop);
   renderGraphics(s, stage, animateRoll);

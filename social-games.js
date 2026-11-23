@@ -2,6 +2,7 @@ import { isConnected, responseTarget } from './room-presence.js';
 import { randomBytes, randomInt } from 'node:crypto';
 import { socialModes } from './public/game-config.js';
 import {refreshGroupScores} from './public/team-play.js';
+import {v2Punchlines,v2Blanks,v2Cards} from './creative-expansion-v2.js';
 
 const punchlines = [
   'What is the worst name for a very fancy restaurant?',
@@ -16,6 +17,7 @@ const punchlines = [
   'Invent a new event for the Olympics of doing chores.',
   'What should a pigeon say in its campaign to become mayor?',
   'What is a terrible name for a children’s bedtime story?',
+  ...v2Punchlines,
 ];
 const blanks = [
   'The holiday brochure promised sunshine and ____.',
@@ -30,6 +32,7 @@ const blanks = [
   'The library now offers evening classes in ____.',
   'Our new neighbour introduced themselves by bringing ____.',
   'This holiday’s most popular souvenir is ____.',
+  ...v2Blanks,
 ];
 const cards = [
   'a goose in sunglasses', 'a very dramatic potato', 'six minutes of awkward silence', 'a marching band of hamsters',
@@ -41,6 +44,7 @@ const cards = [
   'a mysterious button labelled “Perhaps”', 'a robot that only makes soup', 'one extremely loud sock', 'a unicycle for beginners',
   'a bowl of alphabet soup spelling “Help”', 'an umbrella that opens indoors', 'an overly competitive grandma', 'a potato with its own postcode',
   'a lopsided trophy', 'a parade of shopping trolleys', 'an important meeting about snacks', 'a banana wearing a crown',
+  ...v2Cards,
 ];
 const dilemmas = [
   ['The town can fund one annual festival. Which track gets your vote?', 'A parade where all the floats are made of cake', 'A silent disco in the supermarket'],

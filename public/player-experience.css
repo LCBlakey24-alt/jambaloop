@@ -1,0 +1,79 @@
+/* Player-facing join and lobby polish: compact, optional guidance and large phone targets. */
+body:not(.playing) #dialog:has(#join-form) { width: min(520px, calc(100% - 24px)); }
+.join-intro { display: grid; gap: 9px; padding-right: 22px; }
+.join-intro h2 { max-width: 13ch; margin: 0; line-height: 1.02; }
+.join-intro p { max-width: 44ch; line-height: 1.48; }
+.join-quick-steps {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px;
+  list-style: none; padding: 0; margin: 18px 0 0;
+}
+.join-quick-steps li {
+  display: flex; align-items: center; gap: 8px; min-width: 0;
+  padding: 9px; border: 1px solid var(--paper-line, var(--edge));
+  border-radius: 10px; background: var(--paper, var(--panel));
+  font-size: 12px; line-height: 1.25; font-weight: 700;
+}
+#dialog .join-quick-steps { padding: 0; }
+#dialog .join-quick-steps li + li { margin-top: 0; }
+.join-quick-steps li b { color: var(--home-accent, var(--pink)); font-weight: 900; font-variant-numeric: tabular-nums; }
+#join-form { gap: 12px; margin-top: 17px; }
+#join-form .join-room-field { gap: 8px; }
+#join-form #join-room-code {
+  min-height: 64px; padding: 11px 14px;
+  font: 900 clamp(26px, 6vw, 34px)/1.15 var(--head, sans-serif);
+  letter-spacing: .23em; text-align: center; font-variant-numeric: tabular-nums;
+  border: 2px solid var(--paper-line, var(--edge)); border-radius: 13px;
+}
+#join-form #join-room-code:focus-visible { outline-offset: 3px; border-color: var(--home-accent, var(--pink)); }
+#join-form #join-player-name { min-height: 50px; }
+#join-form .join-field-hint { display: block; margin-top: -7px; color: var(--home-muted, var(--muted)); font-size: 12px; line-height: 1.35; }
+#join-form .join-photo-option {
+  border: 1px solid var(--paper-line, var(--edge)); border-radius: 10px;
+  padding: 9px 12px; background: var(--paper, var(--panel)); min-width: 0;
+}
+#join-form .join-photo-option summary {
+  cursor: pointer; font-weight: 800; font-size: 13px; line-height: 1.5;
+  min-height: 28px; display: list-item; list-style-position: inside;
+}
+#join-form .join-photo-option summary span { font-weight: 500; opacity: .76; }
+#join-form .join-photo-option summary:focus-visible { outline: 2px solid var(--home-accent, var(--pink)); outline-offset: 2px; border-radius: 4px; }
+#join-form .selfie-picker { margin-top: 11px; display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
+#join-form .selfie-picker label { font-size: 12px; }
+#join-form .photo-privacy { display: block; font-size: 11px; margin-top: 10px; line-height: 1.45; }
+#join-form .join-room-submit { min-height: 52px; width: 100%; font-size: 16px; }
+#dialog-content > .join-resume-link { display: block; margin: 12px auto 0; text-align: center; }
+.player-game-guide {
+  margin: 12px 0; border: 1px solid color-mix(in srgb, var(--game-accent, var(--pink)) 33%, var(--edge));
+  border-radius: 12px; background: color-mix(in srgb, var(--game-accent, var(--pink)) 8%, var(--panel));
+  overflow: hidden;
+}
+.player-game-guide summary {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  min-height: 52px; padding: 12px 14px; cursor: pointer; list-style: none;
+}
+.player-game-guide summary::-webkit-details-marker { display: none; }
+.player-game-guide summary:focus-visible { outline: 3px solid var(--game-accent, var(--pink)); outline-offset: -4px; }
+.player-game-guide-label { font-size: 14px; font-weight: 750; }
+.player-game-guide-label strong { display: block; margin-top: 2px; color: var(--game-accent, var(--pink)); font-size: 15px; }
+.player-game-guide-count { flex-shrink: 0; color: var(--muted); font-size: 12px; }
+.player-game-guide[open] .player-game-guide-count span { display: inline-block; transform: rotate(180deg); }
+.player-game-guide ol { padding: 0 12px 0 38px; margin: 0 0 8px; }
+.player-game-guide li { margin: 0; padding: 7px 4px; font-size: 13px; line-height: 1.42; }
+.player-game-guide li + li { border-top: 1px solid var(--edge); }
+.player-game-guide > p { border-top: 1px solid var(--edge); margin: 0; padding: 10px 14px; font-size: 12px; }
+@media (max-width: 680px) {
+  .join-quick-steps { margin-top: 11px; gap: 5px; }
+  .join-quick-steps li { padding: 7px 5px; gap: 4px; font-size: 11px; }
+  #join-form { margin-top: 11px; gap: 9px; }
+  #join-form #join-room-code { min-height: 54px; font-size: 27px; }
+  .mobile-deck #dialog[open]:has(#join-form) { height: min(calc(var(--phone-height, 100dvh) - 10px), 550px); }
+  .player-game-guide summary { min-height: 48px; padding: 9px 11px; }
+}
+@media (max-height: 500px) {
+  .join-quick-steps { display: none; }
+  .join-intro { gap: 4px; }
+  .join-intro p { font-size: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .player-game-guide[open] .player-game-guide-count span { transition: none; }
+}

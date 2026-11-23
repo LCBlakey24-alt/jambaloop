@@ -1,0 +1,140 @@
+/* Jambaloop player continuity: full phone ballots and readable final outcomes. */
+html.mobile-deck #app:has(
+  .player-only[data-phase="party-vote"],
+  .player-only[data-phase="party-reveal"],
+  .player-only[data-phase="top-poll"],
+  .player-only[data-phase="top-guess"],
+  .player-only[data-phase="top-reveal"]
+) {
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  scroll-padding-bottom: max(20px, env(safe-area-inset-bottom));
+}
+.mobile-deck .game.player-only:is(
+  [data-phase="party-vote"],
+  [data-phase="party-reveal"],
+  [data-phase="top-poll"],
+  [data-phase="top-guess"],
+  [data-phase="top-reveal"]
+) {
+  margin-block: 5px max(22px, env(safe-area-inset-bottom));
+  min-height: 0;
+}
+.mobile-deck .game.player-only:is(
+  [data-phase="party-vote"],
+  [data-phase="party-reveal"],
+  [data-phase="top-poll"],
+  [data-phase="top-guess"],
+  [data-phase="top-reveal"]
+) .game-top {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  padding: 5px 7px;
+  background: var(--panel);
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  box-shadow: 0 5px 16px #08071255;
+}
+.game.player-only[data-phase="party-vote"] :is(.party-vote-list,.bluff-show-cards) {
+  align-items: stretch;
+}
+.game.player-only[data-phase="party-vote"] :is(.party-vote-card,.bluff-card) {
+  min-width: 0;
+}
+.game.player-only[data-phase="party-vote"] .party-vote-button {
+  min-height: 52px;
+  touch-action: manipulation;
+}
+.game.player-only[data-phase="party-vote"] :is(.party-vote-button,.bluff-card button):focus-visible {
+  outline: 3px solid var(--game-accent, var(--pink));
+  outline-offset: 3px;
+}
+.game .results-winner-banner {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0 19px;
+  border: 1px solid color-mix(in srgb, var(--game-accent, var(--pink)) 43%, var(--edge));
+  border-left: 4px solid var(--game-accent, var(--pink));
+  border-radius: 14px;
+  padding: clamp(12px, 2vw, 19px);
+  background: radial-gradient(ellipse at 85% 0%, color-mix(in srgb, var(--game-accent, var(--pink)) 24%, transparent), transparent 67%), var(--panel);
+}
+.game .results-winner-banner .results-winner-mark {
+  display: grid;
+  place-items: center;
+  width: clamp(42px, 5vw, 62px);
+  height: clamp(42px, 5vw, 62px);
+  border: 2px solid var(--game-accent, var(--pink));
+  border-radius: 50%;
+  color: var(--game-accent, var(--pink));
+  font-size: clamp(23px, 3vw, 33px);
+}
+.game .results-winner-banner .results-winner-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.game .results-winner-banner .results-winner-copy > small {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  color: var(--game-accent, var(--pink));
+}
+.game .results-winner-banner .results-winner-copy > strong {
+  color: var(--ink);
+  font: 750 clamp(19px, 2.5vw, 29px)/1.18 var(--head);
+  overflow-wrap: anywhere;
+}
+.game .results-winner-banner .results-winner-copy > span {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.38;
+}
+.game.player-only .results-player-finish {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+  border-radius: 13px;
+  border: 1px solid color-mix(in srgb, var(--game-accent, var(--pink)) 41%, var(--edge));
+  padding: 14px 16px;
+  background: color-mix(in srgb, var(--game-accent, var(--pink)) 10%, var(--panel));
+}
+.game.player-only .results-player-finish > div { display: grid; gap: 2px; }
+.game.player-only .results-player-finish small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: .07em;
+}
+.game.player-only .results-player-finish strong {
+  font: 800 clamp(26px, 5vw, 38px)/1.08 var(--head);
+  color: var(--game-accent, var(--pink));
+  font-variant-numeric: tabular-nums;
+}
+.game.player-only .results-player-finish span {
+  font-size: 13px;
+  color: var(--ink);
+}
+.game.player-only .results .personal-scorecard dd {
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 520px) {
+  .game.player-only .results-player-finish { padding: 10px 12px; }
+  .game .results-winner-banner { padding: 10px 12px; gap: 8px; }
+  .game .results-winner-banner .results-winner-copy > strong { font-size: 19px; }
+}
+@media (orientation: landscape) and (max-height: 490px) {
+  .game .results-winner-banner { padding: 8px 10px; margin-block: 5px 10px; }
+  .game .results-winner-banner .results-winner-mark { width: 38px; height: 38px; font-size: 22px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .game .results-winner-banner, .game.player-only .results-player-finish { animation: none; transition: none; }
+}

@@ -106,7 +106,7 @@ app.post('/api/rooms', async (req, res) => {
   let code;
   do { code = String(randomInt(100000, 1000000)); } while (rooms.has(code));
   const host = token();
-  const room = { code, host, game: 1, revision: 0, clients: new Map(), seen: new Set(), players: new Map(), waiting: new Map(), liveConnections: new Map(), lastSeen: new Map(), night: { queue: [], played: 0, version: 0 }, answers: new Map(), updated: Date.now() };
+  const room = { code, host, game: 1, revision: 0, clients: new Map(), seen: new Set(), players: new Map(), waiting: new Map(), liveConnections: new Map(), lastSeen: new Map(), night: { queue: [], played: 0, version: 0, results: [], standings: [] }, answers: new Map(), updated: Date.now() };
   resetGame(room, settings);
   // Prefer a real Wi-Fi/LAN address over localhost or virtual adapters.
   // Hosts can switch adapters from the lobby if the recommended one is unreachable.
@@ -230,6 +230,48 @@ function rankings(room) {
   return room.mode === 'quizrace' && room.race ? racePlacings(room.race).map(r => [...room.players.values()].find(p => p.id === r.id)) : [...room.players.values()].sort(comparePlayers);
 }
 
+function recordNightResult(room) {
+  if (room.phase !== 'finished' || room.night.lastScoredGame === room.game) return;
+  const teamResult = room.teams.length && room.mode !== 'quizrace' &&
+    (room.playStyle === 'teams' || room.mode === 'board');
+  const compare = teamResult ? compareTeams(room.mode, room.boardLength) : comparePlayers;
+  const rows = teamResult ? [...room.teams].sort(compare) : rankings(room);
+  const ranks = new Map();
+  let rank = 1;
+  rows.forEach((row, index) => {
+    if (index && compare(row, rows[index - 1]) !== 0) rank = index + 1;
+    ranks.set(row.id, rank);
+  });
+
+  for (const player of room.players.values()) {
+    const resultId = teamResult ? player.team : player.id;
+    const placing = ranks.get(resultId);
+    if (!placing) continue;
+    let standing = room.night.standings.find(entry => entry.id === player.id);
+    if (!standing) {
+      standing = {id: player.id, name: player.name, avatar: player.avatar, stars: 0, wins: 0, podiums: 0, games: 0};
+      room.night.standings.push(standing);
+    }
+    standing.name = player.name;
+    standing.avatar = player.avatar;
+    standing.games++;
+    standing.stars += Math.max(0, 4 - placing);
+    if (placing === 1) standing.wins++;
+    if (placing <= 3) standing.podiums++;
+  }
+  room.night.standings.sort((a, b) => b.stars - a.stars || b.wins - a.wins || a.name.localeCompare(b.name));
+  room.night.results.push({
+    game: room.game,
+    mode: room.mode,
+    winners: room.night.standings.filter(entry => {
+      const player = [...room.players.values()].find(candidate => candidate.id === entry.id);
+      return player && ranks.get(teamResult ? player.team : player.id) === 1;
+    }).map(entry => entry.id),
+  });
+  room.night.results = room.night.results.slice(-24);
+  room.night.lastScoredGame = room.game;
+}
+
 function liveCounts(room) {
   const ids = new Set();
   let ready = 0;
@@ -254,6 +296,7 @@ function sendState(room, key, client, ranked, counts) {
 }
 
 function publish(room, hostOnly = false) {
+  recordNightResult(room);
   room.revision++;
   if (!hostOnly) {
     clearTimeout(room.hostUpdate);

@@ -19,6 +19,8 @@ on:
       - 'scripts/top-answers-browser.mjs'
       - 'scripts/rare-find-browser.mjs'
       - 'scripts/game-night-browser.mjs'
+      - 'scripts/player-live-browser.mjs'
+      - 'public/player-live.css'
       - 'scripts/legacy-party-browser.mjs'
       - 'scripts/bluff-browser.mjs'
       - 'scripts/sketch-browser.mjs'
@@ -91,6 +93,7 @@ jobs:
           node scripts/top-answers-browser.mjs
           node scripts/rare-find-browser.mjs
           node scripts/game-night-browser.mjs
+          node scripts/player-live-browser.mjs
           node scripts/legacy-party-browser.mjs
           node scripts/bluff-browser.mjs
           node scripts/sketch-browser.mjs

@@ -19,11 +19,12 @@ const summaries = {
   spotlight: 'The wheel chooses a topic and a player expert. The expert suggests an answer privately, then the contestant makes the final choice. Everyone takes a turn.',
   topanswers: 'First choose the option you truly prefer. Your room anonymously votes to create real popularity data. Then secretly predict the top choice. Earn 20 points per real vote for that answer, plus 100 for choosing an option tied for most votes.',
   rare: 'Each player privately types a valid answer to the same prompt. Rare valid answers win: 200 points if unique, 100 each for an answer chosen by exactly two, 50 each for answers shared by three or more, zero for invalid. The TV host reviews any missing catalogue entries before reveal.',
+  sketch: 'Choose three, five or seven rounds. One artist receives a secret word or silly scene and draws on a phone while the sketch appears live on TV. Everyone else guesses privately. The first correct guess earns 150 points, then 100 and 75; the artist earns 50 if somebody recognises the drawing.',
 };
 
 export function explainer(mode, play) {
   const title = modes.find(([id]) => id === mode)[1];
-  if(['quizrace','brain','samepage','spotlight','topanswers','rare'].includes(mode))return `<details class="mode-explainer" ${play?'open':''}><summary>How to play ${title}</summary><p>${summaries[mode]}</p></details>`;
+  if(['quizrace','brain','samepage','spotlight','topanswers','rare','sketch'].includes(mode))return `<details class="mode-explainer" ${play?'open':''}><summary>How to play ${title}</summary><p>${summaries[mode]}</p></details>`;
   return `<details class="mode-explainer" ${play ? 'open' : ''}><summary>Watch how to play ${title}</summary>
     <video aria-label="How to play ${title}" controls playsinline muted preload="none" poster="/videos/${mode}.jpg"
       ${play && !matchMedia('(prefers-reduced-motion: reduce)').matches ? 'autoplay' : ''}>

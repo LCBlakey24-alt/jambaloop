@@ -181,7 +181,7 @@ test('Returning devices keep unseen Brain Ladder puzzles ahead of previously pla
   await withServer(async request=>{
     const created=await request('',null,{mode:'brain',category:'mixed',format:'choice',count:7,seconds:0},201);
     const base='/'+created.code;
-    const seen=brainPuzzleBank[0].slice(0,17).map(p=>p.historyId);
+    const seen=brainPuzzleBank[0].slice(0,brainPuzzleBank[0].length-1).map(p=>p.historyId);
     await request(base+'/join',null,{name:'Returning',seenQuestions:seen},201);
     await request(base+'/join',null,{name:'Friend'},201);
     await request(base+'/advance',created.host,{game:1,index:0,phase:'lobby'},204);

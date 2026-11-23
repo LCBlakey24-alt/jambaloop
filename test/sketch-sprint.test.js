@@ -97,7 +97,7 @@ test('Sketch Sprint secret prompt belongs only to artist; strokes and guesses ar
   assert.equal(reveal.phase,'sketch-reveal','Round should end early when all guessers succeed');
   assert.equal(reveal.party.answer,answer);
   assert.equal(reveal.party.guessers.length,3);
-  assert.equal(reveal.players.reduce((sum,p)=>sum+p.score,0),425,'150+100+75+50');
+  assert.equal(reveal.players.reduce((sum,p)=>sum+p.score,0),375,'150+100+75+50');
   assert.equal((await g.state(artist)).party.ownEarned,50);
   const html=sketchView(reveal,{host:true,canControl:true,escape:x=>String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;'),icons:()=>''});
   assert.match(html,/Picture revealed/);

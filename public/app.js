@@ -1529,6 +1529,9 @@ document.addEventListener('click', async event => {
     } else if (action === 'quick-replay') {
       await api('/' + current.code + '/rematch', { game: state.game, sameGame: true });
       await refresh();
+    } else if (action === 'potato-rescue') {
+      await api('/' + current.code + '/potato-rescue', { game: state.game, step: state.party.step });
+      await refresh();
     } else if (action === 'night-next') {
       await api('/' + current.code + '/playlist/next', { game: state.game, version: state.night.version });
       await refresh();

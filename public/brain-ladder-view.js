@@ -1,3 +1,4 @@
+import { partyFinale } from './party-finale.js';
 import {replayButtons} from './game-night.js';
 
 function ladderRail(total,index,ended) {
@@ -47,7 +48,7 @@ export function brainLadderView(state,{host,canControl,escape,icons}) {
   let next='';
   if(finished) {
     body='<div class="brain-finale"><div class="brain-micro">THE FINAL RUNG</div>'+
-      '<h1>'+finalHeadline+'</h1><p>Two lives. Every decision counted.</p>'+
+      '<h1>'+finalHeadline+'</h1>'+partyFinale(state,{host,escape})+'<p>Two lives. Every decision counted.</p>'+
       '<ol class="brain-final-leaders">'+leaders.map((p,i)=>'<li><span><b>'+(i+1)+'.</b> '+escape(p.name)+'</span><span>'+('♥'.repeat(p.lives)||'ELIMINATED')+'</span><strong>'+p.score.toLocaleString()+' PTS</strong></li>').join('')+'</ol>'+
       (!host?'<p class="brain-own-final">Your result: <b>'+state.player?.score?.toLocaleString()+' points</b></p>':'')+
       (canControl?'<div class="actions">'+replayButtons(state,icons)+'</div>':'')+'</div>';

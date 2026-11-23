@@ -13,6 +13,8 @@ body:not(.playing) #dialog:has(#join-form) { width: min(520px, calc(100% - 24px)
   border-radius: 10px; background: var(--paper, var(--panel));
   font-size: 12px; line-height: 1.25; font-weight: 700;
 }
+#dialog .join-quick-steps { padding: 0; }
+#dialog .join-quick-steps li + li { margin-top: 0; }
 .join-quick-steps li b { color: var(--home-accent, var(--pink)); font-weight: 900; font-variant-numeric: tabular-nums; }
 #join-form { gap: 12px; margin-top: 17px; }
 #join-form .join-room-field { gap: 8px; }

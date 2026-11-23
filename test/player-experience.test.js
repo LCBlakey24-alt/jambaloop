@@ -42,6 +42,6 @@ test('join screen collects only a room code and nickname as required fields', as
   assert.match(section, /pattern="\[0-9\]\{6\}"/);
   assert.match(section, /id="join-player-name"/);
   assert.match(section, /<details class="join-photo-option">/);
-  assert.match(section, /class="join-room-submit" type="submit"/);
+  assert.match(section, /class="button primary join-room-submit" type="submit"/);
   assert.match(app, /document\.addEventListener\('paste', event =>/);
 });

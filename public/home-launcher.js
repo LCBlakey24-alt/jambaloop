@@ -98,4 +98,7 @@ export function launcherSetupArtwork(id) {
   return `<span class="tile-setup-art" style="${modeVariables(id)}">${tileArt(id,true)}</span>`;
 }
 
+// The same concise, original game instructions power preview cards and player lobbies.
+export function launcherSteps(id) { return [...identity(id).steps]; }
+
 export function allLauncherIdentities() { return Object.keys(identities); }

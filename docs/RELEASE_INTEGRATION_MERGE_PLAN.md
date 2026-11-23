@@ -4,7 +4,7 @@
 
 ## Current branch layout
 
-GitHub has nine open draft PRs as of this audit:
+GitHub has ten open draft PRs as of this audit:
 
 | PR | Branch | Base | Status / role |
 |---|---|---|---|

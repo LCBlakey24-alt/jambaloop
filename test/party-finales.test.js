@@ -46,7 +46,7 @@ test('phone finale uses the actual published individual rank and score', () => {
 
 test('Hot Potato reports the player caught rather than declaring a winner', () => {
   const state = room('potato',{holder:{id:'b',name:'Bailey'},passes:12});
-  const result = partyFinale(state,phone);
+  const result = partyFinale(state,{...phone,variant:'potato'});
   assert.match(result, /You got caught!/);
   assert.match(result, /12 successful passes/);
   assert.doesNotMatch(result, /GAME WINNER|SHARED VICTORY|YOUR FINISH/);
@@ -58,7 +58,7 @@ test('Hot Potato reports the player caught rather than declaring a winner', () =
 
 test('Fork in the Tracks presents the judge result without inventing a winning team', () => {
   const state = room('tracks');
-  const display = partyFinale(state,host);
+  const display = partyFinale(state,{...host,variant:'tracks'});
   assert.match(display, /All tracks explored/);
   assert.doesNotMatch(display, /WINNING TEAM|GAME WINNER/);
 });

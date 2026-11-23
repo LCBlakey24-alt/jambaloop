@@ -151,37 +151,44 @@ test('Hot Potato recovery endpoint is host-only, rejects stale turns and active 
  });
 });
 
-test('Fill the Blank preserves private hands, validates cards and votes, then reveals real scores',async()=>{
+test('Fill the Blank keeps every hand secret, completes five votes and gives genuine scoreboard totals',async()=>{
  await withServer(async({room})=>{
    const game=await room('cards',5,3);
    await game.advance();
-   const lobby=await game.state();
-   assert.equal(lobby.phase,'party-write');
-   assert.equal(lobby.party.hand,undefined,'TV host must not see private cards');
-   const states=await Promise.all(game.keys.map(key=>game.state(key)));
-   assert.ok(states.every(state=>state.party.hand?.length===6));
-   assert.ok(states.every(state=>state.party.ballot===undefined));
-   const wrong=await game.submit(game.keys[0],'card',{option:999,index:0},400);
-   assert.match(wrong.error,/Choose a card/);
-   for(const key of game.keys) await game.submit(key,'card',{option:0,index:0});
-   const vote=await game.state();
-   assert.equal(vote.phase,'party-vote');
-   assert.equal(vote.party.ballot.length,3);
-   assert.ok(vote.party.ballot.every(item=>item.name===undefined&&item.votes===undefined));
-   const privateBallots=await Promise.all(game.keys.map(key=>game.state(key)));
-   for(let i=0;i<game.keys.length;i++){
-     const key=game.keys[i];
-     const theirs=privateBallots[i].party.ballot.find(item=>!item.yours);
-     assert.ok(theirs);
-     await game.submit(key,'vote',{id:theirs.id,index:0});
+   for(let round=0;round<5;round++){
+     const lobby=await game.state();
+     assert.equal(lobby.phase,'party-write');
+     assert.equal(lobby.index,round);
+     assert.equal(lobby.party.hand,undefined,'TV host must not see private cards');
+     const states=await Promise.all(game.keys.map(key=>game.state(key)));
+     assert.ok(states.every(state=>state.party.hand?.length===6));
+     assert.ok(states.every(state=>state.party.ballot===undefined));
+     if(round===0){
+       const wrong=await game.submit(game.keys[0],'card',{option:999,index:round},400);
+       assert.match(wrong.error,/Choose a card/);
+     }
+     for(const key of game.keys)await game.submit(key,'card',{option:0,index:round});
+     const vote=await game.state();
+     assert.equal(vote.phase,'party-vote');
+     assert.equal(vote.party.ballot.length,3);
+     assert.ok(vote.party.ballot.every(item=>item.name===undefined&&item.votes===undefined));
+     const ballots=await Promise.all(game.keys.map(key=>game.state(key)));
+     for(let i=0;i<game.keys.length;i++){
+       const key=game.keys[i];
+       const theirs=ballots[i].party.ballot.find(item=>!item.yours);
+       assert.ok(theirs);
+       await game.submit(key,'vote',{id:theirs.id,index:round});
+     }
+     const revealed=await game.state();
+     assert.equal(revealed.phase,'party-reveal');
+     assert.equal(revealed.party.ballot.reduce((n,row)=>n+row.votes,0),3);
+     assert.ok(revealed.party.ballot.every(row=>typeof row.name==='string'&&row.votes>=0));
+     await game.advance();
    }
-   const revealed=await game.state();
-   assert.equal(revealed.phase,'party-reveal');
-   const totalVotes=revealed.party.ballot.reduce((n,row)=>n+row.votes,0);
-   assert.equal(totalVotes,3);
-   assert.equal(revealed.players.reduce((n,p)=>n+p.score,0),300);
-   await game.advance();
-   assert.equal((await game.state()).phase,'party-write');
-   assert.equal((await game.state()).index,1);
+   const finale=await game.state();
+   assert.equal(finale.phase,'finished');
+   assert.equal(finale.players.length,3);
+   assert.equal(finale.players.reduce((n,p)=>n+p.score,0),1500,
+     'Each of the 15 genuine player votes must award 100 points in total');
  });
 });

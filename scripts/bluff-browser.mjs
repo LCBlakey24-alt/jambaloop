@@ -1,0 +1,124 @@
+import assert from 'node:assert/strict';
+import {chromium} from 'playwright';
+import {mkdir} from 'node:fs/promises';
+
+const base=process.env.SITE||'http://127.0.0.1:32000';
+const browser=await chromium.launch({
+ headless:true,executablePath:process.env.CHROME_BIN||'/usr/bin/google-chrome',
+ args:['--no-sandbox','--disable-dev-shm-usage'],
+});
+await mkdir('browser-screenshots',{recursive:true});
+const tvContext=await browser.newContext({viewport:{width:1280,height:720}});
+const phoneContext=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
+const errors=[];
+try{
+ const api=async(path,key,data,status=200)=>{
+   const response=await tvContext.request.fetch(base+'/api/rooms'+path,{
+     method:data===undefined?'GET':'POST',
+     headers:{...(key?{'x-game-key':key}:{})},
+     ...(data===undefined?{}:{data}),
+   });
+   assert.equal(response.status(),status,path+': '+await response.text());
+   return status===204?undefined:await response.json();
+ };
+ const created=await api('',undefined,{
+   mode:'bluff',category:'mixed',format:'choice',count:3,seconds:0,playStyle:'individual'
+ },201);
+ const path='/'+created.code;
+ const players=[];
+ for(let i=0;i<3;i++){
+   const user=await api(path+'/join',undefined,{name:'Contestant '+(i+1)},201);
+   players.push(user.key);
+ }
+ const state=async(key=created.host)=>api(path,key);
+ await api(path+'/advance',created.host,{phase:'lobby',game:1,index:0},204);
+ const current=await state();
+ assert.equal(current.phase,'party-write');
+ assert.equal(current.total,3);
+ assert.equal(current.party.prompt,undefined,'TV cannot see secret prompt in write stage');
+ const privately=await Promise.all(players.map(key=>state(key)));
+ const liar=privately.findIndex(s=>s.party.bluffing);
+ assert.ok(liar>=0);
+ const phoneIndex=(liar+1)%3;
+ const phoneKey=players[phoneIndex];
+ const question=privately[phoneIndex].party.prompt;
+ assert.ok(question);
+ assert.equal(privately[liar].party.prompt,undefined);
+ await tvContext.addInitScript(({code,key})=>{
+   sessionStorage.setItem('quizmas-session',JSON.stringify({code,key,host:true}));
+ },{code:created.code,key:created.host});
+ await phoneContext.addInitScript(({code,key})=>{
+   sessionStorage.setItem('quizmas-session',JSON.stringify({code,key,host:false}));
+ },{code:created.code,key:phoneKey});
+ const tv=await tvContext.newPage();
+ const phone=await phoneContext.newPage();
+ tv.on('pageerror',e=>errors.push('TV: '+e.message));
+ phone.on('pageerror',e=>errors.push('Phone: '+e.message));
+ await tv.goto(base,{waitUntil:'domcontentloaded'});
+ await phone.goto(base,{waitUntil:'domcontentloaded'});
+ await tv.locator('.bluff-game[data-bluff-phase="party-write"]').waitFor();
+ await phone.locator('.bluff-game[data-bluff-phase="party-write"]').waitFor();
+ assert.ok(!(await tv.locator('.bluff-game').innerText()).includes(question),'Secret prompt leaked into TV HTML');
+ assert.match(await phone.locator('.bluff-show-intro').innerText(),/secret prompt/i);
+ assert.ok((await phone.locator('.bluff-show-intro').innerText()).includes(question));
+ await phone.locator('.bluff-show-entry textarea').fill('A sensible suggestion from my phone');
+ await phone.locator('.bluff-show-entry button').click();
+ for(let i=0;i<3;i++){
+   if(i===phoneIndex)continue;
+   await api(path+'/party',players[i],{
+     index:0,game:1,action:'write',text:'Other player '+i+' thinks of toast'
+   },204);
+ }
+ const voting=await state();
+ assert.equal(voting.phase,'party-vote');
+ assert.equal(voting.party.liarId,undefined);
+ assert.equal(voting.party.liarName,undefined);
+ await tv.locator('.bluff-game[data-bluff-phase="party-vote"]').waitFor();
+ await phone.locator('.bluff-game[data-bluff-phase="party-vote"]').waitFor();
+ assert.equal(await tv.locator('.bluff-show-cards .bluff-card').count(),3);
+ assert.equal(await phone.locator('.bluff-show-cards .bluff-card').count(),3);
+ assert.equal(await tv.locator('.bluff-show-truth').count(),0);
+ const liarId=privately[liar].player.id;
+ const otherId=privately[(liar+1)%3].player.id;
+ for(let i=0;i<3;i++){
+   if(i===phoneIndex)continue;
+   await api(path+'/party',players[i],{
+     game:1,index:0,action:'vote',id:i===liar?otherId:liarId
+   },204);
+ }
+ await phone.locator('[data-action="bluff-vote"][data-id="'+liarId+'"]').click();
+ const revealed=await state();
+ assert.equal(revealed.phase,'party-reveal');
+ assert.equal(revealed.party.caught,true);
+ assert.equal(revealed.party.correctVotes,2);
+ assert.equal(revealed.players.reduce((n,p)=>n+p.score,0),200);
+ await tv.locator('.bluff-game[data-bluff-phase="party-reveal"]').waitFor();
+ await phone.locator('.bluff-game[data-bluff-phase="party-reveal"]').waitFor();
+ assert.match(await tv.locator('.bluff-show-verdict').innerText(),/was bluffing/);
+ assert.match(await phone.locator('.bluff-show-earned').innerText(),/\+100/);
+ const metrics=await tv.evaluate(()=>({
+   scrollWidth:document.scrollingElement.scrollWidth,
+   scrollHeight:document.scrollingElement.scrollHeight,
+ }));
+ assert.ok(metrics.scrollWidth<=1282,'Bluff TV overflow X '+JSON.stringify(metrics));
+ assert.ok(metrics.scrollHeight<=722,'Bluff TV overflow Y '+JSON.stringify(metrics));
+ await tv.screenshot({path:'browser-screenshots/bluff-vote-reveal-tv-1280x720.png'});
+ await phone.screenshot({path:'browser-screenshots/bluff-vote-reveal-phone-390x844.png'});
+ assert.ok(await phone.evaluate(()=>document.scrollingElement.scrollWidth<=392));
+ await tv.setViewportSize({width:1920,height:1080});
+ await tv.screenshot({path:'browser-screenshots/bluff-vote-reveal-tv-1920x1080.png'});
+ await api(path+'/advance',created.host,{phase:'party-reveal',game:1,index:0},204);
+ const second=await state();
+ assert.equal(second.index,1);
+ assert.equal(second.phase,'party-write');
+ assert.equal(second.party.liarId,undefined);
+ assert.equal(second.party.prompt,undefined);
+ await tv.locator('.bluff-game[data-bluff-phase="party-write"]').waitFor();
+ assert.ok(!(await tv.locator('.bluff-game').innerText()).includes(second.party.prompt??'SECRET UNDEFINED'));
+ assert.deepEqual(errors,[]);
+ console.log('PASS: Spot the Bluff private writing, genuine scoring and reveal, 720p/1080p TV and 390px phone');
+}finally{
+ await phoneContext.close();
+ await tvContext.close();
+ await browser.close();
+}

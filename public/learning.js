@@ -9,7 +9,7 @@ const summaries = {
   punchline: 'Choose 3, 5 or 7 rounds. Write a short funny reply, then vote for anonymous entries. Each vote earns its writer 100 points.' ,
   cards: 'Choose 3, 5 or 7 rounds. Pick a phrase from your private hand, then vote on anonymous entries to award points.',
   tracks: 'Read a silly dilemma, then choose between two tracks. The TV reveals the group’s vote.',
-  bluff: 'Everyone writes a reply, but one phone gets no prompt. The TV shows the replies. Vote for the player you think was bluffing.',
+  bluff: 'Play 3, 5 or 7 rounds. One player per round gets no prompt and must fake a believable reply. Vote for the bluff: a correct vote earns 100 points, while an uncaught bluff earns 100 escape points. Roles rotate and scores carry into the finale.',
   potato: 'One phone at a time has the potato. Get a question right to pass it. Whoever holds it when the shared two-minute timer ends loses.',
   showdown: 'Join a balanced team and answer on your own phone. Each team scores the average of its players’ points. The highest team score wins.',
   knockout: 'Start with three lives. Wrong or missed answers cost a life. For number questions, the closest guesses keep their lives.',

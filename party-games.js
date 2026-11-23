@@ -25,6 +25,22 @@ const prompts = [
   'Name an awkward thing to carry on a bus.',
   'What would you bring to a power cut?',
   'Name something a dog might steal.',
+  'Name something you would not want to find in your cereal.',
+  'What would make a terrible prize at a school fair?',
+  'Name something you could accidentally leave on a train.',
+  'What would be an odd thing to keep in a desk drawer?',
+  'Name something a pirate might bring to a birthday party.',
+  'What is a ridiculous reason to cancel a picnic?',
+  'Name something you would be embarrassed to drop in a shop.',
+  'What might a magician keep in their kitchen?',
+  'Name a strange thing to put on top of a birthday cake.',
+  'What would make an awkward present for your neighbour?',
+  'Name a silly thing to wear to a job interview.',
+  'What might be hidden inside a mysterious parcel?',
+  'Name something that could interrupt a wedding ceremony.',
+  'What would be an unusual object to find in a library?',
+  'Name a terrible item to use as a bookmark.',
+  'What might a superhero forget to take to work?',
 ];
 
 const random = list => list[randomInt(list.length)];
@@ -36,6 +52,71 @@ function potatoQuestion(room) {
   room.party.step++;
 }
 
+function shuffleBluffRoles(keys) {
+  const order=[...keys];
+  for(let i=order.length-1;i>0;i--){
+    const j=randomInt(i+1);
+    [order[i],order[j]]=[order[j],order[i]];
+  }
+  return order;
+}
+
+function startBluffRound(room,publish) {
+  const keys=connectedPlayers(room);
+  if(keys.length<3){
+    // This round cannot be fair with fewer than three active seats.
+    room.phase='finished';
+    publish(room);
+    return;
+  }
+  if(room.index===0)room.bluffQueue=[];
+  room.bluffQueue=(room.bluffQueue??[]).filter(key=>keys.includes(key));
+  if(!room.bluffQueue.length)room.bluffQueue=shuffleBluffRoles(keys);
+  const liar=room.bluffQueue.shift();
+  const available=prompts.filter(prompt=>!room.seen.has(prompt));
+  const prompt=random(available.length?available:prompts);
+  room.seen.add(prompt);
+  room.party={liar,prompt,replies:new Map(),votes:new Map(),earned:new Map()};
+  room.phase='party-write';
+  publish(room);
+}
+
+function advanceBluff(room,publish) {
+  const party=room.party;
+  if(!party)return;
+  if(room.phase==='party-write'){
+    room.phase='party-vote';
+  }else if(room.phase==='party-vote'){
+    const totals=new Map();
+    for(const vote of party.votes.values())totals.set(vote,(totals.get(vote)??0)+1);
+    const liarId=room.players.get(party.liar).id;
+    const liarVotes=totals.get(liarId)??0;
+    party.caught=liarVotes>0&&[...totals].every(([id,count])=>id===liarId||count<liarVotes);
+    party.totals=totals;
+    party.correctVotes=0;
+    for(const [key,vote] of party.votes){
+      if(vote!==liarId)continue;
+      const player=room.players.get(key);
+      player.score+=100;
+      party.earned.set(key,100);
+      party.correctVotes++;
+    }
+    party.escaped=!party.caught&&party.votes.size>0&&party.replies.has(party.liar);
+    if(party.escaped){
+      room.players.get(party.liar).score+=100;
+      party.earned.set(party.liar,(party.earned.get(party.liar)??0)+100);
+    }
+    room.phase='party-reveal';
+  }else if(room.phase==='party-reveal'){
+    if(room.index+1<room.count){
+      room.index++;
+      return startBluffRound(room,publish);
+    }
+    room.phase='finished';
+  }else return;
+  publish(room);
+}
+
 export function startParty(room, publish) {
   if (room.mode === 'rare') return startRareRound(room,publish);
   if (room.mode === 'topanswers') return startTopAnswersRound(room,publish);
@@ -43,22 +124,15 @@ export function startParty(room, publish) {
   if (room.mode === 'spotlight') return startSpotlightGame(room,publish);
   if (room.mode === 'samepage') return startSamePageRound(room, publish);
   if (room.mode === 'tracks') return startForkRound(room,publish);
+  if (room.mode === 'bluff') return startBluffRound(room,publish);
   if (socialModes.includes(room.mode)) return startSocialRound(room, publish);
   const keys = connectedPlayers(room);
-  if (room.mode === 'bluff') {
-    const available = prompts.filter(prompt => !room.seen.has(prompt));
-    const prompt = random(available.length ? available : prompts);
-    room.seen.add(prompt);
-    room.party = { liar: random(keys), prompt, replies: new Map(), votes: new Map() };
-    room.phase = 'party-write';
-  } else {
-    room.party = { holder: random(keys), pool: [], step: 0, passes: 0, rescues: 0 };
-    potatoQuestion(room);
-    room.opened = Date.now();
-    room.ends = room.opened + 120000;
-    room.phase = 'party-potato';
-    watchDeadline(room, () => expireParty(room, publish));
-  }
+  room.party = { holder: random(keys), pool: [], step: 0, passes: 0, rescues: 0 };
+  potatoQuestion(room);
+  room.opened = Date.now();
+  room.ends = room.opened + 120000;
+  room.phase = 'party-potato';
+  watchDeadline(room, () => expireParty(room, publish));
   publish(room);
 }
 
@@ -97,18 +171,8 @@ export function advanceParty(room, publish) {
   if (room.mode === 'spotlight') return advanceSpotlight(room,publish);
   if (room.mode === 'samepage') return advanceSamePage(room, publish);
   if (room.mode === 'tracks') return advanceFork(room,publish);
+  if (room.mode === 'bluff') return advanceBluff(room,publish);
   if (socialModes.includes(room.mode)) return advanceSocial(room, publish);
-  if (room.phase === 'party-write') room.phase = 'party-vote';
-  else if (room.phase === 'party-vote') {
-    const totals = new Map();
-    for (const vote of room.party.votes.values()) totals.set(vote, (totals.get(vote) ?? 0) + 1);
-    const liarId = room.players.get(room.party.liar).id;
-    const liarVotes = totals.get(liarId) ?? 0;
-    room.party.caught = liarVotes > 0 && [...totals].every(([id, count]) => id === liarId || count < liarVotes);
-    room.party.totals = totals;
-    room.phase = 'finished';
-  } else return;
-  publish(room);
 }
 
 export function submitParty(room, key, data, publish) {
@@ -129,6 +193,7 @@ export function submitParty(room, key, data, publish) {
   if (room.mode === 'samepage') return submitSamePage(room, key, data, publish);
   if (socialModes.includes(room.mode) && room.party) return submitSocial(room, key, data, publish);
   const party = room.party;
+  if (room.mode === 'bluff' && data.index !== room.index) return [409, 'This Bluff round has moved on.'];
   if (room.phase === 'party-write' && data.action === 'write') {
     const reply = typeof data.text === 'string' ? data.text.trim() : '';
     if (!reply || reply.length > 100) return [400, 'Enter a reply of 1 to 100 characters.'];
@@ -138,8 +203,8 @@ export function submitParty(room, key, data, publish) {
   }
   if (room.phase === 'party-vote' && data.action === 'vote') {
     const voter = room.players.get(key);
-    if (data.id === voter.id || ![...room.players.values()].some(player => player.id === data.id)) {
-      return [400, 'Vote for another player in the room.'];
+    if (data.id === voter.id || ![...room.players].some(([candidate,player]) => party.replies.has(candidate)&&player.id === data.id)) {
+      return [400, 'Vote for another player who submitted a reply.'];
     }
     if (!party.votes.has(key)) party.votes.set(key, data.id);
     if (!advancePartyWhenReady(room, publish)) publish(room, true);
@@ -191,7 +256,7 @@ export function publicParty(room, key) {
     };
   }
   const writing = room.phase === 'party-write';
-  const finished = room.phase === 'finished';
+  const revealed = ['party-reveal','finished'].includes(room.phase);
   const player = players.get(key);
   return {
     prompt: writing ? player && key !== party.liar ? party.prompt : undefined : party.prompt,
@@ -199,13 +264,16 @@ export function publicParty(room, key) {
     wrote: party.replies.has(key), voted: party.votes.has(key),
     submissions: writing ? party.replies.size : party.votes.size,
     responseTarget: responseTarget(room, writing ? party.replies : party.votes),
-    replies: writing ? undefined : [...players].map(([id, entry]) => ({
+    replies: writing ? undefined : [...players].filter(([id])=>party.replies.has(id)).map(([id, entry]) => ({
       id: entry.id, name: entry.name, avatar: entry.avatar, text: party.replies.get(id),
-      votes: finished ? party.totals.get(entry.id) ?? 0 : undefined,
+      votes: revealed ? party.totals.get(entry.id) ?? 0 : undefined,
     })),
-    liarId: finished ? players.get(party.liar).id : undefined,
-    liarName: finished ? players.get(party.liar).name : undefined,
-    caught: finished ? party.caught : undefined,
+    liarId: revealed ? players.get(party.liar).id : undefined,
+    liarName: revealed ? players.get(party.liar).name : undefined,
+    caught: revealed ? party.caught : undefined,
+    escaped: revealed ? party.escaped : undefined,
+    correctVotes: revealed ? party.correctVotes : undefined,
+    ownEarned: revealed ? party.earned.get(key)??0 : undefined,
   };
 }
 

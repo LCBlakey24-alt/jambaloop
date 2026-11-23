@@ -1,0 +1,111 @@
+/* Spot the Bluff — original TV-and-phone show presentation. */
+.bluff-game {
+  --bluff-mint:#98e5cf;
+  display:flex;flex-direction:column;gap:clamp(8px,1.7dvh,14px);
+  min-width:0;min-height:0;
+  border-top:3px solid var(--bluff-mint);
+  background:radial-gradient(ellipse at 92% 4%,#5fc1b525,transparent 54%),
+    linear-gradient(135deg,#11243c,#111930 68%,#18273f);
+}
+.bluff-show-header {
+  display:flex;align-items:center;flex-wrap:wrap;gap:clamp(6px,1.5dvw,18px);
+  justify-content:space-between;border-bottom:1px solid #98e5cf55;
+  padding-bottom:clamp(7px,1.5dvh,13px);
+}
+.bluff-show-logo {
+  font:900 clamp(17px,2.8dvh,29px)/1 'House Sans',sans-serif;
+  letter-spacing:.07em;color:#effff8;
+}
+.bluff-show-logo span {color:var(--bluff-mint);}
+.bluff-show-round,.bluff-show-phase {
+  font:850 clamp(11px,1.6dvh,14px)/1.2 'House Sans',sans-serif;
+  letter-spacing:.06em;color:#cee9e5;
+}
+.bluff-show-round {
+  border:1px solid #98e5cf68;border-radius:999px;padding:7px 11px;
+}
+.bluff-show-stage {
+  min-height:0;min-width:0;flex:1;display:flex;flex-direction:column;
+  gap:clamp(8px,1.5dvh,12px);
+}
+.host-screen .bluff-show-stage {overflow-y:auto;scrollbar-width:thin;}
+.bluff-show-intro {max-width:min(100%,960px);margin-inline:auto;text-align:center;}
+.bluff-game .bluff-show-intro h1,
+.bluff-game .bluff-show-finale h1 {
+  font:900 clamp(24px,4.8dvh,51px)/1.04 'House Sans',sans-serif;
+  color:#f9fcff;margin:0 0 .3em;text-wrap:balance;
+}
+.bluff-game .bluff-show-intro p {
+  color:#dbeaf2;font:650 clamp(14px,2.15dvh,21px)/1.3 'House Sans',sans-serif;
+  margin:0 auto;max-width:890px;
+}
+.bluff-show-progress {
+  margin:auto;display:flex;align-items:center;justify-content:center;
+  gap:10px;color:#e7f6f4;font:750 clamp(14px,2.2dvh,20px)/1.2 'House Sans',sans-serif;
+}
+.bluff-show-progress strong {font-size:clamp(25px,5dvh,49px);color:var(--bluff-mint);font-variant-numeric:tabular-nums;}
+.bluff-show-entry {max-width:min(100%,620px);width:100%;margin:auto;display:grid;gap:9px;}
+.bluff-show-entry label {display:grid;gap:6px;font-weight:800;}
+.bluff-show-entry textarea {display:block;width:100%;min-height:110px;font-size:16px;resize:vertical;}
+.bluff-show-locked,.bluff-show-earned {
+  margin:auto;text-align:center;border:1px solid #98e5cf77;border-radius:12px;
+  padding:10px 15px;background:#12332eab;color:#e6fff3;
+}
+.bluff-show-earned strong {font-size:1.15em;color:var(--bluff-mint);}
+.bluff-show-cards {
+  margin:0;grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr));
+  align-content:start;min-width:0;
+}
+.bluff-show-cards .bluff-card {
+  display:flex;flex-direction:column;gap:6px;padding:clamp(9px,1.6dvh,14px);
+  border:1px solid #98e5cf59;background:#0c213ccc;
+}
+.bluff-show-cards .bluff-card header {
+  display:flex;align-items:center;gap:9px;flex-wrap:wrap;
+  color:#f4fff9;font-size:clamp(13px,1.8dvh,18px);
+}
+.bluff-show-cards .bluff-card p {
+  color:#f4faff;font:650 clamp(14px,2.2dvh,23px)/1.2 'House Sans',sans-serif;
+  margin:0;overflow-wrap:anywhere;
+}
+.bluff-show-cards .bluff-card button {margin-top:auto;min-height:42px;}
+.bluff-show-cards .bluff-card small {margin-top:auto;color:#c5f1e5;}
+.bluff-show-number {
+  display:grid;place-items:center;width:29px;height:29px;border-radius:8px;
+  background:#98e5cf26;color:var(--bluff-mint);font-weight:900;
+}
+.bluff-show-cards .revealed-bluff {border:2px solid #ffd18a;background:#3d352bd4;}
+.bluff-show-truth {
+  margin-left:auto;padding:3px 7px;border-radius:5px;
+  color:#241a04;background:#ffd18a;letter-spacing:.06em;font-size:10px;
+}
+.bluff-game .bluff-show-verdict {margin-top:8px;color:#ffe4ad;}
+.bluff-show-actions {justify-content:center;margin:0;}
+.bluff-show-actions .button {min-height:43px;}
+.bluff-show-finale {display:grid;gap:12px;text-align:center;align-content:start;}
+.bluff-show-finale > p {color:#cce9e4;}
+.bluff-show-standings {width:min(100%,790px);margin:0 auto;max-height:38dvh;overflow-y:auto;}
+.bluff-show-standings li {justify-content:space-between;}
+@media (min-width:761px) and (min-height:560px) {
+ body.playing .host-screen .bluff-game {flex:1;overflow:hidden;}
+ .host-screen .bluff-show-cards {grid-template-columns:repeat(3,minmax(0,1fr));}
+}
+@media (max-width:760px) {
+ .player-only .bluff-game {overflow:visible;min-height:0;}
+ .player-only .bluff-show-stage {overflow:visible;}
+ .player-only .bluff-show-header {justify-content:start;}
+ .player-only .bluff-show-cards {grid-template-columns:1fr;}
+ .player-only .bluff-show-intro {text-align:left;}
+ .player-only .bluff-show-entry {margin:0;}
+ .player-only .bluff-show-standings {max-height:none;}
+ .player-only .bluff-show-actions .button {width:100%;}
+}
+@media (max-height:740px) and (min-width:761px) {
+ .host-screen .bluff-show-header {padding-bottom:5px;}
+ .host-screen .bluff-show-stage {gap:7px;}
+ .host-screen .bluff-show-cards {gap:7px;}
+ .host-screen .bluff-show-cards .bluff-card {padding:8px;}
+}
+@media (prefers-reduced-motion:reduce) {
+ .bluff-game * {animation:none!important;transition:none!important;}
+}

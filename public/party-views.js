@@ -6,6 +6,7 @@ import {spotlightView} from './spotlight-view.js';
 import {brainLadderView} from './brain-ladder-view.js';
 import {topAnswersView} from './top-answers-view.js';
 import {rareFindView} from './rare-find-view.js';
+import {bluffView} from './bluff-view.js';
 export function avatarView(player, escape) {
   const photo = player.avatar ? ` data-room-avatar="${escape(player.avatar)}"` : '';
   return `<span class="player-avatar avatar-initial" aria-hidden="true"${photo}>${escape(Array.from(player.name)[0]?.toUpperCase() ?? '?')}</span>`;
@@ -48,25 +49,7 @@ export function partyView(state, { host, canControl, escape, reply, icons }) {
     </section>`;
   }
 
-  if (state.phase === 'party-write') return `<section class="game-panel party-panel"><div class="eyebrow">SPOT THE BLUFF · REPLIES</div>
-    <h1>${host ? 'Write your replies' : party.bluffing ? 'You are the bluff' : 'Your private prompt'}</h1>
-    <p>${host ? 'Everyone writes a reply on their phone. One person has no prompt.' : party.bluffing ? 'You don’t get the prompt. Make up a short reply and try to blend in.' : escape(party.prompt)}</p>
-    ${host ? `<p role="status">${party.submissions} of ${party.responseTarget} replied</p>` : party.wrote ? '<p role="status">Reply locked in.</p>' :
-      `<form id="bluff-form"><label>Your reply<textarea name="reply" rows="3" required maxlength="100">${escape(reply ?? '')}</textarea></label><button class="button primary" type="submit">Lock in reply</button></form>`}
-    ${canControl ? `<div class="actions">${next('Show replies and open voting')}</div>` : ''}</section>`;
-
-  return `<section class="game-panel party-panel ${finished ? 'results' : ''}"><div class="eyebrow">SPOT THE BLUFF · ${finished ? 'RESULTS' : 'VOTING'}</div>
-    <h1>${finished ? escape(party.liarName) + (party.caught ? ' was caught!' : ' got away with it!') : 'Who was bluffing?'}</h1>
-    <p class="bluff-prompt">${escape(party.prompt)}</p>
-    <div class="bluff-replies">${party.replies.map(entry => `<article class="bluff-card ${entry.id === party.liarId ? 'revealed-bluff' : ''}">
-      <header>${avatarView(entry, escape)}<strong>${escape(entry.name)}</strong></header>
-      <p>${entry.text ? escape(entry.text) : 'No reply'}</p>
-      ${finished ? `<small>${entry.votes} ${entry.votes === 1 ? 'vote' : 'votes'}${entry.id === party.liarId ? ' · The bluff' : ''}</small>`
-        : !host && state.player.id !== entry.id && !party.voted ? `<button class="button outline small" data-action="bluff-vote" data-id="${entry.id}">Vote for ${escape(entry.name)}</button>` : ''}
-    </article>`).join('')}</div>
-    ${!finished && !host && party.voted ? '<p role="status">Vote locked in.</p>' : ''}
-    ${!finished && host ? `<p role="status">${party.submissions} of ${party.responseTarget} voted</p>` : ''}
-    <div class="actions">${finished ? replay : canControl ? next('Reveal the bluff') : ''}</div></section>`;
+  return bluffView(state,{host,canControl,escape,reply,icons});
 }
 
 function socialView(state, { host, canControl, escape, reply, icons }) {

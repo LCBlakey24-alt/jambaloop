@@ -15,7 +15,7 @@ import { playCue, playTowerImpact } from './sound-cues.js';
 import { boardLengths, boardRoute, boardDuration, durationLabel, suggestedTurnCap, boardRequiresChoice, boardPathChoices } from './board-route.js';
 import {teamPlayModes, defaultPlayStyle} from './team-play.js';
 import { avatarView, partyView } from './party-views.js';
-import {connectSketchPainter,paintSketchBoard} from './sketch-canvas.js';
+import {connectSketchPainter,paintSketchBoard,clearSketch} from './sketch-canvas.js';
 import { openLibrary, savedQuizzes } from './quiz-editor.js';
 import { answerGuide, helpTypes, closestStep, createDraft, formatNumber, orderedItems, specialAnswer } from './answer-controls.js';
 import { demoView, explainer, hasDemo, practiceView, samples } from './learning.js';
@@ -1361,7 +1361,14 @@ document.addEventListener('click', async event => {
   const button = event.target.closest('[data-action]');
   if (!button) return;
   const action = button.dataset.action;
-  if(action==='sketch-clear')return sendParty({action:'clear'},button);
+  if(action==='sketch-colour'||action==='sketch-weight')return;
+  if(action==='sketch-clear'){
+    button.disabled=true;
+    try{await clearSketch();await refresh();}
+    catch(error){const notice=document.querySelector('#game-error');if(notice)notice.textContent=error.message;}
+    finally{button.disabled=false;}
+    return;
+  }
   if (action === 'narrator-toggle') {
     toggleNarration(button.dataset.mode);
     return;

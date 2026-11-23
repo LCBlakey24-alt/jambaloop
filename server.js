@@ -2,7 +2,7 @@ import { clockExpired, setClockPaused, stopDeadline, watchDeadline } from './roo
 import { deskAwards } from './awards.js';
 import { answerValue, boardSpeedValues, bonusValues, canSetScore, defaultScoring, doubleSchedules, pointValues, roundMultiplier } from './public/scoring.js';
 import { playlistLimit, queuedSettings } from './public/game-night.js';
-import { isConnected, responseTarget, touchPlayer, trackConnection } from './room-presence.js';
+import { isConnected, liveConnection, responseTarget, touchPlayer, trackConnection } from './room-presence.js';
 import { boardLengths, boardRoute, boardPath, boardPathChoices, boardFork, boardFinish, boardMappedPosition, boardRequiresChoice } from './public/board-route.js';
 import { teamPlayModes, defaultPlayStyle, validPlayStyle, requiredPlayers, teamAssignments } from './public/team-play.js';
 import { partyModes, startParty, advanceParty, advancePartyWhenReady, expireParty, submitParty, publicParty } from './party-games.js';
@@ -106,7 +106,7 @@ app.post('/api/rooms', async (req, res) => {
   let code;
   do { code = String(randomInt(100000, 1000000)); } while (rooms.has(code));
   const host = token();
-  const room = { code, host, game: 1, revision: 0, clients: new Map(), seen: new Set(), players: new Map(), waiting: new Map(), livePlayers: new Map(), lastSeen: new Map(), night: { queue: [], played: 0, version: 0 }, answers: new Map(), updated: Date.now() };
+  const room = { code, host, game: 1, revision: 0, clients: new Map(), seen: new Set(), players: new Map(), waiting: new Map(), liveConnections: new Map(), lastSeen: new Map(), night: { queue: [], played: 0, version: 0 }, answers: new Map(), updated: Date.now() };
   resetGame(room, settings);
   // Prefer a real Wi-Fi/LAN address over localhost or virtual adapters.
   // Hosts can switch adapters from the lobby if the recommended one is unreachable.
@@ -290,11 +290,12 @@ app.post('/api/rooms/:code/invite', async (req, res) => {
 
 app.get('/api/rooms/:code/live', (req, res) => {
   const { room, key } = res.locals;
-  if (key !== room.host && !room.players.has(key) && !room.waiting.has(key)) return res.status(403).json({ error: 'Join the room to continue.' });
+  if(!res.locals.member)return res.status(403).json({error:'Join the room to receive updates.'});
+  if(liveConnection(room,key))return res.set('Retry-After','5').status(409).json({error:'This session already has a live stream. Wait for it to reconnect.'});
   res.set({ 'Content-Type': 'application/x-ndjson', 'X-Accel-Buffering': 'no', 'Cache-Control': 'no-store, no-transform' });
   res.flushHeaders();
   room.clients.set(res, key);
-  res.on('close', () => room.clients.delete(res));
+  res.once('close', () => {room.clients.delete(res);room.updated=Date.now();});
   trackConnection(room, key, res);
   sendState(room, key, res);
 });

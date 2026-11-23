@@ -367,7 +367,7 @@ function openDialog(mode, value, gameMode, quizId) {
       const brain = game === 'brain';
       const topAnswers = game === 'topanswers';
       const rare = game === 'rare';
-      const creativeRounds = ['cards', 'punchline', 'bluff'].includes(game);
+      const creativeRounds = ['cards', 'punchline', 'bluff', 'sketch'].includes(game);
       const allowsTeams = teamPlayModes.includes(game);
       const teamOption = form.querySelector('input[name="playStyle"][value="teams"]');
       const soloOption = form.querySelector('input[name="playStyle"][value="individual"]');
@@ -389,6 +389,7 @@ function openDialog(mode, value, gameMode, quizId) {
       const help = form.querySelector('#team-play-help');
       help.textContent = trolley ? 'One player becomes the Trolley Driver each round. Everyone else is reshuffled into two teams and votes for one of three cards per phase.'
         : matching ? 'Everyone writes a secret answer individually. Matching answers score points; there are no teams or predetermined correct answers.'
+        : game === 'sketch' ? 'Players rotate as the artist, sketch on their phones, and guess from everyone’s live drawings. This mode scores individually.'
         : !allowsTeams ? 'This game has a shared vote or one-holder outcome, so it currently plays individually.'
         : style === 'teams' ? 'Choose 2–4 teams. Everyone who joins is assigned evenly when play starts; team scores use the average member score so a larger team has no advantage.'
         : board ? 'Every person races their own board piece, up to four racers.'

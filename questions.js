@@ -529,11 +529,23 @@ export function makeQuestions(category, count, seen = new Set(), format = 'choic
     };
   });
   const selected = [];
+  const selectedIds = new Set();
   for (const key of ['fresh', 'used']) {
     let active = groups.filter(group => group[key].length);
     while (selected.length < count && active.length) {
       for (const group of shuffle(active)) {
-        selected.push(group[key].pop());
+        // Content packs can legitimately overlap across subjects. One question
+        // must only appear once in any single match, even in Mixed Bag.
+        let item;
+        while (group[key].length) {
+          const candidate = group[key].pop();
+          const id = questionHistoryId(candidate.row[0]);
+          if (selectedIds.has(id)) continue;
+          selectedIds.add(id);
+          item = candidate;
+          break;
+        }
+        if (item) selected.push(item);
         if (selected.length === count) break;
       }
       active = active.filter(group => group[key].length);

@@ -139,3 +139,28 @@
 @media(prefers-reduced-motion:reduce) {
   .host-screen * {scroll-behavior:auto!important;}
 }
+
+
+/* Host recovery appears only after the current holder's reconnect grace has elapsed. */
+.host-screen[data-mode="potato"] .potato-rescue {
+  display:grid;gap:clamp(5px,1dvh,9px);justify-items:center;
+  max-width:min(96%,760px);align-self:center;text-align:center;
+  padding:clamp(9px,1.6dvh,15px);border-radius:13px;
+  border:1px solid #fac9879c;background:linear-gradient(110deg,#533323a1,#393c4ca1);
+}
+.host-screen[data-mode="potato"] .potato-rescue strong {
+  font:850 clamp(13px,2dvh,19px)/1.2 'House Sans',sans-serif;color:#ffe0a5;
+}
+.host-screen[data-mode="potato"] .potato-rescue :is(p,small) {
+  margin:0;font:650 clamp(11px,1.6dvh,14px)/1.35 'House Sans',sans-serif;color:#fff3e2;
+}
+.host-screen[data-mode="potato"] .potato-rescue button {
+  min-height:42px;font-weight:850;border-color:#ffe0a5;
+}
+.host-screen[data-mode="potato"] .potato-rescue button:focus-visible {
+  outline:3px solid #ffe0a5;outline-offset:3px;
+}
+@media(max-height:740px){
+ .host-screen[data-mode="potato"] .potato-rescue{padding:8px;gap:4px;}
+ .host-screen[data-mode="potato"] .potato-rescue p{font-size:11px;}
+}

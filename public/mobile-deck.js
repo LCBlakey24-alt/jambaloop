@@ -183,11 +183,15 @@ export function mobileDeck(app, dialog, content) {
     root.classList.toggle('mobile-keyboard', height < 365 && Boolean(window.visualViewport && height < innerHeight - 55));
     // Home launcher already has a 4/6/8-card page controller; avoid a second mobile pager.
     if (!dialog.open && app.querySelector('[data-home-shell]')) { appLayout.clear(); keep = undefined; return; }
-    // Active quiz questions must remain one scrollable screen on a phone.
-    // Never split the prompt, answer choices and submission feedback across pager pages.
-    // Real-time racing and trolley sentences also need intact phone screens.
+    // Live interactions need one continuous phone surface, not hidden deck pages.
+    // This applies to answer selection, long voting ballots and reveals. Keep
+    // the host presentation and setup pagination unchanged.
     if (!dialog.open && app.querySelector(
-      '.player-only[data-phase="question"], .player-only[data-phase="reveal"], .game[data-mode="quizrace"], .game[data-mode="tracks"]'
+      '.player-only[data-phase="question"], .player-only[data-phase="reveal"], ' +
+      '.player-only[data-phase="party-vote"], .player-only[data-phase="party-reveal"], ' +
+      '.player-only[data-phase="top-poll"], .player-only[data-phase="top-guess"], ' +
+      '.player-only[data-phase="top-reveal"], ' +
+      '.game[data-mode="quizrace"], .game[data-mode="tracks"]'
     )) { appLayout.clear(); keep = undefined; return; }
     active().measure(keep || (document.activeElement?.matches('input,select,textarea') ? document.activeElement : null));
     keep = undefined;

@@ -37,7 +37,13 @@ function pushSegment(item){
 function flush(){
  if(!active)return;
  const points=active.points;
- if(points.length>1){pushSegment({colour:active.colour,weight:active.weight,points:[...points]});active.points=[points.at(-1)];}
+ if(points.length>1){pushSegment({colour:active.colour,weight:active.weight,points:[...points]});active.points=[points.at(-1)];active.flushed=true;}
+}
+// Clearing is queued behind pending lines, never before an outstanding brush request.
+export function clearSketch(){
+ if(active)flush();
+ queue=queue.catch(()=>{}).then(()=>send({action:'clear'}));
+ return queue;
 }
 export function connectSketchPainter(sender){
  send=sender;
@@ -46,7 +52,7 @@ export function connectSketchPainter(sender){
   if(!canvas||active)return;
   if(e.pointerType==='mouse'&&e.button!==0)return;
   e.preventDefault();canvas.setPointerCapture(e.pointerId);
-  active={canvas,pointer:e.pointerId,points:[pointAt(canvas,e)],colour,weight,time:Date.now()};
+  active={canvas,pointer:e.pointerId,points:[pointAt(canvas,e)],colour,weight,time:Date.now(),flushed:false};
  });
  document.addEventListener('pointermove',e=>{
   if(!active||e.pointerId!==active.pointer)return;
@@ -61,7 +67,7 @@ export function connectSketchPainter(sender){
  const end=e=>{
   if(!active||e.pointerId!==active.pointer)return;
   e.preventDefault();
-  if(active.points.length===1)active.points.push(active.points[0]);
+  if(active.points.length===1&&!active.flushed)active.points.push(active.points[0]);
   flush();
   try{active.canvas.releasePointerCapture(e.pointerId);}catch{}
   active=null;

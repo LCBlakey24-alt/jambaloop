@@ -117,6 +117,23 @@ try {
       'Expanded preview buttons clipped at '+width+'×'+height+': '+JSON.stringify(previewFit));
     await page.screenshot({path:`browser-screenshots/intro-${width}x${height}.png`,fullPage:false});
     console.log('PASS: narrator, instructions and Setup buttons fit the '+width+'×'+height+' preview');
+    if([1366,390].includes(width)) {
+      await page.locator('#game-preview [data-action="close-preview"]').click();
+      await page.locator('.home-actions [data-action="join"]').click();
+      assert.equal(await page.locator('#dialog').evaluate(el=>el.open),true,'Player join should open as a dialog');
+      assert.equal(await page.locator('#join-room-code').getAttribute('inputmode'),'numeric');
+      assert.equal(await page.locator('#join-player-name').getAttribute('required'),'');
+      assert.equal(await page.locator('.join-photo-option').getAttribute('open'),null,'Photo upload must be optional and collapsed');
+      const fit=await page.evaluate(()=>{
+        const box=document.querySelector('#dialog').getBoundingClientRect();
+        return {left:box.left,right:box.right,top:box.top,bottom:box.bottom};
+      });
+      assert.ok(fit.left>=0&&fit.right<=width+2&&fit.top>=0&&fit.bottom<=height+2,
+        'Player join dialog must fit the viewport: '+JSON.stringify(fit));
+      await page.screenshot({path:`browser-screenshots/player-join-${width}x${height}.png`,fullPage:false});
+      await page.locator('#dialog [data-action="close"]').click();
+      console.log('PASS: accessible, responsive player join dialog at '+width+'×'+height);
+    }
     await page.close();
   }
   const audioPage=await browser.newPage();

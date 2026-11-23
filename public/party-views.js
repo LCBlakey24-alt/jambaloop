@@ -7,12 +7,14 @@ import {brainLadderView} from './brain-ladder-view.js';
 import {topAnswersView} from './top-answers-view.js';
 import {rareFindView} from './rare-find-view.js';
 import {bluffView} from './bluff-view.js';
+import {sketchView} from './sketch-view.js';
 export function avatarView(player, escape) {
   const photo = player.avatar ? ` data-room-avatar="${escape(player.avatar)}"` : '';
   return `<span class="player-avatar avatar-initial" aria-hidden="true"${photo}>${escape(Array.from(player.name)[0]?.toUpperCase() ?? '?')}</span>`;
 }
 
 export function partyView(state, { host, canControl, escape, reply, icons }) {
+  if(state.mode==='sketch')return sketchView(state,{host,canControl,escape,icons});
   if (state.mode === 'rare') return rareFindView(state,{host,canControl,escape,icons,reply});
   if (state.mode === 'topanswers') return topAnswersView(state,{host,canControl,escape,icons});
   if (state.mode === 'brain') return brainLadderView(state,{host,canControl,escape,icons});

@@ -4,7 +4,7 @@ Jambaloop is an original multiplayer browser-game product within the planned **R
 
 This is an active development project. Draft pull requests are not necessarily deployed to the live website; always check the branch and GitHub Actions before assuming a feature is published. See [the publisher and brand guide](docs/ROOKIE_QUEST_GAMES_JAMBALOOP_BRAND.md).
 
-Jambaloop currently supports a big-screen host and phone controllers across 17 game modes, with honest mode-specific capacity limits. Some trivia paths are configured for large rooms, but the 300-player ceiling is not a verified load-test result. The question library includes multiple-choice, true-or-false, closest-number, and put-in-order formats, plus separate original prompt banks for the newer game-show modes. Choose from Jambaloop Classic, Christmas, Neon Arcade, and Winter Lodge visual styles. Christmas is a selectable category. Turn on **Include Christmas questions** to add it to Mixed Bag, Spin the Wheel, or Board Race.
+Jambaloop currently supports a big-screen host and phone controllers across 18 game modes, with honest mode-specific capacity limits. Some trivia paths are configured for large rooms, but the 300-player ceiling is not a verified load-test result. The question library includes multiple-choice, true-or-false, closest-number, and put-in-order formats, plus separate original prompt banks for the newer game-show modes. Choose from Jambaloop Classic, Christmas, Neon Arcade, and Winter Lodge visual styles. Christmas is a selectable category. Turn on **Include Christmas questions** to add it to Mixed Bag, Spin the Wheel, or Board Race.
 
 ## Play at home
 
@@ -25,7 +25,7 @@ The game modes have distinct cover identities, with newer formats also using ori
 
 ## Desktop game library and ongoing content
 
-At normal desktop screen sizes (at least 1100 px wide and 700 px tall), the launcher shows **all 17 game modes at once in a six-column, three-row gallery**, without requiring a page change or scrolling the main screen. Smaller laptops and landscape tablets continue using readable paginated tiles; the phone launcher retains four games per page.
+At normal desktop screen sizes (at least 1100 px wide and 700 px tall), the launcher shows **all 18 game modes at once in a six-column, three-row gallery**, without requiring a page change or scrolling the main screen. Smaller laptops and landscape tablets continue using readable paginated tiles; the phone launcher retains four games per page.
 
 The trivia library now has **18 named subject categories plus Mixed Bag**, including the new **Words & Language** and **Maths & Numbers** genres. Both new genres work with multiple choice, true/false, estimate and order formats, and have appropriate Board Race difficulty selections. The same question banks feed Classic Quiz, Wheel, Board Race, Dice Rally, Knockout, Team Showdown, Hot Potato and Quiz Race.
 
@@ -95,9 +95,10 @@ Closest-number and put-in-order sessions offer five questions when you choose on
 - **Quiz Race** supports up to twelve simultaneous individual racers. Correct speed boosts and wrong, skipped or missed slowdowns are private to each phone while the TV shows the live race.
 - **Same Page** asks everyone for a private creative answer and rewards players whose normalised answers match.
 - **Spotlight Wheel** rotates every player through the contestant role, selects a private expert, and scores the contestant and expert independently.
-- **Brain Ladder** uses 180 original calculable puzzles across five-, seven- or ten-level climbs, with two lives per player and private answers.
+- **Brain Ladder** uses 240 original calculable puzzles across five-, seven- or ten-level climbs, with two lives per player and private answers.
 - **Top Answers** creates a genuine live poll from the room, then scores predictions from the actual vote totals rather than invented survey data.
-- **Rare Find** checks typed answers against 34 finite curated catalogues. Unique accepted answers score 200, pairs score 100 each, and groups of three or more score 50 each. Unrecognised answers enter a host-only review with an in-room audit trail before scoring.
+- **Rare Find** checks typed answers against 40 finite curated catalogues. Unique accepted answers score 200, pairs score 100 each, and groups of three or more score 50 each. Unrecognised answers enter a host-only review with an in-room audit trail before scoring.
+- **Sketch Sprint** is the 18th game: three, five or seven rounds for at least three players. One rotating artist sees a secret original prompt and draws on a phone; vector ink appears live on the TV while everyone else gets five private guesses. The first correct guess scores 150 points, second 100 and later correct answers 75; the artist earns 50 if anyone recognises the drawing. Rounds last up to 90 seconds, with 300 original drawable prompts and no copyrighted picture assets. See the [British ElevenLabs narrator pack](docs/ELEVENLABS_BRITISH_NARRATOR_PACK.md) for the 15 remaining optional MP3 recordings. Three existing recordings remain available and other introductions continue to use browser-based British speech when supported.
 
 - **Team Showdown** lets the host or captain choose two, three, or four balanced teams. Everyone answers on their own phone. Each round, a team earns the average of its players’ points, including misses. Highest team score wins, and players retain their individual scores.
 

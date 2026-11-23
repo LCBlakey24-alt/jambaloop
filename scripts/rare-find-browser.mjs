@@ -24,7 +24,7 @@ try{
   const menuContext=await browser.newContext({viewport:{width:1366,height:768}});
   const page=await menuContext.newPage();
   await page.goto(site,{waitUntil:'domcontentloaded',timeout:30000});
-  assert.equal(await page.locator('.game-tile').count(),17,'All games should appear on desktop');
+  assert.equal(await page.locator('.game-tile').count(),18,'All games should appear on desktop');
   await page.locator('.game-tile[data-mode="rare"]').click();
   assert.match(await page.locator('#game-preview').innerText(),/Rare Find/);
   await page.locator('#game-preview [data-action="host"]').click();

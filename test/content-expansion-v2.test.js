@@ -56,7 +56,7 @@ test('Evergreen content pack is additive and every original question has a uniqu
 test('Two added genres are playable in every trivia format, including Board Race level six and mixed Wheel',()=>{
  const configured=new Set(categories.map(row=>row[0]));
  assert.equal(configured.size,categories.length,'Category IDs must be unique');
- assert.equal(modes.length,17,'No existing game may be lost when the quiz genres expand');
+ assert.equal(modes.length,18,'The game library must retain all 17 existing games and the new Sketch Sprint');
  assert.equal(categories.length,19,'The library must expose 18 named topics and Mixed Bag');
  assert.equal(questionCategories.length,18);
  for(const category of newCategories){

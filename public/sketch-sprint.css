@@ -1,0 +1,61 @@
+/* Original Jambaloop Sketch Sprint TV/phone stage. */
+.game[data-mode="sketch"]{--sketch-blue:#a4dcff;color:#f7faff}
+.sketch-game{max-width:min(1070px,100%);margin-inline:auto;background:linear-gradient(135deg,#1b2946,#111d35);border:1px solid #4a6c8a;border-radius:20px;padding:clamp(10px,1.7vw,22px);display:grid;gap:clamp(7px,1.2vh,13px);min-width:0;min-height:0}
+.sketch-head{display:flex;justify-content:space-between;align-items:center;gap:16px;min-width:0}
+.sketch-head h1{margin:3px 0;font:800 clamp(22px,3.7vw,43px)/1.06 'Club Classic',sans-serif;color:#fff}
+.sketch-head p{margin:4px 0;color:#c4d6eb;font-size:clamp(11px,1.4vw,15px)}
+.sketch-kicker{font-size:10px;letter-spacing:.16em;font-weight:800;color:#a4dcff}
+.sketch-timer{display:grid;text-align:center;min-width:74px;padding:6px 10px;border-radius:12px;background:#2c4261;border:1px solid #647e9d}
+.sketch-timer small{font-size:9px;font-weight:800;letter-spacing:.12em}
+.sketch-timer .timer{font:900 clamp(21px,3vw,33px)/1.2 'House Sans',sans-serif;color:#ffda95}
+.sketch-frame{position:relative;display:block;width:100%;max-height:min(51dvh,510px);aspect-ratio:1000/680;border:9px solid #f3f4f1;background:#fffef8;border-radius:17px;overflow:hidden;box-shadow:0 14px 32px #030a1875,0 0 0 1px #507197;justify-self:center}
+.sketch-frame canvas{display:block;width:100%;height:100%;touch-action:pan-y;object-fit:fill}
+.sketch-frame canvas[data-sketch-interactive]{touch-action:none;cursor:crosshair}
+.sketch-watermark{position:absolute;bottom:5px;right:10px;pointer-events:none;color:#9aa5ab;font:800 9px 'House Sans',sans-serif;letter-spacing:.1em}
+.sketch-artist-tools,.sketch-guess{display:grid;gap:7px;padding:12px;border-radius:13px;background:#233653;border:1px solid #526d8e}
+.sketch-secret{margin:0;color:#c4e7ff;font-size:14px}
+.sketch-secret strong{font-size:clamp(17px,3vw,23px);color:#ffe0a4;display:inline-block}
+.sketch-tools{display:flex;align-items:center;justify-content:flex-start;flex-wrap:wrap;gap:7px}
+.sketch-colour{border:2px solid #c5d0e1;background:var(--ink);width:29px;height:29px;border-radius:50%;cursor:pointer;box-shadow:0 0 0 1px #192947}
+.sketch-colour.selected,.sketch-colour:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.sketch-tools [data-action="sketch-weight"][aria-pressed="true"]{background:#385d87;border-color:#87d4ed;color:#fff}
+.sketch-hint{margin:0;color:#b2c9df;font-size:11px}
+.sketch-guess p{margin:0;color:#d8eafa}
+.sketch-guess label{display:block;color:#e9f4ff;font-weight:800;font-size:12px;margin-bottom:5px}
+.sketch-guess-row{display:flex;gap:8px;align-items:center}
+.sketch-guess-row input{flex:1;min-width:0;min-height:43px;background:#e6f4ff;border:1px solid #94afce;color:#0a2139;border-radius:10px;padding:8px 12px;font-size:16px}
+.sketch-guess-row button{min-height:43px}
+.sketch-guess small{color:#bed2e7}
+.sketch-correct{background:#175047;padding:9px;border:1px solid #71dac3;border-radius:9px;font-weight:800}
+.sketch-reveal{background:linear-gradient(100deg,#193f50,#263b63);padding:11px 15px;border-radius:12px;border:1px solid #58829e;display:grid;gap:5px}
+.sketch-reveal span{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#a4dcff}
+.sketch-reveal strong{font:850 clamp(22px,3.4vw,38px) 'Club Classic',sans-serif;color:#fff}
+.sketch-reveal p{margin:0;color:#d2e5f8;font-size:13px}
+.sketch-actions{display:flex;justify-content:center;align-items:center}
+.sketch-actions .button{min-height:41px}
+.sketch-end{max-height:210px;overflow:auto}
+.sketch-end h2{margin:0 0 6px;font-size:20px}
+.sketch-end .ranking{margin:0}
+@media (min-width:900px) and (max-height:800px){
+ .sketch-game{gap:7px;padding:10px 15px}
+ .sketch-frame{max-height:45dvh;width:auto;max-width:100%}
+ .sketch-timer{padding:3px 7px}
+ .sketch-head h1{font-size:27px}
+}
+@media (max-width:700px){
+ .sketch-game{padding:9px;gap:7px;border-radius:14px}
+ .sketch-head h1{font-size:22px}
+ .sketch-head p{font-size:11px}
+ .sketch-timer{min-width:62px;padding:4px}
+ .sketch-frame{border-width:5px;border-radius:12px;max-height:33dvh}
+ .sketch-watermark{font-size:7px}
+ .sketch-secret strong{font-size:19px}
+ .sketch-artist-tools,.sketch-guess{padding:8px;gap:6px}
+ .sketch-colour{width:25px;height:25px}
+ .sketch-tools{gap:7px}
+ .sketch-tools .button{min-height:30px;font-size:10px;padding:4px 7px}
+ .sketch-guess-row input{min-height:38px}
+ .sketch-guess-row button{min-height:38px}
+ .sketch-reveal{padding:8px}
+}
+@media (prefers-reduced-motion:reduce){.sketch-game *{transition:none!important;animation:none!important}}

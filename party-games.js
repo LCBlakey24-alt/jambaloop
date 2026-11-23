@@ -12,6 +12,7 @@ import {startSpotlightGame,advanceSpotlight,submitSpotlight,publicSpotlight} fro
 import {startBrainGame,advanceBrain,submitBrain,publicBrain} from './brain-ladder.js';
 import {startTopAnswersRound,advanceTopAnswers,submitTopAnswers,publicTopAnswers} from './top-answers.js';
 import {startRareRound,advanceRare,advanceRareWhenReady,submitRare,publicRare} from './rare-find.js';
+import {startSketchRound,advanceSketch,expireSketch,submitSketch,publicSketch} from './sketch-sprint.js';
 export { partyModes };
 const prompts = [
   'Name something you might find under a sofa.',
@@ -120,6 +121,7 @@ function advanceBluff(room,publish) {
 }
 
 export function startParty(room, publish) {
+  if(room.mode==='sketch')return startSketchRound(room,publish);
   if (room.mode === 'rare') return startRareRound(room,publish);
   if (room.mode === 'topanswers') return startTopAnswersRound(room,publish);
   if (room.mode === 'brain') return startBrainGame(room,publish);
@@ -159,6 +161,7 @@ export function rescuePotato(room, publish) {
 }
 
 export function expireParty(room, publish) {
+  if(room.mode==='sketch')return expireSketch(room,publish);
   if (room.phase === 'party-potato' && clockExpired(room)) {
     room.phase = 'finished';
     stopDeadline(room);
@@ -167,6 +170,7 @@ export function expireParty(room, publish) {
 }
 
 export function advanceParty(room, publish) {
+  if(room.mode==='sketch')return advanceSketch(room,publish);
   if (room.mode === 'rare') return advanceRare(room,publish);
   if (room.mode === 'topanswers') return advanceTopAnswers(room,publish);
   if (room.mode === 'brain') return advanceBrain(room,publish);
@@ -178,6 +182,7 @@ export function advanceParty(room, publish) {
 }
 
 export function submitParty(room, key, data, publish) {
+  if(room.mode==='sketch')return submitSketch(room,key,data,publish);
   expireParty(room, publish);
   if (room.mode === 'rare') {
     if (data?.game !== room.game) return [409,'This game has moved on.'];
@@ -234,6 +239,7 @@ export function submitParty(room, key, data, publish) {
 }
 
 export function publicParty(room, key) {
+  if(room.mode==='sketch')return publicSketch(room,key);
   if (room.mode === 'rare') return publicRare(room,key);
   if (room.mode === 'topanswers') return publicTopAnswers(room,key);
   if (room.mode === 'brain') return publicBrain(room,key);

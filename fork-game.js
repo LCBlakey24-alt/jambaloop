@@ -1,11 +1,12 @@
 import {randomInt} from 'node:crypto';
 import {isConnected} from './room-presence.js';
 import {forkGoodCards, forkBadCards, forkScenes, forkStages} from './public/fork-cards.js';
+import {v2ForkGood,v2ForkBad} from './creative-expansion-v2.js';
 
 // Each round has a new player Trolley Driver; all other players are
 // randomly dealt into two balanced teams by the authoritative room server.
 function deal(room, kind) {
-  const bank = kind === 'bad' ? forkBadCards : forkGoodCards;
+  const bank = kind === 'bad' ? [...forkBadCards,...v2ForkBad] : [...forkGoodCards,...v2ForkGood];
   room.forkUsed ??= {good:new Set(),bad:new Set()};
   const used = room.forkUsed[kind];
   let available = bank.filter(value => !used.has(value));

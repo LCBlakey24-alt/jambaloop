@@ -944,6 +944,8 @@ function render(s) {
   const stage = enter && !animateRoll ? null : app.querySelector('#board-stage, .wheel-frame');
   const backdrop = enter ? null : app.querySelector('.scene-backdrop');
   const focused = document.activeElement;
+  const guideWasOpen = !enter && !host && s.phase === 'lobby' && Boolean(app.querySelector('.player-game-guide')?.open);
+  const guideHadFocus = guideWasOpen && Boolean(focused?.closest('.player-game-guide'));
   const rosterScroll = enter ? 0 : app.querySelector('.players')?.scrollTop;
   const lobbyAction = !enter && s.phase === 'lobby' && app.contains(focused) && focused.matches('button[data-action]') ? focused.dataset.action : undefined;
   const captainSelect = !enter && focused?.matches('#captain-form select') ? focused.value : undefined;
@@ -977,6 +979,13 @@ function render(s) {
     ${(host || s.isCaptain) && !['lobby', 'finished', 'waiting'].includes(s.phase) && s.night.queue.length ? `<p class="live-lineup">Up next <strong>${modeName(s.night.queue[0])}</strong>
       ${canControl ? '<button class="button outline small" data-action="night">Edit playlist</button>' : ''}</p>` : ''}
     ${body}<p class="error" id="game-error" role="alert"></p></section>`;
+  if (guideWasOpen) {
+    const guide = app.querySelector('.player-game-guide');
+    if (guide) {
+      guide.open = true;
+      if (guideHadFocus) guide.querySelector('summary')?.focus({ preventScroll: true });
+    }
+  }
   switchAvatarSession.refresh();
   if (backdrop) app.querySelector('.scene-backdrop').replaceWith(backdrop);
   renderGraphics(s, stage, animateRoll);

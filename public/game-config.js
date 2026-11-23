@@ -15,6 +15,8 @@ export const categories = [
   ['games', 'Games & Puzzles', 'Board games, video games, and brain teasers.', 'gamepad-2', '#b7c9ff', 'Games'],
   ['animals', 'Animals', 'Wildlife, habitats, and remarkable creatures.', 'paw-print', '#bde5ca', 'Animals'],
   ['space', 'Space & Astronomy', 'Planets, stars, and space exploration.', 'orbit', '#c9b9f5', 'Space'],
+  ['language', 'Words & Language', 'Grammar, wordplay, meanings and spelling.', 'book-open', '#f9cf99', 'Words'],
+  ['maths', 'Maths & Numbers', 'Quick calculations, number patterns and logic.', 'sigma', '#99e7dc', 'Maths'],
   ['mixed', 'Mixed Bag', 'A balanced mix of topics in one game.', 'shuffle', '#a8c6f2', 'Mixed'],
 ];
 
@@ -87,8 +89,8 @@ export function questionCounts(mode, format, category) {
 
 export const categoryGroups = [
   ['All topics', []],
-  ['Science & nature', ['science', 'animals', 'space', 'technology']],
-  ['Culture', ['art', 'entertainment', 'music', 'books']],
+  ['Science & nature', ['science', 'animals', 'space', 'technology', 'maths']],
+  ['Culture', ['art', 'entertainment', 'music', 'books', 'language']],
   ['World & history', ['geography', 'history', 'news']],
   ['Leisure', ['sports', 'games', 'food', 'christmas']],
 ];

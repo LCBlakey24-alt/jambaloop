@@ -39,16 +39,16 @@ export function bluffView(s,{host,canControl,escape,reply,icons}){
         ${party.escaped?'The bluff earned 100 escape points.':''}</p>`:''}
     </div>
     <div class="bluff-replies bluff-show-cards" role="list" aria-label="${showTruth?'Round replies and voting results':'Replies to vote on'}">
-      ${(party.replies??[]).length?(party.replies??[]).map((entry,i)=>`<article class="bluff-card ${showTruth&&entry.id===party.liarId?'revealed-bluff':''}" role="listitem">
+      ${(party.replies??[]).length?(party.replies??[]).map((entry,i)=>`<article class="bluff-card party-vote-card ${showTruth&&entry.id===party.liarId?'revealed-bluff':''}" role="listitem">
         <header><span class="bluff-show-number">${i+1}</span><strong>${escape(entry.name)}</strong>${showTruth&&entry.id===party.liarId?'<b class="bluff-show-truth">THE BLUFF</b>':''}</header>
         <p>${escape(entry.text)}</p>
         ${showTruth?`<small>${entry.votes} ${entry.votes===1?'vote':'votes'}</small>`:
           !host&&entry.id===s.player?.id?'<small>Your reply — you cannot vote for yourself.</small>':
-          !host&&!party.voted?`<button class="button outline small" data-action="bluff-vote" data-id="${escape(entry.id)}">Vote for ${escape(entry.name)}</button>`:''}
+          !host&&!party.voted?`<button type="button" class="button outline small party-vote-button" data-action="bluff-vote" data-id="${escape(entry.id)}" aria-label="Vote for ${escape(entry.name)}">Vote for ${escape(entry.name)}</button>`:''}
       </article>`).join(''):'<p class="bluff-show-empty">No player replies were submitted for this round.</p>'}
     </div>
     ${!showTruth&&host?`<p class="bluff-show-progress" role="status">${party.submissions} / ${party.responseTarget} votes submitted</p>`:''}
-    ${!showTruth&&!host&&party.voted?'<p class="bluff-show-locked" role="status">Vote locked in. Watch the TV for the reveal.</p>':''}
+    ${!showTruth&&!host&&party.voted?'<div class="bluff-show-locked party-vote-confirmation" role="status"><strong>Vote locked in</strong><span>Your choice is saved. Watch the TV for the reveal.</span></div>':''}
     ${showTruth&&!host?`<p class="bluff-show-earned" role="status">You earned <strong>+${party.ownEarned??0} points</strong> this round.</p>`:''}`;
     if(canControl)actions=`<button type="button" class="button primary" data-action="advance">${
       showTruth?(s.index+1<s.total?'Next secret round':'Show final standings'):'Reveal the bluff'} ${icons('arrow-right')}</button>`;

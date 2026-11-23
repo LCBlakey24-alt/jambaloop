@@ -1,5 +1,5 @@
 import { clockExpired, stopDeadline, watchDeadline } from './room-clock.js';
-import { connectedPlayers, responseTarget } from './room-presence.js';
+import { connectedPlayers, isConnected, responseTarget } from './room-presence.js';
 import { randomInt } from 'node:crypto';
 import { makeQuestions } from './questions.js';
 
@@ -52,7 +52,7 @@ export function startParty(room, publish) {
     room.party = { liar: random(keys), prompt, replies: new Map(), votes: new Map() };
     room.phase = 'party-write';
   } else {
-    room.party = { holder: random(keys), pool: [], step: 0, passes: 0 };
+    room.party = { holder: random(keys), pool: [], step: 0, passes: 0, rescues: 0 };
     potatoQuestion(room);
     room.opened = Date.now();
     room.ends = room.opened + 120000;
@@ -60,6 +60,26 @@ export function startParty(room, publish) {
     watchDeadline(room, () => expireParty(room, publish));
   }
   publish(room);
+}
+
+/**
+ * Host-only recovery when a holder has genuinely dropped off after the reconnect grace.
+ * No one can use this to bypass an active holder, paused game, or expired timer.
+ */
+export function rescuePotato(room, publish) {
+  if(room.mode!=='potato'||room.phase!=='party-potato'||!room.party) return [409,'Hot Potato is not active.'];
+  if(room.pausedAt) return [409,'Resume the timer before moving the potato.'];
+  if(clockExpired(room)){expireParty(room,publish);return [409,'Hot Potato has ended.'];}
+  const oldHolder=room.party.holder;
+  if(isConnected(room,oldHolder))return [409,'The holder is still connected or within their reconnection grace period.'];
+  const recipients=connectedPlayers(room).filter(key=>key!==oldHolder);
+  if(!recipients.length)return [409,'No other connected players are available.'];
+  room.party.holder=random(recipients);
+  room.party.rescues=(room.party.rescues??0)+1;
+  room.party.last={id:room.players.get(oldHolder).id,result:'rescue'};
+  potatoQuestion(room);
+  publish(room);
+  return [204];
 }
 
 export function expireParty(room, publish) {
@@ -163,7 +183,10 @@ export function publicParty(room, key) {
     return {
       holder: { id: holder.id, name: holder.name, avatar: holder.avatar },
       holding: key === party.holder,
-      step: party.step, passes: party.passes, last: party.last,
+      step: party.step, passes: party.passes, rescues: party.rescues??0, last: party.last,
+      holderConnected: key===room.host ? isConnected(room,party.holder) : undefined,
+      canRescue: key===room.host && room.phase==='party-potato' && !room.pausedAt && !clockExpired(room) && !isConnected(room,party.holder)
+        && connectedPlayers(room).some(other=>other!==party.holder),
       question: room.phase === 'party-potato' && key === party.holder ? question : undefined,
     };
   }

@@ -1,4 +1,5 @@
 import { replayButtons } from './game-night.js';
+import { partyFinale } from './party-finale.js';
 import { socialModes, modes } from './game-config.js';
 import {forkView} from './fork-view.js';
 import {samePageView} from './same-page-view.js';
@@ -29,7 +30,7 @@ export function partyView(state, { host, canControl, escape, reply, icons }) {
     : '<p>Stay here if the captain starts another game.</p>';
   if (state.mode === 'potato') {
     if (finished) return `<section class="game-panel results party-results"><div class="eyebrow">TIME’S UP</div>
-      <h1>${escape(party.holder.name)} got caught with the potato!</h1><div class="party-holder">${avatarView(party.holder, escape)}<p>${party.passes} successful ${party.passes === 1 ? 'pass' : 'passes'}</p></div><div class="actions">${replay}</div></section>`;
+      <h1>${escape(party.holder.name)} got caught with the potato!</h1>${partyFinale(state, { host, escape, variant: 'potato' })}<div class="party-holder">${avatarView(party.holder, escape)}<p>${party.passes} successful ${party.passes === 1 ? 'pass' : 'passes'}</p></div><div class="actions">${replay}</div></section>`;
     const holder = escape(party.holder.name);
     const feedback = party.last && party.last.id === state.player?.id ? { miss: 'Incorrect. You still have the potato.', skip: 'Question skipped. You still have the potato.', pass: 'Correct! You passed the potato.', alone: 'Correct! Waiting for someone else to reconnect before you can pass.', rescue: 'The host moved the potato when your connection dropped. You can rejoin the next turn.' }[party.last.result] : '';
     return `<section class="game-panel party-panel potato-panel">
@@ -70,7 +71,11 @@ function socialView(state, { host, canControl, escape, reply, icons }) {
   if (finished) {
     const best = state.players[0]?.score ?? 0;
     const winners = state.players.filter(player => player.score === best);
-    body = `<h1>${tracks ? 'All tracks explored' : winners.length === 1 ? escape(winners[0].name) + ' wins!' : 'It’s a tie!'}</h1>
+    const teamWinners = state.playStyle === 'teams' ? state.teams.filter(team => state.teamWinners?.includes(team.id)) : [];
+    const headline = state.playStyle === 'teams'
+      ? teamWinners.length === 1 ? 'Team ' + escape(teamWinners[0].name) + ' wins!' : 'The teams are tied!'
+      : winners.length === 1 ? escape(winners[0].name) + ' wins!' : 'It’s a tie!';
+    body = `${partyFinale(state, { host, escape })}<h1>${tracks ? 'All tracks explored' : headline}</h1>
       ${tracks ? '<p>Play again for another set of dilemmas.</p>' : `<ol class="ranking">${state.players.map(player => `<li><span>${avatarView(player, escape)}${escape(player.name)}</span><strong>${player.score.toLocaleString()} pts</strong></li>`).join('')}</ol>`}
       ${canControl ? `<div class="actions">${replayButtons(state, icons)}</div>` : '<p>Stay here if the captain starts another game.</p>'}`;
   } else if (writing) {
@@ -101,8 +106,6 @@ function socialView(state, { host, canControl, escape, reply, icons }) {
     ? `<div class="party-team-scores" aria-label="Team standings">${[...state.teams].sort((a,b)=>b.score-a.score).map(team=>
       `<div style="--team:${team.color}"><strong>Team ${escape(team.name)}</strong><span>${team.score.toLocaleString()} pts</span></div>`).join('')}</div>`
     : '';
-  const winner = finished && state.playStyle === 'teams' && state.teamWinners?.length === 1
-    ? `<p class="party-team-winner">Team ${escape(state.teams.find(t=>t.id===state.teamWinners[0])?.name)} wins!</p>` : '';
   return `<section class="game-panel party-panel ${finished ? 'results' : ''}">
-    <div class="eyebrow">${title} · Round ${index + 1} of ${total}</div>${winner}${teamScores}${body}</section>`;
+    <div class="eyebrow">${title} · Round ${index + 1} of ${total}</div>${teamScores}${body}</section>`;
 }

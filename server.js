@@ -67,7 +67,7 @@ function readSettings(body = {}) {
   const scores = canSetScore(mode) ? (scoring
     ? { base: scoring.base, bonus: seconds ? scoring.bonus : 0, doubles: scoring.doubles }
     : defaultScoring(seconds)) : undefined;
-  return { mode, theme, difficulty, raceLength, raceTrack, raceDifficulty, scoring: scores, boardSpeed: seconds ? boardSpeed : 0, legacyScoring: scoring === undefined, format: privateTeam ? 'choice' : format, category: fixedQuestionModes.includes(mode) && !privateTeam ? category : 'mixed', count: ['tracks', 'samepage', 'spotlight', 'brain', 'topanswers', 'rare', 'punchline', 'cards'].includes(mode) ? count : socialModes.includes(mode) ? 3 : partyModes.includes(mode) ? 1 : quiz?.questions.length ?? count,
+  return { mode, theme, difficulty, raceLength, raceTrack, raceDifficulty, scoring: scores, boardSpeed: seconds ? boardSpeed : 0, legacyScoring: scoring === undefined, format: privateTeam ? 'choice' : format, category: fixedQuestionModes.includes(mode) && !privateTeam ? category : 'mixed', count: ['tracks', 'samepage', 'spotlight', 'brain', 'topanswers', 'rare', 'punchline', 'cards', 'bluff'].includes(mode) ? count : socialModes.includes(mode) ? 3 : partyModes.includes(mode) ? 1 : quiz?.questions.length ?? count,
     seconds, autoReveal, includeChristmas, phoneView: privateTeam ? 'full' : phoneView, privateQuestions: privateTeam,
     teamCount, boardLength, playStyle, scoreInterval: supportsScoreCheckpoints(mode) ? scoreInterval : 1, customQuiz: quiz };
 }

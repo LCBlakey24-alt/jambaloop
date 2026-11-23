@@ -1,4 +1,5 @@
 import { scoreBreakView, updateScoreBreak } from './score-break.js';
+import { bindRoomAvatars } from './room-avatars.js';
 import { quizRaceView } from './quiz-race-view.js';
 import { mountQuizRaceTrack } from './quiz-race-track.js';
 import { mobileDeck } from './mobile-deck.js';
@@ -23,6 +24,7 @@ import { boardView, diceView, lobbyView, reviewView, rollRecap, teamList, teamSc
 const icons = (name, css = '') => `<img class="${css}" src="/icons/${name}.svg" alt="">`;
 const modeName = id => modes.find(mode => mode[0] === id)?.[1] ?? '';
 const app = document.querySelector('#app');
+const switchAvatarSession = bindRoomAvatars(app);
 const home = app.innerHTML;
 const dialog = document.querySelector('#dialog');
 const content = document.querySelector('#dialog-content');
@@ -514,6 +516,7 @@ function startSession(next) {
   reconnecting = false;
   nextConnect = 0;
   session = next;
+  switchAvatarSession(next);
   tvFocus = false;
   state = undefined;
   draftKey = undefined;
@@ -540,6 +543,7 @@ function leave() {
   stream?.abort();
   stream = undefined;
   session = undefined;
+  switchAvatarSession();
   tvFocus = false;
   submittingAnswer = undefined;
   raceSending = false; raceTrackView?.dispose(); raceTrackView = undefined;

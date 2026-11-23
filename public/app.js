@@ -895,7 +895,7 @@ function render(s) {
       ${bonusMax ? `<span>Up to +${bonusMax.toLocaleString()} for speed</span>` : ''}${s.boost > 1 ? '<span>×2 this round</span>' : ''}</p>` : '';
     timer = !revealed && s.ends
       ? host ? '<div class="tv-clock"><span class="timer" id="timer"></span><small>TIME LEFT</small></div>'
-        : '<span class="timer" id="timer"></span>'
+        : '<span class="player-timer" aria-label="Time remaining"><span class="player-timer-label">TIME LEFT</span><span class="timer" id="timer"></span></span>'
       : '';
     const lifeInfo = knockout ? `<p class="life-info">${host ? s.remaining + ' still in' : eliminated ? 'Out of lives · Spectating' : '♥ ' + lifeLabel(s.player.lives) + ' left'}</p>` : '';
     const answerStatus = eliminated ? 'Watch the rest of the game, then join the rematch.' : locked ? 'Answer locked in. Waiting for the reveal…' : sending ? 'Sending your answer…' : s.ends ? 'Tap your answer before time runs out.' : 'Choose an answer to lock it in.';
@@ -906,12 +906,19 @@ function render(s) {
     const response = host && !revealed
       ? `<progress id="response-progress" class="response-progress" value="${s.answered}" max="${Math.max(1, responseTarget(s))}" aria-label="Players who answered"></progress>` : '';
     const promptHelp = !revealed ? `<p class="question-guide">${host && special ? 'On your phone: ' : ''}${answerGuide(question.type)[1]}</p>` : '';
+    const playerFeedback = !host && (revealed || locked || sending || eliminated)
+      ? `<div class="player-answer-feedback" role="status" data-feedback="${revealed ? won ? 'correct' : 'incorrect' : eliminated ? 'spectating' : locked ? 'locked' : 'sending'}">
+        <span class="feedback-mark" aria-hidden="true">${revealed ? won ? '✓' : '!' : eliminated ? '•' : locked ? '✓' : '…'}</span>
+        <span><strong>${revealed ? won ? 'Correct answer!' : 'Round complete' : eliminated ? 'Spectating' : locked ? 'Answer locked in' : 'Sending your answer'}</strong>
+        <small>${revealed ? revealStatus : eliminated ? 'You can watch the remaining rounds.' : locked ? 'You can relax while everyone else finishes.' : 'Hold on while we save your choice.'}</small></span>
+      </div>` : '';
     body = `${host ? '<div class="tv-round">' : ''}<div class="game-panel question-panel ${revealed ? 'is-reveal' : ''}">
       <div class="eyebrow round-kicker"><span>${board ? 'TURN' : 'QUESTION'} ${s.index + 1} OF ${s.total}</span>
         <span>${escape(s.quizTitle || categoryName(question.category))}</span><span>${answerGuide(question.type)[0]}</span></div>
       ${board || rally ? rollRecap(s) : ''}${board ? boardPrediction(s, host) : ''}${scoringLine}${lifeInfo}
       ${ownTeam && s.playStyle === 'teams' ? `<p class="your-team" style="--team:${ownTeam.color}">Team ${escape(ownTeam.name)}${showLiveScores ? ' · ' + ownTeam.score.toLocaleString() + ' pts' : ''}</p>` : ''}
       <h2>${controllerOnly ? (revealed ? 'Answer revealed' : 'Look at the TV') : escape(s.question.prompt)}</h2>
+      ${playerFeedback}
       ${timer && !host ? '<div class="time-track" aria-hidden="true"><div id="time-fill"></div></div>' : ''}
       ${promptHelp}
       ${special ? specialAnswer(question, { draft, selection, revealed, host, disabled: eliminated || sending, closest: s.closest }, escape) : `<div class="answers ${s.question.options.length === 2 ? 'binary-answers' : ''}">${s.question.options.map((option, index) => `<button style="--answer:${colors[index]};--share:${s.breakdown && s.answered ? s.breakdown[index] * 100 / s.answered : 0}%" class="answer ${selection === index ? 'selected' : ''} ${revealed && s.question.correct === index ? 'correct' : ''}"
@@ -919,7 +926,7 @@ function render(s) {
       <strong>${'ABCD'[index]}</strong><span>${escape(option)}${revealed && s.question.correct === index ? ' ✓' : ''}</span>
       ${s.breakdown ? `<small class="answer-count"><b class="vote-share">${s.answered ? Math.round(100 * s.breakdown[index] / s.answered) : 0}%</b><span>${s.breakdown[index]} ${s.breakdown[index] === 1 ? 'vote' : 'votes'}</span></small>` : ''}</button>`).join('')}</div>`}
       ${revealed && s.question.source ? `<a class="question-source" href="${escape(s.question.source)}" target="_blank" rel="noopener noreferrer">Verified answer source</a>` : ''}
-       ${checkpointNote(s)}<div class="round-footer">${host ? '' : `<div class="round-status"><p class="status" role="status">${revealed ? revealStatus + (showLiveScores ? ' Total: ' + s.player.score.toLocaleString() + ' pts.' : '') : answerStatus}</p>${revealed && s.player.streak >= 2 ? `<span class="streak-tag">${s.player.streak} in a row</span>` : ''}</div>`}
+       ${checkpointNote(s)}<div class="round-footer">${host ? '' : `<div class="round-status"><p class="status" ${playerFeedback ? '' : 'role="status"'}>${revealed ? revealStatus + (showLiveScores ? ' Total: ' + s.player.score.toLocaleString() + ' pts.' : '') : answerStatus}</p>${revealed && s.player.streak >= 2 ? `<span class="streak-tag">${s.player.streak} in a row</span>` : ''}</div>`}
       ${pauseButton}
       ${canControl ? `<button class="button primary captain-next" data-action="advance">${nextQuestionLabel(s)} ${icons('arrow-right')}</button>` : ''}</div>
       </div>${tvRoundHud(s, timer, response, host)}${host ? '</div>' : ''}${revealed && board && showLiveScores ? `<div class="game-panel round-leaders"><h2>Race standings</h2>${teamList(s, ownTeam?.id, true)}</div>` : ''}

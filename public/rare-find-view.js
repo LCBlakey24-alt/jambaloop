@@ -1,4 +1,5 @@
 // Original TV-first rarity show. User text must always be escaped before injection into markup.
+import { partyFinale } from './party-finale.js';
 import {replayButtons} from './game-night.js';
 function revealRows(p,escape){
  const groups=p.results?.groups||[];
@@ -31,13 +32,13 @@ function reviewQueue(p,escape){
   <p class="rare-review-footnote">${p.remaining} ${p.remaining===1?'answer still needs':'answers still need'} a decision.</p>
   </section>`;
 }
-function finalRows(s,escape){
+function finalRows(s,escape,host){
  const rankings=s.players||[];
  const highest=rankings[0]?.score??0;
  const top=rankings.filter(entry=>entry.score===highest);
  const title=top.length===1?escape(top[0].name)+' found the edge!':'It’s a shared Rare Find win!';
  return `<div class="rare-finale"><span class="rare-eyebrow">RARE FIND · FINAL RESULTS</span>
-  <h1>${title}</h1><p>Correct answers scored best when nobody else thought of them.</p>
+  <h1>${title}</h1>${partyFinale(s,{host,escape})}<p>Correct answers scored best when nobody else thought of them.</p>
   <ol class="rare-final-leaders">${rankings.map(entry=>{
     const rank=rankings.findIndex(candidate=>candidate.score===entry.score)+1;
     return `<li><span><b>${rank}.</b> ${escape(entry.name)}</span><strong>${entry.score.toLocaleString()} PTS</strong></li>`;
@@ -53,7 +54,7 @@ export function rareFindView(s,{host,canControl,escape,icons,reply}){
    <span class="rare-status">${write?'SEEK AN ANSWER':review?'HOST REVIEW':reveal?'RARITY REVEAL':'GAME COMPLETE'}</span></header>`;
  let stage='',footer='';
  if(finished){
-  stage=finalRows(s,escape)+(!host?`<p class="rare-personal-total">Your final total: <strong>${s.player?.score?.toLocaleString()??0} pts</strong></p>`:'');
+  stage=finalRows(s,escape,host)+(!host?`<p class="rare-personal-total">Your final total: <strong>${s.player?.score?.toLocaleString()??0} pts</strong></p>`:'');
   if(canControl)footer=`<div class="rare-footer">${replayButtons(s,icons)}</div>`;
  }else{
   const prompt=`<div class="rare-prompt"><span class="rare-eyebrow">${escape(p.category)} · ORIGINAL CHALLENGE</span>

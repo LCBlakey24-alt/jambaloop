@@ -4,22 +4,22 @@ Jambaloop is an original multiplayer browser-game product within the planned **R
 
 This is an active development project. Draft pull requests are not necessarily deployed to the live website; always check the branch and GitHub Actions before assuming a feature is published. See [the publisher and brand guide](docs/ROOKIE_QUEST_GAMES_JAMBALOOP_BRAND.md).
 
-Jambaloop currently supports a big-screen host and phone controllers, with mode-specific capacity limits. The general server can host up to 300 participants for suitable modes. The question library includes more than 560 questions across its categories, with multiple-choice, true-or-false, closest-number, and put-in-order formats. Mixed formats rotate through all four. Choose from Quiz Club, Christmas, Neon Arcade, and Winter Lodge visual styles. Christmas is a selectable category. Turn on **Include Christmas questions** to add it to Mixed Bag, Spin the Wheel, or Board Race.
+Jambaloop currently supports a big-screen host and phone controllers across 17 game modes, with honest mode-specific capacity limits. Some trivia paths are configured for large rooms, but the 300-player ceiling is not a verified load-test result. The question library includes multiple-choice, true-or-false, closest-number, and put-in-order formats, plus separate original prompt banks for the newer game-show modes. Choose from Jambaloop Classic, Christmas, Neon Arcade, and Winter Lodge visual styles. Christmas is a selectable category. Turn on **Include Christmas questions** to add it to Mixed Bag, Spin the Wheel, or Board Race.
 
 ## Play at home
 
-1. Install Node.js 18 or later on a laptop. Run `npm ci` and then `npm start` from this folder.
+1. Install Node.js 22 on a laptop. Run `npm ci` and then `npm start` from this folder.
 2. Open http://localhost:3000 on the laptop. Show it on the TV with HDMI or screen mirroring. A compatible TV browser can also open the laptop’s local network address.
 3. Connect the laptop and phones to the same network. Host a game and have players scan the room’s QR code. Players can also enter the six-digit code or paste the full invite link into the code box.
 4. Start when everyone is in the lobby. Players answer on their phones and the host advances after each reveal. Use **Quiz scoring** to set base points, the largest possible timed bonus, and double-point rounds.
 
 ## Play on a phone
 
-Quiz Club fits a phone or small touch screen one page at a time. When a view needs more room, use **Back** and **Next** below it. This works for game and category browsing, captain settings, ballots, quiz editing and results. Use **Games** or **Topics** from the mobile home screen to jump directly to those sections.
+Jambaloop fits a phone or small touch screen one page at a time. When a view needs more room, use **Back** and **Next** below it. This works for game and category browsing, captain settings, ballots, quiz editing and results. Use **Games** or **Topics** from the mobile home screen to jump directly to those sections.
 
 ## Game styles and effects
 
-Every mode has its own stage palette, display font and animated backdrop. The fonts are bundled, so the game can load them over your local network. Turn on **Sound** on the TV for mode-specific transition cues and swooshes. Quiz Club follows your device’s reduced-motion setting for background and transition effects.
+Every mode has its own stage palette, display font and animated backdrop. The fonts are bundled, so the game can load them over your local network. Turn on **Sound** on the TV for mode-specific transition cues and swooshes. Jambaloop follows your device’s reduced-motion setting for background and transition effects.
 
 The game modes have distinct cover identities, with newer formats also using original typographic cover designs. Board Race has a brass and hardwood tower, a felt board, and four pawn silhouettes that match the standings. The die drops through opening gates, strikes four ramps and bounces onto the board. The timed animation settles on the number drawn by the room server. With TV sound on, the tower plays a clack at each impact. The camera moves closer for the drop and pulls back for the pawn’s route. Dice Rally uses a copper-trimmed tray and two separate bounce paths. Both games carry the roll result into the question screen. Reduced motion displays the settled result, and TV browsers without WebGL show a flat view.
 
@@ -41,7 +41,7 @@ On the shared screen, the checkpoint starts at the previous standings and reveal
 
 ## Game Night playlists
 
-Choose **Build a playlist** in the lobby to line up the games that follow the current one. Add your own choices or start with an approximate 15-, 30-, or 60-minute preset. The host and captain can reorder or skip upcoming games. Select **Load next game** from results to open the next lobby with the same room code, players, and avatars. Each game starts with fresh scores. Set a different quiz or time limit in the next lobby before starting it.
+Choose **Build a playlist** in the lobby to line up the games that follow the current one. Add your own choices or start with an approximate 15-, 30-, or 60-minute preset covering both established and newer shows. The host and captain can reorder or skip upcoming games. Select **Load next game** from results to open the next lobby with the same room code, players, and avatars. Each game starts with fresh raw scores. The games-night table instead awards three, two or one stars for podium places, so a 10,000-point quiz is not unfairly added to a 200-point party game; tied places share the same stars. Set a different quiz or time limit in the next lobby before starting it.
 
 The captain or host chooses **Phone display** in game setup. **Show question and answers** puts the question and controls on each phone. **Answer controls only** keeps the question prompt on the TV and sends the buttons, number scroller, or ordering list to the phones.
 
@@ -56,7 +56,7 @@ The captain or host chooses **Phone display** in game setup. **Show question and
 
 - **Punchline Party** needs at least three players. Write a short reply to a funny prompt and vote for another player’s anonymous entry. Each vote is worth 100 points across three rounds. If more than six entries come in, six are randomly shortlisted for the ballot.
 - **Fill the Blank** needs at least three players. Choose a phrase from your private six-card hand to complete the sentence. Vote for the best anonymous combination. Each vote is worth 100 points across three rounds. If more than six entries come in, six are randomly shortlisted for the ballot.
-- **Fork in the Tracks** needs at least two players. Pick between two silly outcomes on your phone. The TV reveals the room’s choice across three dilemmas.
+- **Fork in the Tracks** needs at least three players. Every player becomes Trolley Driver once. In each round the remaining players are reshuffled into two balanced teams, and each team chooses from three positive cards, three sabotage cards and three final-defence cards. The Driver then pulls the lever; the spared team scores and individual scores persist across the reshuffle.
 - **Board Race** shows a 3D dice tower on compatible TV browsers. On their turn, an active teammate taps **Roll the dice**, or the TV host can roll for them. The die tumbles down the tower and lands on the board before the pawn advances by the face value, stopping at the finish if fewer spaces remain. The face value is the base score and the difficulty level from 1 to 6. The landing tile chooses the genre. Timed rounds can add a speed bonus worth up to 25%, 50%, or 100% of the roll. Players on other teams can predict whether the roll will be high or low for fun.
 
 ## Create your own quizzes
@@ -67,7 +67,7 @@ Choose **Use quiz** from the library or select it as the **Question source** for
 
 ## Answering questions
 
-Open **Practice answers** for the four quiz formats or **Try a practice round** for the dice, wheel, and party games. Each mode also has a short captioned explainer video in its setup panel. Choose **Family mix · ages 8+** or **Challenge mix** for curated multiple-choice games from the standard trivia setup. These mixed-topic packs are separate options from the general question bank and saved quizzes.
+Open **Practice answers** for the four quiz formats or **Try a practice round** for supported dice, wheel, puzzle and party games. Setup panels provide written rules and an optional spoken introduction; recorded audio is used only where a credited asset is bundled. Choose **Family mix · ages 8+** or **Challenge mix** for curated multiple-choice games from the standard trivia setup. These mixed-topic packs are separate options from the general question bank and saved quizzes.
 
 - **Multiple choice and true or false** submit immediately when you tap an answer.
 - **Closest number** uses the right-hand scroller, plus/minus buttons, or typed entry. Tap **Lock in number** to submit. The smallest absolute difference wins. Tied guesses all get the same base points. In Knockout, only the closest guesses keep their lives.
@@ -83,6 +83,13 @@ Closest-number and put-in-order sessions offer five questions when you choose on
 
 - **Dice Rally** rolls two 3D dice before each question. A total of 2–6 is worth ×1, 7–10 is worth ×2, and 11–12 is worth ×3. The same multiplier applies to every correct answer that round.
 - **Knockout** gives each player three lives. Wrong and missed answers cost one life. Eliminated players can spectate and rejoin for the next game. Multiplayer games end when one or zero players remain, or when the questions run out. Players rank by lives first and points second. If the last players are eliminated together, points decide the winner.
+
+- **Quiz Race** supports up to twelve simultaneous individual racers. Correct speed boosts and wrong, skipped or missed slowdowns are private to each phone while the TV shows the live race.
+- **Same Page** asks everyone for a private creative answer and rewards players whose normalised answers match.
+- **Spotlight Wheel** rotates every player through the contestant role, selects a private expert, and scores the contestant and expert independently.
+- **Brain Ladder** uses 180 original calculable puzzles across five-, seven- or ten-level climbs, with two lives per player and private answers.
+- **Top Answers** creates a genuine live poll from the room, then scores predictions from the actual vote totals rather than invented survey data.
+- **Rare Find** checks typed answers against 34 finite curated catalogues. Unique accepted answers score 200, pairs score 100 each, and groups of three or more score 50 each. Unrecognised answers enter a host-only review with an in-room audit trail before scoring.
 
 - **Team Showdown** lets the host or captain choose two, three, or four balanced teams. Everyone answers on their own phone. Each round, a team earns the average of its players’ points, including misses. Highest team score wins, and players retain their individual scores.
 
@@ -103,4 +110,4 @@ The server pushes live updates and batches lobby and answer counts. The host can
 
 Set base points, a maximum time bonus, and a double-points schedule for Classic Quiz, Spin the Wheel, Dice Rally, Knockout, and Team Showdown. The bonus decreases linearly as the timer runs down. Closest-number questions award equal base points to tied guesses. Double points multiply the base and its bonus. In Dice Rally, the roll multiplier also applies.
 
-Run `npm test` to verify room sizes, reconnect behavior, playlists, scoring, awards, readiness, pause and replay, Board Race difficulty, and dice-tower clearances. The reconnect test waits for the server’s actual grace period.
+Run `npm test` to verify room sizes, reconnect behavior, protected avatars and live streams, playlists and normalized standings, scoring, awards, readiness, pause and replay, newer game-show rules, Board Race difficulty, and dice-tower clearances. The reconnect test waits for the server’s actual grace period. Automated passes are not a substitute for a real multi-phone group playtest; see `docs/RELEASE_READINESS_2026-11-23.md` for the current evidence and blockers.

@@ -1,4 +1,5 @@
 // Sketch Sprint has a deliberately separate broadcast/player layout.
+import { partyFinale } from './party-finale.js';
 import {replayButtons} from './game-night.js';
 export function sketchView(state,{host,canControl,escape,icons}){
  const p=state.party,done=state.phase==='finished',reveal=state.phase==='sketch-reveal'||done;
@@ -6,7 +7,7 @@ export function sketchView(state,{host,canControl,escape,icons}){
  const after=canControl?`<div class="sketch-actions">${done?replayButtons(state,icons):`<button class="button primary" data-action="advance">${reveal?state.index+1<state.total?'Next artist':'Final results':'Reveal drawing'}</button>`}</div>`:'';
  const board=`<div class="sketch-frame"><canvas id="sketch-board" width="1000" height="680" aria-label="Live drawing canvas" ${!host&&!reveal&&p.drawing?'data-sketch-interactive="true"':''}></canvas>
  <span class="sketch-watermark" aria-hidden="true">JAMBALOOP · SKETCH SPRINT</span></div>`;
- const card=done?`<div class="sketch-end"><h2>Sketch Sprint champions</h2><ol class="ranking">${state.players.map(player=>`<li><span>${escape(player.name)}</span><strong>${player.score.toLocaleString()} pts</strong></li>`).join('')}</ol></div>`:'';
+ const card=done?`<div class="sketch-end"><h2>Sketch Sprint champions</h2>${partyFinale(state,{host,escape})}<ol class="ranking">${state.players.map(player=>`<li><span>${escape(player.name)}</span><strong>${player.score.toLocaleString()} pts</strong></li>`).join('')}</ol></div>`:'';
  const revealLine=reveal?`<div class="sketch-reveal"><span>It was</span><strong>${escape(p.answer)}</strong><p>${p.guessers.length?p.guessers.map(g=>escape(g.name)+' +'+g.points).join(' · '):'Nobody guessed it this time.'} ${p.guessers.length?artist+' earned +50 for a recognised sketch.':''}</p></div>`:'';
  const heading=done?'Final results':reveal?'Picture revealed':host?'What are they drawing?':p.drawing?'You are the artist!':'Guess what it is!';
  const header=`<div class="sketch-head"><div><span class="sketch-kicker">ROUND ${state.index+1} / ${state.total} · ${escape(p.category)}</span><h1>${heading}</h1><p>${artist} is drawing · ${p.correctCount} correct ${p.correctCount===1?'guess':'guesses'}</p></div>${!reveal&&state.ends?`<div class="sketch-timer"><small>TIME LEFT</small><span id="timer" class="timer"></span></div>`:''}</div>`;

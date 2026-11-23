@@ -1,3 +1,5 @@
+import { extraEstimateQuestions, extraOrderQuestions } from './question-expansion-v2.js';
+
 export const estimates = {
   general: [
     ['How many squares are on a standard chessboard?', 64, 'squares', 0, 150],
@@ -113,6 +115,12 @@ export const estimates = {
   ],
 };
 
+// Append extra estimate questions before composing ordered-question pools.
+for(const [category,questions] of Object.entries(extraEstimateQuestions)) {
+  estimates[category]??=[];
+  estimates[category].push(...questions);
+}
+
 export const orders = {
   general: [
     ['Put these units of time in order from shortest to longest.', 'Second', 'Minute', 'Hour', 'Day'],
@@ -227,3 +235,8 @@ export const orders = {
     ["Order these events from earliest to latest during a total solar eclipse.", "Partial eclipse begins", "Totality starts", "Totality ends", "Partial eclipse ends"],
   ],
 };
+
+for(const [category,questions] of Object.entries(extraOrderQuestions)) {
+  orders[category]??=[];
+  orders[category].push(...questions);
+}

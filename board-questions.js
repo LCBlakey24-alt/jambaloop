@@ -65,9 +65,31 @@ export const boardQuestionOrder = {
   games: { choice: [4, 2, 0, 1, 3], boolean: [3, 0, 2, 1, 4], estimate: [1, 4, 0, 2, 3], order: [2, 3, 1, 4, 0] },
   animals: { choice: [2, 1, 0, 3, 4], boolean: [1, 2, 3, 0, 4], estimate: [1, 0, 2, 3, 4], order: [4, 2, 0, 1, 3] },
   space: { choice: [1, 2, 0, 3, 4], boolean: [1, 4, 3, 2, 0], estimate: [0, 2, 3, 1, 4], order: [2, 4, 0, 1, 3] },
+  language: {
+    choice:[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14],
+    boolean:[0,1,2,3,4,5,6,7,8,9,10,11],
+    estimate:[0,1,2,3,4], order:[0,1,2,3,4],
+  },
+  maths: {
+    choice:[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14],
+    boolean:[0,1,2,3,4,5,6,7,8,9,10,11],
+    estimate:[0,1,2,3,4], order:[0,1,2,3,4],
+  },
 };
 
 export const boardExpert = {
+  language: {
+    choice:['Which word is an anagram of LISTEN?', 'SILENT', 'LITTLE', 'STONE', 'LINEN'],
+    boolean:['The words “their” and “there” can be pronounced the same in standard English.', true],
+    estimate:['How many vowels (a, e, i, o, u) appear in the word “queueing”?', 5, 'vowels', 0, 12],
+    order:['Put these words in alphabetical order.', 'Candle', 'Castle', 'Cattle', 'Cedar'],
+  },
+  maths: {
+    choice:['What is the greatest common divisor of 36 and 48?', '12', '6', '8', '18'],
+    boolean:['The number 1 is a prime number.', false],
+    estimate:['How many degrees are in the sum of the interior angles of a regular pentagon?', 540, 'degrees', 180, 900],
+    order:['Order these factorial values from smallest to largest.', '1!', '2!', '3!', '4!'],
+  },
   general: {
     choice: ['What number is represented by the Roman numeral CDXLIV?', '444', '464', '544', '446'],
     boolean: ['The Greek word from which “democracy” derives includes a word meaning “people”.', true],

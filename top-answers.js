@@ -1,6 +1,7 @@
 import {randomInt} from 'node:crypto';
 import {isConnected} from './room-presence.js';
 import {questionHistoryId} from './public/question-history.js';
+import {v2Topanswers} from './creative-expansion-v2.js';
 
 // Original, subjective questions. Popularity is only measured from this room's actual choices.
 // No external audience, prior poll percentages or fabricated survey scores are implied.
@@ -86,6 +87,7 @@ export const topAnswersPrompts=Object.freeze([
   ask('Which game-show round sounds most exciting?','Mystery envelopes','Speed puzzles','Team challenge','Wheel of surprises'),
   ask('Which object would you most want to see float?','A car','A house','A football','A grand piano'),
   ask('Which food should never be a pizza topping?','Jelly beans','Banana','Marshmallows','Pickles'),
+  ...v2Topanswers.map(row=>ask(...row)),
 ]);
 
 export function chooseTopAnswersPrompt(seen=new Set()) {

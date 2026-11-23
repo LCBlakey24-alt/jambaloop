@@ -1,6 +1,7 @@
 import { boardExpert, boardQuestionOrder } from './board-questions.js';
 import { questionHistoryId } from './public/question-history.js';
 import { verifiedChoiceQuestions } from './verified-questions.js';
+import { extraChoiceQuestions, extraBooleanQuestions } from './question-expansion-v2.js';
 import { difficultyQuestions } from './difficulty-questions.js';
 import { estimates, orders } from './extra-questions.js';
 
@@ -483,6 +484,15 @@ function shuffle(items) {
   return copy;
 }
 
+// Content packs share the standard question selector, so history and mixed formats work automatically.
+for (const [category,items] of Object.entries(extraChoiceQuestions)) {
+  banks[category]??=[];
+  banks[category].push(...items);
+}
+for (const [category,items] of Object.entries(extraBooleanQuestions)) {
+  trueFalse[category]??=[];
+  trueFalse[category].push(...items);
+}
 for (const [category, items] of Object.entries(verifiedChoiceQuestions)) {
   banks[category] ??= [];
   banks[category].push(...items.map(({prompt,answer,distractors}) => [prompt, answer, ...distractors]));

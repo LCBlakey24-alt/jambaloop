@@ -4,7 +4,7 @@ import {isConnected} from './room-presence.js';
 
 // Original, deterministic reasoning puzzles. Every answer is calculated rather
 // than asserted from a fictional survey or claimed population pass rate.
-// Ten increasing reasoning levels, eighteen variants per level.
+// Ten increasing reasoning levels, twenty-four deterministic variants per level.
 const days=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 const colours=['Red','Blue','Green','Yellow','Purple'];
 const positiveOptions=(value,step=1)=>[value,value-step,value+step,value+2*step];
@@ -75,7 +75,7 @@ function makePuzzle(level,v) {
 
 export const brainPuzzleBank=Object.freeze(
   Array.from({length:10},(_,i)=>Object.freeze(
-    Array.from({length:18},(_,v)=>{
+    Array.from({length:24},(_,v)=>{
       const entry=makePuzzle(i+1,v);
       if(new Set(entry.options).size!==4 || entry.options.length!==4 ||
         !entry.options.includes(entry.answer)) throw Error('Invalid brain puzzle choices');

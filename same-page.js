@@ -1,6 +1,7 @@
 import { randomInt } from 'node:crypto';
 import { isConnected } from './room-presence.js';
 import { questionHistoryId } from './public/question-history.js';
+import {v2Samepage} from './creative-expansion-v2.js';
 
 // Original creative prompts. No survey statistics or factual claims are required.
 export const samePagePrompts = Object.freeze([
@@ -59,7 +60,8 @@ export const samePagePrompts = Object.freeze([
   'Name something you would wear to a fancy-dress party.',
   'Name the worst possible prize on a quiz show.',
   'Name something you would expect to see at a carnival.',
-  'Name something that might make a haunted house less frightening.'
+  'Name something that might make a haunted house less frightening.',
+  ...v2Samepage,
 ]);
 
 export function normaliseSamePageAnswer(value) {

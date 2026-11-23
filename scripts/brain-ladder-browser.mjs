@@ -31,7 +31,7 @@ try {
   const startCtx=await browser.newContext({viewport:{width:1366,height:768}});
   const setup=await startCtx.newPage();
   await setup.goto(site,{waitUntil:'domcontentloaded',timeout:30000});
-  await setup.locator('[data-action="mode-page"][data-direction="1"]').click();
+  assert.equal(await setup.locator('.game-tile').count(),17,'All games should appear on desktop');
   await setup.locator('.game-tile[data-mode="brain"]').click();
   assert.match(await setup.locator('#game-preview').innerText(),/Brain Ladder/i);
   await setup.locator('#game-preview [data-action="host"]').click();

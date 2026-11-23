@@ -23,6 +23,14 @@ Every mode has its own stage palette, display font and animated backdrop. The fo
 
 The game modes have distinct cover identities, with newer formats also using original typographic cover designs. Board Race has a brass and hardwood tower, a felt board, and four pawn silhouettes that match the standings. The die drops through opening gates, strikes four ramps and bounces onto the board. The timed animation settles on the number drawn by the room server. With TV sound on, the tower plays a clack at each impact. The camera moves closer for the drop and pulls back for the pawn’s route. Dice Rally uses a copper-trimmed tray and two separate bounce paths. Both games carry the roll result into the question screen. Reduced motion displays the settled result, and TV browsers without WebGL show a flat view.
 
+## Desktop game library and ongoing content
+
+At normal desktop screen sizes (at least 1100 px wide and 700 px tall), the launcher shows **all 17 game modes at once in a six-column, three-row gallery**, without requiring a page change or scrolling the main screen. Smaller laptops and landscape tablets continue using readable paginated tiles; the phone launcher retains four games per page.
+
+The trivia library now has **18 named subject categories plus Mixed Bag**, including the new **Words & Language** and **Maths & Numbers** genres. Both new genres work with multiple choice, true/false, estimate and order formats, and have appropriate Board Race difficulty selections. The same question banks feed Classic Quiz, Wheel, Board Race, Dice Rally, Knockout, Team Showdown, Hot Potato and Quiz Race.
+
+Content should grow with every major development release: this iteration adds 166 static quiz questions across the four formats, 227 creative prompt/phrase cards, six Rare Find answer sets and 60 extra calculated Brain Ladder variants. Content expansion has automatic format and duplicate checks, but **factual answers still require independent editorial/source review before a public release**. See [Content Expansion Playbook](docs/CONTENT_EXPANSION_PLAYBOOK.md).
+
 ## Browse and present
 
 Filter categories by group or search by name. The four new categories are **Art & Design**, **Games & Puzzles**, **Animals**, and **Space & Astronomy**. Each adds 20 questions across the four answer formats. They support up to 15 questions with mixed formats or five when you choose a single format.

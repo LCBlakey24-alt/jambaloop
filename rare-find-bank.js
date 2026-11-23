@@ -63,6 +63,12 @@ add('platonic','Science','Name one of the five Platonic solids.',['Tetrahedron',
 add('natural-notes','Music','Name a natural musical note using one letter (without sharps or flats).',['A','B','C','D','E','F','G']);
 add('vowels','General','Name one of the five traditional vowel letters in English.',['A','E','I','O','U']);
 add('seasons','General','Name one of the four seasons of the year.',['Spring','Summer','Autumn','Winter'],null,{Autumn:['Fall']});
+add('months-ber','General','Name a month whose name ends with the letters “ber”.',['September','October','November','December']);
+add('weekdays-ts','General','Name a weekday or weekend day starting with T or S.',['Tuesday','Thursday','Saturday','Sunday']);
+add('cardinal-points','General','Name a cardinal compass direction.',['North','East','South','West'],null,{North:['N'],East:['E'],South:['S'],West:['W']});
+add('matter-basic','Science','Name a state of matter from the three-state school model.',['Solid','Liquid','Gas']);
+add('polygons-three-eight','Maths','Name a common polygon with between three and eight sides (inclusive).',['Triangle','Quadrilateral','Pentagon','Hexagon','Heptagon','Octagon'],null,{Quadrilateral:['Four-sided polygon']});
+add('rainbow-colours','General','Name a colour in the traditional seven-colour rainbow mnemonic.',['Red','Orange','Yellow','Green','Blue','Indigo','Violet']);
 export const rareFindBank=Object.freeze(catalog);
 export function answerMapFor(prompt){
  const result=new Map();

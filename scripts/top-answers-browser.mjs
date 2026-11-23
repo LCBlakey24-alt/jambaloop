@@ -26,7 +26,7 @@ try{
   const menu=await browser.newContext({viewport:{width:1366,height:768}});
   const launcher=await menu.newPage();
   await launcher.goto(site,{waitUntil:'domcontentloaded',timeout:30000});
-  await launcher.locator('[data-action="mode-page"][data-direction="1"]').click();
+  assert.equal(await launcher.locator('.game-tile').count(),17,'All games should appear on desktop');
   await launcher.locator('.game-tile[data-mode="topanswers"]').click();
   assert.match(await launcher.locator('#game-preview').innerText(),/Top Answers/);
   await launcher.locator('#game-preview [data-action="host"]').click();

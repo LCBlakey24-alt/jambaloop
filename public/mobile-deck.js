@@ -190,7 +190,7 @@ export function mobileDeck(app, dialog, content) {
       '.player-only[data-phase="question"], .player-only[data-phase="reveal"], ' +
       '.player-only[data-phase="party-vote"], .player-only[data-phase="party-reveal"], ' +
       '.player-only[data-phase="top-poll"], .player-only[data-phase="top-guess"], ' +
-      '.player-only[data-phase="top-reveal"], ' +
+      '.player-only[data-phase="top-reveal"], .player-only[data-phase="finished"], ' +
       '.game[data-mode="quizrace"], .game[data-mode="tracks"]'
     )) { appLayout.clear(); keep = undefined; return; }
     active().measure(keep || (document.activeElement?.matches('input,select,textarea') ? document.activeElement : null));

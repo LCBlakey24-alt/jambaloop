@@ -14,6 +14,7 @@ import { difficultyQuestions } from './difficulty-questions.js';
 import { advanceQuizRace, createQuizRace, publicRaceState, raceDifficulties, raceLengths, racePlacings, raceTracks, setRacePaused, submitRaceAnswer } from './quiz-race.js';
 import { networkInterfaces } from 'node:os';
 import { inviteOriginOptions, qrJoinUrl } from './room-invite.js';
+import {isRoomMember,normaliseNickname,positiveSetting,readAvatar,requestBudget} from './room-safety.js';
 import { fileURLToPath } from 'node:url';
 import { validateQuiz, prepareCustomQuiz } from './public/custom-quiz.js';
 import { boardQuestion, makeQuestions, questionCategories, verifiedSourceFor } from './questions.js';
@@ -24,8 +25,13 @@ const app = express();
 const rooms = new Map();
 const port = process.env.PORT || 3000;
 const maxPlayers = 300;
+const maxRooms = positiveSetting('MAX_ROOMS',128);
+const idleRoomMs = positiveSetting('ROOM_IDLE_MS',4*60*60*1000);
+const creationBudget=requestBudget(positiveSetting('ROOMS_PER_MINUTE',60));
+const joinBudget=requestBudget(positiveSetting('JOINS_PER_ROOM_PER_MINUTE',360));
 const categories = [...questionCategories, 'mixed'];
 const token = () => randomBytes(18).toString('hex');
+if(process.env.TRUST_PROXY)app.set('trust proxy',process.env.TRUST_PROXY);
 app.use(express.json({ limit: '128kb' }));
 app.use('/vendor', express.static(fileURLToPath(new URL('./node_modules/three/build/', import.meta.url))));
 app.use('/icons', express.static(fileURLToPath(new URL('./node_modules/lucide-static/icons/', import.meta.url))));
@@ -92,6 +98,9 @@ function resetGame(room, settings) {
 }
 
 app.post('/api/rooms', async (req, res) => {
+  const retry=creationBudget.retryIn(req.ip);
+  if(retry)return res.set('Retry-After',String(retry)).status(429).json({error:'Too many room creation attempts. Try again shortly.'});
+  if(rooms.size>=maxRooms)return res.set('Retry-After','60').status(503).json({error:'All game rooms are currently in use.'});
   const settings = readSettings(req.body);
   if (!settings) return res.status(400).json({ error: 'Choose a game mode, category, question count and timer.' });
   let code;
@@ -120,18 +129,23 @@ app.post('/api/rooms', async (req, res) => {
 app.use('/api/rooms/:code', (req, res, next) => {
   const room = rooms.get(req.params.code);
   if (!room) return res.status(404).json({ error: 'Room not found. Check the code and try again.' });
-  room.updated = Date.now();
-  expireParty(room, publish);
-  if (room.phase === 'question' && clockExpired(room)) reveal(room);
-  res.locals.room = room;
-  res.locals.key = req.get('x-game-key');
-  touchPlayer(room, res.locals.key);
+  const key=req.get('x-game-key');
+  const member=isRoomMember(room,key);
+  res.locals.room=room;
+  res.locals.key=key;
+  res.locals.member=member;
+  if(member){
+    room.updated=Date.now();
+    expireParty(room,publish);
+    if(room.phase==='question'&&clockExpired(room))reveal(room);
+    touchPlayer(room,key);
+  }
   next();
 });
 
 app.get('/api/rooms/:code', (_req, res) => {
   const { room, key } = res.locals;
-  if (key !== room.host && !room.players.has(key) && !room.waiting.has(key)) return res.status(403).json({ error: 'Join the room to continue.' });
+  if (!res.locals.member) return res.status(403).json({ error: 'Join the room to continue.' });
   res.json(roomState(room, key));
 });
 
@@ -287,15 +301,17 @@ app.get('/api/rooms/:code/live', (req, res) => {
 
 app.post('/api/rooms/:code/join', (req, res) => {
   const { room } = res.locals;
-  const name = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
-  if (!name || name.length > 24) return res.status(400).json({ error: 'Enter a nickname of up to 24 characters.' });
+  const retry=joinBudget.retryIn(room.code+'/'+req.ip);
+  if(retry)return res.set('Retry-After',String(retry)).status(429).json({error:'Too many join attempts. Try again shortly.'});
+  const name=normaliseNickname(req.body?.name);
+  if(!name)return res.status(400).json({error:'Enter a nickname up to 24 characters without control characters.'});
   if (room.players.size + room.waiting.size >= (room.mode === 'quizrace' ? 12 : room.mode === 'spotlight' ? 20 : ['brain','topanswers','rare'].includes(room.mode) ? 30 : maxPlayers)) return res.status(409).json({ error: 'This room is full.' });
   if ([...room.players.values(), ...room.waiting.values()].some(player => player.name.toLowerCase() === name.toLowerCase())) {
     return res.status(409).json({ error: 'That nickname is taken.' });
   }
   const key = token();
-  const avatar = req.body?.avatar;
-  if (avatar !== undefined && (typeof avatar !== 'string' || avatar.length > 14000 || !/^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(avatar))) {
+  const avatar = readAvatar(req.body?.avatar);
+  if (req.body?.avatar !== undefined && !avatar) {
     return res.status(400).json({ error: 'Use a smaller selfie or join without a photo.' });
   }
   const id = token();
@@ -308,7 +324,7 @@ app.post('/api/rooms/:code/join', (req, res) => {
   for (const id of seenQuestions) room.seen.add(id);
   if (avatar) {
     room.avatars ??= new Map();
-    room.avatars.set(id, Buffer.from(avatar.split(',')[1], 'base64'));
+    room.avatars.set(id, avatar);
   }
   resetPlayer(player);
   if (room.phase === 'lobby') {
@@ -316,6 +332,7 @@ app.post('/api/rooms/:code/join', (req, res) => {
     room.captain ??= key;
   } else room.waiting.set(key, player);
   touchPlayer(room, key);
+  room.updated=Date.now();
   res.status(201).json({ key });
   publish(room, true);
 });
@@ -335,9 +352,10 @@ app.post('/api/rooms/:code/ready', (req, res) => {
 });
 
 app.get('/api/rooms/:code/avatar/:id', (req, res) => {
+  if(!res.locals.member)return res.status(403).json({error:'Join this room to view its photos.'});
   const avatar = res.locals.room.avatars?.get(req.params.id);
   if (!avatar) return res.sendStatus(404);
-  res.type('jpeg').set('X-Content-Type-Options', 'nosniff').send(avatar);
+  res.type('jpeg').set({'X-Content-Type-Options':'nosniff','Cross-Origin-Resource-Policy':'same-origin'}).send(avatar);
 });
 
 app.post('/api/rooms/:code/party', (req, res) => {
@@ -681,6 +699,8 @@ app.post('/api/rooms/:code/advance', (req, res) => {
   if (req.body?.game !== room.game || req.body?.phase !== room.phase || req.body?.index !== room.index) return res.sendStatus(204);
   if (room.pausedAt) return res.status(409).json({ error: 'Resume the timer before advancing.' });
   if (room.phase === 'lobby') {
+    if(req.body?.lobbyVersion!==undefined&&req.body.lobbyVersion!==room.lobbyVersion)
+      return res.status(409).json({error:'Lobby settings changed. Review them before starting.'});
     const minimum = requiredPlayers(room.mode,room.playStyle,room.teamCount,minimumPlayers(room.mode));
     if (liveCounts(room).connected < minimum) return res.status(409).json({ error: `You need at least ${minimum} connected ${minimum === 1 ? 'player' : 'players'} to start.` });
     if (room.mode === 'board' && room.playStyle === 'individual' && room.players.size > 4) {
@@ -818,6 +838,8 @@ app.post('/api/rooms/:code/configure', (req, res) => {
   const { room, key } = res.locals;
   if (!controlsRoom(room, key)) return res.status(403).json({ error: 'Only the captain or TV host can change the game.' });
   if (room.phase !== 'lobby' || req.body?.game !== room.game) return res.status(409).json({ error: 'The lobby has closed.' });
+  if(req.body?.lobbyVersion!==undefined&&req.body.lobbyVersion!==room.lobbyVersion)
+    return res.status(409).json({error:'Lobby settings changed. Reopen setup to review the current choices.'});
   const body = req.body?.useRoomQuiz === true && room.customQuiz ? { ...req.body, customQuiz: room.customQuiz } : req.body;
   const settings = readSettings(body);
   if (!settings) return res.status(400).json({ error: 'Check the game settings or saved quiz.' });
@@ -875,13 +897,29 @@ setInterval(() => {
   }
 }, 100).unref();
 
+app.use('/api',(error,req,res,next)=>{
+  if(res.headersSent)return next(error);
+  res.set('Cache-Control','no-store');
+  if(error.type==='entity.too.large')return res.status(413).json({error:'Request is too large.'});
+  if(error.type==='entity.parse.failed')return res.status(400).json({error:'Invalid request format.'});
+  console.error('Room request failed:',error.name);
+  return res.status(500).json({error:'Something went wrong. Try again.'});
+});
+
 setInterval(() => {
+  const now=Date.now();
   for (const [code, room] of rooms) {
-    if (!room.clients.size && Date.now() - room.updated > 4 * 60 * 60 * 1000) {
+    if (!room.clients.size && now-room.updated >= idleRoomMs) {
+      stopDeadline(room);
+      clearTimeout(room.hostUpdate);
+      clearTimeout(room.timer);
+      clearTimeout(room.autoTimer);
       rooms.delete(code);
     }
   }
-}, 60_000).unref();
+  creationBudget.sweep(now);
+  joinBudget.sweep(now);
+}, Math.min(60_000,idleRoomMs)).unref();
 setInterval(() => {
   for (const room of rooms.values()) {
     if (!room.clients.size && Date.now() - room.updated > 60000) continue;

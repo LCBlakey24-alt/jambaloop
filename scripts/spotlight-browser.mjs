@@ -125,6 +125,31 @@ try{
     await host.locator('.spotlight-game [data-action="advance"]').click(); // show final standings
     await host.locator('.spotlight-game[data-spotlight-phase="finished"]').waitFor({timeout:15000});
     assert.equal(await host.locator('.spotlight-final-ranking li').count(),3);
+    assert.equal(await host.locator('.results-winner-banner').count(),1,'TV gets a scored winner highlight');
+    await contestant.page.locator('.spotlight-game[data-spotlight-phase="finished"]').waitFor({timeout:15000});
+    assert.equal(await contestant.page.locator('.results-player-finish').count(),1,'Player sees their final score and rank');
+    for(const [pw,ph] of [[390,844],[844,390]]){
+      await contestant.page.setViewportSize({width:pw,height:ph});
+      await contestant.page.waitForFunction(()=>{
+        const app=document.querySelector('#app');
+        return document.documentElement.classList.contains('mobile-deck') && app &&
+          getComputedStyle(app).overflowY==='auto';
+      });
+      const layout=await contestant.page.evaluate(()=>{
+        const app=document.querySelector('#app');
+        return {appWidth:app.scrollWidth,clientWidth:app.clientWidth,
+          hidden:document.querySelectorAll('.results-player-finish [data-deck-hidden]').length,
+          isHidden:Boolean(document.querySelector('.results-player-finish')?.closest('[data-deck-hidden]')),
+          resultVisible:document.querySelector('.results-player-finish')?.getClientRects().length>0,
+          pagerVisible:[...document.querySelectorAll('.mobile-pager')].some(pager=>!pager.hidden)};
+      });
+      assert.ok(layout.resultVisible&&!layout.isHidden,'Player final position is reachable: '+JSON.stringify(layout));
+      assert.equal(layout.hidden,0,'Result details may not be split into pages');
+      assert.equal(layout.pagerVisible,false,'Final results should not show a mobile page pager');
+      assert.ok(layout.appWidth<=layout.clientWidth+2,'Phone final results overflow '+pw+'x'+ph+': '+JSON.stringify(layout));
+      await contestant.page.locator('.results-player-finish').scrollIntoViewIfNeeded();
+      await contestant.page.screenshot({path:'browser-screenshots/spotlight-final-phone-'+pw+'x'+ph+'.png'});
+    }
     assert.match(await host.locator('.studio-publisher').textContent(),/ROOKIE QUEST GAMES/,'Final TV screen restores publisher credit');
     const finalFit=await host.evaluate(()=>{
       const board=document.querySelector('.spotlight-game').getBoundingClientRect();

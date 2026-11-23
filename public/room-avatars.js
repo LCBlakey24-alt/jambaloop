@@ -34,37 +34,21 @@ export function bindRoomAvatars(root) {
     }, {once: true});
   }
 
-  const visibility = typeof IntersectionObserver === 'function'
-    ? new IntersectionObserver(entries => {
-      for (const {target, isIntersecting} of entries) {
-        if (!isIntersecting) continue;
-        visibility.unobserve(target);
-        show(target);
-      }
-    }) : undefined;
-
   function watch(node) {
     if (node.nodeType !== Node.ELEMENT_NODE) return;
     const elements = node.matches(selector) ? [node] : node.querySelectorAll(selector);
-    for (const item of elements) visibility ? visibility.observe(item) : show(item);
+    for (const item of elements) show(item);
   }
 
   const roster = new MutationObserver(records => {
-    for (const {addedNodes, removedNodes} of records) {
+    for (const {addedNodes} of records) {
       for (const node of addedNodes) watch(node);
-      if (!visibility) continue;
-      for (const node of removedNodes) {
-        if (node.nodeType !== Node.ELEMENT_NODE || node.isConnected) continue;
-        if (node.matches(selector)) visibility.unobserve(node);
-        else for (const item of node.querySelectorAll(selector)) visibility.unobserve(item);
-      }
     }
   });
   window.addEventListener('online', () => { if (current) watch(root); });
 
-  return session => {
+  const switchSession = session => {
     roster.disconnect();
-    visibility?.disconnect();
     controller?.abort();
     for (const photo of photos.values()) photo.then(url => { if (url) URL.revokeObjectURL(url); });
     photos.clear();
@@ -73,4 +57,6 @@ export function bindRoomAvatars(root) {
     controller = new AbortController();
     roster.observe(root, {childList: true, subtree: true});
   };
+  switchSession.refresh = () => { if (current) watch(root); };
+  return switchSession;
 }

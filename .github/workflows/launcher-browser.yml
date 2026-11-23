@@ -20,6 +20,10 @@ on:
       - 'scripts/rare-find-browser.mjs'
       - 'scripts/game-night-browser.mjs'
       - 'scripts/legacy-party-browser.mjs'
+      - 'scripts/bluff-browser.mjs'
+      - 'public/bluff-show*'
+      - 'public/bluff-view.js'
+      - 'test/spot-the-bluff.test.js'
       - 'party-games.js'
       - 'public/party-views.js'
       - 'rare-find.js'
@@ -83,6 +87,7 @@ jobs:
           node scripts/rare-find-browser.mjs
           node scripts/game-night-browser.mjs
           node scripts/legacy-party-browser.mjs
+          node scripts/bluff-browser.mjs
           node scripts/tv-all-modes.mjs
       - name: Upload screen captures on success or failure
         if: always()

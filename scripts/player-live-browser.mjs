@@ -17,7 +17,7 @@ try {
     const errors = [];
     const create = await context.request.post(site + '/api/rooms', { data: {
       mode: 'classic', format: 'choice', category: 'general', count: 5,
-      seconds: 60, playStyle: 'individual', autoReveal: false
+      seconds: 30, playStyle: 'individual', autoReveal: false
     } });
     assert.equal(create.status(), 201, await create.text());
     const { code, host } = await create.json();

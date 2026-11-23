@@ -1044,7 +1044,7 @@ export const extraEstimateQuestions = Object.freeze({
 export const extraOrderQuestions = Object.freeze({
   "language": [
     [
-      "Put these English words in alphabetical order.",
+      "Put Apple, Banana, Cherry and Date in alphabetical order.",
       "Apple",
       "Banana",
       "Cherry",
@@ -1058,7 +1058,7 @@ export const extraOrderQuestions = Object.freeze({
       "Planet"
     ],
     [
-      "Put these words in alphabetical order.",
+      "Alphabetise Cloud, Dawn, Fog and Rain.",
       "Cloud",
       "Dawn",
       "Fog",
@@ -1072,7 +1072,7 @@ export const extraOrderQuestions = Object.freeze({
       "-tion"
     ],
     [
-      "Put these words in alphabetical order.",
+      "Alphabetise Anchor, Brick, Circle and Dragon.",
       "Anchor",
       "Brick",
       "Circle",

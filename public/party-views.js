@@ -28,13 +28,19 @@ export function partyView(state, { host, canControl, escape, reply, icons }) {
     if (finished) return `<section class="game-panel results party-results"><div class="eyebrow">TIME’S UP</div>
       <h1>${escape(party.holder.name)} got caught with the potato!</h1><div class="party-holder">${avatarView(party.holder, escape)}<p>${party.passes} successful ${party.passes === 1 ? 'pass' : 'passes'}</p></div><div class="actions">${replay}</div></section>`;
     const holder = escape(party.holder.name);
-    const feedback = party.last && party.last.id === state.player?.id ? { miss: 'Incorrect. You still have the potato.', skip: 'Question skipped. You still have the potato.', pass: 'Correct! You passed the potato.', alone: 'Correct! Waiting for someone else to reconnect before you can pass.' }[party.last.result] : '';
+    const feedback = party.last && party.last.id === state.player?.id ? { miss: 'Incorrect. You still have the potato.', skip: 'Question skipped. You still have the potato.', pass: 'Correct! You passed the potato.', alone: 'Correct! Waiting for someone else to reconnect before you can pass.', rescue: 'The host moved the potato when your connection dropped. You can rejoin the next turn.' }[party.last.result] : '';
     return `<section class="game-panel party-panel potato-panel">
       <div class="eyebrow">HOT POTATO · SHARED COUNTDOWN</div>
       ${host ? '<div class="potato-stage-clock"><span class="timer potato-timer" id="timer"></span></div>' : ''}
       <h1>${party.holding ? 'You have the potato!' : holder + ' has the potato'}</h1>
       <div class="party-holder">${avatarView(party.holder, escape)}<p>${party.passes} successful ${party.passes === 1 ? 'pass' : 'passes'}</p></div>
       ${feedback ? `<p class="party-feedback" role="status">${feedback}</p>` : ''}
+      ${host && party.holderConnected === false ? `<div class="potato-rescue" role="status">
+        <strong>${escape(party.holder.name)} appears disconnected.</strong>
+        <p>Once their reconnection grace period has passed, you can move the potato to an online player. The countdown keeps running.</p>
+        ${party.canRescue ? '<button type="button" class="button outline" data-action="potato-rescue">Move potato to another player</button>'
+          : '<small>No other players are currently connected.</small>'}
+      </div>` : ''}
       ${party.holding ? `<div class="potato-question"><h2>${escape(party.question.prompt)}</h2>
         <div class="answers">${party.question.options.map((option, index) => `<button class="answer potato-choice" style="--answer:var(--pink)" data-action="potato-answer" data-option="${index}"><strong>${'ABCD'[index]}</strong><span>${escape(option)}</span></button>`).join('')}</div>
         <button class="button outline" data-action="potato-skip">Skip question</button><p>A skip or wrong answer gives you a new question. You keep the potato until you get one right.</p></div>`

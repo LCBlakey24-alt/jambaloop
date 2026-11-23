@@ -76,6 +76,7 @@ export function questionCounts(mode, format, category) {
   if (mode === 'brain') return [5, 7, 10];
   if (mode === 'topanswers') return [3, 5, 7];
   if (mode === 'rare') return [3, 5, 7];
+  if (['punchline','cards'].includes(mode)) return [3, 5, 7];
   if (mode === 'spotlight') return [1, 2, 3];
   if (['tracks','samepage'].includes(mode)) return [3, 5, 7];
   if (mode === 'board') return [12, 18, 24, 36, 48, 60];

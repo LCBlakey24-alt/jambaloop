@@ -5,7 +5,7 @@ import { playlistLimit, queuedSettings } from './public/game-night.js';
 import { isConnected, liveConnection, responseTarget, touchPlayer, trackConnection } from './room-presence.js';
 import { boardLengths, boardRoute, boardPath, boardPathChoices, boardFork, boardFinish, boardMappedPosition, boardRequiresChoice } from './public/board-route.js';
 import { teamPlayModes, defaultPlayStyle, validPlayStyle, requiredPlayers, teamAssignments } from './public/team-play.js';
-import { partyModes, startParty, advanceParty, advancePartyWhenReady, expireParty, submitParty, publicParty } from './party-games.js';
+import { partyModes, startParty, advanceParty, advancePartyWhenReady, expireParty, rescuePotato, submitParty, publicParty } from './party-games.js';
 import express from 'express';
 import QRCode from 'qrcode';
 import { randomBytes, randomInt } from 'node:crypto';
@@ -67,7 +67,7 @@ function readSettings(body = {}) {
   const scores = canSetScore(mode) ? (scoring
     ? { base: scoring.base, bonus: seconds ? scoring.bonus : 0, doubles: scoring.doubles }
     : defaultScoring(seconds)) : undefined;
-  return { mode, theme, difficulty, raceLength, raceTrack, raceDifficulty, scoring: scores, boardSpeed: seconds ? boardSpeed : 0, legacyScoring: scoring === undefined, format: privateTeam ? 'choice' : format, category: fixedQuestionModes.includes(mode) && !privateTeam ? category : 'mixed', count: ['tracks', 'samepage', 'spotlight', 'brain', 'topanswers', 'rare'].includes(mode) ? count : socialModes.includes(mode) ? 3 : partyModes.includes(mode) ? 1 : quiz?.questions.length ?? count,
+  return { mode, theme, difficulty, raceLength, raceTrack, raceDifficulty, scoring: scores, boardSpeed: seconds ? boardSpeed : 0, legacyScoring: scoring === undefined, format: privateTeam ? 'choice' : format, category: fixedQuestionModes.includes(mode) && !privateTeam ? category : 'mixed', count: ['tracks', 'samepage', 'spotlight', 'brain', 'topanswers', 'rare', 'punchline', 'cards'].includes(mode) ? count : socialModes.includes(mode) ? 3 : partyModes.includes(mode) ? 1 : quiz?.questions.length ?? count,
     seconds, autoReveal, includeChristmas, phoneView: privateTeam ? 'full' : phoneView, privateQuestions: privateTeam,
     teamCount, boardLength, playStyle, scoreInterval: supportsScoreCheckpoints(mode) ? scoreInterval : 1, customQuiz: quiz };
 }
@@ -414,6 +414,18 @@ app.get('/api/rooms/:code/avatar/:id', (req, res) => {
   const avatar = res.locals.room.avatars?.get(req.params.id);
   if (!avatar) return res.sendStatus(404);
   res.type('jpeg').set({ 'X-Content-Type-Options': 'nosniff', 'Cross-Origin-Resource-Policy': 'same-origin' }).send(avatar);
+});
+
+// A host can recover a disconnected holder, but never steal the turn from
+// someone still online or within the existing reconnect grace.
+app.post('/api/rooms/:code/potato-rescue', (req, res) => {
+  const {room,key}=res.locals;
+  if(key!==room.host)return res.status(403).json({error:'Only the TV host can reassign a disconnected potato.'});
+  if(room.mode!=='potato'||room.phase!=='party-potato'||req.body?.game!==room.game||req.body?.step!==room.party?.step)
+    return res.status(409).json({error:'This Hot Potato turn has moved on.'});
+  const [status,message]=rescuePotato(room,publish);
+  if(message)return res.status(status).json({error:message});
+  return res.sendStatus(status);
 });
 
 app.post('/api/rooms/:code/party', (req, res) => {

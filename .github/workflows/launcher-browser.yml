@@ -19,6 +19,9 @@ on:
       - 'scripts/top-answers-browser.mjs'
       - 'scripts/rare-find-browser.mjs'
       - 'scripts/game-night-browser.mjs'
+      - 'scripts/legacy-party-browser.mjs'
+      - 'party-games.js'
+      - 'public/party-views.js'
       - 'rare-find.js'
       - 'rare-find-bank.js'
       - 'public/rare-find*'
@@ -79,6 +82,7 @@ jobs:
           node scripts/top-answers-browser.mjs
           node scripts/rare-find-browser.mjs
           node scripts/game-night-browser.mjs
+          node scripts/legacy-party-browser.mjs
           node scripts/tv-all-modes.mjs
       - name: Upload screen captures on success or failure
         if: always()

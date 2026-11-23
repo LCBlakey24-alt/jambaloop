@@ -1,7 +1,7 @@
 export const reconnectWindow = 18_000;
 
 export function liveConnection(room, key) {
-  const response = room.liveConnections.get(key);
+  const response = room.liveConnections?.get(key);
   return response && !response.destroyed && !response.writableEnded ? response : undefined;
 }
 

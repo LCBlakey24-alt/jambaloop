@@ -3,6 +3,8 @@ import test from 'node:test';
 import {once} from 'node:events';
 import {spawn} from 'node:child_process';
 import {rareFindBank,answerMapFor,normaliseRare,selectRarePrompt} from '../rare-find-bank.js';
+import {advancePartyWhenReady} from '../party-games.js';
+import {rareFindView} from '../public/rare-find-view.js';
 
 async function withServer(run){
   const child=spawn(process.execPath,['server.js'],{
@@ -77,6 +79,32 @@ test('Rare Find bank has 30+ distinct inspectable finite answer sets, aliases an
   assert.equal(answerMapFor(rareFindBank.find(p=>p.id==='compass-rose')).get('ne'),'North East');
   const onlyLast=new Set(rareFindBank.slice(0,-1).map(p=>p.historyId));
   assert.equal(selectRarePrompt(onlyLast).id,rareFindBank.at(-1).id);
+});
+
+test('A disconnected non-responder no longer blocks automatic Rare Find completion',()=>{
+  const makePlayer=name=>({id:name,name,score:0,wins:0,streak:0,bestStreak:0,misses:0});
+  const room={mode:'rare',phase:'rare-write',index:0,count:3,
+    players:new Map([['alex',makePlayer('Alex')],['bailey',makePlayer('Bailey')],['casey',makePlayer('Casey')]]),
+    livePlayers:new Map(),lastSeen:new Map(),
+    party:{type:'rare',prompt:rareFindBank.find(prompt=>prompt.id==='solar-planets'),
+      entries:new Map([['alex','Mercury'],['bailey','Venus']]),decisions:new Map(),audit:[]}};
+  let publications=0;
+  assert.equal(advancePartyWhenReady(room,()=>publications++),true);
+  assert.equal(room.phase,'rare-reveal');
+  assert.equal(publications,1);
+  assert.equal(room.players.get('alex').score,200);
+  assert.equal(room.players.get('bailey').score,200);
+  assert.equal(room.players.get('casey').score,0);
+});
+
+test('Rare Find finale displays tied contestants at the same rank',()=>{
+  const html=rareFindView({phase:'finished',index:2,total:3,party:{type:'rare'},players:[
+    {name:'Alex',score:500},{name:'Bailey',score:500},{name:'Casey',score:200},
+  ]},{host:true,canControl:false,escape:String,icons:()=>'',reply:''});
+  assert.match(html,/<b>1\.<\/b> Alex/);
+  assert.match(html,/<b>1\.<\/b> Bailey/);
+  assert.match(html,/<b>3\.<\/b> Casey/);
+  assert.doesNotMatch(html,/<b>2\.<\/b>/);
 });
 
 test('Unique and matching accepted answers score fairly and remain invisible before reveal',async()=>{
@@ -234,11 +262,49 @@ test('Host can close stalled rounds; late player submissions fail with no fabric
   });
 });
 
-test('Room keeps a maximum of thirty Rare Find contestants',async()=>{
+test('Rare Find accepts only its three supported game lengths and preserves players on rematch',async()=>{
+  await withServer(async request=>{
+    for(const count of [3,5,7]){
+      const room=await request('',null,{mode:'rare',category:'mixed',count,format:'choice',seconds:0},201);
+      assert.equal((await request('/'+room.code,room.host)).total,count);
+    }
+    const invalid=await request('',null,{mode:'rare',category:'mixed',count:4,format:'choice',seconds:0},400);
+    assert.match(invalid.error,/question count|Choose a game mode/i);
+
+    const game=await makeGame(request);
+    for(let round=0;round<3;round++){
+      await game.advance();
+      assert.equal((await game.state()).phase,'rare-reveal');
+      await game.advance();
+      assert.equal((await game.state()).phase,round===2?'finished':'rare-write');
+    }
+    const finished=await game.state();
+    assert.equal(finished.playerCount,3);
+    await request(game.base+'/rematch',game.room.host,{game:finished.game,sameGame:true},204);
+    const lobby=await game.state();
+    assert.equal(lobby.phase,'lobby');
+    assert.equal(lobby.mode,'rare');
+    assert.equal(lobby.total,3);
+    assert.equal(lobby.playerCount,3);
+    assert.ok(lobby.players.every(player=>player.score===0));
+  });
+});
+
+test('Thirty Rare Find contestants can submit and receive real room rarity scores',async()=>{
   await withServer(async request=>{
     const room=await request('',null,{mode:'rare',category:'mixed',count:3,format:'choice',seconds:0},201);
-    for(let i=0;i<30;i++)await request('/'+room.code+'/join',null,{name:'Climber '+i},201);
+    const base='/'+room.code,keys=[];
+    for(let i=0;i<30;i++)keys.push((await request(base+'/join',null,{name:'Finder '+i,
+      seenQuestions:desiredHistory('solar-planets')},201)).key);
     const refused=await request('/'+room.code+'/join',null,{name:'Climber 31'},409);
     assert.match(refused.error,/full/i);
+    await request(base+'/advance',room.host,{game:1,index:0,phase:'lobby'},204);
+    for(const key of keys)await request(base+'/party',key,{game:1,index:0,action:'write',text:'Mercury'},204);
+    const reveal=await request(base,room.host);
+    assert.equal(reveal.phase,'rare-reveal');
+    assert.equal(reveal.party.results.responded,30);
+    assert.deepEqual(reveal.party.results.groups.map(group=>({answer:group.answer,count:group.count,points:group.points})),
+      [{answer:'Mercury',count:30,points:50}]);
+    assert.equal((await request(base,keys[0])).party.earned,50);
   });
 });

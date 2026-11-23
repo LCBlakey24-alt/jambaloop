@@ -38,7 +38,10 @@ function finalRows(s,escape){
  const title=top.length===1?escape(top[0].name)+' found the edge!':'It’s a shared Rare Find win!';
  return `<div class="rare-finale"><span class="rare-eyebrow">RARE FIND · FINAL RESULTS</span>
   <h1>${title}</h1><p>Correct answers scored best when nobody else thought of them.</p>
-  <ol class="rare-final-leaders">${rankings.map((entry,i)=>`<li><span><b>${i+1}.</b> ${escape(entry.name)}</span><strong>${entry.score.toLocaleString()} PTS</strong></li>`).join('')}</ol>
+  <ol class="rare-final-leaders">${rankings.map(entry=>{
+    const rank=rankings.findIndex(candidate=>candidate.score===entry.score)+1;
+    return `<li><span><b>${rank}.</b> ${escape(entry.name)}</span><strong>${entry.score.toLocaleString()} PTS</strong></li>`;
+  }).join('')}</ol>
   </div>`;
 }
 export function rareFindView(s,{host,canControl,escape,icons,reply}){

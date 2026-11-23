@@ -2,6 +2,7 @@ import { boardRoute, boardPath, boardPathChoices, boardFinish, boardFork, boardM
 import { avatarView } from './party-views.js';
 import { categories, categoryName, partyModes, minimumPlayers, wheelCategories } from './game-config.js';
 import {requiredPlayers} from './team-play.js';
+import { launcherSteps } from './home-launcher.js';
 
 export function wheelView(state) {
   const entries = wheelCategories(state.includeChristmas);
@@ -114,11 +115,18 @@ export function lobbyView(state, { host, escape, icons, modeName }) {
     joinOptions.map(option => '<option value="' + escape(option.origin) + '" ' + (option.origin === joinOrigin ? 'selected' : '') + '>' + escape(option.label) + '</option>').join('') + '</select></label>' : '';
   const readyCount = state.readyCount ?? 0;
   const readyText = `${readyCount} of ${state.connected} ready`;
+  const steps = launcherSteps(state.mode);
+  // Keep the instructions optional: returning players can simply press Ready.
+  const playerGuide = steps.length ? `<details class="player-game-guide">
+    <summary><span class="player-game-guide-label">How to play <strong>${game}</strong></span><span class="player-game-guide-count">${steps.length} steps <span aria-hidden="true">⌄</span></span></summary>
+    <ol>${steps.map(step => `<li>${escape(step)}</li>`).join('')}</ol>
+    <p>Keep this phone open. The game will start when the captain is ready.</p>
+  </details>` : '';
   if (!host) return `<div class="game-panel phone-lobby">
     <div class="lobby-eyebrow"><span class="eyebrow">ROOM ${state.code}</span>${state.isCaptain ? '<span class="captain-tag">★ Captain</span>' : ''}</div>
     <h2>${state.game > 1 ? 'Rematch ready, ' : 'You’re in, '}${escape(state.player.name)}!</h2>
     <p>${state.isCaptain ? 'Choose a game for the room and start when everyone is ready.' : 'Stay here while the captain sets up the game.'}</p>
-    ${summary}${teamPreview}
+    ${summary}${teamPreview}${playerGuide}
     <div class="ready-actions"><button class="button outline" data-action="ready-toggle" aria-label="I’m ready" aria-pressed="${Boolean(state.player.ready)}">
       ${icons(state.player.ready ? 'circle-check' : 'circle')}${state.player.ready ? 'Ready' : 'I’m ready'}</button><span role="status">${readyText}</span></div>
     ${state.isCaptain ? '' : captain}

@@ -21,6 +21,11 @@ on:
       - 'scripts/game-night-browser.mjs'
       - 'scripts/legacy-party-browser.mjs'
       - 'scripts/bluff-browser.mjs'
+      - 'scripts/sketch-browser.mjs'
+      - 'public/sketch-*'
+      - 'sketch-*'
+      - 'test/sketch-sprint.test.js'
+      - 'public/narration-scripts.js'
       - 'public/bluff-show*'
       - 'public/bluff-view.js'
       - 'test/spot-the-bluff.test.js'
@@ -88,6 +93,7 @@ jobs:
           node scripts/game-night-browser.mjs
           node scripts/legacy-party-browser.mjs
           node scripts/bluff-browser.mjs
+          node scripts/sketch-browser.mjs
           node scripts/tv-all-modes.mjs
       - name: Upload screen captures on success or failure
         if: always()

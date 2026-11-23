@@ -1,4 +1,4 @@
-# Quiz Club deployment and testing notes
+# Jambaloop deployment and testing notes
 
 The original uploaded source (22 November 2026) is preserved in this repository. The initial GitHub migration adds only the gitignore, documentation and GitHub Actions checks; it intentionally makes no changes to game logic or UI.
 
@@ -20,6 +20,15 @@ This Express app must run as a long-lived Node.js service in its present archite
 
 Set `PORT` to the port configured by the host, and set `PUBLIC_URL` to the canonical HTTPS origin (for example `https://games.example.com`) so QR and invite links have the correct trusted address.
 
+The HTTP boundary has conservative in-process limits which can be tuned with positive integer environment variables:
+
+- `MAX_ROOMS` (default `128`)
+- `ROOM_IDLE_MS` (default four hours)
+- `ROOMS_PER_MINUTE` (default `30` per resolved client address)
+- `JOINS_PER_ROOM_PER_MINUTE` (default `360` per room and resolved client address)
+
+Leave Express proxy trust disabled unless the exact reverse-proxy hop is understood. When a deployment requires the real client address for rate limiting, set `TRUST_PROXY` to an Express-compatible trusted proxy value; do not blindly use a permissive value. `PUBLIC_URL` remains the source of truth for public QR links.
+
 Evaluate proxy and forwarded-host trust before a public launch, and never commit passwords, environment files or API tokens. If deploying beyond private testing, add durable rooms, capacity/load testing, rate limits/abuse protection, and client reconnect checks.
 
 ## Verification checklist
@@ -27,11 +36,11 @@ Evaluate proxy and forwarded-host trust before a public launch, and never commit
 - `npm ci` installs cleanly with Node.js 22
 - `npm test` runs all tests (including integration tests that launch the Express server)
 - A host can create a six-digit room; a second device can join by code and QR
-- Try each of the 11 game modes end to end, including phone controls and scoring
+- Try each available game mode end to end, including phone controls and scoring
 - Try reconnecting and refreshing host and player devices
 - Try 4, 12, and 30 players before separately testing larger groups under realistic conditions
 - Verify games hosted on a public HTTPS URL and `PUBLIC_URL` invite links
 
-## Known limitations of initial migration verification
+## Known limitations
 
-In the ChatGPT container used to prepare this handoff, network dependency installation did not complete. The 7 standalone tests passed; server-backed integration tests remain unverified. The README contains a 300-player product limit, but that is not equivalent to an audited load test.
+Rooms, rate-limit buckets and player photos remain process-local and disappear on restart. Multiple Node replicas still cannot share one room. Automated 4-, 12- and 30-client regressions are useful correctness checks, but are not a production load test and do not validate the configured 300-player ceiling.

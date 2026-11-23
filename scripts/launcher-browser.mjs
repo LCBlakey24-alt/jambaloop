@@ -12,7 +12,7 @@ const browser = await chromium.launch({
   args: ['--no-sandbox', '--disable-dev-shm-usage']
 });
 const sizes=[
-  [1280,720,8],[1366,768,8],[1920,1080,8],
+  [1280,720,modes.length],[1366,768,modes.length],[1920,1080,modes.length],
   [1024,768,8],[800,768,6],[390,844,4]
 ];
 await mkdir('browser-screenshots',{recursive:true});
@@ -58,8 +58,9 @@ try {
     console.log(`PASS: homepage ${width}×${height} fits with ${count} tiles — ${layout.firstFont}`);
 
     if(width===1366) {
-      await page.locator('[data-action="mode-page"][data-direction="1"]').click();
-      assert.equal(await page.locator('.game-tile').count(),Math.min(8,modes.length-8),'Second page should respect the eight-tile launcher pagination');
+      assert.equal(await page.locator('#mode-pager').isVisible(),false,'Desktop should show every game without pagination');
+      const shown=await page.locator('.game-tile').evaluateAll(tiles=>tiles.map(tile=>tile.dataset.mode));
+      assert.deepEqual(shown,modes.map(mode=>mode[0]),'All games must be immediately accessible in desktop order');
       await page.locator('.game-tile[data-mode="quizrace"]').click();
       assert.equal(await page.locator('#game-preview').isVisible(),true,'Expanded preview missing');
       assert.equal(await page.locator('#mode-list').isVisible(),false,'Grid should hide while preview is expanded');
@@ -90,6 +91,12 @@ try {
       await page.locator('[data-action="home-tab"][data-tab="games"]').first().click();
       assert.equal(await page.locator('[data-home-panel="games"]').isVisible(),true,'Game tab did not return');
       console.log('PASS: page navigation, Quiz Race preview, setup dialogue and topic browser');
+    }
+    if(width===390){
+      await page.locator('[data-action="mode-page"][data-direction="1"]').click();
+      assert.equal(await page.locator('.game-tile').count(),4,'Phone retains clear four-game pagination');
+      await page.locator('[data-action="mode-page"][data-direction="-1"]').click();
+      assert.equal(await page.locator('.game-tile').count(),4);
     }
     if (await page.locator('#game-preview').isVisible()) {
       await page.locator('#game-preview [data-action="close-preview"]').click();

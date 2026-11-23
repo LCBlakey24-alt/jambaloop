@@ -874,6 +874,18 @@ export const extraBooleanQuestions = Object.freeze({
     [
       "The word 'alphabet' is longer than the word 'letter'.",
       true
+    ],
+    [
+      "The plural form of the animal name 'goose' is 'geese'.",
+      true
+    ],
+    [
+      "An English sentence can be written as a question.",
+      true
+    ],
+    [
+      "A comma is the same punctuation mark as an exclamation mark.",
+      false
     ]
   ],
   "maths": [
@@ -924,6 +936,18 @@ export const extraBooleanQuestions = Object.freeze({
     [
       "Every even number is a prime number.",
       false
+    ],
+    [
+      "The number 9 is the square of 3.",
+      true
+    ],
+    [
+      "Half of 30 is 20.",
+      false
+    ],
+    [
+      "The number 100 is a multiple of 10.",
+      true
     ]
   ]
 });

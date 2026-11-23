@@ -77,6 +77,27 @@ try{
  await phone.locator('.bluff-game[data-bluff-phase="party-vote"]').waitFor();
  assert.equal(await tv.locator('.bluff-show-cards .bluff-card').count(),3);
  assert.equal(await phone.locator('.bluff-show-cards .bluff-card').count(),3);
+ // All ballot entries must remain reachable without opening the mobile deck pager.
+ for (const [width,height] of [[390,844],[844,390]]) {
+   await phone.setViewportSize({width,height});
+   await phone.waitForFunction(()=>document.documentElement.classList.contains('mobile-deck') &&
+     getComputedStyle(document.querySelector('#app')).overflowY==='auto');
+   const layout=await phone.evaluate(()=>{
+     const app=document.querySelector('#app');
+     const cards=[...document.querySelectorAll('.bluff-show-cards .bluff-card')];
+     return {scroll:getComputedStyle(app).overflowY, width:app.scrollWidth, available:app.clientWidth,
+       hidden:cards.filter(card=>Boolean(card.closest('[data-deck-hidden]'))).length,
+       pager:[...document.querySelectorAll('.mobile-pager')].some(nav=>!nav.hidden),
+       choices:document.querySelectorAll('.bluff-show-cards [data-action="bluff-vote"]').length};
+   });
+   assert.equal(layout.hidden,0,'Hidden voting card at '+width+'x'+height+': '+JSON.stringify(layout));
+   assert.equal(layout.pager,false,'Active ballot must not paginate at '+width+'x'+height);
+   assert.ok(layout.width<=layout.available+2,'Ballot overflow at '+width+'x'+height+': '+JSON.stringify(layout));
+   assert.equal(layout.choices,2,'Player should have two legal choices and cannot vote for themselves');
+   await phone.locator('.bluff-show-cards [data-action="bluff-vote"]').last().scrollIntoViewIfNeeded();
+   await phone.screenshot({path:'browser-screenshots/bluff-ballot-phone-'+width+'x'+height+'.png'});
+ }
+ await phone.setViewportSize({width:390,height:844});
  assert.equal(await tv.locator('.bluff-show-truth').count(),0);
  const liarId=privately[liar].player.id;
  const otherId=privately[(liar+1)%3].player.id;

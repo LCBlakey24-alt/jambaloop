@@ -42,9 +42,9 @@ const correctIndex = question => {
 };
 const otherIndex=question=>(correctIndex(question)+1)%4;
 
-test('All 180 original Brain Ladder puzzles have one calculable answer, four distinct choices and an explanation',()=>{
+test('All 240 original Brain Ladder puzzles have one calculable answer, four distinct choices and an explanation',()=>{
   assert.equal(brainPuzzleBank.length,10);
-  assert.ok(brainPuzzleBank.every(tier=>tier.length===18));
+  assert.ok(brainPuzzleBank.every(tier=>tier.length===24));
   const seen=new Set();
   for(let level=1;level<=10;level++){
     for(const p of brainPuzzleBank[level-1]){
@@ -59,7 +59,7 @@ test('All 180 original Brain Ladder puzzles have one calculable answer, four dis
       assert.notEqual(q.id,p.id,'Fresh-first selection must skip an already seen puzzle');
     }
   }
-  assert.equal(seen.size,180);
+  assert.equal(seen.size,240);
   assert.equal(brainPuzzleBank[0][0].answer,'10');
   assert.equal(brainPuzzleBank[1][0].answer,'8');
   assert.equal(brainPuzzleBank[2][0].answer,'Tuesday');

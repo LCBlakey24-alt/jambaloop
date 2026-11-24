@@ -15,12 +15,12 @@ try {
   const created = await ctx.request.post(site + '/api/rooms', {
     data: { mode: 'quizrace', category: 'mixed', format: 'choice', count: 5, seconds: 0 },
   });
-  assert.equal(created.status(), 201, await created.clone().text());
+  assert.equal(created.status(), 201);
   const {code, host} = await created.json();
   const keys = [];
   for(const name of ['Alex', 'Bailey']) {
     const joined = await ctx.request.post(site + '/api/rooms/' + code + '/join', {data:{name}});
-    assert.equal(joined.status(), 201, await joined.clone().text());
+    assert.equal(joined.status(), 201);
     keys.push((await joined.json()).key);
   }
   await ctx.addInitScript(room => {

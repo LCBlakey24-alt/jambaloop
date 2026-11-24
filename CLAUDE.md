@@ -19,6 +19,11 @@
 - All art, narration and card/question copy must be original or properly licensed, not replications of another show's branded assets.
 - Expand and fact-check content regularly, avoiding immediate repeats; use honest source and answer provenance.
 
+### New proposed wordplay game (not shipped)
+
+**Heard It Wrong** — [#51](https://github.com/LCBlakey24-alt/jambaloop/issues/51), [design brief](docs/HEARD_IT_WRONG_DESIGN.md) — is the owner's misheard-sounding music idea: **"Sweed Comb Alibaba" → "Sweet Home Alabama"**. Use newly authored title-soundalike clues and well-known short song-title answers for the first prototype, NOT copied commercial lyrics/recordings, album art or imitated celebrity voices. Read the rights, answer-source, accessibility and duplication constraints in the spec. Prioritise phone controller and room reliability first. Do not register or deploy an untested 19th game or mark actual lyric/recording licensing cleared.
+
+
 ## Work order
 
 1. Sync and inspect `main`, live deployment, issues, recent CI and most severe reproducible bugs. Fix bugs with failing tests first.

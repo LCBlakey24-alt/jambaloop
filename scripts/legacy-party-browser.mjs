@@ -77,6 +77,25 @@ try {
 
   await tv.locator('[data-action="potato-rescue"]').click();
   await phone.locator('.potato-question').waitFor({timeout:15000});
+  await phone.waitForFunction(() =>
+    getComputedStyle(document.querySelector('#app')).overflowY === 'auto' &&
+    [...document.querySelectorAll('.mobile-pager')].every(nav => nav.hidden),
+    {timeout:10000});
+  const activePhone = await phone.evaluate(() => ({
+    phase:document.querySelector('.game.player-only')?.dataset.phase,
+    pager:[...document.querySelectorAll('.mobile-pager')].some(nav=>!nav.hidden),
+    overflow:getComputedStyle(document.querySelector('#app')).overflowY,
+    choices:document.querySelectorAll('.potato-question [data-action="potato-answer"]').length,
+    hiddenControls:document.querySelectorAll('.potato-question [data-deck-hidden]').length,
+    horizontalOverflow:document.querySelector('#app').scrollWidth-document.querySelector('#app').clientWidth,
+  }));
+  assert.equal(activePhone.phase,'party-potato');
+  assert.equal(activePhone.pager,false);
+  assert.equal(activePhone.overflow,'auto');
+  assert.equal(activePhone.choices,4);
+  assert.equal(activePhone.hiddenControls,0);
+  assert.ok(activePhone.horizontalOverflow<=2,'Phone cannot fit its controls horizontally: '+JSON.stringify(activePhone));
+
   const after=await state();
   assert.equal(after.party.rescues,1);
   assert.equal(after.party.passes,0);

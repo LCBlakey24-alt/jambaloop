@@ -1497,7 +1497,7 @@ document.addEventListener('click', async event => {
       }
     } finally {
       raceSending = false;
-      if (session === activeSession && state?.mode === 'quizrace') {
+      if (session === activeSession && state?.mode === 'quizrace' && state.game === game) {
         signature = undefined;
         render(state);
         const notice = document.querySelector('#game-error');

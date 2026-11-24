@@ -44,3 +44,7 @@ Future game backlog: Word Weld (#29), Signal Jam (#30), Secret Suspects (#42), B
 ## Execution / acceptance
 
 Use Node 22, npm ci, npm test, syntax checks, question QA, all configured Playwright scripts, dedicated tests for each affected mode; review screenshots, browser console, touch controls, reduced motion, contrast, long questions, multiple themes and physical TV/phone playtest. Track exact commands, outcomes and failing checks, PR/commit links. Inspect actual code rather than blindly implementing these notes. Small reviewable PRs, no direct main edits or unsafe merges. Preserve current IDs, state privacy, room auth, QR join and guest-first experience. Finish the highest-priority safe chunk before starting the next. Report remaining blockers honestly and update roadmap/CLAUDE.md after progress.
+
+## Update — integration batch (24 November 2026, late)
+
+See [INTEGRATION_STATUS_2026-11-24.md](INTEGRATION_STATUS_2026-11-24.md). #53–#58, #63, #65, #66, #62 and #60 are integrated on one review branch with fixes; the browser failure at `brain-ladder-browser.mjs:34` and all other stale 18/19 counts now compare against `released-games.js`. So Close now has true server-gated reveal stages (the earlier "do not claim staged API secrecy" caveat no longer applies), and a 72-prompt sourced measurement bank. Nothing is merged to main or deployed.

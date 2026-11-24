@@ -8,7 +8,7 @@
 
 ## Project constraints
 
-- Jambaloop is an existing Node 22 / Express 5 multiplayer browser game. TV host and phone controllers currently support **18 released game mode IDs**, with vanilla JavaScript UI and 3D only where appropriate. Do not rebuild it from scratch.
+- Jambaloop is an existing Node 22 / Express 5 multiplayer browser game. TV host and phone controllers support **18 released game mode IDs on `main`**; So Close (`soclose`) is the 19th, integrated on a review branch but not deployed. `released-games.js` is the single explicit list tests compare against — update it deliberately when adding a game, with vanilla JavaScript UI and 3D only where appropriate. Do not rebuild it from scratch.
 - Run `npm ci` and `npm test` before edits; add regression tests for each confirmed bug. Check full gameplay/content and browser workflows as relevant.
 - Improve stability, reconnects, authoritative timers/scoring, player and host UX, responsive layouts, and original question/prompt coverage **before** expanding the number of game tiles.
 - Preserve API/auth semantics and existing modes, themes, quiz editor, private data filters, SSE events, three.js fallback, session continuity and accessibility unless a tested change is explicitly scoped.
@@ -39,3 +39,6 @@
 
 ## Latest owner-approved development addendum (24 November 2026, evening)
 Read [the next development handoff](docs/CLAUDE_NEXT_DEVELOPMENT_HANDOFF_2026-11-24.md) before beginning new work. It records draft PRs #63/#65, their latest checked CI, the standalone So Close estimation show, dramatic reveals across all games, the six original redesign batches plus So Close, continuous content expansion, and release priorities. Earlier references to 18 games describe the shipped baseline, not the proposed 19-game library. Do not assume draft features are merged or deployed.
+
+## Integration batch status (24 November 2026, late)
+[docs/INTEGRATION_STATUS_2026-11-24.md](docs/INTEGRATION_STATUS_2026-11-24.md) records which PRs were reviewed and integrated, defects fixed (So Close server-staged reveal, wheel drag direction, hardcoded game counts), content added (72 sourced So Close prompts), test results and what is **not** deployed. For games with secret submissions, follow the So Close pattern: stage reveal data on the server, never only in the animation.

@@ -2,6 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {modes} from '../public/game-config.js';
+import {showIdentity,showMark} from '../public/show-identity.js';
+import {launcherTile,launcherPreview,launcherSetupArtwork} from '../public/home-launcher.js';
+import {scoreReveal} from '../public/ceremony.js';
 import {modeStyle,modeVariables} from '../public/mode-style.js';
 
 const css=readFileSync(new URL('../public/game-show-batch-1.css',import.meta.url),'utf8');
@@ -32,4 +35,31 @@ test('all 18 registered games keep usable shared style tokens',()=>{
     assert.match(vars,/--mode-panel:#[0-9a-f]{6}/i);
     assert.match(vars,/--mode-type:/);
   }
+});
+
+test('first three games have original distinct cover art and finale identity',()=>{
+  const ids=['classic','wheel','knockout'];
+  assert.equal(new Set(ids.map(id=>showMark(id))).size,3);
+  assert.equal(new Set(ids.map(id=>showIdentity(id).finale)).size,3);
+  for(const id of ids){
+    const mode=modes.find(([key])=>key===id);
+    const mark=showMark(id);
+    assert.match(mark,/aria-hidden="true"/);
+    assert.match(mark,/focusable="false"/);
+    for(const view of [launcherTile(mode),launcherPreview(id),launcherSetupArtwork(id)]){
+      assert.ok(view.includes(mark));
+      assert.ok(view.includes('data-show="'+id+'"'));
+    }
+    const reveal=scoreReveal(true,{mode:id,ceremony:{starts:0}});
+    assert.ok(reveal.includes(showIdentity(id).finale));
+    assert.ok(reveal.includes('data-action="ceremony-skip"'));
+  }
+});
+test('other modes retain their original artwork and generic ceremony',()=>{
+  for(const [id] of modes.filter(([id])=>!['classic','wheel','knockout'].includes(id))){
+    assert.equal(showMark(id),'');
+    assert.equal(showIdentity(id),undefined);
+    assert.ok(!scoreReveal(true,{mode:id,ceremony:{starts:0}}).includes('show-finale-identity'));
+  }
+  assert.equal(showMark('__proto__'),'');
 });

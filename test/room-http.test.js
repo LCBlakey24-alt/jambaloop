@@ -124,7 +124,7 @@ test('new shared-TV quiz rooms default to answer-only phones with a full-text fa
 
   // A host may explicitly enable full mobile questions for remote/accessible play.
   const full = await post('/api/rooms',{...settings,phoneView:'full'});
-  assert.equal(full.status,201,await full.text());
+  assert.equal(full.status,201,await full.clone().text());
   const {code,host} = await full.json();
   const fullState = await fetch(origin+'/api/rooms/'+code,{headers:{'x-game-key':host}});
   assert.equal((await fullState.json()).phoneView,'full');

@@ -19,6 +19,10 @@
 - All art, narration and card/question copy must be original or properly licensed, not replications of another show's branded assets.
 - Expand and fact-check content regularly, avoiding immediate repeats; use honest source and answer provenance.
 
+## Voiceover future roadmap (do not implement during current QA sprint)
+
+[Issue #61](https://github.com/LCBlakey24-alt/jambaloop/issues/61) and [full-match narrator/Double Act brief](docs/FULL_MATCH_NARRATION_AND_DUO_ROADMAP.md) describe an optional British TV presenter who narrates game previews, stage changes, predetermined public prompts/questions, reveal and finishing; and a later two-original-speaker scripted dialogue mode. Avoid runtime AI generation, secret answer/player-text narration, overlapping audio or blocking timers. Pre-render known licensed clips, keep exact captions, phones silent by default and sound opt-in; always provide text-only play. Current main contains **only 3 actual ElevenLabs MP3s** even though 18 scripts and 15 additional prior recordings are documented. Never mark unavailable binary audio as shipped. After quality/reconnection work, verify missing assets first; do not regenerate needlessly or spend credits without approval.
+
 ## Work order
 
 1. Sync and inspect `main`, live deployment, issues, recent CI and most severe reproducible bugs. Fix bugs with failing tests first.

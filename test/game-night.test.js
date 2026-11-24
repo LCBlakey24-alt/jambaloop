@@ -322,9 +322,12 @@ test('Fill the Blank lets each player refresh a hand once before locking their a
   const second = await room.state(key);
   assert.equal(second.party.hand.length, 6);
   assert.equal(second.party.redrawAvailable, false);
+  assert.equal(second.party.handVersion, 1);
   assert.ok(second.party.hand.every(card => !first.includes(card)), 'refresh must present genuinely different choices');
+  await request(room.path + '/party', key, { game, index, action: 'card', option: 0, handVersion: 0 }, 409);
+  assert.equal((await room.state(key)).party.wrote, false, 'outdated card must never be silently substituted');
   await request(room.path + '/party', key, { game, index, action: 'redraw' }, 409);
-  await request(room.path + '/party', key, { game, index, action: 'card', option: 0 }, 204);
+  await request(room.path + '/party', key, { game, index, action: 'card', option: 0, handVersion: 1 }, 204);
   await request(room.path + '/party', key, { game, index, action: 'redraw' }, 409);
   const otherPlayer = await room.state(room.players[1].key);
   assert.equal(otherPlayer.party.hand.length, 6);
@@ -364,6 +367,39 @@ test('Punchline Party awards double points on its third and final round', async 
   assert.equal(byId.get('Player 2'), 0);
   await room.advance();
   assert.equal((await room.state()).phase, 'finished');
+});
+
+test('a social round with no submitted entries skips an impossible vote', async () => {
+  const room = await roomWith('punchline', 3, { count: 3 });
+  await room.advance();
+  assert.equal((await room.state()).phase, 'party-write');
+  await room.advance();
+  const noVotes = await room.state();
+  assert.equal(noVotes.phase, 'party-reveal');
+  assert.equal(noVotes.party.ballot.length, 0);
+  assert.equal(noVotes.players.reduce((sum, player) => sum + player.score, 0), 0);
+  await room.advance();
+  assert.equal((await room.state()).phase, 'party-write');
+});
+
+test('a social round with one author still permits everyone else to vote', async () => {
+  const room = await roomWith('punchline', 3, { count: 3 });
+  await room.advance();
+  const {game,index} = await room.state();
+  await request(room.path + '/party', room.players[0].key, {
+    game,index,action:'write',text:'Only reply'
+  },204);
+  await room.advance();
+  const ballot = await room.state();
+  assert.equal(ballot.phase,'party-vote');
+  assert.equal(ballot.party.ballot.length,1);
+  const id=ballot.party.ballot[0].id;
+  await request(room.path + '/party', room.players[0].key, {game,index,action:'vote',id},400);
+  for(let i=1;i<room.players.length;i++) await request(room.path + '/party', room.players[i].key, {game,index,action:'vote',id},204);
+  const reveal = await room.state();
+  assert.equal(reveal.phase,'party-reveal');
+  assert.equal(reveal.party.ballot[0].votes,2);
+  assert.equal(reveal.players.reduce((sum, player) => sum + player.score,0),200);
 });
 
 test('Board Race records off-turn predictions and resolves them after the 3D roll', async () => {

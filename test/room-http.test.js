@@ -100,6 +100,36 @@ test('malformed and oversized JSON return concise API errors', async t => {
   }
 });
 
+test('new shared-TV quiz rooms default to answer-only phones with a full-text fallback', async t => {
+  const {post, room, origin} = await start(t);
+  const current = await room();
+  assert.equal((await current.state()).phoneView, 'answers');
+
+  const joined = await post(current.path + '/join', {name:'TV Player'});
+  assert.equal(joined.status,201);
+  const {key}=await joined.json();
+  const playerState = () => fetch(origin + current.path,{headers:{'x-game-key':key}}).then(response=>response.json());
+  assert.equal((await playerState()).phoneView,'answers');
+  const lobby = await current.state();
+  const started = await post(current.path + '/advance', {
+    game:lobby.game,index:lobby.index,phase:lobby.phase,lobbyVersion:lobby.lobbyVersion,
+  },{'x-game-key':current.host});
+  assert.equal(started.status,204,await started.text());
+  const hostQuestion = await current.state();
+  const phoneQuestion = await playerState();
+  assert.equal(hostQuestion.phase,'question');
+  assert.ok(hostQuestion.question.prompt, 'TV host still sees full question');
+  assert.equal(phoneQuestion.question.prompt,undefined, 'phone sees controls, not duplicate TV question');
+  assert.deepEqual(phoneQuestion.question.options,hostQuestion.question.options);
+
+  // A host may explicitly enable full mobile questions for remote/accessible play.
+  const full = await post('/api/rooms',{...settings,phoneView:'full'});
+  assert.equal(full.status,201,await full.text());
+  const {code,host} = await full.json();
+  const fullState = await fetch(origin+'/api/rooms/'+code,{headers:{'x-game-key':host}});
+  assert.equal((await fullState.json()).phoneView,'full');
+});
+
 test('budget buckets expire without evicting active addresses', () => {
   const budget = requestBudget(1, 60_000, 2);
   assert.equal(budget.retryIn('one', 0), 0);

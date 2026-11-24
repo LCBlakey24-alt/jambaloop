@@ -292,15 +292,15 @@ test('game night standings award normalized podium stars across rematches', asyn
   assert.ok(second.night.standings.every(player => player.stars < 10), 'raw quiz points must not leak into game-night stars');
 });
 
-test('a 30-player punchline ballot stays anonymous and has six entries', async () => {
+test('a 30-player punchline ballot includes everyone anonymously without excluding submissions', async () => {
   const room = await roomWith('punchline', 30);
   await room.advance();
   const { game, index } = await room.state();
   await Promise.all(room.players.map(({ key }, n) => request(room.path + '/party', key, { game, index, action: 'write', text: 'Joke ' + n }, 204)));
   const vote = await room.state();
   assert.equal(vote.phase, 'party-vote');
-  assert.equal(vote.party.ballot.length, 6);
-  assert.equal(vote.party.shortlisted, 24);
+  assert.equal(vote.party.ballot.length, 30);
+  assert.equal(vote.party.shortlisted, 0);
   assert.ok(vote.party.ballot.every(entry => entry.name === undefined));
   await Promise.all(room.players.map(async ({ key }) => {
     const eligible = (await room.state(key)).party.ballot.find(entry => !entry.yours);
@@ -309,6 +309,61 @@ test('a 30-player punchline ballot stays anonymous and has six entries', async (
   const reveal = await room.state();
   assert.equal(reveal.phase, 'party-reveal');
   assert.equal(reveal.party.ballot.reduce((total, entry) => total + entry.votes, 0), 30);
+});
+
+test('Fill the Blank lets each player refresh a hand once before locking their answer', async () => {
+  const room = await roomWith('cards', 3, { count: 3 });
+  await room.advance();
+  const { game, index } = await room.state();
+  const { key } = room.players[0];
+  const first = (await room.state(key)).party.hand;
+  assert.equal(first.length, 6);
+  await request(room.path + '/party', key, { game, index, action: 'redraw' }, 204);
+  const second = await room.state(key);
+  assert.equal(second.party.hand.length, 6);
+  assert.equal(second.party.redrawAvailable, false);
+  assert.ok(second.party.hand.every(card => !first.includes(card)), 'refresh must present genuinely different choices');
+  await request(room.path + '/party', key, { game, index, action: 'redraw' }, 409);
+  await request(room.path + '/party', key, { game, index, action: 'card', option: 0 }, 204);
+  await request(room.path + '/party', key, { game, index, action: 'redraw' }, 409);
+  const otherPlayer = await room.state(room.players[1].key);
+  assert.equal(otherPlayer.party.hand.length, 6);
+  assert.ok(otherPlayer.party.hand.every(card => typeof card === 'string'), 'another player gets their own private hand');
+  assert.equal((await room.state()).party.hand, undefined, 'host must never receive private cards');
+});
+
+test('Punchline Party awards double points on its third and final round', async () => {
+  const room = await roomWith('punchline', 3, { count: 3 });
+  const byId = new Map();
+  for (let round = 0; round < 3; round++) {
+    await room.advance();
+    const { game, index } = await room.state();
+    for (let i = 0; i < room.players.length; i++) {
+      await request(room.path + '/party', room.players[i].key,
+        { game, index, action: 'write', text: 'Original joke ' + round + ' - ' + i }, 204);
+    }
+    const ballot = await room.state();
+    assert.equal(ballot.phase, 'party-vote');
+    assert.equal(ballot.party.votePoints, round === 2 ? 200 : 100);
+    assert.equal(ballot.party.ballot.length, 3);
+    assert.ok(ballot.party.ballot.every(entry => entry.name === undefined));
+    for (let i = 0; i < room.players.length; i++) {
+      const key = room.players[i].key;
+      const myBallot = (await room.state(key)).party.ballot;
+      const desired = myBallot.find(entry => !entry.yours && entry.text.endsWith(i === 0 ? '- 1' : '- 0'));
+      assert.ok(desired, 'expected eligible vote target');
+      await request(room.path + '/party', key, { game, index, action: 'vote', id: desired.id }, 204);
+    }
+    const revealed = await room.state();
+    assert.equal(revealed.phase, 'party-reveal');
+    assert.equal(revealed.party.ballot.reduce((sum, entry) => sum + entry.votes, 0), 3);
+    for (const player of revealed.players) byId.set(player.name, player.score);
+  }
+  assert.equal(byId.get('Player 0'), 800);
+  assert.equal(byId.get('Player 1'), 400);
+  assert.equal(byId.get('Player 2'), 0);
+  await room.advance();
+  assert.equal((await room.state()).phase, 'finished');
 });
 
 test('Board Race records off-turn predictions and resolves them after the 3D roll', async () => {

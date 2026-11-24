@@ -115,6 +115,19 @@ export const estimates = {
   ],
 };
 
+// Additional self-contained measurement calculations for estimation games.
+// Exact unit conversions and supplied dimensions avoid changing external facts.
+estimates.general.push(
+  ['A staircase has 26 steps, each rising 175 mm. How high does it climb in millimetres?',4550,'mm',0,10000],
+  ['A box contains 24 packets weighing 375 g each. What is their combined mass in grams?',9000,'g',0,20000],
+  ['A walking route consists of 14 sections, each 650 metres long. What is the total length in metres?',9100,'metres',0,20000],
+  ['A container holds 3.6 litres of water. How many millilitres is that?',3600,'ml',0,8000],
+  ['A model tower is 72 cm tall at a scale of 1:50. What is the real height in metres?',36,'metres',0,100],
+  ['A roll of ribbon measures 18 metres. How many centimetres long is it?',1800,'cm',0,5000],
+  ['A delivery consists of 16 boxes weighing 12 kg each. What is their total mass in kilograms?',192,'kg',0,500],
+  ['A tank contains 250 litres and is filled with another 175 litres. How many litres does it now contain?',425,'litres',0,1000]
+);
+
 // Append extra estimate questions before composing ordered-question pools.
 for(const [category,questions] of Object.entries(extraEstimateQuestions)) {
   estimates[category]??=[];

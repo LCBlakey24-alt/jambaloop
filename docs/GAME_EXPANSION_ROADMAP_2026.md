@@ -1,5 +1,5 @@
 # Jambaloop — Game Expansion Planning Roadmap
-**Planning update:** 23 November 2026
+**Planning update:** 24 November 2026
 **Repository:** LCBlakey24-alt/jambaloop
 **Status:** DESIGN ONLY — no gameplay, UI, database, authentication, or deployment changes authorised by this document.
 
@@ -7,7 +7,7 @@
 Add genuinely different games inspired by popular *types* of browser/tabletop party entertainment, without copying another publisher's names, artwork, wording, card decks, branding, audio or distinctive presentation. Jambaloop games must each have their own central player decision, moment-to-moment loop, win condition, and TV/phone experience. Expand existing games by introducing *modes* when the core experience would otherwise be redundant.
 
 ## Existing baseline
-The game catalogue currently lists 17 modes in `public/game-config.js`: Classic Quiz, Spin the Wheel, Board Race, Dice Rally, Knockout, Punchline Party, Fill the Blank, Fork in the Tracks, Spot the Bluff, Hot Potato, Quiz Race, Team Showdown, Same Page, Spotlight Wheel, Brain Ladder, Top Answers, Rare Find. Check the current source and merged PR status again before implementing; a repository draft or a file on main is not proof a feature is on the live website.
+The game catalogue currently lists **18 modes** in `public/game-config.js`: Classic Quiz, Spin the Wheel, Board Race, Dice Rally, Knockout, Punchline Party, Fill the Blank, Fork in the Tracks, Spot the Bluff, Hot Potato, Quiz Race, Team Showdown, Same Page, Spotlight Wheel, Brain Ladder, Top Answers, Rare Find, **Sketch Sprint**. Check the current source and merged PR status again before implementing; a repository draft or a file on main is not proof a feature is on the live website.
 
 ## Next-wave expansion — six priority concepts
 
@@ -40,6 +40,25 @@ The game catalogue currently lists 17 modes in `public/game-config.js`: Classic 
 - **Story Chain** — original collaborative storytelling with secret creative constraints; consider overlap with Sketch Relay (text-only versus picture relay) and distinguish clearly.
 - **Would You Rather?**, **Never Have I Ever** and compatibility questions should start as content packs or closely integrated modes, not automatic additional game tiles.
 
+## Newly proposed, distinct social games — 24 November 2026
+
+These are **new design proposals**, not implemented modes. The current website remains at 18 playable games.
+
+### Secret Suspects — true-story deduction ([#42](https://github.com/LCBlakey24-alt/jambaloop/issues/42))
+
+Players voluntarily submit **true** anonymous secrets. A neutral/rotating reader announces one secret, the group discusses, and each non-owner guesses who submitted it. Correctly identifying the owner earns **+1**; the owner earns **+3** if *nobody else* identifies them. The owner's decoy vote must not count as a correct guess or invalidate the hide-it bonus. Secret ownership, votes and pending stories are private until the reveal. Include consent, a non-punitive skip/replace option and temporary story retention. It is fundamentally different from Spot the Bluff: no designated unprompted liar; each clue is an actual personal story. **MVP before launch:** audited privacy, scoring, multi-secret selection without trivial elimination, rotating reader, TV/phone flow and non-graphic family-safe mode.
+
+### Bloodmoon Council — vampire-themed day/night hidden roles ([#43](https://github.com/LCBlakey24-alt/jambaloop/issues/43))
+
+A new original social-deduction game using the broad classic night/day hidden-role mechanic, but vampire fiction instead of a Werewolf/Traitors brand imitation. Proposed roles: **Vampires**, **Oracle**, **Warden**, and **Villagers**. At night vampires secretly nominate a victim, Oracle inspects one player's alignment and Warden protects someone. Daytime reveals what happened, then players discuss and privately vote to banish a suspect. Villagers win if all vampires are removed; vampires win if they equal/outnumber remaining non-vampires. Avoid duplicate skins of Spot the Bluff or Signal Jam. The **neutral host/TV must not receive hidden roles**, even as a background payload; dead players spectate without secret spoilers. Recommended group 6–12, subject to balance testing. See [complete design brief](BLOODMOON_COUNCIL_DESIGN.md) for roles, phase/privacy matrix, tie rules, accessibility and tests.
+
+### Position in the queue
+
+1. First resolve **confirmed multiplayer/restart risk** [#41](https://github.com/LCBlakey24-alt/jambaloop/issues/41) and other gameplay-breaking defects.
+2. Complete planned **Hot Potato / Spot the Bluff** depth [#40](https://github.com/LCBlakey24-alt/jambaloop/issues/40) and ongoing original content growth.
+3. Prototype Secret Suspects and Bloodmoon Council in **separate** design, game-engine, privacy, and UI PRs. Validate their distinct core loops against every existing game.
+4. Continue the original P1–P6 pipeline only as capacity and playtests support it. Do not count any concept as an additional live mode until fully coded, tested and merged/deployed.
+
 ## Content filtering, age and accessibility (design requirement)
 
 - Whole-site content metadata must include audience eligibility (Kids, Family, Teen, Adults Only), intensity/subject tags, authored/source provenance, moderation state, pack ID, and stable duplicate-detection ID.
@@ -68,14 +87,14 @@ Before a new **home-page game tile** is approved, its design document must answe
 
 ## Implementation order and release discipline
 
-1. Keep existing 17 modes stable; reconcile stacked/open PRs and current deployed state before modifying code.
+1. Keep the existing **18** modes stable; inspect current branch, CI and live deployed commit before modifying code.
 2. Write individual playable-design briefs for P1–P6, each with a short realistic MVP, examples, data schema, screen flows and overlap test.
 3. Prototype **Sketch Relay**, then **Clue Circuit**. Validate real TV + multi-phone play before expanding.
 4. Prototype **Mini Mayhem** and **Letter Panic** with input/latency and fairness tests.
 5. Develop **Escape Together** and **Mind Spectrum** after the shared media/puzzle and subjective-scoring needs are specified.
 6. Reassess the four backlog ideas only after their closest existing/new game has been playtested.
 7. Keep ongoing original content expansion, not just added tiles; check factual sources, moderation and repeat frequency.
-8. Codex/Claude implementation must be isolated to reviewed changes, follow existing test discipline, and **must not** merge, deploy, switch on 18+ content or implement accounts on the strength of this planning document alone.
+8. Codex/Claude implementation must be isolated to reviewed changes, follow existing test discipline, and **must not** merge, deploy, switch on 18+ content or implement accounts on the strength of this planning document alone. The Render service auto-deploys commits merged into `main`, so a merge can interrupt active rooms.
 
 ## Planning status
-**Ten recently proposed concepts recorded:** six priority independent candidates, four backlog candidates (with Doodle Detectives initially treated as a drawing-game sub-mode). Nothing in this document asserts that these new games are coded, published or live.
+**Twelve additional proposals recorded:** the original six priority independent candidates and four backlog candidates, plus Secret Suspects and Bloodmoon Council (both planning-only). Doodle Detectives remains a potential drawing-game sub-mode. None of the proposals listed in this roadmap is implied to be coded, published or live.

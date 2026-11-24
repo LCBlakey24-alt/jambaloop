@@ -61,6 +61,14 @@ Both concepts are **planning-only** and should have standalone small design/engi
 - Later: safe Friends & Couples Truth or Dare and Who Knows Me Best?, optional family/teen/adult metadata and UK-compliant age assurance. **Do not ship adults-only mode or accounts before legal/privacy architecture.**
 - Update three categories continuously: verified multiple-choice/true-false/number/order questions, source-checked genre packs, and original creative prompts/phrase cards. Don't claim estimates (such as global doors vs windows) are sourced facts.
 
+## Further planning added on 24 November — check latest PR status
+
+- [Next-wave detailed rulebook](GAME_CONCEPTS_NEXT_WAVE_2026-11-24.md) elaborates the existing Sketch Relay game, creator-owned Bank/traditional card games, proposed **Question Vault** [#49](https://github.com/LCBlakey24-alt/jambaloop/issues/49) and **Mystery Market** [#48](https://github.com/LCBlakey24-alt/jambaloop/issues/48), plus reuse-first memory/sound/caption packs.
+- These proposals are **not yet implemented**, do not increase the 18 playable-mode count, and must not divert work from live room recovery [#41](https://github.com/LCBlakey24-alt/jambaloop/issues/41) and TV-first controllers [#45](https://github.com/LCBlakey24-alt/jambaloop/issues/45).
+- [Bank design PR #47](https://github.com/LCBlakey24-alt/jambaloop/pull/47) remains separately tracked in this planning snapshot. Preserve the owner's 15-combined-card BANK-or-continue threshold and clarify all remaining gaps before implementation. Recheck open PR status at run time.
+- Do not auto-merge a docs PR merely because CI passes: Render deploys even docs-only commits to main and currently loses in-memory game rooms during restart. Schedule any merge appropriately.
+
+
 ## Coding and verification guardrails
 
 - For each issue: verify the bug exists on latest `main`; write a failing test first; implement minimal fix; run all affected tests; add browser acceptance on actual phone and host sizes; document known constraints; put into a descriptive feature branch and PR.

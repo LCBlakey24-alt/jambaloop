@@ -68,7 +68,7 @@ test('every show has its own decorative emblem on launcher, preview and setup ar
   }
 });
 test('other modes retain the generic ceremony until their redesign batch lands',()=>{
-  for(const [id] of modes.filter(([id])=>!['classic','wheel','knockout'].includes(id))){
+  for(const [id] of modes.filter(([id])=>!['classic','wheel','knockout','board','dice','quizrace'].includes(id))){
     assert.equal(showIdentity(id),undefined);
     assert.ok(!scoreReveal(true,{mode:id,ceremony:{starts:0}}).includes('show-finale-identity'));
   }

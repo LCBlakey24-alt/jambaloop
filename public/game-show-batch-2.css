@@ -1,0 +1,242 @@
+/* Game Show Redesign — batch 2: Board Race (premium tabletop), Dice Rally
+   (Art Deco brass-and-velvet salon) and Quiz Race (neon arcade circuit).
+   Presentation only: scoped to three existing mode IDs, with no new controls,
+   hidden information, timers or scoring. Motion is disabled at the end of the
+   file for prefers-reduced-motion. */
+
+/* ======================================================= BOARD RACE ===== */
+.game[data-mode="board"] {
+  --ink:#fbf4e4; --muted:#d9cfb6; --game-accent:#e8c591;
+  --mode-backdrop:#13241c; --mode-panel:#1f3a2b; --mode-edge:#a8783f;
+  --board-wood:#5a3a22; --board-cream:#f4ead2; --board-ink:#2b2419;
+}
+.game.host-screen[data-mode="board"] {
+  background:
+    radial-gradient(ellipse at 50% 40%,#2a5139 0,#173022 48%,transparent 78%),
+    repeating-linear-gradient(92deg,#3d2716 0 7px,#46301b 7px 15px,#3a2515 15px 22px),
+    #3a2515;
+}
+.game[data-mode="board"] .scene-backdrop {
+  background:radial-gradient(ellipse at 50% 45%,#24452f,#13241c 70%);
+}
+.game[data-mode="board"] .scene-backdrop > i {display:none}
+.game[data-mode="board"] .game-top {
+  border:1px solid #a8783f; border-bottom:3px solid #a8783f;
+  background:linear-gradient(180deg,#5a3a22,#3e2817); box-shadow:inset 0 1px #ffffff1c,0 6px 18px #0007;
+}
+.game[data-mode="board"] .screen-mode-title {font-family:'Club Race',Georgia,serif;letter-spacing:.06em;color:#f4ead2}
+.game[data-mode="board"] .screen-mode-icon {background:#f4ead2;color:#2b2419;border-radius:6px}
+.game[data-mode="board"] :is(.turn-panel,.question-panel,.results,.join-panel,.roster-panel,.tv-status,.tv-leaders) {
+  border:2px solid #a8783f; border-radius:14px;
+  background:linear-gradient(160deg,#21402e,#152a1e 70%);
+  box-shadow:inset 0 0 0 5px #10201a,inset 0 0 0 6px #e8c59133,0 16px 36px #0008;
+}
+.game[data-mode="board"] .turn-copy h1,
+.game[data-mode="board"] .results h1 {font-family:'Club Race',Georgia,serif;color:#f4ead2;text-shadow:0 2px 0 #10201a}
+.game[data-mode="board"] .eyebrow {color:#e8c591;letter-spacing:.16em}
+.game[data-mode="board"] #board-stage {border:3px solid #6b4628;box-shadow:inset 0 0 0 2px #e8c59155,0 18px 40px #000a}
+/* Answers are cream playing cards with a category-coloured corner pip. */
+.game[data-mode="board"] .question-panel .answer {
+  border:1px solid #c9b48c; border-radius:10px;
+  background:linear-gradient(160deg,#fbf4e4,#ece0c3); color:#2b2419;
+  box-shadow:0 2px 0 #b39b6c,0 8px 18px #0006;
+}
+.game[data-mode="board"] .question-panel .answer strong {background:var(--answer);color:#fff;border-radius:50%;border:2px solid #fff8}
+.game[data-mode="board"] .question-panel .answer small {color:#5b4a32}
+.game[data-mode="board"] .question-panel .answer.correct {
+  background:linear-gradient(160deg,#fffaf0,#f1e2bf); border-color:#2f8a55;
+  box-shadow:0 0 0 3px #2f8a55,0 10px 24px #0007;
+}
+.game[data-mode="board"] .question-panel .answer.selected {box-shadow:0 0 0 3px #e8c591,0 10px 24px #0007}
+.game[data-mode="board"] .board-team {border:1px solid #a8783f66;background:#10201a99;border-radius:10px}
+.game[data-mode="board"] .board-path-option {border:2px solid #a8783f;background:#f4ead2;color:#2b2419;border-radius:12px}
+.game[data-mode="board"] .board-path-option.power b {color:#8a4b12}
+.game[data-mode="board"] .board-path-option.questions b {color:#1f6e66}
+.game[data-mode="board"] .board-path-option small {color:#4e3f2a;opacity:1}
+.game[data-mode="board"] .board-path-option:disabled {opacity:.85}
+.game[data-mode="board"] .tv-clock {border:2px solid #a8783f;background:#3e2817;border-radius:50%}
+.game[data-mode="board"] .tv-clock .timer {color:#f4ead2}
+
+/* ======================================================== DICE RALLY ===== */
+.game[data-mode="dice"] {
+  --ink:#fff4dc; --muted:#e8cdbf; --game-accent:#e9c46a;
+  --mode-backdrop:#24090f; --mode-panel:#3d1421; --mode-edge:#b8913f;
+  --deco-cut:16px;
+}
+.game.host-screen[data-mode="dice"],
+.game[data-mode="dice"] .scene-backdrop {
+  background:
+    repeating-conic-gradient(from 0deg at 50% -10%,#e9c46a0f 0deg 2deg,transparent 2deg 9deg),
+    radial-gradient(ellipse at 50% 20%,#5c1a2c 0,#2b0b13 58%,#160509 100%);
+}
+.game[data-mode="dice"] .scene-backdrop > i {display:none}
+.game[data-mode="dice"] .game-top {
+  border-top:1px solid #e9c46a; border-bottom:3px double #e9c46a;
+  background:linear-gradient(180deg,#3d1421,#260a12);
+}
+.game[data-mode="dice"] .screen-mode-title {font-family:'House Sans',sans-serif;font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:#f3dca0}
+.game[data-mode="dice"] .screen-mode-icon {background:linear-gradient(135deg,#f7dd8f,#b8913f);color:#2b0b13;transform:rotate(45deg);border-radius:4px}
+.game[data-mode="dice"] .screen-mode-icon > * {transform:rotate(-45deg)}
+/* Chamfered brass-trimmed plates: the salon's stepped Deco frame. */
+.game[data-mode="dice"] :is(.turn-panel,.question-panel,.results,.join-panel,.roster-panel,.tv-status,.tv-leaders) {
+  border:0; border-radius:0;
+  clip-path:polygon(var(--deco-cut) 0,calc(100% - var(--deco-cut)) 0,100% var(--deco-cut),100% calc(100% - var(--deco-cut)),calc(100% - var(--deco-cut)) 100%,var(--deco-cut) 100%,0 calc(100% - var(--deco-cut)),0 var(--deco-cut));
+  background:
+    linear-gradient(#e9c46a,#e9c46a) top/100% 1px no-repeat,
+    linear-gradient(#e9c46a,#e9c46a) bottom/100% 1px no-repeat,
+    linear-gradient(160deg,#4a1828,#2c0c15 75%);
+  box-shadow:inset 0 0 0 1px #b8913f,inset 0 0 0 6px #2b0b13,inset 0 0 0 7px #e9c46a55;
+}
+.game[data-mode="dice"] .eyebrow {color:#e9c46a;letter-spacing:.3em;font-weight:800}
+.game[data-mode="dice"] .turn-copy h1,
+.game[data-mode="dice"] .results h1 {
+  font-family:'House Sans',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.08em;
+  background:linear-gradient(180deg,#fff1c2,#e9c46a 55%,#a77b2c);-webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.game.host-screen[data-mode="dice"] .question-panel > h2 {text-align:center;margin-inline:auto;max-width:30ch;letter-spacing:.01em}
+.game[data-mode="dice"] .dice-rules span {
+  border:1px solid #b8913f;border-radius:0;background:#2b0b13;color:#f3dca0;letter-spacing:.08em;
+  clip-path:polygon(8px 0,calc(100% - 8px) 0,100% 50%,calc(100% - 8px) 100%,8px 100%,0 50%);padding-inline:14px;
+}
+.game[data-mode="dice"] .dice-rules b {color:#e9c46a}
+.game[data-mode="dice"] #board-stage {border:1px solid #b8913f;box-shadow:inset 0 0 0 5px #2b0b13,inset 0 0 0 6px #e9c46a66,0 18px 40px #000a}
+.game[data-mode="dice"] .question-panel .answer {
+  border:1px solid #b8913f;border-radius:0;
+  clip-path:polygon(12px 0,calc(100% - 12px) 0,100% 12px,100% calc(100% - 12px),calc(100% - 12px) 100%,12px 100%,0 calc(100% - 12px),0 12px);
+  background:linear-gradient(120deg,#521b2d,#350f1b);color:#fff4dc;
+}
+.game[data-mode="dice"] .question-panel .answer strong {
+  border:0;border-radius:0;background:linear-gradient(135deg,#f7dd8f,#b8913f);color:#2b0b13;
+  clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);
+}
+.game[data-mode="dice"] .question-panel .answer.correct {background:linear-gradient(120deg,#6b4a18,#3a2410);box-shadow:inset 0 0 0 2px #f7dd8f}
+.game[data-mode="dice"] .question-panel .answer.selected {box-shadow:inset 0 0 0 2px #e9c46a}
+.game[data-mode="dice"] .button.primary {background:linear-gradient(180deg,#f7dd8f,#c9a24e);color:#2b0b13;border:1px solid #fff1c2;border-radius:2px;letter-spacing:.08em;text-transform:uppercase}
+.game[data-mode="dice"] .tv-clock {background:#2b0b13;border:1px solid #e9c46a;border-radius:0;clip-path:polygon(12px 0,calc(100% - 12px) 0,100% 12px,100% calc(100% - 12px),calc(100% - 12px) 100%,12px 100%,0 calc(100% - 12px),0 12px)}
+.game[data-mode="dice"] .tv-clock .timer {color:#f3dca0}
+
+/* ========================================================= QUIZ RACE ===== */
+.game[data-mode="quizrace"] {
+  --ink:#f2fbff; --muted:#a9c4dd; --game-accent:#1dd9be;
+  --mode-backdrop:#07061a; --mode-panel:#120f33; --mode-edge:#3a2f86;
+  --neon-cyan:#1dfbe0; --neon-pink:#ff3fb4; --neon-violet:#8f6bff;
+}
+.game.host-screen[data-mode="quizrace"] {
+  background:radial-gradient(ellipse at 50% 0,#2a1667 0,#0b0927 45%,#05040f 100%);
+}
+/* On the default neon track a perspective grid floor scrolls towards the
+   viewer like a night circuit; themed tracks keep their own scenery. */
+.game[data-mode="quizrace"] .race-track-wrap[data-track="neon"] {
+  isolation:isolate; border-color:#1dfbe066;
+  background:radial-gradient(ellipse at 50% 0,#24165e,#0a0824 62%);
+  box-shadow:inset 0 0 40px #1dfbe014,0 0 22px #1dfbe01a;
+}
+.game[data-mode="quizrace"] .race-track-wrap[data-track="neon"]::before {
+  content:''; position:absolute; z-index:0; left:-25%; right:-25%; bottom:-14%; height:70%;
+  pointer-events:none; transform-origin:50% 100%; transform:perspective(420px) rotateX(62deg);
+  will-change:transform;
+  background:
+    linear-gradient(#ff3fb455 1px,transparent 1px) 0 0/100% 44px,
+    linear-gradient(90deg,#1dfbe044 1px,transparent 1px) 0 0/64px 100%;
+  mask-image:linear-gradient(to top,#000 10%,transparent 95%);
+  -webkit-mask-image:linear-gradient(to top,#000 10%,transparent 95%);
+}
+/* Neon road: layered strokes fake a glow without a per-frame SVG filter. */
+.game[data-mode="quizrace"] .race-track-wrap[data-track="neon"] .race-road-outline {stroke:#1dfbe0;stroke-opacity:.9;stroke-width:132}
+.game[data-mode="quizrace"] .race-track-wrap[data-track="neon"] .race-road {stroke:#120d38;stroke-width:124}
+.game[data-mode="quizrace"] .race-track-wrap[data-track="neon"] .race-road-centre {stroke:#ff3fb4;stroke-width:3;opacity:.8;stroke-dasharray:18 22}
+.game[data-mode="quizrace"] .race-track-wrap[data-track="neon"] .quiz-race-svg {position:relative;z-index:1}
+.game[data-mode="quizrace"] .scene-backdrop {background:radial-gradient(ellipse at 50% 0,#22145a,#07061a 65%)}
+.game[data-mode="quizrace"] .scene-backdrop > i {display:none}
+.game[data-mode="quizrace"] .game-top {
+  border:1px solid #1dfbe055; border-bottom:2px solid var(--neon-cyan);
+  background:linear-gradient(90deg,#0d0a2c,#160f45 50%,#0d0a2c);
+  box-shadow:0 0 18px #1dfbe033,inset 0 -1px 0 #ff3fb466;
+}
+.game[data-mode="quizrace"] .screen-mode-title {font-family:'Club Knockout',sans-serif;font-style:italic;text-transform:uppercase;letter-spacing:.06em;color:#fff;text-shadow:0 0 10px #1dfbe0aa}
+.game[data-mode="quizrace"] .screen-mode-icon {background:#0d0a2c;color:var(--neon-cyan);box-shadow:0 0 0 1px var(--neon-cyan),0 0 12px #1dfbe088}
+.game[data-mode="quizrace"] :is(.race-broadcast,.race-finish-panel,.race-phone,.join-panel,.roster-panel,.results) {
+  border:1px solid #1dfbe066; border-radius:14px;
+  background:linear-gradient(165deg,#15114080,#0a0824e6);
+  box-shadow:0 0 0 1px #ff3fb433,0 0 26px #1dfbe022,inset 0 0 30px #1dfbe00d;
+  backdrop-filter:blur(2px);
+}
+.game[data-mode="quizrace"] :is(.race-broadcast-head h1,.race-finish-panel h1,.race-phone h1) {
+  font-family:'Club Knockout',sans-serif;font-style:italic;text-transform:uppercase;letter-spacing:.02em;
+  color:#fff;text-shadow:0 0 6px #fff8,0 0 18px var(--neon-cyan),0 0 36px #1dfbe066;
+}
+.game[data-mode="quizrace"] .race-question {font-family:'Club Knockout',sans-serif;font-style:italic;text-transform:uppercase;letter-spacing:.01em}
+.game[data-mode="quizrace"] .eyebrow {color:var(--neon-pink);letter-spacing:.24em;text-shadow:0 0 8px #ff3fb488}
+.game[data-mode="quizrace"] .race-broadcast-time strong {color:var(--neon-cyan);text-shadow:0 0 12px #1dfbe0aa;font-variant-numeric:tabular-nums}
+.game[data-mode="quizrace"] .race-countdown {
+  font-family:'Club Knockout',sans-serif;font-style:italic;color:#fff;
+  text-shadow:0 0 10px #fff,0 0 30px var(--neon-pink),0 0 60px var(--neon-pink);
+}
+.game[data-mode="quizrace"] .race-rank-row {border:1px solid #1dfbe033;background:#0c0a2acc;border-radius:8px}
+.game[data-mode="quizrace"] .race-rank-row:first-child {border-color:var(--neon-cyan);box-shadow:0 0 14px #1dfbe044}
+.game[data-mode="quizrace"] .race-position {font-family:'Club Knockout',sans-serif;font-style:italic;color:var(--neon-cyan)}
+.game[data-mode="quizrace"] .race-mini-track i {background:linear-gradient(90deg,var(--neon-violet),var(--racer,var(--neon-cyan)));box-shadow:0 0 8px var(--racer,var(--neon-cyan))}
+/* Arcade cabinet buttons on the phone. */
+.game[data-mode="quizrace"] .race-answer {
+  border:2px solid var(--neon-cyan); border-radius:10px; background:#0d0a2c; color:#fff;
+  box-shadow:0 0 0 1px #1dfbe022,0 0 14px #1dfbe033,inset 0 -3px 0 #1dfbe055;
+  transition:transform .12s, box-shadow .2s, background-color .2s;
+}
+.game[data-mode="quizrace"] .race-answer:nth-child(2) {border-color:var(--neon-pink);box-shadow:0 0 14px #ff3fb433,inset 0 -3px 0 #ff3fb455}
+.game[data-mode="quizrace"] .race-answer:nth-child(3) {border-color:var(--neon-violet);box-shadow:0 0 14px #8f6bff33,inset 0 -3px 0 #8f6bff55}
+.game[data-mode="quizrace"] .race-answer:nth-child(4) {border-color:#ffd34d;box-shadow:0 0 14px #ffd34d33,inset 0 -3px 0 #ffd34d55}
+.game[data-mode="quizrace"] .race-answer:not(:disabled):active {transform:translateY(2px) scale(.98);background:#1a1550}
+.game[data-mode="quizrace"] .race-phone-speed {color:var(--neon-cyan);text-shadow:0 0 10px #1dfbe0aa}
+.game[data-mode="quizrace"] .race-personal-finish {border-color:var(--neon-cyan);background:#0d0a2c;box-shadow:0 0 22px #1dfbe033}
+.game[data-mode="quizrace"] .race-personal-finish strong {color:#fff;text-shadow:0 0 14px var(--neon-cyan)}
+
+/* ============================================================ TILES ===== */
+.tile-art[data-show="board"] {
+  background:radial-gradient(ellipse at 50% 55%,#2d5a3e,#163022 65%),#163022;
+  box-shadow:inset 0 0 0 5px #5a3a22,inset 0 0 0 6px #e8c59166;
+}
+.tile-art[data-show="board"] .tile-wordmark {font-family:'Club Race',Georgia,serif;color:#f4ead2}
+.tile-art[data-show="dice"] {
+  background:repeating-conic-gradient(from 0deg at 50% -8%,#e9c46a14 0deg 3deg,transparent 3deg 12deg),radial-gradient(ellipse at 50% 30%,#5c1a2c,#24090f 75%);
+  box-shadow:inset 0 0 0 2px #b8913f,inset 0 0 0 6px #24090f,inset 0 0 0 7px #e9c46a66;
+}
+.tile-art[data-show="dice"] .tile-wordmark {letter-spacing:.04em;background:linear-gradient(180deg,#fff1c2,#e9c46a 60%,#a77b2c);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none}
+.tile-art[data-show="dice"] .tile-wordmark > span:last-child {filter:none}
+.tile-art[data-show="quizrace"] {
+  background:linear-gradient(180deg,#160f45,#07061a 70%);
+  box-shadow:inset 0 0 0 1px #1dfbe088,0 0 22px #1dfbe022;
+}
+.tile-art[data-show="quizrace"] .tile-wordmark {color:#fff;text-shadow:0 0 6px #fff8,0 0 18px #1dfbe0}
+.tile-art[data-show="quizrace"] .tile-wordmark > span:last-child {color:#ff3fb4;text-shadow:0 0 6px #fff6,0 0 18px #ff3fb4}
+
+/* =========================================================== MOTION ===== */
+@media (prefers-reduced-motion:no-preference) {
+  /* Board Race: the right card flips face-up on the reveal. */
+  .game.phase-enter[data-mode="board"][data-phase="reveal"] .question-panel .answer.correct {animation:board-card-flip .7s cubic-bezier(.2,.8,.2,1) both;transform-origin:50% 50%}
+  .game.phase-enter[data-mode="board"][data-phase="question"] .question-panel .answer {animation:board-card-deal .5s cubic-bezier(.16,1,.3,1) backwards}
+  .game.phase-enter[data-mode="board"][data-phase="question"] .question-panel .answer:nth-child(2) {animation-delay:70ms}
+  .game.phase-enter[data-mode="board"][data-phase="question"] .question-panel .answer:nth-child(3) {animation-delay:140ms}
+  .game.phase-enter[data-mode="board"][data-phase="question"] .question-panel .answer:nth-child(4) {animation-delay:210ms}
+  /* Dice Rally: a brass light sweeps across the winning plate. */
+  .game[data-mode="dice"] .question-panel .answer.correct {background-image:linear-gradient(110deg,transparent 30%,#fff1c255 48%,transparent 66%),linear-gradient(120deg,#6b4a18,#3a2410);background-size:250% 100%,100% 100%;background-repeat:no-repeat}
+  .game.phase-enter[data-mode="dice"][data-phase="reveal"] .question-panel .answer.correct {animation:deco-sweep 1.1s .15s cubic-bezier(.65,0,.35,1) both}
+  /* Quiz Race: the grid floor rolls, the countdown pulses on every tick. */
+  .game[data-mode="quizrace"] .race-track-wrap[data-track="neon"]::before {animation:neon-floor 1.6s linear infinite}
+  .game[data-mode="quizrace"] .race-countdown {animation:neon-tick 1s cubic-bezier(.2,.8,.2,1) infinite}
+  .game[data-mode="quizrace"] .race-rank-row:first-child {animation:neon-leader 2.4s ease-in-out infinite}
+  .game.phase-enter[data-mode="quizrace"] .race-finish-panel h1 {animation:neon-flicker 1.2s steps(1,end) both}
+}
+@keyframes board-card-flip {0%{transform:perspective(700px) rotateY(180deg);filter:brightness(.6)} 55%{transform:perspective(700px) rotateY(-12deg)} 100%{transform:perspective(700px) rotateY(0);filter:none}}
+@keyframes board-card-deal {from{opacity:.15;transform:translate(-30px,-20px) rotate(-6deg)}}
+@keyframes deco-sweep {from{background-position:130% 0,0 0} to{background-position:-30% 0,0 0}}
+/* Transform-only loop of exactly one grid row: composited, no repaint. */
+@keyframes neon-floor {from{transform:perspective(420px) rotateX(62deg) translateY(0)} to{transform:perspective(420px) rotateX(62deg) translateY(44px)}}
+@keyframes neon-tick {0%{transform:scale(1.35);opacity:.4} 25%{transform:scale(1);opacity:1} 100%{transform:scale(.92);opacity:.85}}
+@keyframes neon-leader {50%{box-shadow:0 0 24px #1dfbe066}}
+@keyframes neon-flicker {0%{opacity:.2} 10%{opacity:1} 18%{opacity:.4} 26%,100%{opacity:1}}
+@media (prefers-reduced-motion:reduce) {
+  .game[data-mode="board"] .question-panel .answer,
+  .game[data-mode="dice"] .question-panel .answer.correct,
+  .game[data-mode="quizrace"] .race-track-wrap[data-track="neon"]::before,
+  .game[data-mode="quizrace"] :is(.race-countdown,.race-rank-row,.race-finish-panel h1) {animation:none!important}
+}

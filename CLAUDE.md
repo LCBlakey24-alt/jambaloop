@@ -19,6 +19,15 @@
 - All art, narration and card/question copy must be original or properly licensed, not replications of another show's branded assets.
 - Expand and fact-check content regularly, avoiding immediate repeats; use honest source and answer provenance.
 
+## New design briefs to evaluate (not shipped)
+
+- Read [next-wave game portfolio](docs/GAME_CONCEPTS_NEXT_WAVE_2026-11-24.md) and the existing [game expansion roadmap](docs/GAME_EXPANSION_ROADMAP_2026.md) before considering any new tile. **Question Vault #49** and **Mystery Market #48** are new *proposals*, not functionality. Sketch Relay already exists as a planned idea (not a released game), now with a detailed turn design.
+- Prefer **Memory Gallery** within Picture Perfect, **Sound Scene** within the existing quiz system and **Caption Contest** within Punchline Party rather than making near-duplicate launcher games.
+- Bank is the creator's [original card concept #46](https://github.com/LCBlakey24-alt/jambaloop/issues/46). Its confirmed 15-card decision is based on **saved bank + cards earned this turn**, not only previously banked cards. At exactly 15 the player may BANK or continue; **after passing 15 the BANK option vanishes**. Other unresolved rules still need creator confirmation. See open [documentation PR #47](https://github.com/LCBlakey24-alt/jambaloop/pull/47).
+- Keep user intent central: TV explains the game, phone gives a single current action, minimal text, no live Back/Next paging. Test on 320px phones, phone landscape, landscape tablet and TV.
+- Separate rules approval, engine/privacy test, UI/browser test, reviewed PR and deployed version. Automatic Render deploy can restart an in-progress room; don't merge a documentation or gameplay PR during a game night without warning.
+
+
 ## Work order
 
 1. Sync and inspect `main`, live deployment, issues, recent CI and most severe reproducible bugs. Fix bugs with failing tests first.

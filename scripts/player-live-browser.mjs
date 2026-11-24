@@ -69,6 +69,27 @@ try {
     assert.match(await player.locator('.player-answer-feedback').innerText(), /Answer locked in/);
     await player.screenshot({ path: `browser-screenshots/player-locked-${width}x${height}.png`, fullPage: false });
 
+    // A refreshed/reconnected phone must recover the server's locked answer,
+    // not reopen voting or silently send the same choice a second time.
+    const beforeReload = await context.request.get(site + '/api/rooms/' + code, {
+      headers: { 'x-game-key': host }
+    });
+    assert.equal(beforeReload.status(), 200);
+    assert.equal((await beforeReload.json()).answered, 1, 'The answer should be counted exactly once');
+    await player.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
+    await player.locator('.player-only[data-phase="question"] .player-answer-feedback[data-feedback="locked"]')
+      .waitFor({timeout:15000});
+    assert.equal(await player.locator('.question-panel .answer[data-action="answer"]').count(),4);
+    assert.equal(await player.locator('.question-panel .answer[data-action="answer"]').nth(1).isDisabled(),true,
+      'A restored player must not be allowed to resubmit an already-locked answer');
+    const afterReload = await context.request.get(site + '/api/rooms/' + code, {
+      headers: { 'x-game-key': host }
+    });
+    assert.equal(afterReload.status(),200);
+    assert.equal((await afterReload.json()).answered,1,'A reloaded phone must not add another answer');
+    await player.screenshot({ path: `browser-screenshots/player-reconnected-locked-${width}x${height}.png`, fullPage:false });
+
+
     const reveal = await context.request.post(site + '/api/rooms/' + code + '/advance', {
       headers: { 'x-game-key': host }, data: { game: 1, index: 0, phase: 'question' }
     });
@@ -76,6 +97,12 @@ try {
     await player.locator('.player-only[data-phase="reveal"] .player-answer-feedback').waitFor({ timeout: 10000 });
     const state = await player.locator('.player-answer-feedback').getAttribute('data-feedback');
     assert.ok(['correct', 'incorrect'].includes(state), 'Player receives a clear post-reveal result');
+    // Reloading again after reveal retains the user's personal result.
+    await player.reload({waitUntil:'domcontentloaded',timeout:30000});
+    await player.locator('.player-only[data-phase="reveal"] .player-answer-feedback')
+      .waitFor({timeout:15000});
+    assert.equal(await player.locator('.player-answer-feedback').getAttribute('data-feedback'),state,
+      'Reconnected phone must show the same server-authoritative reveal result');
     assert.equal(await player.locator('.question-panel .answer').count(), 4);
     assert.deepEqual(errors, []);
     await player.screenshot({ path: `browser-screenshots/player-reveal-${width}x${height}.png`, fullPage: false });

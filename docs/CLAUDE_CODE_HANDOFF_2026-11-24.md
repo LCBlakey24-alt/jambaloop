@@ -61,6 +61,11 @@ Both concepts are **planning-only** and should have standalone small design/engi
 - Later: safe Friends & Couples Truth or Dare and Who Knows Me Best?, optional family/teen/adult metadata and UK-compliant age assurance. **Do not ship adults-only mode or accounts before legal/privacy architecture.**
 - Update three categories continuously: verified multiple-choice/true-false/number/order questions, source-checked genre packs, and original creative prompts/phrase cards. Don't claim estimates (such as global doors vs windows) are sourced facts.
 
+## Further proposed music game — Heard It Wrong
+
+[Heard It Wrong](HEARD_IT_WRONG_DESIGN.md) ([#51](https://github.com/LCBlakey24-alt/jambaloop/issues/51)) is now in the planning backlog. It decodes the creator's invented soundalike title phrase, e.g. "Sweed Comb Alibaba" for "Sweet Home Alabama". TV reads/displays a newly authored phrase, phone presents simple answer buttons. Do not copy genuine song lyric passages, music recordings, official artwork or celebrity voices. If a future mode wants genuine misheard lyric text or clips, conduct separate rights/permissions review. Validate 60+ original clues, avoid repeats, verify title/artist metadata, and give this its own gameplay tests. Nothing in this planning document authorises an immediate new launcher tile or production release.
+
+
 ## Coding and verification guardrails
 
 - For each issue: verify the bug exists on latest `main`; write a failing test first; implement minimal fix; run all affected tests; add browser acceptance on actual phone and host sizes; document known constraints; put into a descriptive feature branch and PR.

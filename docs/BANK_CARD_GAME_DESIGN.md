@@ -11,7 +11,7 @@
 3. **Start of each turn:** flip the starting card face-up. The player may **replace it once**, but **must keep the replacement**. If the first card is a Joker, the player may use this replacement option; if the replacement is a Joker, it is unlucky and the Joker consequence applies. Do not offer a second replacement.
 4. **Predict Higher or Lower** for the next card against the current face-up card. Successful guesses allow the player to continue choosing whether to push onward or, when permitted, bank.
 5. **Earliest banking:** after **two cards have been drawn**, the player may call **BANK** to move eligible run cards into their persistent bank. Confirm precise starting-card counting before implementing.
-6. **Banking cut-off:** only bank up to **15 saved cards**. Once a player has 15 cards in their bank, the **BANK button is unavailable** and they must keep predicting to finish the last five cards and win. This is the game's compulsory high-risk finish. Do not offer banking at 16–19 or let a player bypass that final stretch.
+6. **Banking cut-off at 15 TOTAL:** when the player's **existing bank + cards currently earned in this turn** reaches **exactly 15**, they have a choice: **BANK now** (subject to the two-card minimum) or **keep going all the way to 20**. **Once that combined total passes 15, banking is no longer available during that run.** They must risk the remaining predictions and reach 20 to win; they cannot bank at 16, 17, 18 or 19. The decision at exactly 15 is the defining final-stretch fork.
 7. **Rank tie/pair:** if the next drawn card has the **same rank/number** as the previous/current card (e.g. two different sevens), this is an automatic **failed turn**. They **get nothing new**, their turn ends immediately and play passes to the next player. No higher/lower success, no extra turn, and **no new banking**. Existing saved cards remain safe because only a Joker removes cards already banked.
 8. **Joker:** a Joker causes the player to lose **all previously banked cards**, even when close to 20. This is different from a failed higher/lower guess or a matching-rank pair. If a Joker is the first card, the player may choose to replace it; if the replacement is another Joker, the risk remains.
 9. **Normal failed guesses:** the creator has explicitly stated that **banked cards are only lost to a Joker**. Whether a wrong higher/lower guess ends the turn and discards all current unbanked progress should still be specified precisely.
@@ -21,7 +21,7 @@
 ## Remaining rules to resolve before implementation
 
 - For banking eligibility, do the **first face-up card and one guessed card** count as the two drawn cards, or must two higher/lower predictions succeed after the starter?
-- Can a player bank an unbanked run only if the resulting saved bank is **15 or fewer**? What if saving the complete run would push the bank from 14 to 17? Confirm whether it must be refused, whether partial banking is possible, or whether the 15-card cap takes effect only at turn boundaries.
+- **Clarified:** the 15-card rule applies to the **total of saved cards plus cards earned in the current run**, not solely to how many were banked before the turn. Thus 12 banked + 3 current = 15 offers BANK or KEEP GOING (once banking's two-card minimum is met); 12 banked + 4 current = 16 **cannot BANK** and must continue towards 20. No partial banking or over-15 banking option was described. Confirm how starting face-up/replacement cards count in the run.
 - Does reaching **20** with 15 saved cards plus five cards in the current unbanked run trigger immediate victory without a Bank action? This is the natural interpretation of the compulsory last five, but confirm the exact counting of starting/replacement cards.
 - On a **wrong non-pair** higher/lower guess, does the turn finish and the whole current run disappear? The old bank is safe unless a Joker appears.
 - Does an **initial Joker** immediately wipe the bank before the player gets their one replacement choice, or is its penalty evaluated only if kept/replaced by another Joker? Is a Joker found on the **replacement** an immediate bank wipe and end of turn?
@@ -36,7 +36,7 @@ Record creator-confirmed answers on [#46](https://github.com/LCBlakey24-alt/jamb
 | --- | --- |
 | Current player and face-up card on a large animated card table | Two large touch buttons: **Higher** and **Lower** |
 | Current unbanked cards and each player's bank (not the secret future card) | **Change first card** appears only once at start of turn; replacement is final |
-| Dramatic Joker wipe, pair failure and final five-card run | **BANK** appears only when eligible and is disabled once 15 cards have been banked |
+| Dramatic Joker wipe, pair failure and final five-card run | **BANK** appears only after minimum eligibility and before passing 15 combined cards. At exactly 15 choose BANK or continue; at 16–19 there is no BANK action |
 | Scores, countdown/turn order, win screen, optional British presenter | Small status: your turn / locked / wait; no long instructional text |
 
 Use an accessible full-card-text fallback for players who cannot see the television. A normal action should fit entirely on one phone screen without horizontal navigation or page-swiping. Design the 390×844 portrait, 844×390 landscape and tablet player screens *before* building animations.

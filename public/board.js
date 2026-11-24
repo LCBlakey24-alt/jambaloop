@@ -579,6 +579,8 @@ function positionRallyDie(mesh, result, index, progress) {
   }
 }
 
+const easeOutCubic = t => 1 - Math.pow(1 - t, 3);
+
 export function mountTable(container, state, duration, onImpact) {
   let start = performance.now();
   const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
@@ -592,12 +594,26 @@ export function mountTable(container, state, duration, onImpact) {
   let lastProgress;
   const rally = state.mode === 'dice';
   renderer.setPixelRatio(Math.min(1.75, window.devicePixelRatio));
+  renderer.toneMapping = THREE.NeutralToneMapping;
+  renderer.toneMappingExposure = 1.08;
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Only the shared TV screen breathes between rolls; phones render on demand.
+  const idleMotion = !reducedMotion && Boolean(container.closest('.host-screen'));
+  const mountedAt = performance.now();
+  const introLength = reducedMotion ? 0 : 1300;
+  let lastIdleFrame = 0;
   renderer.domElement.setAttribute('aria-hidden', 'true');
   container.append(renderer.domElement);
   let usable = true;
   let frame;
 
+  // No environment map: prefiltering one blocked the main thread for ~1.5s
+  // per mount in profiling, and the stage remounts every phase. A warm rim
+  // light gives brass and lacquer their highlights for free instead.
   const fill = new THREE.HemisphereLight('#eae5ff', '#4e3c4c', 1.8);
+  const rim = new THREE.DirectionalLight('#ffd9a0', 1.1);
+  rim.position.set(-6, 3.5, -5);
+  scene.add(rim);
   const key = new THREE.DirectionalLight('#fff2df', 2.55);
   key.position.set(-3, 8, 6);
   const edge = new THREE.DirectionalLight(accent, 1.46);
@@ -623,21 +639,33 @@ export function mountTable(container, state, duration, onImpact) {
     return { mesh, result, yaw, contact };
   });
 
-  function frameCamera(progress) {
+  const lookTarget = new THREE.Vector3();
+  const orbit = new THREE.Vector3();
+  function frameCamera(progress, now = performance.now()) {
     const aspect = camera.aspect;
     if (rally) {
       const push = rolling ? Math.sin(progress * Math.PI) * .12 : 0;
       const distance = Math.max(1, 1.41 / aspect);
       camera.position.set((1.5 - push) * distance, (6.55 - push) * distance, (7 - push) * distance);
-      camera.lookAt(0, .36, 0);
+      lookTarget.set(0, .36, 0);
       camera.zoom = 1.10 + push;
     } else {
       const pan = rolling ? THREE.MathUtils.smoothstep(progress, 0, .24) * (1 - THREE.MathUtils.smoothstep(progress, .43, .69)) : 0;
       const distance = Math.max(1, 1.39 / aspect);
       camera.position.set((4.42 + pan * .82) * distance, (10.55 - pan * .8) * distance, (12.25 - pan * .8) * distance);
-      camera.lookAt((aspect < 1.08 ? .76 : 1.08) + pan * Math.min(1.34, aspect), 1.48 + pan * .42, -.07);
+      lookTarget.set((aspect < 1.08 ? .76 : 1.08) + pan * Math.min(1.34, aspect), 1.48 + pan * .42, -.07);
       camera.zoom = 1.14 + pan * .18;
     }
+    // Intro: swing in from a wider, higher angle; then a slow idle drift.
+    const intro = introLength ? 1 - easeOutCubic(Math.min(1, (now - mountedAt) / introLength)) : 0;
+    const drift = idleMotion ? Math.sin(now / 5200) * .045 : 0;
+    const bob = idleMotion ? Math.sin(now / 6900) * .06 : 0;
+    orbit.copy(camera.position).sub(lookTarget)
+      .applyAxisAngle(yAxis, intro * .42 + drift)
+      .multiplyScalar(1 + intro * .28);
+    camera.position.copy(lookTarget).add(orbit);
+    camera.position.y += intro * 1.4 + bob;
+    camera.lookAt(lookTarget);
     camera.updateProjectionMatrix();
   }
 
@@ -668,7 +696,7 @@ export function mountTable(container, state, duration, onImpact) {
     if (!usable) return;
     cancelAnimationFrame(frame);
     const progress = rolling ? Math.min(1, initialProgress + (now - start) / rollDuration) : 1;
-    frameCamera(progress);
+    frameCamera(progress, now);
     for (const [index, { mesh, result, contact }] of dice.entries()) {
       if (rally) {
         positionRallyDie(mesh, result, index, Math.min(1, progress / (.72 + index * .095)));
@@ -697,8 +725,18 @@ export function mountTable(container, state, duration, onImpact) {
       if (game.motion) container.dataset.settled = String(settled);
     }
     renderer.render(scene, camera);
-    container.dataset.rendered = 'true';
-    if (progress < 1) frame = requestAnimationFrame(draw);
+    if (container.dataset.rendered !== 'true') container.dataset.rendered = 'true';
+    const introRunning = now - mountedAt < introLength;
+    if (progress < 1 || introRunning) frame = requestAnimationFrame(draw);
+    else if (idleMotion) frame = requestAnimationFrame(idle);
+  }
+
+  // Idle drift renders at about 30fps; the browser pauses it in hidden tabs.
+  function idle(now) {
+    if (!usable) return;
+    if (now - lastIdleFrame < 32) { frame = requestAnimationFrame(idle); return; }
+    lastIdleFrame = now;
+    draw(now);
   }
 
   function lost(event) {

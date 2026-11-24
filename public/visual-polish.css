@@ -1,0 +1,252 @@
+/*
+ * Jambaloop visual polish: shared motion tokens, launcher depth, phase
+ * choreography and celebration layers. Loaded last so it can refine earlier
+ * sheets without editing them. Every animation here is decorative and is
+ * switched off for prefers-reduced-motion at the end of the file.
+ */
+:root {
+  --ease-out-expo: cubic-bezier(.16, 1, .3, 1);
+  --ease-out-back: cubic-bezier(.34, 1.56, .64, 1);
+  --ease-in-out: cubic-bezier(.65, 0, .35, 1);
+  --motion-fast: .18s;
+  --motion-base: .34s;
+  --motion-slow: .6s;
+}
+
+/* ------------------------------------------------------------ launcher -- */
+
+/* The shell is at most 1400px wide, so size tiles from that, not 100vw.
+   At 1920×1080 the seven-column row previously overflowed and was clipped. */
+@media (min-width:1100px) and (min-height:700px) {
+  /* A legacy body:not(.playing) .mode-list {gap:13px} outranked the launcher's
+     own gap, so seven columns were 21px wider than the sizing formula. */
+  body:not(.playing) .home-shell .mode-list { gap:var(--tile-gap); }
+  .home-shell .mode-list {
+    --shell-inline:min(1400px,calc(100vw - 40px));
+    --tile-edge:min(calc((100dvh - 270px)/3),calc((var(--shell-inline) - 5 * var(--tile-gap) - 8px)/6),192px);
+  }
+  .home-shell .mode-list:has(.game-tile:nth-child(19)) {
+    --tile-edge:min(calc((100dvh - 270px)/3),calc((var(--shell-inline) - 6 * var(--tile-gap) - 8px)/7),192px);
+  }
+}
+/* Sit the grid under its heading instead of floating mid-panel. */
+.home-shell .launcher-content { align-items:start; padding-top:clamp(4px,1.4dvh,18px); }
+
+/* Ambient studio light behind the launcher. */
+.home-ambient::before, .home-ambient::after {
+  content:''; position:absolute; border-radius:50%; filter:blur(60px); opacity:.5; pointer-events:none;
+}
+.home-ambient::before { width:44vw; height:44vw; left:-12vw; top:-18vw; background:radial-gradient(circle,#2be3c033,transparent 65%); }
+.home-ambient::after { width:40vw; height:40vw; right:-10vw; bottom:-22vw; background:radial-gradient(circle,#8b62f933,transparent 65%); }
+.home-heading h1 em { background-size:200% 100%; }
+
+/* Tiles: a physical card that leans towards the pointer. */
+.game-tile, .home-shell .game-tile {
+  transform:perspective(820px) rotateX(var(--tilt-x,0deg)) rotateY(var(--tilt-y,0deg)) translateY(var(--lift,0px));
+  transform-style:preserve-3d;
+  transition:transform .42s var(--ease-out-expo), border-color .2s, box-shadow .3s var(--ease-out-expo);
+  will-change:transform;
+}
+.game-tile[data-tilting] { transition:transform .09s linear, border-color .2s, box-shadow .3s; }
+.game-tile:hover, .game-tile:focus-visible,
+.home-shell .game-tile:hover, .home-shell .game-tile:focus-visible {
+  --lift:-5px;
+  transform:perspective(820px) rotateX(var(--tilt-x,0deg)) rotateY(var(--tilt-y,0deg)) translateY(var(--lift));
+  box-shadow:inset 0 1px #ffffff2e, 0 18px 38px #05071599, 0 0 0 1px color-mix(in srgb,var(--game-accent) 40%,transparent),
+    0 10px 40px color-mix(in srgb,var(--game-accent) 22%,transparent);
+}
+.game-tile:active { --lift:-1px; transition-duration:.08s; }
+/* Moving specular light. */
+.game-tile::after {
+  content:''; position:absolute; inset:0; z-index:4; pointer-events:none; border-radius:inherit;
+  background:radial-gradient(circle at var(--glare-x,50%) var(--glare-y,-10%),#ffffff33,#ffffff08 38%,transparent 62%);
+  opacity:0; transition:opacity .35s;
+  mix-blend-mode:screen;
+}
+.game-tile:hover::after, .game-tile:focus-visible::after { opacity:1; }
+
+/* Every show now carries its own emblem; give it depth and a little life. */
+.tile-art .show-mark {
+  position:absolute; inset:auto 4% 9% auto; width:52%; height:auto; max-height:80%;
+  color:var(--game-accent); opacity:.26; z-index:0; pointer-events:none;
+  filter:drop-shadow(0 0 10px color-mix(in srgb,var(--game-accent) 40%,transparent));
+  transform:translateZ(0) rotate(-4deg);
+  transition:transform .6s var(--ease-out-expo), opacity .4s;
+}
+.tile-art .tile-wordmark, .tile-art .tile-strap { position:relative; z-index:2; }
+.game-tile:hover .show-mark, .game-tile:focus-visible .show-mark {
+  opacity:.42; transform:translate(-4%,-5%) rotate(2deg) scale(1.08);
+}
+.game-tile:hover .tile-wordmark { transform:translateZ(24px); }
+.tile-wordmark { transition:transform .5s var(--ease-out-expo); }
+
+/* Staggered deal-in whenever a page of games appears. */
+.mode-list .game-tile { animation:tile-deal .62s var(--ease-out-expo) backwards; }
+.mode-list .game-tile:nth-child(1){animation-delay:0ms}
+.mode-list .game-tile:nth-child(2){animation-delay:30ms}
+.mode-list .game-tile:nth-child(3){animation-delay:60ms}
+.mode-list .game-tile:nth-child(4){animation-delay:90ms}
+.mode-list .game-tile:nth-child(5){animation-delay:120ms}
+.mode-list .game-tile:nth-child(6){animation-delay:150ms}
+.mode-list .game-tile:nth-child(7){animation-delay:180ms}
+.mode-list .game-tile:nth-child(8){animation-delay:210ms}
+.mode-list .game-tile:nth-child(9){animation-delay:240ms}
+.mode-list .game-tile:nth-child(10){animation-delay:270ms}
+.mode-list .game-tile:nth-child(11){animation-delay:300ms}
+.mode-list .game-tile:nth-child(12){animation-delay:330ms}
+.mode-list .game-tile:nth-child(13){animation-delay:360ms}
+.mode-list .game-tile:nth-child(14){animation-delay:390ms}
+.mode-list .game-tile:nth-child(15){animation-delay:420ms}
+.mode-list .game-tile:nth-child(16){animation-delay:450ms}
+.mode-list .game-tile:nth-child(17){animation-delay:480ms}
+.mode-list .game-tile:nth-child(18){animation-delay:510ms}
+.mode-list .game-tile:nth-child(19){animation-delay:540ms}
+.mode-list .game-tile .show-mark :is(path,circle,rect) {
+  stroke-dasharray:420; animation:mark-draw 1.4s var(--ease-in-out) backwards; animation-delay:inherit;
+}
+.mode-list .game-tile .show-mark { animation-delay:inherit; }
+
+/* Preview: the cover lifts out and the copy follows. */
+.game-preview .preview-cover { animation:preview-cover-in .62s var(--ease-out-expo) backwards; transform-style:preserve-3d; }
+.game-preview .preview-cover .tile-art {
+  transform:perspective(900px) rotateX(var(--tilt-x,0deg)) rotateY(var(--tilt-y,0deg));
+  transition:transform .45s var(--ease-out-expo);
+  box-shadow:0 26px 60px #04061299, 0 0 60px color-mix(in srgb,var(--game-accent) 16%,transparent);
+}
+.preview-cover[data-tilting] .tile-art { transition-duration:.09s; }
+.game-preview .preview-cover .show-mark { opacity:.36; }
+.game-preview .preview-cover .show-mark :is(path,circle,rect) { stroke-dasharray:420; animation:mark-draw 1.6s .15s var(--ease-in-out) backwards; }
+.game-preview .preview-copy > * { animation:copy-rise .5s var(--ease-out-expo) backwards; }
+.game-preview .preview-copy > :nth-child(2){animation-delay:40ms}
+.game-preview .preview-copy > :nth-child(3){animation-delay:80ms}
+.game-preview .preview-copy > :nth-child(4){animation-delay:120ms}
+.game-preview .preview-copy > :nth-child(n+5){animation-delay:160ms}
+.preview-steps li { transition:transform .25s var(--ease-out-expo), background-color .25s; }
+.preview-steps li:hover { transform:translateX(4px); }
+
+/* --------------------------------------------------------- buttons ------ */
+.button { transition:transform var(--motion-fast) var(--ease-out-expo), box-shadow .25s, background-color .2s, border-color .2s, filter .2s; }
+.button:not(:disabled):hover { transform:translateY(-1px); }
+.button:not(:disabled):active { transform:translateY(1px) scale(.98); transition-duration:.06s; }
+.button.primary { position:relative; overflow:hidden; isolation:isolate; }
+.button.primary::before {
+  content:''; position:absolute; inset:0 auto 0 -60%; width:45%; z-index:-1; pointer-events:none;
+  background:linear-gradient(100deg,transparent,#ffffff40,transparent);
+  transform:skewX(-18deg); transition:left .7s var(--ease-out-expo);
+}
+.button.primary:not(:disabled):hover::before { left:120%; }
+
+/* ------------------------------------------------------ game phases ----- */
+/* Bolder, quicker stage entrances (replaces the faint .55 opacity start). */
+@keyframes journey-stage-in { from { opacity:.2; transform:translateY(18px) scale(.985); } to { opacity:1; transform:none; } }
+@keyframes journey-answer-in { from { opacity:.2; transform:translateY(10px) scale(.99); } to { opacity:1; transform:none; } }
+.game.phase-enter[data-phase="question"] .question-panel,
+.game.phase-enter[data-phase="ready"] .game-panel { animation-duration:.5s; animation-timing-function:var(--ease-out-expo); }
+
+/* Answers deal in one after another; they are clickable throughout. */
+.game.phase-enter[data-phase="question"] .answers .answer { animation:answer-deal .46s var(--ease-out-expo) backwards; }
+.game.phase-enter[data-phase="question"] .answers .answer:nth-child(2){animation-delay:60ms}
+.game.phase-enter[data-phase="question"] .answers .answer:nth-child(3){animation-delay:120ms}
+.game.phase-enter[data-phase="question"] .answers .answer:nth-child(4){animation-delay:180ms}
+.game.phase-enter[data-phase="question"] .question-panel h2 { animation:headline-in .55s var(--ease-out-expo) backwards; }
+
+.answers .answer { transition:transform .22s var(--ease-out-expo), box-shadow .25s, opacity .3s, filter .3s, background-color .2s, border-color .2s; }
+.game[data-phase="question"] .answers .answer:not(:disabled):hover { transform:translateY(-2px); }
+.game[data-phase="question"] .answers .answer:not(:disabled):active { transform:scale(.98); }
+.answers .answer.selected { box-shadow:0 0 0 3px color-mix(in srgb,var(--game-accent,#9de) 55%,transparent), 0 10px 26px #0005; }
+
+/* Reveal: the right answer lights up, the rest step back. */
+.game[data-phase="reveal"] .answers .answer:not(.correct) { opacity:.6; filter:saturate(.55); }
+.game[data-phase="reveal"] .answers .answer.selected:not(.correct) { opacity:.82; }
+.game.phase-enter[data-phase="reveal"] .answers .answer.correct { animation:answer-correct .9s var(--ease-out-back) backwards; }
+.game.player-only.phase-enter[data-result="miss"] .answers .answer.selected:not(.correct) { animation:answer-miss .5s var(--ease-in-out); }
+.game.player-only.phase-enter[data-result="win"] .question-panel { animation:result-win .7s var(--ease-out-back) backwards; }
+
+/* Timers get a heartbeat in the last five seconds. */
+.timer.urgent { animation:timer-beat 1s var(--ease-in-out) infinite; }
+
+/* Finals: podium places rise in from third to first. */
+.game.phase-enter[data-phase="finished"] .podium-place { animation:podium-rise .8s var(--ease-out-expo) backwards; }
+.game.phase-enter[data-phase="finished"] .podium-place.place-3 { animation-delay:.15s; }
+.game.phase-enter[data-phase="finished"] .podium-place.place-2 { animation-delay:.35s; }
+.game.phase-enter[data-phase="finished"] .podium-place.place-1 { animation-delay:.6s; }
+.game.phase-enter[data-phase="finished"] .podium-place.place-1 > span { animation:crown-pop .7s 1.1s var(--ease-out-back) backwards; display:inline-block; }
+.podium-place.place-1 { position:relative; overflow:hidden; }
+.podium-place.place-1::after {
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background:linear-gradient(115deg,transparent 35%,#ffffff30 50%,transparent 65%);
+  transform:translateX(-120%); animation:winner-sheen 3.6s 1.6s var(--ease-in-out) infinite;
+}
+.game.phase-enter[data-phase="finished"] :is(.ranking li,.team-scoreboard li,.party-team-scores > div) { animation:row-in .5s var(--ease-out-expo) backwards; }
+.game.phase-enter[data-phase="finished"] :is(.ranking li,.team-scoreboard li):nth-child(2){animation-delay:50ms}
+.game.phase-enter[data-phase="finished"] :is(.ranking li,.team-scoreboard li):nth-child(3){animation-delay:100ms}
+.game.phase-enter[data-phase="finished"] :is(.ranking li,.team-scoreboard li):nth-child(4){animation-delay:150ms}
+.game.phase-enter[data-phase="finished"] :is(.ranking li,.team-scoreboard li):nth-child(n+5){animation-delay:200ms}
+
+/* Scene backdrops drift slowly so the studio never looks frozen. */
+.scene-backdrop > i { animation:backdrop-float 18s var(--ease-in-out) infinite alternate; }
+.scene-backdrop > i:nth-child(2) { animation-duration:24s; animation-delay:-6s; }
+.scene-backdrop > i:nth-child(3) { animation-duration:30s; animation-delay:-12s; }
+
+/* 3D table: a soft vignette and a glow that breathes while dice roll. */
+.table-stage, #board-stage { position:relative; }
+#board-stage::after {
+  content:''; position:absolute; inset:0; pointer-events:none; border-radius:inherit;
+  background:radial-gradient(ellipse at 50% 45%,transparent 55%,#02040b70 100%);
+}
+#board-stage[data-beat="rolling"], #board-stage[data-beat="landing"] {
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--game-accent,#9de) 35%,transparent), 0 0 46px color-mix(in srgb,var(--game-accent,#9de) 18%,transparent);
+  transition:box-shadow .4s;
+}
+
+/* TV sidebar standings scroll inside the HUD instead of growing the page. */
+.host-screen .tv-round-hud { align-content:start; min-height:0; }
+.host-screen .tv-round-hud .tv-leaders { min-height:0; max-height:calc(100dvh - 365px); overflow:auto; overscroll-behavior:contain; }
+.host-screen .tv-round-hud .tv-leaders .ranking li { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:6px 9px; }
+.host-screen .tv-round-hud .tv-leaders .ranking li strong { white-space:nowrap; }
+.host-screen .tv-round-hud .tv-leaders .ranking li { animation:row-in .45s var(--ease-out-expo) backwards; }
+.host-screen .tv-round-hud .tv-leaders .ranking li:nth-child(2){animation-delay:50ms}
+.host-screen .tv-round-hud .tv-leaders .ranking li:nth-child(3){animation-delay:100ms}
+.host-screen .tv-round-hud .tv-leaders .ranking li:nth-child(n+4){animation-delay:150ms}
+.tv-leaders-more { margin:6px 0 0; font-size:12px; color:var(--muted,#b8c6dc); }
+
+/* Celebration canvas sits above everything and never takes input. */
+.confetti-layer { position:fixed; inset:0; width:100vw; height:100vh; pointer-events:none; z-index:9999; }
+
+@keyframes tile-deal { from { opacity:0; transform:perspective(820px) translateY(26px) rotateX(18deg) scale(.94); } to { opacity:1; } }
+@keyframes mark-draw { from { stroke-dashoffset:420; } to { stroke-dashoffset:0; } }
+@keyframes preview-cover-in { from { opacity:0; transform:translateY(16px) scale(.94) rotate(-2deg); } }
+@keyframes copy-rise { from { opacity:0; transform:translateY(12px); } }
+@keyframes answer-deal { from { opacity:.15; transform:translateY(14px) scale(.97); } }
+@keyframes headline-in { from { opacity:0; transform:translateY(10px); letter-spacing:.02em; } }
+@keyframes answer-correct {
+  0% { transform:scale(.96); box-shadow:0 0 0 0 color-mix(in srgb,var(--game-accent,#9fe) 70%,transparent); }
+  45% { transform:scale(1.035); box-shadow:0 0 0 10px color-mix(in srgb,var(--game-accent,#9fe) 25%,transparent); }
+  100% { transform:none; box-shadow:0 0 0 0 transparent; }
+}
+@keyframes answer-miss { 20%,60% { transform:translateX(-6px); } 40%,80% { transform:translateX(6px); } }
+@keyframes result-win { from { transform:scale(.97); box-shadow:0 0 0 0 color-mix(in srgb,var(--game-accent,#9fe) 60%,transparent); } 60% { transform:scale(1.01); box-shadow:0 0 0 14px transparent; } }
+@keyframes timer-beat { 0%,100% { transform:scale(1); } 15% { transform:scale(1.12); } 30% { transform:scale(.98); } }
+@keyframes podium-rise { from { opacity:0; transform:translateY(40px) scale(.96); } }
+@keyframes crown-pop { from { transform:scale(0) rotate(-30deg); } }
+@keyframes winner-sheen { 0% { transform:translateX(-120%); } 40%,100% { transform:translateX(120%); } }
+@keyframes row-in { from { opacity:0; transform:translateX(-14px); } }
+@keyframes backdrop-float { from { transform:translate3d(0,0,0) rotate(0); } to { transform:translate3d(3%,-4%,0) rotate(8deg); } }
+
+@media (prefers-reduced-motion:no-preference) {
+  .home-heading h1 em { animation:headline-shimmer 9s var(--ease-in-out) infinite alternate; }
+  @keyframes headline-shimmer { to { background-position:100% 0; } }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  .game-tile, .home-shell .game-tile, .game-preview .preview-cover .tile-art { transform:none !important; transition:border-color .2s, box-shadow .2s !important; }
+  .game-tile::after, .button.primary::before, .podium-place.place-1::after { display:none; }
+  .mode-list .game-tile, .mode-list .game-tile .show-mark :is(path,circle,rect), .game-preview .preview-cover,
+  .game-preview .preview-cover .show-mark :is(path,circle,rect), .game-preview .preview-copy > *,
+  .game.phase-enter .answers .answer, .game.phase-enter .question-panel h2, .game .answers .answer.correct,
+  .game.player-only .question-panel, .timer.urgent, .podium-place, .podium-place > span,
+  .game :is(.ranking li,.team-scoreboard li,.party-team-scores > div), .scene-backdrop > i { animation:none !important; }
+  .tile-art .show-mark, .game-tile:hover .show-mark, .game-tile:hover .tile-wordmark { transform:none; transition:none; }
+  .button, .answers .answer, .preview-steps li { transition:none !important; transform:none !important; }
+  .confetti-layer { display:none; }
+}

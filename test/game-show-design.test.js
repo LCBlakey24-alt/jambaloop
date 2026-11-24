@@ -56,9 +56,19 @@ test('first three games have original distinct cover art and finale identity',()
     assert.ok(reveal.includes('data-action="ceremony-skip"'));
   }
 });
-test('other modes retain their original artwork and generic ceremony',()=>{
+test('every show has its own decorative emblem on launcher, preview and setup art',()=>{
+  const marks=modes.map(([id])=>showMark(id));
+  assert.equal(new Set(marks).size,modes.length,'Each emblem is distinct');
+  for(const [index,mode] of modes.entries()){
+    const [id]=mode;
+    assert.match(marks[index],/^<svg class="show-mark"[^>]*aria-hidden="true" focusable="false"/);
+    assert.doesNotMatch(marks[index],/<(script|image|foreignObject|text)\b|href=/,'Emblems are inline vector paths only');
+    assert.ok(launcherTile(mode).includes(marks[index]));
+    assert.ok(launcherPreview(id).includes(marks[index]));
+  }
+});
+test('other modes retain the generic ceremony until their redesign batch lands',()=>{
   for(const [id] of modes.filter(([id])=>!['classic','wheel','knockout'].includes(id))){
-    assert.equal(showMark(id),'');
     assert.equal(showIdentity(id),undefined);
     assert.ok(!scoreReveal(true,{mode:id,ceremony:{starts:0}}).includes('show-finale-identity'));
   }

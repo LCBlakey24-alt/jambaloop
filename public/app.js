@@ -1,4 +1,5 @@
 import { showIdentity } from './show-identity.js';
+import { bindTilt, celebrate, countUp } from './motion.js';
 import {soCloseView,numberWheelRows,soCloseRevealView} from './so-close-view.js';
 import {revealFrame as soCloseFrame, stageFrame as soCloseStage} from './so-close-reveal.js';
 import { scoreBreakView, updateScoreBreak } from './score-break.js';
@@ -30,6 +31,7 @@ const icons = (name, css = '') => `<img class="${css}" src="/icons/${name}.svg" 
 const modeName = id => modes.find(mode => mode[0] === id)?.[1] ?? '';
 const app = document.querySelector('#app');
 const switchAvatarSession = bindRoomAvatars(app);
+bindTilt();
 const home = app.innerHTML;
 const dialog = document.querySelector('#dialog');
 const content = document.querySelector('#dialog-content');
@@ -710,7 +712,7 @@ function standings(players) {
   return players.slice(0, 3).map((player, index) => {
     const rank = rankOf(players, player);
     return `<div class="podium-place place-${index + 1}"><span>${rank === 1 ? '★' : '#' + rank}</span>
-      <strong>${escape(player.name)}</strong><small>${player.score.toLocaleString()} pts</small></div>`;
+      <strong>${escape(player.name)}</strong><small data-count-up>${player.score.toLocaleString()} pts</small></div>`;
   }).join('');
 }
 
@@ -742,7 +744,9 @@ function checkpointNote(s) {
 function tvRoundHud(s, timer, progress, host) {
   if (!host) return '';
   const revealed = s.phase === 'reveal';
-  const leaders = revealed && showsScoresEachQuestion(s) && !s.teams.length ? s.players.slice(0, 3) : [];
+  // The TV sidebar carries the standings; a second full-width board used to
+  // squeeze the question panel until its answers were cut off at 720p.
+  const leaders = revealed && showsScoresEachQuestion(s) && !s.teams.length ? s.players.slice(0, 8) : [];
   const groupPlay = showsScoresEachQuestion(s) && s.teams.length && s.mode !== 'board';
   return `<aside class="tv-round-hud">
     <section class="game-panel tv-status">
@@ -751,7 +755,7 @@ function tvRoundHud(s, timer, progress, host) {
       <p class="status" id="host-answer-count" role="status">${answerCount(s)}</p>${progress}
     </section>
     ${groupPlay ? `<section class="game-panel tv-leaders"><div class="eyebrow">TEAM SCORES</div>${teamScoreboard(s.teams)}</section>` : ''}
-    ${leaders.length ? `<section class="game-panel tv-leaders"><div class="eyebrow">TOP SCORES</div>${leaderboard(leaders)}</section>` : ''}
+    ${leaders.length ? `<section class="game-panel tv-leaders"><div class="eyebrow">${s.players.length > leaders.length ? 'TOP SCORES' : 'LEADERBOARD'}</div>${leaderboard(leaders)}${s.players.length > leaders.length ? `<p class="tv-leaders-more">+${s.players.length - leaders.length} more players</p>` : ''}</section>` : ''}
   </aside>`;
 }
 
@@ -789,6 +793,21 @@ function phaseCaption(s) {
     race: 'Quiz Race in progress',
     finished: 'Final results',
   }[s.phase];
+}
+
+// Decorative celebration for genuine winning moments; keys stop repeats on re-render.
+function celebrateMoment(s, host, enter, result) {
+  const view = app.querySelector('.game');
+  if (!view) return;
+  const key = `${s.code}/${s.game}`;
+  if (s.phase === 'finished') {
+    if (enter) countUp(view);
+    if (host && !document.querySelector('#post-ceremony[hidden]')) celebrate(key + '/finale', { source: view, origin: 'sides' });
+    const teamWin = s.teams?.length && s.teamWinners?.includes(s.player?.team);
+    if (!host && enter && (s.rank === 1 || teamWin)) celebrate(key + '/finale/player', { source: view, intensity: .45 });
+  } else if (!host && enter && result === 'win') {
+    celebrate(`${key}/${s.index}/round`, { source: view, intensity: .22 });
+  }
 }
 
 function render(s) {
@@ -943,7 +962,7 @@ function render(s) {
       ${pauseButton}
       ${canControl ? `<button class="button primary captain-next" data-action="advance">${nextQuestionLabel(s)} ${icons('arrow-right')}</button>` : ''}</div>
       </div>${tvRoundHud(s, timer, response, host)}${host ? '</div>' : ''}${revealed && board && showLiveScores ? `<div class="game-panel round-leaders"><h2>Race standings</h2>${teamList(s, ownTeam?.id, true)}</div>` : ''}
-      ${host && revealed && showLiveScores && !board && !s.teams.length ? `<div class="game-panel round-leaders"><h2>Leaderboard</h2>${fullLeaderboard(s.players, 'View full leaderboard')}</div>` : ''}`;
+`;
   }
   if (s.phase === 'finished') {
     const nextUp = gameNightView(s, { canControl, escape, icons });
@@ -1013,6 +1032,7 @@ function render(s) {
   switchAvatarSession.refresh();
   if (backdrop) app.querySelector('.scene-backdrop').replaceWith(backdrop);
   renderGraphics(s, stage, animateRoll);
+  celebrateMoment(s, host, enter, result);
   if(s.mode==='sketch')paintSketchBoard(s.party);
   if(s.mode==='quizrace' && s.race){
     raceTrackView?.dispose(); raceTrackView=mountQuizRaceTrack(app);
@@ -1052,6 +1072,8 @@ function updateSoCloseReveal(s=state){
   target.dataset.frame=key;
   target.innerHTML=soCloseRevealView(s,frame,Boolean(session?.host),escape);
   const done=frame.kind==='winner';
+  if(done&&(session?.host?(s.estimateGuesses??[]).some(row=>row.won):s.answerCorrect))
+    celebrate(`${s.code}/${s.game}/${s.index}/soclose`,{source:target.closest('.game'),intensity:session?.host?.8:.4});
   const actions=target.parentElement.querySelector('.so-close-reveal-actions');
   if(actions){actions.querySelector('[data-action="estimate-reveal-skip"]').hidden=done;actions.querySelector('[data-action="advance"]').hidden=!done;}
   const cueKey=s.code+'/'+s.game+'/'+s.index+'/'+key;
@@ -1073,7 +1095,10 @@ function updateCeremony() {
   if (frame.dataset.index !== String(index)) {
     frame.dataset.index = index;
     frame.innerHTML = frameView(ceremonyFrames[index], escape, icons);
-    if (ceremonyFrames[index].rows[0]?.rank === 1 && soundEnabled) playCue(sound, state.mode, 'finished');
+    if (ceremonyFrames[index].rows[0]?.rank === 1) {
+      if (soundEnabled) playCue(sound, state.mode, 'finished');
+      celebrate(`${state.code}/${state.game}/finale`, { source: frame.closest('.game'), origin: 'sides' });
+    }
   }
 }
 

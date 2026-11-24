@@ -1,3 +1,4 @@
+import { showIdentity, showMark } from './show-identity.js';
 import { avatarView } from './party-views.js';
 
 const awardIcons = { fast: 'zap', slow: 'hourglass', correct: 'trophy', wrong: 'target', streak: 'flame', comeback: 'trending-up' };
@@ -6,6 +7,7 @@ export function scoreReveal(phase, room) {
   if (!room.ceremony) return '';
   return `<section class="game-panel score-ceremony" id="score-ceremony" ${phase ? '' : 'hidden'}>
     <div class="eyebrow">FINAL SCORE REVEAL</div>
+    ${showIdentity(room.mode) ? `<div class="show-finale-identity">${showMark(room.mode)}<span>${showIdentity(room.mode).finale}</span></div>` : ''}
     <div id="ceremony-frame"></div>
     <button class="button outline small" data-action="ceremony-skip">Skip to full results</button></section>`;
 }

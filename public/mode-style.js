@@ -1,5 +1,6 @@
 // Display fonts and scene colours share the same palette on every device.
 const styles = {
+  soclose: { font:'Club Tracks', weight:700, accent:'#ffbf68', backdrop:'#08282d', panel:'#123e42', edge:'#559a93', motif:'tiles', notes:[330,440,550], wave:'triangle' },
   quizrace: { font: 'Club Race', weight: 700, accent: '#1dd9be', backdrop: '#131a33', panel: '#222d4a', edge: '#4a5a83', motif: 'orbit', notes: [523, 622, 784], wave: 'triangle' },
   classic: { font: 'Club Classic', weight: 700, accent: '#f5d58d', backdrop: '#080f24', panel: '#14254a', edge: '#9b7843', motif: 'stars', notes: [523, 659, 784], wave: 'sine' },
   wheel: { font: 'Club Wheel', weight: 700, accent: '#ffcf74', backdrop: '#200e36', panel: '#3d1958', edge: '#9a57ad', motif: 'orbit', notes: [440, 622, 831], wave: 'triangle' },

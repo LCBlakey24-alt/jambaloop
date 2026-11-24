@@ -2,6 +2,7 @@ import { modes } from './game-config.js';
 import { answerGuide, helpTypes, specialAnswer } from './answer-controls.js';
 
 const summaries = {
+  soclose: 'Scroll or enter a number privately. The closest estimate earns 100 points; an exact answer earns 200. Ties share the same award.',
   classic: 'Choose a topic, answer on your phone, and compete for the highest score.',
   wheel: 'The host spins for a category before each question. Everyone answers on their phone.',
   board: 'Roll the die from your phone. Its face sets the move, base points and difficulty. The space you land on sets the genre.',
@@ -24,7 +25,7 @@ const summaries = {
 
 export function explainer(mode, play) {
   const title = modes.find(([id]) => id === mode)[1];
-  if(['quizrace','brain','samepage','spotlight','topanswers','rare','sketch'].includes(mode))return `<details class="mode-explainer" ${play?'open':''}><summary>How to play ${title}</summary><p>${summaries[mode]}</p></details>`;
+  if(['soclose','quizrace','brain','samepage','spotlight','topanswers','rare','sketch'].includes(mode))return `<details class="mode-explainer" ${play?'open':''}><summary>How to play ${title}</summary><p>${summaries[mode]}</p></details>`;
   return `<details class="mode-explainer" ${play ? 'open' : ''}><summary>Watch how to play ${title}</summary>
     <video aria-label="How to play ${title}" controls playsinline muted preload="none" poster="/videos/${mode}.jpg"
       ${play && !matchMedia('(prefers-reduced-motion: reduce)').matches ? 'autoplay' : ''}>

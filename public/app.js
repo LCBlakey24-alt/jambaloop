@@ -1,4 +1,6 @@
 import { showIdentity } from './show-identity.js';
+import {soCloseView,numberWheelRows,soCloseRevealView} from './so-close-view.js';
+import {revealFrame as soCloseFrame} from './so-close-reveal.js';
 import { scoreBreakView, updateScoreBreak } from './score-break.js';
 import { winnerBanner, playerFinish } from './result-highlights.js';
 import { bindRoomAvatars } from './room-avatars.js';
@@ -58,6 +60,7 @@ let previewTheme = localStorage.getItem('quiz-club-theme') ?? defaultTheme;
 let boardDisplay;
 let boardModule;
 let renderedPhase;
+let lastSoCloseCue;
 let categoryGroup = 0;
 let homeFilter = 'all';
 let homePage = 0;
@@ -152,6 +155,7 @@ function renderHome() {
   setTheme(previewTheme);
   app.innerHTML = home;
   renderedPhase = undefined;
+  lastSoCloseCue = undefined;
   announcement.textContent = '';
   partyReply = '';
   footer.hidden = false;
@@ -346,6 +350,8 @@ function openDialog(mode, value, gameMode, quizId) {
       form.elements.privateQuestions.disabled = game !== 'showdown';
       const board = game === 'board';
       const race = game === 'quizrace';
+      const soClose = game === 'soclose';
+      if(soClose){form.elements.format.value='estimate';form.elements.difficulty.value='standard';}
       form.querySelector('#race-setup').hidden = !race;
       form.querySelector('#race-setup').disabled = !race;
       if(race){form.elements.format.value='choice';form.elements.seconds.value='0';form.elements.difficulty.value='standard';}
@@ -362,7 +368,7 @@ function openDialog(mode, value, gameMode, quizId) {
         form.elements.speedPoints.value = points.bonus;
       }
       const categoryField = form.querySelector('#category-field');
-      const supportsCustom = fixedQuestionModes.includes(game) && !privateQuiz;
+      const supportsCustom = fixedQuestionModes.includes(game) && !privateQuiz && !soClose;
       const trolley = game === 'tracks';
       const matching = game === 'samepage';
       const spotlight = game === 'spotlight';
@@ -405,13 +411,13 @@ function openDialog(mode, value, gameMode, quizId) {
       form.elements.difficulty.disabled = !supportsCustom || custom || race;
       form.querySelector('#difficulty-field').hidden = form.elements.difficulty.disabled;
       const curated = !form.elements.difficulty.disabled && form.elements.difficulty.value !== 'standard';
-      categoryField.hidden = (!supportsCustom && !race) || custom || curated;
-      form.elements.format.closest('label').hidden = custom || party || privateQuiz || curated || race;
+      categoryField.hidden = (!supportsCustom && !race && !soClose) || custom || curated;
+      form.elements.format.closest('label').hidden = custom || party || privateQuiz || curated || race || soClose;
       form.elements.count.closest('label').hidden = custom || (party && !matching && !spotlight && !brain && !topAnswers && !rare && !creativeRounds) || race;
       form.elements.seconds.closest('label').hidden = party || race;
       form.elements.autoReveal.closest('label').hidden = party || race;
       form.elements.phoneView.closest('label').hidden = party || privateQuiz || race;
-      form.querySelector('.setup-presets').hidden = party || race;
+      form.querySelector('.setup-presets').hidden = party || race || soClose;
       const scoreInterval = form.elements.scoreInterval;
       scoreInterval.disabled = !supportsScoreCheckpoints(game);
       scoreInterval.closest('label').hidden = scoreInterval.disabled;
@@ -441,7 +447,7 @@ function openDialog(mode, value, gameMode, quizId) {
         : form.elements.seconds.value === '0' ? 'No speed bonus.'
         : format === 'mixed' ? 'Timed correct answers can earn a speed bonus. Closest guesses receive equal base points.'
         : 'Faster correct answers earn more.';
-      form.querySelector('#scoring-note').textContent = race ? 'You steer your speed with answers. Correct boosts you, Pass and wrong answers slow you down. First to finish wins.' : party ? (rare ? 'Everyone secretly enters a valid answer that the other players might not think of. A verified unique answer earns 200 points, a pair earns 100 each, three or more matches earn 50 each. Unrecognised answers need the TV host to review them before reveal. Choose 3, 5 or 7 rounds.' : topAnswers ? 'Everyone privately votes for their genuine favourite among four options. Then secretly predicts the room’s most popular answer. The TV reveals real room vote counts (never invented surveys). Score 20 per vote for your prediction, plus 100 when you predict a top-ranked option. Choose 3, 5 or 7 rounds.' : brain ? 'Climb 5, 7 or 10 original reasoning puzzles. Start with 2 lives; a missed or wrong answer costs 1 life. Each higher level earns more points, and eliminated players can watch the remaining climb.' : spotlight ? 'Everyone takes one contestant turn. A randomly selected expert suggests an answer first. Contestants earn 100 points for a correct answer; experts earn 40 for a correct suggestion. Choose one, two or three turns each, for up to twenty players.' : matching ? 'Write a short answer privately. Each other player who matches it earns you 100 points. Choose 3, 5 or 7 rounds.' : trolley ? 'Each round: two teams choose one of three cards in each phase (defend, sabotage, reinforce). The Trolley Driver pulls the lever. One round per player.' : game === 'bluff' ? 'Play 3, 5 or 7 rounds. One player per round never sees the secret prompt, and the bluff role rotates. A correct vote earns +100 points. If the bluff escapes the vote, they earn +100. Strict most votes catches the bluff; tied top votes let them escape.' : game === 'potato' ? 'Two or more players. The potato has one shared two-minute timer.' : creativeRounds ? 'Choose 3, 5 or 7 rounds. Players select cards or write punchlines privately, then vote on the funniest entry each round. The same room and cumulative scores continue throughout.' : 'Players use their phones to enter or vote.')
+      form.querySelector('#scoring-note').textContent = soClose ? 'Closest guesses earn 100 points; exact guesses earn 200. No speed bonus.' : race ? 'You steer your speed with answers. Correct boosts you, Pass and wrong answers slow you down. First to finish wins.' : party ? (rare ? 'Everyone secretly enters a valid answer that the other players might not think of. A verified unique answer earns 200 points, a pair earns 100 each, three or more matches earn 50 each. Unrecognised answers need the TV host to review them before reveal. Choose 3, 5 or 7 rounds.' : topAnswers ? 'Everyone privately votes for their genuine favourite among four options. Then secretly predicts the room’s most popular answer. The TV reveals real room vote counts (never invented surveys). Score 20 per vote for your prediction, plus 100 when you predict a top-ranked option. Choose 3, 5 or 7 rounds.' : brain ? 'Climb 5, 7 or 10 original reasoning puzzles. Start with 2 lives; a missed or wrong answer costs 1 life. Each higher level earns more points, and eliminated players can watch the remaining climb.' : spotlight ? 'Everyone takes one contestant turn. A randomly selected expert suggests an answer first. Contestants earn 100 points for a correct answer; experts earn 40 for a correct suggestion. Choose one, two or three turns each, for up to twenty players.' : matching ? 'Write a short answer privately. Each other player who matches it earns you 100 points. Choose 3, 5 or 7 rounds.' : trolley ? 'Each round: two teams choose one of three cards in each phase (defend, sabotage, reinforce). The Trolley Driver pulls the lever. One round per player.' : game === 'bluff' ? 'Play 3, 5 or 7 rounds. One player per round never sees the secret prompt, and the bluff role rotates. A correct vote earns +100 points. If the bluff escapes the vote, they earn +100. Strict most votes catches the bluff; tied top votes let them escape.' : game === 'potato' ? 'Two or more players. The potato has one shared two-minute timer.' : creativeRounds ? 'Choose 3, 5 or 7 rounds. Players select cards or write punchlines privately, then vote on the funniest entry each round. The same room and cumulative scores continue throughout.' : 'Players use their phones to enter or vote.')
         : privateQuiz ? 'Each player gets a unique multiple-choice or True or False question in each round.'
         : custom ? 'Uses every question in the saved quiz in its authored order.'
         : curated ? 'A curated mixed-topic pack with multiple-choice questions.' : board
@@ -869,6 +875,8 @@ function render(s) {
       ${!host ? `<dl class="personal-scorecard"><div><dt>Rounds won</dt><dd>${s.player.wins} / ${s.index + 1}</dd></div><div><dt>Best streak</dt><dd>${s.player.bestStreak}</dd></div><div><dt>Final rank</dt><dd>#${s.rank}</dd></div></dl>` : ''}
       ${!host && s.playerCount > s.players.length ? '<h2>Top 10</h2>' : ''}${fullLeaderboard(s.players, 'Full standings')}${s.review.length ? reviewView(s.review, escape, formatNumber) : ''}<div class="actions">${canControl ? replayButtons(s, icons) : `<button class="button outline" data-action="leave">Back to home ${icons('arrow-right')}</button>`}</div>
       ${host ? '' : '<p class="status">Stay here if the captain or host starts a rematch.</p>'}</div>`;
+  } else if(s.mode==='soclose' && s.phase==='reveal' && s.estimateReveal){
+    body=`<div class="game-panel so-close-broadcast"><div class="eyebrow">ROUND ${s.index+1} OF ${s.total}</div><p class="so-close-reveal-prompt">${controllerOnly?'Round results':escape(s.question.prompt)}</p><div id="so-close-frame" aria-live="polite"></div>${canControl?`<div class="actions so-close-reveal-actions"><button class="button outline" data-action="estimate-reveal-skip">Skip to results</button><button class="button primary" data-action="advance" hidden>${nextQuestionLabel(s)} ${icons('arrow-right')}</button></div>`:''}</div>`;
   } else if (host && s.privateQuestions) {
     const revealed = s.phase === 'reveal';
     timer = !revealed && s.ends ? '<div class="tv-clock"><span class="timer" id="timer"></span><small>TIME LEFT</small></div>' : '';
@@ -908,7 +916,7 @@ function render(s) {
       : locked ? question.type === 'estimate' ? 'Another guess was closer.' : 'Incorrect.' : 'Question closed.';
     const response = host && !revealed
       ? `<progress id="response-progress" class="response-progress" value="${s.answered}" max="${Math.max(1, responseTarget(s))}" aria-label="Players who answered"></progress>` : '';
-    const promptHelp = !revealed ? `<p class="question-guide">${host && special ? 'On your phone: ' : ''}${answerGuide(question.type)[1]}</p>` : '';
+    const promptHelp = !revealed ? `<p class="question-guide">${host && special ? 'On your phone: ' : ''}${s.mode === 'soclose' ? 'Swipe the number wheel or enter a number, then lock in your guess.' : answerGuide(question.type)[1]}</p>` : '';
     const playerFeedback = !host && (revealed || locked || sending || eliminated)
       ? `<div class="player-answer-feedback" role="status" data-feedback="${revealed ? won ? 'correct' : 'incorrect' : eliminated ? 'spectating' : locked ? 'locked' : 'sending'}">
         <span class="feedback-mark" aria-hidden="true">${revealed ? won ? '✓' : '!' : eliminated ? '•' : locked ? '✓' : '…'}</span>
@@ -924,7 +932,7 @@ function render(s) {
       ${playerFeedback}
       ${timer && !host ? '<div class="time-track" aria-hidden="true"><div id="time-fill"></div></div>' : ''}
       ${promptHelp}
-      ${special ? specialAnswer(question, { draft, selection, revealed, host, disabled: eliminated || sending, closest: s.closest }, escape) : `<div class="answers ${s.question.options.length === 2 ? 'binary-answers' : ''}">${s.question.options.map((option, index) => `<button style="--answer:${colors[index]};--share:${s.breakdown && s.answered ? s.breakdown[index] * 100 / s.answered : 0}%" class="answer ${selection === index ? 'selected' : ''} ${revealed && s.question.correct === index ? 'correct' : ''}"
+      ${s.mode === 'soclose' ? soCloseView(question,{draft,selection,revealed,host,disabled:eliminated || sending,closest:s.closest,guesses:s.estimateGuesses},escape) : special ? specialAnswer(question, { draft, selection, revealed, host, disabled: eliminated || sending, closest: s.closest }, escape) : `<div class="answers ${s.question.options.length === 2 ? 'binary-answers' : ''}">${s.question.options.map((option, index) => `<button style="--answer:${colors[index]};--share:${s.breakdown && s.answered ? s.breakdown[index] * 100 / s.answered : 0}%" class="answer ${selection === index ? 'selected' : ''} ${revealed && s.question.correct === index ? 'correct' : ''}"
        data-dim="${revealed ? s.question.correct !== index : !host && selection !== undefined && selection !== index}" data-action="answer" data-option="${index}" ${host || revealed || locked || sending || eliminated ? 'disabled' : ''}>
       <strong>${'ABCD'[index]}</strong><span>${escape(option)}${revealed && s.question.correct === index ? ' ✓' : ''}</span>
       ${s.breakdown ? `<small class="answer-count"><b class="vote-share">${s.answered ? Math.round(100 * s.breakdown[index] / s.answered) : 0}%</b><span>${s.breakdown[index]} ${s.breakdown[index] === 1 ? 'vote' : 'votes'}</span></small>` : ''}</button>`).join('')}</div>`}
@@ -969,7 +977,7 @@ function render(s) {
   const boost = s.boost > 1 && ['ready', 'rolling', 'question', 'reveal'].includes(s.phase)
     ? `<span class="score-boost">${icons('zap')} Double points</span>` : '';
   const mode = modes.find(([id]) => id === s.mode);
-  const result = !host && s.phase === 'reveal' ? won ? 'win' : s.selection !== undefined ? 'miss' : 'skip'
+  const result = !host && s.phase === 'reveal' && s.mode!=='soclose' ? won ? 'win' : s.selection !== undefined ? 'miss' : 'skip'
     : !host && s.phase === 'question' && s.selection !== undefined ? 'locked' : '';
   const completed = ['reveal', 'score-break', 'party-reveal','sketch-reveal'].includes(s.phase) ? s.index + 1 : s.index;
   const track = showProgress ? `<div class="round-track" role="img" aria-label="${completed} of ${s.total} rounds completed">
@@ -1027,8 +1035,27 @@ function render(s) {
     textarea?.focus({ preventScroll: true });
     textarea?.setSelectionRange(...writing);
   }
+  updateSoCloseReveal(s);
   if (enter && /^(lobby|ready|question|reveal|score-break|finished|party-)/.test(s.phase)) {
     window.scrollTo({ top: 0, behavior: 'instant' });
+  }
+}
+
+function updateSoCloseReveal(s=state){
+  const target=document.querySelector('#so-close-frame');
+  if(!target||!s?.estimateReveal||s.mode!=='soclose'||s.phase!=='reveal')return;
+  const frame=soCloseFrame(s.estimateReveal,Date.now()+offset);
+  const key=frame.kind+'/'+frame.shown;
+  if(target.dataset.frame===key)return;
+  target.dataset.frame=key;
+  target.innerHTML=soCloseRevealView(s,frame,Boolean(session?.host),escape);
+  const done=frame.kind==='winner';
+  const actions=target.parentElement.querySelector('.so-close-reveal-actions');
+  if(actions){actions.querySelector('[data-action="estimate-reveal-skip"]').hidden=done;actions.querySelector('[data-action="advance"]').hidden=!done;}
+  const cueKey=s.code+'/'+s.game+'/'+s.index+'/'+key;
+  if(lastSoCloseCue!==cueKey){
+    lastSoCloseCue=cueKey;
+    if(session?.host&&soundEnabled)playCue(sound,s.mode,'estimate-'+frame.kind);
   }
 }
 
@@ -1111,7 +1138,7 @@ function receive(next, current) {
   setConnectionStatus(false);
   if (soundEnabled && current.host && state) {
     if (state.phase !== next.phase || state.index !== next.index) {
-      if (!next.ceremony || matchMedia('(prefers-reduced-motion: reduce)').matches) playCue(sound, next.mode, next.phase);
+      if (!(next.mode==='soclose' && next.phase==='reveal') && (!next.ceremony || matchMedia('(prefers-reduced-motion: reduce)').matches)) playCue(sound, next.mode, next.phase);
     }
     else if (next.mode === 'potato' && next.party?.passes > state.party?.passes) playCue(sound, next.mode, 'pass');
   }
@@ -1267,7 +1294,10 @@ function editorContext(editor) {
 function setEditorNumber(editor, value) {
   editor.querySelector('[data-number]').value = value;
   editor.querySelector('[data-range]').value = value;
-  editorContext(editor)?.save(value);
+  const context=editorContext(editor);
+  context?.save(value);
+  const rows=editor.querySelector('[data-so-close-rows]');
+  if(rows && context) rows.innerHTML=numberWheelRows(context.question,value);
 }
 
 document.addEventListener('input', event => {
@@ -1283,13 +1313,12 @@ document.addEventListener('input', event => {
   const value = event.target.valueAsNumber;
   if (event.target.matches('[data-range]')) setEditorNumber(editor, value);
   else if (event.target.validity.valid && Number.isSafeInteger(value)) {
-    editor.querySelector('[data-range]').value = value;
-    context.save(value);
+    setEditorNumber(editor,value);
   }
 });
 
 document.addEventListener('wheel', event => {
-  const target = event.target.closest('[data-range]');
+  const target = event.target.closest('[data-range], [data-so-close-rows]');
   if (!target || !event.deltaY) return;
   const editor = target.closest('[data-editor]');
   const context = editorContext(editor);
@@ -1297,6 +1326,25 @@ document.addEventListener('wheel', event => {
   event.preventDefault();
   setEditorNumber(editor, closestStep(context.question, context.value, -Math.sign(event.deltaY)));
 }, { passive: false });
+
+let soCloseDrag;
+document.addEventListener('pointerdown',event=>{
+  const rows=event.target.closest('[data-so-close-rows]');
+  if(!rows || !event.isPrimary || event.button!==0)return;
+  soCloseDrag={rows,id:event.pointerId,y:event.clientY};
+  rows.setPointerCapture(event.pointerId);
+});
+document.addEventListener('pointermove',event=>{
+  if(!soCloseDrag || soCloseDrag.id!==event.pointerId)return;
+  const {rows,y}=soCloseDrag;
+  if(!rows.isConnected){soCloseDrag=undefined;return;}
+  const editor=rows.closest('[data-editor]');
+  const context=editorContext(editor);
+  if(!context)return;
+  const steps=Math.trunc((event.clientY-y)/24);
+  if(steps){setEditorNumber(editor,closestStep(context.question,context.value,-steps));soCloseDrag.y+=steps*24;}
+});
+for(const type of ['pointerup','pointercancel','lostpointercapture'])document.addEventListener(type,event=>{if(soCloseDrag?.id===event.pointerId)soCloseDrag=undefined;});
 
 document.addEventListener('keydown', event => {
   if (event.key !== 'Enter' || !event.target.matches('[data-number]')) return;
@@ -1631,6 +1679,9 @@ document.addEventListener('click', async event => {
         if (!dialog.open) dialog.showModal();
         content.querySelector('input').select();
       }
+    } else if(action==='estimate-reveal-skip'){
+      await api('/'+current.code+'/estimate-reveal-skip',{game:state.game,index:state.index});
+      await refresh();
     } else if (action === 'ceremony-skip') {
       await api('/' + current.code + '/ceremony', { game: state.game });
       await refresh();
@@ -1764,5 +1815,6 @@ setInterval(() => {
 setInterval(() => {
   updateTimer();
   updateCeremony();
+  updateSoCloseReveal();
   if (state?.phase === 'score-break') updateScoreBreak(app, Date.now() + offset);
 }, 150);

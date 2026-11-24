@@ -18,6 +18,12 @@ For the next coding session, read [**CLAUDE.md**](CLAUDE.md) and the [dated Clau
 
 **Deployment warning:** Render currently auto-deploys on changes to `main`. The game server stores rooms, votes and scores in process memory, so a live deployment can interrupt an active session and lose its room state. Finish game sessions before merging where possible and verify the exact Render commit has reached **Live** before announcing release. The missing British narration MP3 pack (15 new files) is still a separate installation task; files in a plan do not imply the audio is bundled.
 
+### Future TV voiceover and co-host narration — planned only
+
+[Full-match narration and original two-presenter roadmap](docs/FULL_MATCH_NARRATION_AND_DUO_ROADMAP.md) ([Issue #61](https://github.com/LCBlakey24-alt/jambaloop/issues/61)) extends the existing short audio introductions to optional British spoken game instructions, **known/public** question or prompt readouts, stage transitions, rounds, voting, result reveals and rematches. TV hosts the voice with matching on-screen writing/captions; phones stay quiet, simple controllers. A later opt-in **Double Act** format would feature two original presenters exchanging prerecorded, funny lines via ElevenLabs multi-speaker Dialogue mode, without impersonating real UK presenters or reading unpredictable player text.
+
+**Current truth:** all 18 modes have written intros, but only `classic.mp3`, `board.mp3` and `quizrace.mp3` are committed narrator recordings. Fifteen other previously provided recordings still need binary integration before claiming all intros use the professional British voice. No full-match or dual-host mode exists yet. See [existing British voice recording pack](docs/ELEVENLABS_BRITISH_NARRATOR_PACK.md). Finish mobile/multiplayer reliability work before adding optional, cost-controlled voice production.
+
 ## Play at home
 
 1. Install Node.js 22 on a laptop. Run `npm ci` and then `npm start` from this folder.

@@ -2,6 +2,12 @@
 
 **Implementation status (22 November 2026):** Intro playback has been wired into all twelve expanded tiles in draft PR #7. Three pre-recorded ElevenLabs clips have been generated and uploaded as static MP3s: **Classic Quiz, Board Race and Quiz Race**. The ElevenLabs free generation service became busy while generating the remaining nine, so those modes currently use a **clearly labelled browser-native English speech fallback**, with the same scripts and controls. They do **not yet** have the consistent professional narrator voice. This design branch has not been published to the family site's Render deployment.
 
+## Expansion addendum — 24 November 2026 (current design)
+
+The older baseline in this document reflects the original 12-mode audio rollout and must not be read as the current state. **Main currently contains 18 written game intros but only 3 recorded MP3 assets**; 15 additional MP3 recordings were provided outside the repository and await verification/upload (see [British narrator pack](ELEVENLABS_BRITISH_NARRATOR_PACK.md)). The owner now wants **optional full-match narrated stages and preapproved public prompt/question readouts**, with a later **two-original-voice comedic TV co-host option**.
+
+Read the [complete updated full-match/Double Act design brief](FULL_MATCH_NARRATION_AND_DUO_ROADMAP.md) and [Issue #61](https://github.com/LCBlakey24-alt/jambaloop/issues/61) for 18-game stage inventory, event-triggered audio state model, transcript/caption requirements, licensing, no-personal-data voice rules, costs and delivery phases. Current implementation remains intro-only, not full-match narration. No runtime text-to-dialogue or live AI synthesis is approved. Prioritise verified binaries and multiplayer/mobile QA before new audio production.
+
 ## Creative direction
 
 A single recurring **Jambaloop announcer**: energetic, upbeat, warm, British-English, lightly game-show inspired, cheerful without sounding like an advertisement or constant chatter. Use the **same voice** across every game to make the site feel cohesive. Each game can have a short, distinct musical sting and/or transition sound *later* without changing the core voice.

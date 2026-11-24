@@ -59,6 +59,12 @@ A new original social-deduction game using the broad classic night/day hidden-ro
 3. Prototype Secret Suspects and Bloodmoon Council in **separate** design, game-engine, privacy, and UI PRs. Validate their distinct core loops against every existing game.
 4. Continue the original P1–P6 pipeline only as capacity and playtests support it. Do not count any concept as an additional live mode until fully coded, tested and merged/deployed.
 
+## Future presentation feature — full-match audio and Double Act (24 November 2026)
+
+[Issue #61](https://github.com/LCBlakey24-alt/jambaloop/issues/61) and [the detailed narration/Double Act roadmap](FULL_MATCH_NARRATION_AND_DUO_ROADMAP.md) cover an optional British TV presenter for game selection, stage instructions, round changes, **pre-recorded known/public** questions and prompts, voting, reveal and finishing, and a later two-original-voice comedic co-host style. This improves the **existing 18 games** rather than adding another tile. Keep phones simple and silent by default; match every clip with readable text/captions, and do not narrate unreviewed user-created content or private clues.
+
+Only **3 ElevenLabs narrator MP3s** are actually committed to main as of the plan; the 15 previously supplied exported intros still require actual binary integration. Complete those first, then add small, fixed, prerecorded stage cues with priority/cancel/once-per-phase rules and no runtime voice-generation costs. Two-person dialogue is a later opt-in style, not approved for production generation or celebrity imitation. This sits behind reliability [#41](https://github.com/LCBlakey24-alt/jambaloop/issues/41) and mobile controller simplicity [#45](https://github.com/LCBlakey24-alt/jambaloop/issues/45).
+
 ## Content filtering, age and accessibility (design requirement)
 
 - Whole-site content metadata must include audience eligibility (Kids, Family, Teen, Adults Only), intensity/subject tags, authored/source provenance, moderation state, pack ID, and stable duplicate-detection ID.

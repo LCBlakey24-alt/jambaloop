@@ -44,9 +44,10 @@ app.use('/api', (_req, res, next) => {
 });
 
 function readSettings(body = {}) {
-  const { mode = 'classic', theme = defaultTheme, format = 'choice', category, count, seconds, autoReveal = false, includeChristmas = false, teamCount = mode === 'tracks' ? 2 : 4, boardLength = 16, playStyle = defaultPlayStyle(mode), privateQuestions = false, phoneView = 'full', difficulty = 'standard', scoring, boardSpeed = 50, scoreInterval = 1, customQuiz = null, raceLength = 'medium', raceTrack = 'neon', raceDifficulty = 'mixed' } = body ?? {};
+  const { mode = 'classic', theme = defaultTheme, format = mode === 'soclose' ? 'estimate' : 'choice', category, count, seconds, autoReveal = false, includeChristmas = false, teamCount = mode === 'tracks' ? 2 : 4, boardLength = 16, playStyle = defaultPlayStyle(mode), privateQuestions = false, phoneView = 'full', difficulty = 'standard', scoring, boardSpeed = 50, scoreInterval = 1, customQuiz = null, raceLength = 'medium', raceTrack = 'neon', raceDifficulty = 'mixed' } = body ?? {};
   if (typeof privateQuestions !== 'boolean' || !validPlayStyle(mode,playStyle) || (mode === 'tracks' && teamCount !== 2)) return;
   if (mode === 'quizrace' && (!raceLengths[raceLength] || !raceTracks.includes(raceTrack) || !raceDifficulties.includes(raceDifficulty) || format !== 'choice' || customQuiz !== null)) return;
+  if (mode === 'soclose' && (format !== 'estimate' || privateQuestions || customQuiz !== null || difficulty !== 'standard')) return;
   const privateTeam = mode === 'showdown' && privateQuestions;
   if (privateTeam && customQuiz !== null) return;
   if (!boardLengths.includes(boardLength) || !['full', 'answers'].includes(phoneView) || ![2, 3, 4].includes(teamCount)) return;
@@ -64,10 +65,10 @@ function readSettings(body = {}) {
   if (scoring !== undefined && (!scoring || !pointValues.includes(scoring.base) || !bonusValues.includes(scoring.bonus)
     || !doubleSchedules.some(([id]) => id === scoring.doubles))) return;
   if (!boardSpeedValues.includes(boardSpeed) || !scoreIntervals.includes(scoreInterval)) return;
-  const scores = canSetScore(mode) ? (scoring
+  const scores = mode === 'soclose' ? {base:100,bonus:0,doubles:'off'} : canSetScore(mode) ? (scoring
     ? { base: scoring.base, bonus: seconds ? scoring.bonus : 0, doubles: scoring.doubles }
     : defaultScoring(seconds)) : undefined;
-  return { mode, theme, difficulty, raceLength, raceTrack, raceDifficulty, scoring: scores, boardSpeed: seconds ? boardSpeed : 0, legacyScoring: scoring === undefined, format: privateTeam ? 'choice' : format, category: fixedQuestionModes.includes(mode) && !privateTeam ? category : 'mixed', count: ['tracks', 'samepage', 'spotlight', 'brain', 'topanswers', 'rare', 'sketch', 'punchline', 'cards', 'bluff'].includes(mode) ? count : socialModes.includes(mode) ? 3 : partyModes.includes(mode) ? 1 : quiz?.questions.length ?? count,
+  return { mode, theme, difficulty, raceLength, raceTrack, raceDifficulty, scoring: scores, boardSpeed: seconds ? boardSpeed : 0, legacyScoring: mode !== 'soclose' && scoring === undefined, format: privateTeam ? 'choice' : format, category: fixedQuestionModes.includes(mode) && !privateTeam ? category : 'mixed', count: ['tracks', 'samepage', 'spotlight', 'brain', 'topanswers', 'rare', 'sketch', 'punchline', 'cards', 'bluff'].includes(mode) ? count : socialModes.includes(mode) ? 3 : partyModes.includes(mode) ? 1 : quiz?.questions.length ?? count,
     seconds, autoReveal, includeChristmas, phoneView: privateTeam ? 'full' : phoneView, privateQuestions: privateTeam,
     teamCount, boardLength, playStyle, scoreInterval: supportsScoreCheckpoints(mode) ? scoreInterval : 1, customQuiz: quiz };
 }
@@ -217,6 +218,10 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
     answerCorrect: revealed && answer ? Boolean(answer.won) : undefined,
     earned: revealed && !hiddenScores && answer?.won ? answer.points : undefined,
     closest: revealed && question?.type === 'estimate' ? room.closest : undefined,
+    estimateGuesses: room.mode === 'soclose' && revealed && isHost ? [...answers].flatMap(([playerKey, entry]) => {
+      const participant = players.get(playerKey);
+      return participant ? [{id:participant.id,name:participant.name,guess:entry.option,distance:Math.abs(entry.option-correct),won:Boolean(entry.won),points:entry.won?entry.points:0}] : [];
+    }).sort((a,b)=>a.distance-b.distance) : undefined,
     breakdown: revealed && isHost && !room.privateQuestions && ['choice', 'boolean'].includes(question.type) ? question.options.map((_, option) =>
       [...answers.values()].filter(entry => entry.option === option).length) : undefined,
     question: visible && question ? { ...publicQuestion, historyId:questionHistoryId(question.prompt), basePoints: room.motion?.points ?? (question.type === 'estimate' && room.legacyScoring ? 1000 : room.scoring?.base), prompt: isHost || room.phoneView === 'full' ? publicQuestion.prompt : undefined, correct: revealed ? correct : undefined, source: revealed ? verifiedSourceFor(question.prompt) : undefined } : undefined,
@@ -511,6 +516,7 @@ function reveal(room) {
       : answer.option === actual.correct;
     if (!won) continue;
     answer.won = true;
+    if (room.mode === 'soclose') answer.points = answer.option === question.correct ? 200 : 100;
     const player = room.players.get(key);
     // Only the active team's correct answers earn the Power Lane multiplier.
     // Other teams still answer the shared question at its normal value.

@@ -59,6 +59,15 @@ A new original social-deduction game using the broad classic night/day hidden-ro
 3. Prototype Secret Suspects and Bloodmoon Council in **separate** design, game-engine, privacy, and UI PRs. Validate their distinct core loops against every existing game.
 4. Continue the original P1–P6 pipeline only as capacity and playtests support it. Do not count any concept as an additional live mode until fully coded, tested and merged/deployed.
 
+## Heard It Wrong — music-title soundalike game (24 November 2026)
+
+**Planning only:** [Issue #51](https://github.com/LCBlakey24-alt/jambaloop/issues/51) and [full design brief](HEARD_IT_WRONG_DESIGN.md).
+
+The creator supplied **"Sweed Comb Alibaba" → "Sweet Home Alabama"** as the intended example. The proposed loop is to read a **newly written nonsense soundalike phrase** on the TV and guess its original song title. Phones show a simple four-button A/B/C/D controller; optional typed mode or accessible no-TV fallback. Proposed scoring is 100 points per correct title with an optional speed bonus; 10/15/20 rounds depend on a sufficiently large and reviewed content pool. This differs from Music trivia (phonetic decoding versus factual recall) and Word Weld (no combining two trivia answers). Test as a distinctive format before adding another launcher tile.
+
+**Rights/content:** initial game uses original phonetic *title* puzzles and song-title answers only. **Do not store actual commercial lyric lines or play song recordings** without separate rights clearance. Optional approved British narration may read the invented phonetic clue, not a copyrighted verse. Require original, family-safe prompts, captions and mobile accessibility. Planned 60+ validated clues before a public long-format launch. No new game mode has been built by this proposal.
+
+
 ## Content filtering, age and accessibility (design requirement)
 
 - Whole-site content metadata must include audience eligibility (Kids, Family, Teen, Adults Only), intensity/subject tags, authored/source provenance, moderation state, pack ID, and stable duplicate-detection ID.

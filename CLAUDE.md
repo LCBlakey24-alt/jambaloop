@@ -23,6 +23,10 @@
 
 [Issue #61](https://github.com/LCBlakey24-alt/jambaloop/issues/61) and [full-match narrator/Double Act brief](docs/FULL_MATCH_NARRATION_AND_DUO_ROADMAP.md) describe an optional British TV presenter who narrates game previews, stage changes, predetermined public prompts/questions, reveal and finishing; and a later two-original-speaker scripted dialogue mode. Avoid runtime AI generation, secret answer/player-text narration, overlapping audio or blocking timers. Pre-render known licensed clips, keep exact captions, phones silent by default and sound opt-in; always provide text-only play. Current main contains **only 3 actual ElevenLabs MP3s** even though 18 scripts and 15 additional prior recordings are documented. Never mark unavailable binary audio as shipped. After quality/reconnection work, verify missing assets first; do not regenerate needlessly or spend credits without approval.
 
+## Future account/statistics feature — **do not build yet**
+
+[Player profiles, lifetime records and optional TV “form guide” #59](https://github.com/LCBlakey24-alt/jambaloop/issues/59) are recorded in [the dedicated roadmap](docs/PLAYER_PROFILES_AND_STATS_ROADMAP.md). An eventual user account can show per-game plays, individual/team wins, streaks and opt-in public highlights, with guest play preserved. Any reported percentage must be labelled a **historical record with sample size**, not an unsupported chance to win. Future implementation needs an audited server-authoritative winner definition for each mode, persistent private storage, secure authentication, age/privacy review, data deletion and idempotent completed-game events. No account database, login provider or paid feature is approved by this documentation. **Keep existing-game code review/reconnection and mobile QA as priority.**
+
 ## Work order
 
 1. Sync and inspect `main`, live deployment, issues, recent CI and most severe reproducible bugs. Fix bugs with failing tests first.

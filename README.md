@@ -24,6 +24,10 @@ For the next coding session, read [**CLAUDE.md**](CLAUDE.md) and the [dated Clau
 
 **Current truth:** all 18 modes have written intros, but only `classic.mp3`, `board.mp3` and `quizrace.mp3` are committed narrator recordings. Fifteen other previously provided recordings still need binary integration before claiming all intros use the professional British voice. No full-match or dual-host mode exists yet. See [existing British voice recording pack](docs/ELEVENLABS_BRITISH_NARRATOR_PACK.md). Finish mobile/multiplayer reliability work before adding optional, cost-controlled voice production.
 
+### Future feature — optional player profiles and lifetime game stats
+
+[Player profiles and statistics](docs/PLAYER_PROFILES_AND_STATS_ROADMAP.md) ([Issue #59](https://github.com/LCBlakey24-alt/jambaloop/issues/59)) are planned for a later phase, **not currently available**. If players choose to create accounts, they could see games completed, individual and team wins, per-game historic win rates with their match count, achievements and an optional end-of-night recap. A player could choose to show a small **opt-in** “form guide” on the TV before a game; this would be labelled **historical results, not a guaranteed chance to win**. Guests must always be able to join and play without an account. Private-by-default profiles, account deletion, age-appropriate design, secure identity and persistent storage all require review before implementation. Reliability and phone-controller improvements remain the current priority.
+
 ## Play at home
 
 1. Install Node.js 22 on a laptop. Run `npm ci` and then `npm start` from this folder.

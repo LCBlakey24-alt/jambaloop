@@ -51,6 +51,12 @@ on:
       - 'fork-game.js'
       - 'public/board-*.js'
       - 'public/team-play*'
+      - 'released-games.js'
+      - 'public/so-close*'
+      - 'public/game-config.js'
+      - 'public/game-show-batch-1.css'
+      - 'public/show-identity.js'
+      - 'scripts/so-close-browser.mjs'
       - '.github/workflows/launcher-browser.yml'
   workflow_dispatch:
 

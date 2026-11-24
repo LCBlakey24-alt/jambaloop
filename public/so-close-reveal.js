@@ -17,3 +17,12 @@ export function revealFrame(reveal,now){
   const afterGuesses=afterOpening-plan.groups*plan.step;
   return {kind:afterGuesses<plan.suspense?'suspense':'actual',shown:reveal.count};
 }
+// The server releases the actual value, then the results, at fixed stages.
+// A client whose clock runs slightly ahead holds the previous frame until the
+// matching state arrives, so it never shows an empty answer or winner.
+export function stageFrame(frame,reveal){
+  const stage=reveal?.stage??'results';
+  if(stage==='guesses'&&(frame.kind==='actual'||frame.kind==='winner'))return {kind:'suspense',shown:reveal.count};
+  if(stage==='answer'&&frame.kind==='winner')return {kind:'actual',shown:reveal.count};
+  return frame;
+}

@@ -1,5 +1,6 @@
 import { clockExpired, setClockPaused, stopDeadline, watchDeadline } from './room-clock.js';
 import { placementRanks } from './result-ranks.js';
+import { revealPlan as estimateRevealPlan } from './public/so-close-reveal.js';
 import { deskAwards } from './awards.js';
 import { answerValue, boardSpeedValues, bonusValues, canSetScore, defaultScoring, doubleSchedules, pointValues, roundMultiplier } from './public/scoring.js';
 import { playlistLimit, queuedSettings } from './public/game-night.js';
@@ -84,6 +85,7 @@ function resetGame(room, settings) {
   for (const [key, player] of room.waiting) room.players.set(key, player);
   room.waiting.clear();
   stopDeadline(room);
+  clearEstimateTimers(room);
   Object.assign(room, settings, {
     settings, lobbyVersion: (room.lobbyVersion ?? 0) + 1, clockVersion: 0, pausedAt: 0,
     scoreBreak: undefined, lastScoreBreak: new Map(), estimateReveal: undefined, estimateGuesses: undefined,
@@ -158,6 +160,34 @@ function controlsRoom(room, key) {
   return key === room.host || (room.captain !== undefined && key === room.captain);
 }
 
+// So Close reveals are staged on the server, not only in the animation.
+// 'guesses': names and numbers only; 'answer': the actual value too;
+// 'results': winners, distances, points and updated scores.
+function estimateStage(room, now = Date.now()) {
+  const reveal = room.estimateReveal;
+  if (room.mode !== 'soclose' || room.phase !== 'reveal' || !reveal || reveal.skipped) return 'results';
+  const plan = estimateRevealPlan(reveal.count);
+  const elapsed = now - reveal.starts;
+  return elapsed >= plan.duration ? 'results' : elapsed >= plan.duration - plan.actual ? 'answer' : 'guesses';
+}
+
+function clearEstimateTimers(room) {
+  for (const timer of room.estimateTimers ?? []) clearTimeout(timer);
+  room.estimateTimers = undefined;
+}
+
+function scheduleEstimateStages(room) {
+  clearEstimateTimers(room);
+  const { starts, count } = room.estimateReveal;
+  const plan = estimateRevealPlan(count);
+  const { game, index } = room;
+  const publishStage = () => {
+    if (room.phase === 'reveal' && room.game === game && room.index === index && room.estimateReveal?.starts === starts) publish(room);
+  };
+  room.estimateTimers = [plan.duration - plan.actual, plan.duration]
+    .map(delay => setTimeout(publishStage, Math.max(0, starts + delay - Date.now())));
+}
+
 function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)) {
   const isHost = key === room.host;
   const captain = room.players.get(room.captain);
@@ -169,10 +199,17 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
   const hiddenScores = room.scoreInterval !== 1 && !['lobby', 'finished'].includes(phase);
   const publicPlayer = ({ rounds, fastest, slowest, misses, comebacks, ...entry }) => phase === 'lobby' && isHost
     ? { ...entry, connected: counts.ids.has(entry.id) } : entry;
-  const leaderboard = (isHost && !hiddenScores ? ranked : !waiting && phase === 'finished' ? ranked.slice(0, 10) : []).map(publicPlayer);
   const revealed = phase === 'reveal';
   const answer = answers.get(key);
   const { correct, ...publicQuestion } = question ?? {};
+  const estimateHold = revealed && room.mode === 'soclose' ? estimateStage(room) : 'results';
+  const holdOutcome = estimateHold !== 'results';
+  const holdAnswer = estimateHold === 'guesses';
+  // Until the winner moment, every view sees pre-round scores and standings.
+  const held = entry => holdOutcome && room.estimateReveal?.before?.has(entry.id)
+    ? { ...entry, ...room.estimateReveal.before.get(entry.id) } : entry;
+  const standingsOrder = holdOutcome ? ranked.map(held).sort(comparePlayers) : ranked;
+  const leaderboard = (isHost && !hiddenScores ? standingsOrder : !waiting && phase === 'finished' ? standingsOrder.slice(0, 10) : []).map(publicPlayer);
   const activeTeam = room.mode === 'board' && room.teams.length ? index % room.teams.length : undefined;
   const scoreBreak = phase === 'score-break' && !waiting ? room.scoreBreak : undefined;
   const ownCheckpoint = scoreBreak && player ? room.lastScoreBreak.get(room.teams.length ? player.team : player.id)?.row : undefined;
@@ -210,7 +247,7 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
           finishedAt:Math.min(Infinity,...racers.map(racer => racer.finishedAt ?? Infinity))};
       }).sort((a,b)=>a.finishedAt-b.finishedAt || b.distance-a.distance) : undefined,
     boardFork: room.mode === 'board' ? boardFork(room.boardLength) : undefined,
-    players: leaderboard, playerCount: players.size, player: player ? { ...publicPlayer(player), score: scoresPublished ? player.score : playerScore } : undefined,
+    players: leaderboard, playerCount: players.size, player: player ? { ...publicPlayer(held(player)), score: scoresPublished ? held(player).score : playerScore } : undefined,
     review: !waiting && phase === 'finished' ? (room.privateQuestions ? room.privateReview.get(key) ?? [] : room.roundReview).map((review, i) => ({
       ...review,
       prompt: isHost || room.phoneView === 'full' ? review.prompt : undefined,
@@ -218,14 +255,18 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
     })) : undefined,
     remaining: room.mode === 'knockout' && phase !== 'lobby' ? room.remaining : undefined,
     rank: player ? finalRanks?.get(player.id) : undefined, selection: answers.get(key)?.option, now: Date.now(),
-    answerCorrect: revealed && answer ? Boolean(answer.won) : undefined,
-    earned: revealed && !hiddenScores && answer?.won ? answer.points : undefined,
-    closest: revealed && question?.type === 'estimate' ? room.closest : undefined,
-    estimateReveal: room.mode === 'soclose' && revealed && !waiting ? room.estimateReveal : undefined,
-    estimateGuesses: room.mode === 'soclose' && revealed && isHost ? room.estimateGuesses : undefined,
+    answerCorrect: revealed && answer && !holdOutcome ? Boolean(answer.won) : undefined,
+    earned: revealed && !hiddenScores && !holdOutcome && answer?.won ? answer.points : undefined,
+    closest: revealed && !holdOutcome && question?.type === 'estimate' ? room.closest : undefined,
+    estimateReveal: room.mode === 'soclose' && revealed && !waiting && room.estimateReveal ? {
+      starts: room.estimateReveal.starts, count: room.estimateReveal.count, skipped: room.estimateReveal.skipped, stage: estimateHold,
+    } : undefined,
+    estimateGuesses: room.mode === 'soclose' && revealed && isHost && room.estimateGuesses ? (holdOutcome
+      ? room.estimateGuesses.map(({ id, name, guess }) => ({ id, name, guess })).sort((a, b) => a.guess - b.guess || a.id.localeCompare(b.id))
+      : room.estimateGuesses) : undefined,
     breakdown: revealed && isHost && !room.privateQuestions && ['choice', 'boolean'].includes(question.type) ? question.options.map((_, option) =>
       [...answers.values()].filter(entry => entry.option === option).length) : undefined,
-    question: visible && question ? { ...publicQuestion, historyId:questionHistoryId(question.prompt), basePoints: room.motion?.points ?? (question.type === 'estimate' && room.legacyScoring ? 1000 : room.scoring?.base), prompt: isHost || room.phoneView === 'full' ? publicQuestion.prompt : undefined, correct: revealed ? correct : undefined, source: revealed ? verifiedSourceFor(question.prompt) : undefined } : undefined,
+    question: visible && question ? { ...publicQuestion, historyId:questionHistoryId(question.prompt), basePoints: room.motion?.points ?? (question.type === 'estimate' && room.legacyScoring ? 1000 : room.scoring?.base), prompt: isHost || room.phoneView === 'full' ? publicQuestion.prompt : undefined, correct: revealed && !holdAnswer ? correct : undefined, source: revealed && !holdAnswer ? verifiedSourceFor(question.prompt) : undefined } : undefined,
     qr: isHost ? qr : undefined, joinUrl: isHost ? joinUrl : undefined,
     joinOptions: isHost ? room.joinOptions : undefined };
 }
@@ -502,6 +543,8 @@ function nextTurn(room) {
 
 function reveal(room) {
   const question = room.questions[room.index];
+  const before = room.mode === 'soclose' ? new Map([...room.players.values()].map(player =>
+    [player.id, { score: player.score, wins: player.wins, streak: player.streak, bestStreak: player.bestStreak }])) : undefined;
   const estimates = question.type === 'estimate' ? [...room.answers.values()] : [];
   const distance = estimates.length ? Math.min(...estimates.map(answer => Math.abs(answer.option - question.correct))) : undefined;
   room.closest = question.type === 'estimate' && distance !== undefined
@@ -567,7 +610,8 @@ function reveal(room) {
       const participant = room.players.get(playerKey);
       return participant ? [{id:participant.id,name:participant.name,guess:entry.option,distance:Math.abs(entry.option-question.correct),won:Boolean(entry.won),points:entry.won?entry.points:0}] : [];
     }).sort((a,b)=>a.distance-b.distance);
-    room.estimateReveal = {starts:Date.now(),count:room.estimateGuesses.length,skipped:false};
+    room.estimateReveal = { starts: Date.now(), count: room.estimateGuesses.length, skipped: false, before };
+    scheduleEstimateStages(room);
   }
   room.phase = 'reveal';
   stopDeadline(room);
@@ -578,6 +622,7 @@ function reveal(room) {
 }
 
 function openQuestion(room) {
+  clearEstimateTimers(room);
   room.estimateReveal = undefined;
   room.estimateGuesses = undefined;
   room.answers.clear();
@@ -778,7 +823,7 @@ app.post('/api/rooms/:code/estimate-reveal-skip', (req,res)=>{
   const {room,key}=res.locals;
   if(!controlsRoom(room,key))return res.status(403).json({error:'Only the host or captain can skip the reveal.'});
   if(room.mode!=='soclose'||room.phase!=='reveal'||!room.estimateReveal||req.body?.game!==room.game||req.body?.index!==room.index)return res.status(409).json({error:'This reveal has ended.'});
-  if(!room.estimateReveal.skipped){room.estimateReveal.skipped=true;publish(room);}
+  if(!room.estimateReveal.skipped){room.estimateReveal.skipped=true;clearEstimateTimers(room);publish(room);}
   res.sendStatus(204);
 });
 
@@ -803,6 +848,12 @@ app.post('/api/rooms/:code/advance', (req, res) => {
     advanceParty(room, publish);
   } else if (room.phase === 'question') {
     reveal(room);
+  } else if (room.phase === 'reveal' && estimateStage(room) !== 'results') {
+    // An early Next (stale client, keyboard shortcut) completes the So Close
+    // reveal instead of jumping past it; the following press moves on.
+    room.estimateReveal.skipped = true;
+    clearEstimateTimers(room);
+    publish(room);
   } else if (room.phase === 'reveal') {
     if (finalTurn(room)) {
       room.phase = 'finished';
@@ -1005,6 +1056,7 @@ setInterval(() => {
       clearTimeout(room.hostUpdate);
       clearTimeout(room.timer);
       clearTimeout(room.autoTimer);
+      clearEstimateTimers(room);
       rooms.delete(code);
     }
   }

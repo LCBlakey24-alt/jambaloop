@@ -1,6 +1,6 @@
 import { showIdentity } from './show-identity.js';
 import {soCloseView,numberWheelRows,soCloseRevealView} from './so-close-view.js';
-import {revealFrame as soCloseFrame} from './so-close-reveal.js';
+import {revealFrame as soCloseFrame, stageFrame as soCloseStage} from './so-close-reveal.js';
 import { scoreBreakView, updateScoreBreak } from './score-break.js';
 import { winnerBanner, playerFinish } from './result-highlights.js';
 import { bindRoomAvatars } from './room-avatars.js';
@@ -1044,7 +1044,7 @@ function render(s) {
 function updateSoCloseReveal(s=state){
   const target=document.querySelector('#so-close-frame');
   if(!target||!s?.estimateReveal||s.mode!=='soclose'||s.phase!=='reveal')return;
-  const frame=soCloseFrame(s.estimateReveal,Date.now()+offset);
+  const frame=soCloseStage(soCloseFrame(s.estimateReveal,Date.now()+offset),s.estimateReveal);
   const key=frame.kind+'/'+frame.shown;
   if(target.dataset.frame===key)return;
   target.dataset.frame=key;

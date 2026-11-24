@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {modes} from '../public/game-config.js';
+import {releasedGameIds} from '../released-games.js';
 import {showIdentity,showMark} from '../public/show-identity.js';
 import {launcherTile,launcherPreview,launcherSetupArtwork} from '../public/home-launcher.js';
 import {scoreReveal} from '../public/ceremony.js';
@@ -27,8 +28,8 @@ test('each batch one show has dedicated stage and answer treatments',()=>{
   assert.equal(new Set(['classic','wheel','knockout'].map(id=>modeStyle(id).backdrop)).size,3);
 });
 
-test('all 18 registered games keep usable shared style tokens',()=>{
-  assert.equal(modes.length,18);
+test('every released game keeps usable shared style tokens',()=>{
+  assert.deepEqual(modes.map(([id])=>id),[...releasedGameIds]);
   for(const [id] of modes){
     const vars=modeVariables(id);
     assert.match(vars,/--game-accent:#[0-9a-f]{6}/i);

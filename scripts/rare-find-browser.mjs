@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {mkdir} from 'node:fs/promises';
 import {rareFindBank} from '../rare-find-bank.js';
+import { releasedGameIds } from '../released-games.js';
 
 const site=process.env.SITE||'http://127.0.0.1:32000';
 const browser=await chromium.launch({
@@ -24,7 +25,7 @@ try{
   const menuContext=await browser.newContext({viewport:{width:1366,height:768}});
   const page=await menuContext.newPage();
   await page.goto(site,{waitUntil:'domcontentloaded',timeout:30000});
-  assert.equal(await page.locator('.game-tile').count(),18,'All games should appear on desktop');
+  assert.deepEqual(await page.locator('.game-tile').evaluateAll(tiles=>tiles.map(tile=>tile.dataset.mode)),[...releasedGameIds],'All released games should appear on desktop');
   await page.locator('.game-tile[data-mode="rare"]').click();
   assert.match(await page.locator('#game-preview').innerText(),/Rare Find/);
   await page.locator('#game-preview [data-action="host"]').click();

@@ -6,6 +6,18 @@ This is an active development project. Draft pull requests are not necessarily d
 
 Jambaloop currently supports a big-screen host and phone controllers across 18 game modes, with honest mode-specific capacity limits. Some trivia paths are configured for large rooms, but the 300-player ceiling is not a verified load-test result. The question library includes multiple-choice, true-or-false, closest-number, and put-in-order formats, plus separate original prompt banks for the newer game-show modes. Choose from Jambaloop Classic, Christmas, Neon Arcade, and Winter Lodge visual styles. Christmas is a selectable category. Turn on **Include Christmas questions** to add it to Mixed Bag, Spin the Wheel, or Board Race.
 
+## Development roadmap and Claude Code handoff — 24 November 2026
+
+**Live product:** 18 playable game modes. **Planned concepts are not live features.** Jambaloop's current core is a big-screen host with player phones, guest room codes and server-authoritative gameplay.
+
+For the next coding session, read [**CLAUDE.md**](CLAUDE.md) and the [dated Claude Code handoff](docs/CLAUDE_CODE_HANDOFF_2026-11-24.md) first, then consult the [game expansion roadmap](docs/GAME_EXPANSION_ROADMAP_2026.md) and the latest GitHub issues, branches, tests and Render deployment. The handoff is a snapshot; verify `main` against the deployed version before changing code.
+
+**Next priorities:** fix reproducible multiplayer bugs and room-restart risk ([#41](https://github.com/LCBlakey24-alt/jambaloop/issues/41)); deepen Hot Potato and Spot the Bluff ([#40](https://github.com/LCBlakey24-alt/jambaloop/issues/40)); keep increasing original prompts and source-reviewed trivia with no-repeat coverage; then prototype distinctly different games in isolated PRs.
+
+**New design-only concepts:** [Secret Suspects — true anonymous personal secrets](https://github.com/LCBlakey24-alt/jambaloop/issues/42) and [Bloodmoon Council — vampire day/night hidden-role deduction](docs/BLOODMOON_COUNCIL_DESIGN.md) ([#43](https://github.com/LCBlakey24-alt/jambaloop/issues/43)). Neither is implemented, registered in the launcher or released. Do not copy another programme's branding, scripts, cards, artwork or narration; an original experience and new-player tutorials are required.
+
+**Deployment warning:** Render currently auto-deploys on changes to `main`. The game server stores rooms, votes and scores in process memory, so a live deployment can interrupt an active session and lose its room state. Finish game sessions before merging where possible and verify the exact Render commit has reached **Live** before announcing release. The missing British narration MP3 pack (15 new files) is still a separate installation task; files in a plan do not imply the audio is bundled.
+
 ## Play at home
 
 1. Install Node.js 22 on a laptop. Run `npm ci` and then `npm start` from this folder.
@@ -15,7 +27,7 @@ Jambaloop currently supports a big-screen host and phone controllers across 18 g
 
 ## Play on a phone
 
-Jambaloop fits a phone or small touch screen one page at a time. When a view needs more room, use **Back** and **Next** below it. This works for game and category browsing, captain settings, ballots, quiz editing and results. Use **Games** or **Topics** from the mobile home screen to jump directly to those sections.
+Jambaloop adapts to phones and small touch screens. The launcher and setup can use **Back** and **Next** where needed, but live question controls, party voting ballots and final results use a **single scrollable phone surface** so no answer or vote option is hidden on another page. Use **Games** or **Topics** on the mobile home screen to jump directly to those sections.
 
 ## Game styles and effects
 
@@ -29,7 +41,7 @@ At normal desktop screen sizes (at least 1100 px wide and 700 px tall), the laun
 
 The trivia library now has **18 named subject categories plus Mixed Bag**, including the new **Words & Language** and **Maths & Numbers** genres. Both new genres work with multiple choice, true/false, estimate and order formats, and have appropriate Board Race difficulty selections. The same question banks feed Classic Quiz, Wheel, Board Race, Dice Rally, Knockout, Team Showdown, Hot Potato and Quiz Race.
 
-Content should grow with every major development release: this iteration adds 166 static quiz questions across the four formats, 227 creative prompt/phrase cards, six Rare Find answer sets and 60 extra calculated Brain Ladder variants. Content expansion has automatic format and duplicate checks, but **factual answers still require independent editorial/source review before a public release**. See [Content Expansion Playbook](docs/CONTENT_EXPANSION_PLAYBOOK.md).
+Content grows with major development releases: earlier content expansion included 166 static quiz questions across the four formats, 227 creative prompt/phrase cards, six Rare Find answer sets and 60 extra calculated Brain Ladder variants. The Party Games 2.0 update added a further **100 original family-friendly prompts/cards** (30 Punchline prompts, 30 Fill the Blank prompts and 40 phrase cards). Content expansion has automatic format and duplicate checks, but **factual answers still require independent editorial/source review before a public release**. See [Content Expansion Playbook](docs/CONTENT_EXPANSION_PLAYBOOK.md).
 
 ## Browse and present
 
@@ -62,8 +74,8 @@ The captain or host chooses **Phone display** in game setup. **Show question and
 
 ## Family games and the dice tower
 
-- **Punchline Party** needs at least three players. Write a short reply to a funny prompt and vote for another player’s anonymous entry. Each vote is worth 100 points across a selectable 3-, 5- or 7-round game. If more than six entries come in, six are randomly shortlisted for the ballot.
-- **Fill the Blank** needs at least three players. Choose a phrase from your private six-card hand to complete the sentence. Vote for the best anonymous combination. Each vote is worth 100 points across three rounds. If more than six entries come in, six are randomly shortlisted for the ballot.
+- **Punchline Party** needs at least three players. Write a short reply to a funny prompt and vote for another player's anonymous entry. Choose 3, 5 or 7 rounds; **every valid submitted entry** appears on the ballot, and players cannot vote for their own. Votes are worth **100 points normally and 200 points in the final round**.
+- **Fill the Blank** needs at least three players. Choose a phrase from your private six-card hand to complete the sentence. You can **refresh your six-card hand once per round before locking in**. Choose 3, 5 or 7 rounds; all valid entries appear on the anonymous ballot, with **100-point votes normally and 200-point votes in the final round**. Other players and the host cannot see your private hand.
 - **Fork in the Tracks** needs at least three players. Every player becomes Trolley Driver once. In each round the remaining players are reshuffled into two balanced teams, and each team chooses from three positive cards, three sabotage cards and three final-defence cards. The Driver then pulls the lever; the spared team scores and individual scores persist across the reshuffle.
 - **Board Race** shows a 3D dice tower on compatible TV browsers. On their turn, an active teammate taps **Roll the dice**, or the TV host can roll for them. The die tumbles down the tower and lands on the board before the pawn advances by the face value, stopping at the finish if fewer spaces remain. The face value is the base score and the difficulty level from 1 to 6. The landing tile chooses the genre. Timed rounds can add a speed bonus worth up to 25%, 50%, or 100% of the roll. Players on other teams can predict whether the roll will be high or low for fun.
 

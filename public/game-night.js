@@ -11,10 +11,10 @@ export const gameNightPresets = {
 export function queuedSettings(mode, theme) {
   return {
     mode, theme, count: mode === 'board' ? 12 : mode === 'spotlight' ? 1 : mode === 'topanswers' ? 3 : mode === 'rare' ? 3 : 5, category: 'mixed', seconds: 20,
-    format: 'choice', autoReveal: true,
+    format: mode === 'soclose' ? 'estimate' : 'choice', autoReveal: true,
     scoreInterval: supportsScoreCheckpoints(mode) ? defaultScoreInterval : undefined,
     privateQuestions: mode === 'showdown',
-    difficulty: fixedQuestionModes.includes(mode) && mode !== 'showdown' ? 'family' : 'standard',
+    difficulty: fixedQuestionModes.includes(mode) && !['showdown','soclose'].includes(mode) ? 'family' : 'standard',
   };
 }
 

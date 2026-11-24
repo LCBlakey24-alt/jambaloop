@@ -1479,15 +1479,36 @@ document.addEventListener('click', async event => {
   }
   if (action === 'race-answer' || action === 'race-pass') {
     if (raceSending || !state.race?.own?.question) return;
-    raceSending = true;
+    const activeSession = session;
+    const game = state.game;
     const qid = state.race.own.question.id;
+    const answer = action === 'race-pass' ? { pass: true } : { option: Number(button.dataset.raceOption) };
     const controls = document.querySelectorAll('[data-action="race-answer"], [data-action="race-pass"]');
-    controls.forEach(control => control.disabled=true);
+    raceSending = true;
+    controls.forEach(control => control.disabled = true);
+    let errorText;
     try {
-      await api('/' + session.code + '/race-answer', {game:state.game,questionId:qid,...(action==='race-pass'?{pass:true}:{option:Number(button.dataset.raceOption)})});
-      await refresh();
-    } catch(error){const err=document.querySelector('#game-error');if(err)err.textContent=error.message;}
-    finally {raceSending=false;controls.forEach(control=>control.disabled=false);if(state?.race){signature=undefined;render(state);}} 
+      await api('/' + activeSession.code + '/race-answer', { game, questionId: qid, ...answer }, activeSession.key);
+      if (session === activeSession) await refresh();
+    } catch (error) {
+      if (session === activeSession) {
+        // The 409 response means a question may have expired. Refresh the
+        // controls first, then keep the explanation visible on the new screen.
+        errorText = error.message;
+        await refresh();
+      }
+    } finally {
+      raceSending = false;
+      if (session === activeSession && state?.mode === 'quizrace' && state.game === game) {
+        signature = undefined;
+        render(state);
+        const notice = document.querySelector('#game-error');
+        if (notice && errorText) notice.textContent = errorText;
+      } else {
+        // Never redraw another room after an old request has finished.
+        controls.forEach(control => { if (control.isConnected) control.disabled = false; });
+      }
+    }
     return;
   }
   if (action === 'fork-card') return sendParty({ action: 'card', step: Number(button.dataset.forkStep), option: Number(button.dataset.option) }, button);

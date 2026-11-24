@@ -470,7 +470,7 @@ function openDialog(mode, value, gameMode, quizId) {
     update();
   } else if (mode === 'night') {
     playlistDraft = { queue: [...state.night.queue], version: state.night.version, game: state.game };
-    content.innerHTML = playlistEditor(playlistDraft.queue, escape, icons);
+    content.innerHTML = playlistEditor(playlistDraft.queue, escape, icons, (state?.playerCount ?? 0) + (state?.waitingCount ?? 0));
   } else if (mode === 'library') {
     content.innerHTML = '<div id="quiz-library"></div>';
     openLibrary(content.firstElementChild, escape, id => {
@@ -1468,7 +1468,7 @@ document.addEventListener('click', async event => {
       const to = Number(index) + (nightEdit === 'up' ? -1 : 1);
       [queue[index], queue[to]] = [queue[to], queue[index]];
     }
-    content.innerHTML = playlistEditor(playlistDraft.queue, escape, icons);
+    content.innerHTML = playlistEditor(playlistDraft.queue, escape, icons, (state?.playerCount ?? 0) + (state?.waitingCount ?? 0));
     const focused = nightEdit === 'preset' ? content.querySelector(`[data-minutes="${minutes}"]`)
       : nightEdit === 'add' || nightEdit === 'remove' ? content.querySelector('[name="queuedMode"]')
       : content.querySelector(`[data-index="${Number(index) + (nightEdit === 'up' ? -1 : 1)}"]:not(:disabled)`);

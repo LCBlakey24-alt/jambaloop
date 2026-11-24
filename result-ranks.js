@@ -16,3 +16,23 @@ export function placementRanks(rows, compare, distinctPositions = false) {
   });
   return ranks;
 }
+
+/**
+ * Final places for a finished game. Hot Potato has no points: the player
+ * caught holding it (`caughtId`) finishes last and everyone else shares first.
+ */
+export function finishRanks(rows, compare, { distinctPositions = false, caughtId } = {}) {
+  if (caughtId !== undefined) return new Map(rows.map(row => [row.id, row.id === caughtId ? rows.length : 1]));
+  return placementRanks(rows, compare, distinctPositions);
+}
+
+/** Orders rows so a caught Hot Potato holder is listed last; otherwise by `compare`. */
+export function caughtLast(rows, compare, caughtId) {
+  return [...rows].sort((a, b) => (caughtId === undefined ? 0 : Number(a.id === caughtId) - Number(b.id === caughtId)) || compare(a, b));
+}
+
+/** Game Night stars for one finished game. Being caught is a loss even when it is only 2nd of 2. */
+export function nightAward(placing, caught = false) {
+  if (caught || !placing) return { stars: 0, win: false, podium: false };
+  return { stars: Math.max(0, 4 - placing), win: placing === 1, podium: placing <= 3 };
+}

@@ -100,3 +100,8 @@
 }
 .practice-scene p { margin-top: 0; font-size: 1.06rem; }
 .practice-scene [data-action="demo-answer"] { text-align: left; justify-content: start; }
+
+/* Group-size guidance: a game the room has outgrown is flagged, not hidden. */
+.lobby-capacity { color:#ffcf9a !important; font-weight:700; }
+.playlist-editor li.playlist-unfit { border-color:#d98a5a80; background:#3a221a40; }
+.playlist-editor li.playlist-unfit strong small { display:block; margin-top:2px; color:#ffcf9a; font-size:11px; font-weight:700; }

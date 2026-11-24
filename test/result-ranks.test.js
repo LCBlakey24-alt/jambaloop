@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { placementRanks } from '../result-ranks.js';
+import { caughtLast, finishRanks, nightAward, placementRanks } from '../result-ranks.js';
 import { createQuizRace, racePlacings } from '../quiz-race.js';
 
 const compare = (a, b) => (b.lives ?? 0) - (a.lives ?? 0) || b.score - a.score;
@@ -51,4 +51,30 @@ test('Ranking remains stable over repeated state publication and does not mutate
   const two = placementRanks(points,compare,true);
   assert.deepEqual(one,two);
   assert.equal(JSON.stringify(points),before);
+});
+
+test('Hot Potato: the caught holder finishes last and everyone else shares first', () => {
+  // No points are scored, so a score order ties the whole room at first place.
+  const rows = [{id:'a',score:0},{id:'b',score:0},{id:'c',score:0},{id:'d',score:0}];
+  assert.deepEqual([...placementRanks(rows, compare).values()], [1,1,1,1], 'the old score order made the holder a winner');
+  const ranks = finishRanks(rows, compare, { caughtId: 'b' });
+  assert.deepEqual(Object.fromEntries(ranks), { a: 1, b: 4, c: 1, d: 1 });
+  assert.deepEqual(caughtLast(rows, compare, 'b').map(row => row.id), ['a','c','d','b']);
+  assert.deepEqual(caughtLast(rows, compare, undefined).map(row => row.id), ['a','b','c','d']);
+  // Two players: being caught is still a loss, not a second-place podium.
+  const pair = finishRanks(rows.slice(0, 2), compare, { caughtId: 'a' });
+  assert.equal(pair.get('a'), 2);
+  assert.deepEqual(nightAward(pair.get('a'), true), { stars: 0, win: false, podium: false });
+  assert.deepEqual(nightAward(pair.get('b')), { stars: 3, win: true, podium: true });
+});
+
+test('Game Night awards keep their existing scale for every other result', () => {
+  assert.deepEqual(nightAward(1), { stars: 3, win: true, podium: true });
+  assert.deepEqual(nightAward(2), { stars: 2, win: false, podium: true });
+  assert.deepEqual(nightAward(3), { stars: 1, win: false, podium: true });
+  assert.deepEqual(nightAward(4), { stars: 0, win: false, podium: false });
+  assert.deepEqual(nightAward(undefined), { stars: 0, win: false, podium: false });
+  // Quiz Race keeps its distinct finishing order.
+  const race = [{id:'x',score:100},{id:'y',score:100}];
+  assert.deepEqual(Object.fromEntries(finishRanks(race, compare, { distinctPositions: true })), { x: 1, y: 2 });
 });

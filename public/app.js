@@ -1,3 +1,4 @@
+import { showIdentity } from './show-identity.js';
 import { scoreBreakView, updateScoreBreak } from './score-break.js';
 import { winnerBanner, playerFinish } from './result-highlights.js';
 import { bindRoomAvatars } from './room-avatars.js';
@@ -976,7 +977,7 @@ function render(s) {
   app.innerHTML = `<section class="game ${host ? 'host-screen' : 'player-only'} ${host && tvFocus ? 'tv-focus' : ''} ${enter ? 'phase-enter' : ''}" data-deck-key="${phaseKey}" data-phase="${s.phase}" data-paused="${Boolean(s.pausedAt)}" data-mode="${s.mode}" data-result="${result}" style="${modeVariables(s.mode)}">${sceneBackdrop(s.mode, enter && (s.phase === 'finished' || result === 'win'))}<div class="game-top">
     <div class="screen-identity"><span class="screen-mode-icon" aria-hidden="true">${icons(mode[3])}</span>
       <div><div class="screen-mode-title">${escape(s.quizTitle || (s.mode === 'classic' ? categoryName(s.category) : modeName(s.mode)))}</div>
-      <div class="screen-status"><span class="phase-caption">${caption}</span>
+      <div class="screen-status">${host && s.phase === 'lobby' && showIdentity(s.mode) ? `<span class="show-studio-label">${showIdentity(s.mode).studio}</span>` : ''}<span class="phase-caption">${caption}</span>
       ${s.isCaptain && s.phase !== 'lobby' ? '<span class="captain-tag">★ Captain</span>' : ''}${boost}
       ${host && ['lobby','finished'].includes(s.phase) ? '<span class="studio-publisher">A ROOKIE QUEST GAMES PRODUCTION</span>' : ''}
       ${host && !['lobby','waiting'].includes(s.phase) ? `<span class="tv-live-pill"><i aria-hidden="true"></i>JAMBALOOP LIVE · <span data-tv-connected>${s.connected}</span> PLAYERS</span>` : ''}</div></div></div>${track}

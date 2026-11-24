@@ -1,5 +1,6 @@
 // Animated mode identities are CSS-driven: real text, no photographic covers.
 import { modes, minimumPlayers, partyModes } from './game-config.js';
+import { showMark } from './show-identity.js';
 import { modeStyle, modeVariables } from './mode-style.js';
 import { narration, narratorAsset } from './narration-scripts.js';
 
@@ -41,8 +42,9 @@ function identity(id) {
 function tileArt(id, isPreview = false) {
   const style = modeStyle(id);
   const {lines,strap} = identity(id);
-  return `<span class="tile-art ${isPreview?'tile-art-preview':''}" data-motif="${style.motif}" aria-hidden="true">
+  return `<span class="tile-art ${isPreview?'tile-art-preview':''}" data-motif="${style.motif}" data-show="${id}" aria-hidden="true">
     <span class="tile-motion"><i></i><i></i><i></i></span>
+    ${showMark(id)}
     <span class="tile-wordmark">${lines.map(line=>`<span>${line}</span>`).join('')}</span>
     <span class="tile-strap">${strap}</span>
   </span>`;

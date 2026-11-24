@@ -1,11 +1,11 @@
 // Display fonts and scene colours share the same palette on every device.
 const styles = {
   quizrace: { font: 'Club Race', weight: 700, accent: '#1dd9be', backdrop: '#131a33', panel: '#222d4a', edge: '#4a5a83', motif: 'orbit', notes: [523, 622, 784], wave: 'triangle' },
-  classic: { font: 'Club Classic', weight: 700, accent: '#aabaff', backdrop: '#141831', panel: '#232b4a', edge: '#414e76', motif: 'stars', notes: [523, 659, 784], wave: 'sine' },
-  wheel: { font: 'Club Wheel', weight: 700, accent: '#dfbbff', backdrop: '#201333', panel: '#34204a', edge: '#584075', motif: 'orbit', notes: [440, 622, 831], wave: 'triangle' },
+  classic: { font: 'Club Classic', weight: 700, accent: '#f5d58d', backdrop: '#080f24', panel: '#14254a', edge: '#9b7843', motif: 'stars', notes: [523, 659, 784], wave: 'sine' },
+  wheel: { font: 'Club Wheel', weight: 700, accent: '#ffcf74', backdrop: '#200e36', panel: '#3d1958', edge: '#9a57ad', motif: 'orbit', notes: [440, 622, 831], wave: 'triangle' },
   board: { font: 'Club Race', weight: 700, accent: '#e8c591', backdrop: '#141f1a', panel: '#23352b', edge: '#49634d', motif: 'tiles', notes: [392, 523, 659], wave: 'triangle' },
   dice: { font: 'Club Rally', weight: 400, accent: '#ffb87c', backdrop: '#2a1716', panel: '#442728', edge: '#724742', motif: 'dice', notes: [330, 494, 740], wave: 'triangle' },
-  knockout: { font: 'Club Knockout', weight: 700, accent: '#ff98b4', backdrop: '#2a1427', panel: '#411e39', edge: '#71415d', motif: 'pulse', notes: [294, 440, 587], wave: 'triangle' },
+  knockout: { font: 'Club Knockout', weight: 700, accent: '#ff9b91', backdrop: '#190c13', panel: '#30171e', edge: '#88444a', motif: 'pulse', notes: [294, 440, 587], wave: 'triangle' },
   bluff: { font: 'Club Bluff', weight: 800, accent: '#98e5cf', backdrop: '#101f29', panel: '#19343f', edge: '#33595f', motif: 'glints', notes: [349, 415, 523], wave: 'sine' },
   punchline: { font: 'Club Punchline', weight: 800, accent: '#ffc0a5', backdrop: '#2b1a29', panel: '#43283b', edge: '#714859', motif: 'bubbles', notes: [587, 740, 880], wave: 'triangle' },
   cards: { font: 'Club Cards', weight: 700, accent: '#f4c0de', backdrop: '#281925', panel: '#40293b', edge: '#64435a', motif: 'cards', notes: [330, 550, 660], wave: 'sine' },

@@ -6,6 +6,7 @@ import { narration, narratorAsset } from './narration-scripts.js';
 export const LAUNCHER_PAGE_SIZE = 8;
 
 const identities = {
+  soclose: {lines:['SO','CLOSE'],strap:'EVERY NUMBER COUNTS',kind:'ESTIMATION',steps:['Read the question and its measurement unit.','Scroll to your best estimate and lock it in privately.','The closest guess earns 100 points; exact guesses earn 200.']},
   classic:   {lines:['CLASSIC','QUIZ'], strap:'THE ORIGINAL QUIZ', kind:'TRIVIA', steps:['Pick a question category and round length.','Answer questions on your phone.','Collect points and top the leaderboard.']},
   wheel:     {lines:['SPIN THE','WHEEL'], strap:'LET FATE CHOOSE', kind:'TRIVIA', steps:['Spin the wheel for the next category.','Answer the question on your phone.','Score points across the rounds.']},
   board:     {lines:['BOARD','RACE'], strap:'ROLL. RACE. WIN.', kind:'RACING', steps:['Choose your teams and board length.','Roll the dice and tackle landing-square questions.','Move around the board towards the finish.']},
@@ -41,7 +42,7 @@ function identity(id) {
 function tileArt(id, isPreview = false) {
   const style = modeStyle(id);
   const {lines,strap} = identity(id);
-  return `<span class="tile-art ${isPreview?'tile-art-preview':''}" data-motif="${style.motif}" aria-hidden="true">
+  return `<span class="tile-art ${isPreview?'tile-art-preview':''}" data-motif="${style.motif}" data-show="${id}" aria-hidden="true">
     <span class="tile-motion"><i></i><i></i><i></i></span>
     <span class="tile-wordmark">${lines.map(line=>`<span>${line}</span>`).join('')}</span>
     <span class="tile-strap">${strap}</span>

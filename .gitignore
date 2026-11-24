@@ -28,3 +28,6 @@ Thumbs.db
 # Locally persisted data
 *.sqlite
 *.sqlite3
+
+# Playwright review captures (uploaded as CI artifacts)
+browser-screenshots/

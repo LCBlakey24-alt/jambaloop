@@ -5,7 +5,8 @@ import {once} from 'node:events';
 import {estimates} from '../extra-questions.js';
 import {modes,minimumPlayers} from '../public/game-config.js';
 import {queuedSettings} from '../public/game-night.js';
-import {soCloseView,guessRows} from '../public/so-close-view.js';
+import {revealPlan,revealFrame} from '../public/so-close-reveal.js';
+import {soCloseRevealView,soCloseView,guessRows} from '../public/so-close-view.js';
 
 test('So Close picker handles bounds and hides actual number while guessing',()=>{
   assert.ok(modes.some(([id])=>id==='soclose'));
@@ -72,7 +73,42 @@ test('So Close server keeps guesses private and awards exact and tied closest po
     assert.equal(reveal.estimateGuesses.length,2);
     assert.deepEqual(reveal.estimateGuesses.map(row=>row.points),round===0?[200,0]:[100,100]);
     assert.equal((await state(b.key)).estimateGuesses,undefined);
+    assert.deepEqual((await state(b.key)).estimateReveal,reveal.estimateReveal);
+    assert.equal(reveal.estimateReveal.count,2);
+    await request(path+'/estimate-reveal-skip',b.key,{game,index},403);
+    await request(path+'/estimate-reveal-skip',host,{game,index:index+1},409);
+    await request(path+'/estimate-reveal-skip',host,{game,index},204);
+    assert.equal((await state(b.key)).estimateReveal.skipped,true);
     assert.equal((await state(a.key)).earned,round===0?200:100);
     await advance();
   }
+});
+
+test('reveal shows each guess before answer and winner, and groups large rooms',()=>{
+  const reveal={starts:10000,count:2,skipped:false};
+  assert.deepEqual(revealFrame(reveal,10000),{kind:'opening',shown:0});
+  assert.deepEqual(revealFrame(reveal,11000),{kind:'guesses',shown:1,from:0});
+  assert.deepEqual(revealFrame(reveal,11900),{kind:'guesses',shown:2,from:1});
+  assert.equal(revealFrame(reveal,12800).kind,'suspense');
+  assert.equal(revealFrame(reveal,14600).kind,'actual');
+  assert.equal(revealFrame(reveal,16300).kind,'winner');
+  assert.equal(revealFrame({...reveal,skipped:true},10000).kind,'winner');
+  assert.ok(revealPlan(300).groups<=10);
+  assert.ok(revealPlan(300).duration<=14000);
+  assert.equal(revealFrame({...reveal,count:0},11000).kind,'suspense');
+  const state={estimateReveal:reveal,question:{correct:917,min:0,max:1000,unit:'metres'},estimateGuesses:[
+    {id:'a',name:'Winner',guess:920,won:true,points:100,distance:3},
+    {id:'b',name:'Other',guess:800,won:false,points:0,distance:117}
+  ]};
+  const guess=soCloseRevealView(state,{kind:'guesses',from:0,shown:1},true,String);
+  assert.match(guess,/Other/);
+  assert.doesNotMatch(guess,/917|Winner|100 pts/);
+  const actual=soCloseRevealView(state,{kind:'actual',shown:2},true,String);
+  assert.match(actual,/917/);
+  assert.doesNotMatch(actual,/Winner|100 pts/);
+  const finish=soCloseRevealView(state,{kind:'winner',shown:2},true,String);
+  assert.match(finish,/Winner wins the round/);
+  assert.match(finish,/Other/);
+  const phone=soCloseRevealView({...state,selection:920,answerCorrect:true,earned:100},{kind:'suspense',shown:2},false,String);
+  assert.doesNotMatch(phone,/917|100 pts|You win/);
 });

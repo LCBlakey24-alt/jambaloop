@@ -27,3 +27,7 @@
 4. Prototype **new** game ideas only after design/privacy contracts and targeted tests; keep implementation separate from this documentation update.
 
 **If tool context is limited, follow the longer handoff instead of guessing at omitted features.** Always report what was reviewed, built, tested, merged and deployed as distinct statuses.
+
+
+## Latest owner-approved development addendum (24 November 2026, evening)
+Read [the next development handoff](docs/CLAUDE_NEXT_DEVELOPMENT_HANDOFF_2026-11-24.md) before beginning new work. It records draft PRs #63/#65, their latest checked CI, the standalone So Close estimation show, dramatic reveals across all games, the six original redesign batches plus So Close, continuous content expansion, and release priorities. Earlier references to 18 games describe the shipped baseline, not the proposed 19-game library. Do not assume draft features are merged or deployed.

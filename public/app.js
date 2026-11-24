@@ -1,4 +1,5 @@
-import {soCloseView,numberWheelRows} from './so-close-view.js';
+import {soCloseView,numberWheelRows,soCloseRevealView} from './so-close-view.js';
+import {revealFrame as soCloseFrame} from './so-close-reveal.js';
 import { scoreBreakView, updateScoreBreak } from './score-break.js';
 import { winnerBanner, playerFinish } from './result-highlights.js';
 import { bindRoomAvatars } from './room-avatars.js';
@@ -58,6 +59,7 @@ let previewTheme = localStorage.getItem('quiz-club-theme') ?? defaultTheme;
 let boardDisplay;
 let boardModule;
 let renderedPhase;
+let lastSoCloseCue;
 let categoryGroup = 0;
 let homeFilter = 'all';
 let homePage = 0;
@@ -152,6 +154,7 @@ function renderHome() {
   setTheme(previewTheme);
   app.innerHTML = home;
   renderedPhase = undefined;
+  lastSoCloseCue = undefined;
   announcement.textContent = '';
   partyReply = '';
   footer.hidden = false;
@@ -871,6 +874,8 @@ function render(s) {
       ${!host ? `<dl class="personal-scorecard"><div><dt>Rounds won</dt><dd>${s.player.wins} / ${s.index + 1}</dd></div><div><dt>Best streak</dt><dd>${s.player.bestStreak}</dd></div><div><dt>Final rank</dt><dd>#${s.rank}</dd></div></dl>` : ''}
       ${!host && s.playerCount > s.players.length ? '<h2>Top 10</h2>' : ''}${fullLeaderboard(s.players, 'Full standings')}${s.review.length ? reviewView(s.review, escape, formatNumber) : ''}<div class="actions">${canControl ? replayButtons(s, icons) : `<button class="button outline" data-action="leave">Back to home ${icons('arrow-right')}</button>`}</div>
       ${host ? '' : '<p class="status">Stay here if the captain or host starts a rematch.</p>'}</div>`;
+  } else if(s.mode==='soclose' && s.phase==='reveal' && s.estimateReveal){
+    body=`<div class="game-panel so-close-broadcast"><div class="eyebrow">ROUND ${s.index+1} OF ${s.total}</div><p class="so-close-reveal-prompt">${controllerOnly?'Round results':escape(s.question.prompt)}</p><div id="so-close-frame" aria-live="polite"></div>${canControl?`<div class="actions so-close-reveal-actions"><button class="button outline" data-action="estimate-reveal-skip">Skip to results</button><button class="button primary" data-action="advance" hidden>${nextQuestionLabel(s)} ${icons('arrow-right')}</button></div>`:''}</div>`;
   } else if (host && s.privateQuestions) {
     const revealed = s.phase === 'reveal';
     timer = !revealed && s.ends ? '<div class="tv-clock"><span class="timer" id="timer"></span><small>TIME LEFT</small></div>' : '';
@@ -969,7 +974,7 @@ function render(s) {
   const boost = s.boost > 1 && ['ready', 'rolling', 'question', 'reveal'].includes(s.phase)
     ? `<span class="score-boost">${icons('zap')} Double points</span>` : '';
   const mode = modes.find(([id]) => id === s.mode);
-  const result = !host && s.phase === 'reveal' ? won ? 'win' : s.selection !== undefined ? 'miss' : 'skip'
+  const result = !host && s.phase === 'reveal' && s.mode!=='soclose' ? won ? 'win' : s.selection !== undefined ? 'miss' : 'skip'
     : !host && s.phase === 'question' && s.selection !== undefined ? 'locked' : '';
   const completed = ['reveal', 'score-break', 'party-reveal','sketch-reveal'].includes(s.phase) ? s.index + 1 : s.index;
   const track = showProgress ? `<div class="round-track" role="img" aria-label="${completed} of ${s.total} rounds completed">
@@ -1027,8 +1032,27 @@ function render(s) {
     textarea?.focus({ preventScroll: true });
     textarea?.setSelectionRange(...writing);
   }
+  updateSoCloseReveal(s);
   if (enter && /^(lobby|ready|question|reveal|score-break|finished|party-)/.test(s.phase)) {
     window.scrollTo({ top: 0, behavior: 'instant' });
+  }
+}
+
+function updateSoCloseReveal(s=state){
+  const target=document.querySelector('#so-close-frame');
+  if(!target||!s?.estimateReveal||s.mode!=='soclose'||s.phase!=='reveal')return;
+  const frame=soCloseFrame(s.estimateReveal,Date.now()+offset);
+  const key=frame.kind+'/'+frame.shown;
+  if(target.dataset.frame===key)return;
+  target.dataset.frame=key;
+  target.innerHTML=soCloseRevealView(s,frame,Boolean(session?.host),escape);
+  const done=frame.kind==='winner';
+  const actions=target.parentElement.querySelector('.so-close-reveal-actions');
+  if(actions){actions.querySelector('[data-action="estimate-reveal-skip"]').hidden=done;actions.querySelector('[data-action="advance"]').hidden=!done;}
+  const cueKey=s.code+'/'+s.game+'/'+s.index+'/'+key;
+  if(lastSoCloseCue!==cueKey){
+    lastSoCloseCue=cueKey;
+    if(session?.host&&soundEnabled)playCue(sound,s.mode,'estimate-'+frame.kind);
   }
 }
 
@@ -1111,7 +1135,7 @@ function receive(next, current) {
   setConnectionStatus(false);
   if (soundEnabled && current.host && state) {
     if (state.phase !== next.phase || state.index !== next.index) {
-      if (!next.ceremony || matchMedia('(prefers-reduced-motion: reduce)').matches) playCue(sound, next.mode, next.phase);
+      if (!(next.mode==='soclose' && next.phase==='reveal') && (!next.ceremony || matchMedia('(prefers-reduced-motion: reduce)').matches)) playCue(sound, next.mode, next.phase);
     }
     else if (next.mode === 'potato' && next.party?.passes > state.party?.passes) playCue(sound, next.mode, 'pass');
   }
@@ -1631,6 +1655,9 @@ document.addEventListener('click', async event => {
         if (!dialog.open) dialog.showModal();
         content.querySelector('input').select();
       }
+    } else if(action==='estimate-reveal-skip'){
+      await api('/'+current.code+'/estimate-reveal-skip',{game:state.game,index:state.index});
+      await refresh();
     } else if (action === 'ceremony-skip') {
       await api('/' + current.code + '/ceremony', { game: state.game });
       await refresh();
@@ -1764,5 +1791,6 @@ setInterval(() => {
 setInterval(() => {
   updateTimer();
   updateCeremony();
+  updateSoCloseReveal();
   if (state?.phase === 'score-break') updateScoreBreak(app, Date.now() + offset);
 }, 150);

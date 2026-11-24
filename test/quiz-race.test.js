@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createQuizRace, advanceQuizRace, submitRaceAnswer, raceMovement, raceSpeed, boostEffect, setRacePaused, publicRaceState, racePlacings } from '../quiz-race.js';
 import { minimumPlayers, modes } from '../public/game-config.js';
+import { quizRaceView } from '../public/quiz-race-view.js';
 
 const sample = [
   { type:'choice', category:'general', prompt:'Which planet is red?', options:['Venus','Mars','Saturn','Jupiter'], correct:1 },
@@ -10,6 +11,34 @@ const sample = [
 const players = [ ['key-a', {id:'a',name:'Alex'}], ['key-b',{id:'b',name:'Blake'}] ];
 const make = (now=0, options={}) => createQuizRace(players,sample,options,now);
 const start = () => {const race=make();advanceQuizRace(race,3100);return race;};
+
+test('race finish shows a simple personal phone result but full standings on TV', () => {
+  const state = {
+    phase:'finished',playStyle:'individual',player:{id:'a',team:0},playerCount:2,isCaptain:false,
+    race:{track:'neon',length:70,racers:[
+      {id:'b',name:'Blake',color:'#1dd9be',position:1,distance:70,finishedAt:55_000},
+      {id:'a',name:'Alex',color:'#ffbd43',position:2,distance:70,finishedAt:58_000},
+    ],own:{position:2,distance:70}},
+    teams:[],teamWinners:[],
+  };
+  const controls = {canControl:false,icons:()=>'',sending:false,replayButtons:()=>''};
+  const phone = quizRaceView(state,{...controls,host:false});
+  assert.match(phone,/Your Quiz Race result/);
+  assert.match(phone,/YOUR POSITION/);
+  assert.match(phone,/#2/);
+  assert.match(phone,/View full results without a TV/);
+  assert.doesNotMatch(phone,/class="race-track-wrap"/);
+  assert.doesNotMatch(phone,/class="race-finish-panel"/);
+  const tv = quizRaceView(state,{...controls,host:true});
+  assert.match(tv,/race-finish-panel/);
+  assert.match(tv,/race-track-wrap/);
+  assert.match(tv,/Blake wins Quiz Race/);
+
+  const team = {...state,playStyle:'teams',teams:[
+    {id:0,name:'Blue'},{id:1,name:'Red'}],teamWinners:[0],
+    raceTeams:[{id:0,name:'Blue',distance:70,color:'#1dd9be'},{id:1,name:'Red',distance:70,color:'#ffbd43'}]};
+  assert.match(quizRaceView(team,{...controls,host:false}),/Your team wins!/);
+});
 
 test('Quiz Race is a distinct registered mode needing two players', () => {
   assert.ok(modes.some(([id])=>id==='quizrace'));

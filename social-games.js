@@ -96,6 +96,12 @@ export function advanceSocial(room, publish) {
     // six-entry shortlist excluded most players in larger rooms from earning votes.
     party.ballot = shuffle(party.entries.values());
     room.phase = 'party-vote';
+    // An empty ballot (or a lone entry with no other connected voters) cannot
+    // receive a legal vote. Reveal immediately rather than stranding the room.
+    if (socialTarget(room) === 0) {
+      party.totals = new Map();
+      room.phase = 'party-reveal';
+    }
   } else if (room.phase === 'party-vote') {
     party.totals = new Map();
     for (const vote of party.votes.values()) party.totals.set(vote, (party.totals.get(vote) ?? 0) + 1);
@@ -127,6 +133,9 @@ export function submitSocial(room, key, data, publish) {
     return [204];
   }
   if (room.phase === 'party-write' && ['write', 'card'].includes(data.action)) {
+    if (room.mode === 'cards' && data.action === 'card' &&
+        (data.handVersion ?? 0) !== (party.redrawn.has(key) ? 1 : 0))
+      return [409, 'Your hand has changed. Select a card from the current hand.'];
     const text = room.mode === 'cards' ? party.hands.get(key)?.[data.option]
       : typeof data.text === 'string' ? data.text.trim() : '';
     if (typeof text !== 'string' || !text || text.length > 100) return [400, room.mode === 'cards' ? 'Choose a card from your hand.' : 'Enter a reply of 1 to 100 characters.'];
@@ -172,6 +181,7 @@ export function publicSocial(room, key) {
     shortlisted: 0,
     votePoints: party.votePoints,
     redrawAvailable: writing && room.mode === 'cards' && party.hands?.has(key) === true && !party.entries.has(key) && !party.redrawn?.has(key),
+    handVersion: writing && room.mode === 'cards' && party.hands?.has(key) ? (party.redrawn.has(key) ? 1 : 0) : undefined,
     wrote: party.entries.has(key), voted: party.votes.has(key),
     hand: writing ? party.hands?.get(key) : undefined,
     ballot: party.ballot?.map(entry => ({

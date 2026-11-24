@@ -59,6 +59,23 @@ A new original social-deduction game using the broad classic night/day hidden-ro
 3. Prototype Secret Suspects and Bloodmoon Council in **separate** design, game-engine, privacy, and UI PRs. Validate their distinct core loops against every existing game.
 4. Continue the original P1–P6 pipeline only as capacity and playtests support it. Do not count any concept as an additional live mode until fully coded, tested and merged/deployed.
 
+## Detailed game mechanics and next-wave portfolio — 24 November 2026
+
+The new [Next-wave Game Design Portfolio](GAME_CONCEPTS_NEXT_WAVE_2026-11-24.md) adds a playable first-pass loop, provisional scoring, TV-versus-phone responsibilities, privacy contracts, content targets and QA requirements to the strongest candidates. It gives Claude Code a detailed starting point, **not permission to publish a new mode without tests**.
+
+| Concept | Status | New player decision / uniqueness | Recommended treatment |
+| --- | --- | --- | --- |
+| **Question Vault** ([#49](https://github.com/LCBlakey24-alt/jambaloop/issues/49)) | New proposal | Cooperative limited yes/no questions to identify the Keeper's secret object | Prototype as distinct new game after reliability/mobile work |
+| **Mystery Market** ([#48](https://github.com/LCBlakey24-alt/jambaloop/issues/48)) | New proposal | Secretly allocate finite fictional bidding coins across mystery lots, win/lose net worth | Prototype as distinct new game after economy/balance review |
+| **Sketch Relay** | Already planned P1 | Alternate private drawings and interpretations, then TV chain reveal | Expand existing concept; do not duplicate Sketch Sprint |
+| **Bank** ([#46](https://github.com/LCBlakey24-alt/jambaloop/issues/46)) | Creator-owned, rules still being clarified | Higher/Lower predictions with first-card replace, Joker bank wipe and forced finish above 15 cards | Priority card-game prototype once remaining rules are confirmed |
+| **Chase the Ace, Cheat, Sevens, Blackjack/21** | Traditional-card shortlist | Swapping/lives, claim/challenge, public suit-building, dealer risk | Evaluate one by one, not four simultaneous untested tiles |
+| **Memory Gallery** | Picture Perfect sub-mode | Remember details from an original visual scene | Add as a pack/format, not a separate launcher tile |
+| **Sound Scene** | Quiz/audio question pack | Identify bundled original sounds or their sequence | Add as accessible quiz content, not a separate title |
+| **Caption Contest** | Punchline Party round type | Caption an original image anonymously and vote | Reuse Punchline Party's existing entry/vote pipeline |
+
+**Feature priorities remain:** P0 [room restart reliability #41](https://github.com/LCBlakey24-alt/jambaloop/issues/41), P0 [TV-first single-screen mobile UX #45](https://github.com/LCBlakey24-alt/jambaloop/issues/45), P1 [Hot Potato and Bluff improvements #40](https://github.com/LCBlakey24-alt/jambaloop/issues/40), then source-backed content expansion and **one** tested new prototype at a time. All additions require their own state/rules tests and distinctive original identity. Future designs are not among the 18 current public modes.
+
 ## Content filtering, age and accessibility (design requirement)
 
 - Whole-site content metadata must include audience eligibility (Kids, Family, Teen, Adults Only), intensity/subject tags, authored/source provenance, moderation state, pack ID, and stable duplicate-detection ID.
@@ -97,4 +114,4 @@ Before a new **home-page game tile** is approved, its design document must answe
 8. Codex/Claude implementation must be isolated to reviewed changes, follow existing test discipline, and **must not** merge, deploy, switch on 18+ content or implement accounts on the strength of this planning document alone. The Render service auto-deploys commits merged into `main`, so a merge can interrupt active rooms.
 
 ## Planning status
-**Twelve additional proposals recorded:** the original six priority independent candidates and four backlog candidates, plus Secret Suspects and Bloodmoon Council (both planning-only). Doodle Detectives remains a potential drawing-game sub-mode. None of the proposals listed in this roadmap is implied to be coded, published or live.
+**Fourteen additional proposals recorded:** the original six priority independent candidates and four backlog candidates, plus Secret Suspects, Bloodmoon Council, Question Vault and Mystery Market (all planning-only). Bank is tracked separately as the creator's original card-game design and is not implemented. Doodle Detectives remains a potential drawing-game sub-mode. None of the proposals listed in this roadmap is implied to be coded, published or live.

@@ -131,6 +131,7 @@ try{
   await tv.page.locator('.so-close-guess-card').first().waitFor({timeout:5000});
   await tv.page.screenshot({path:'browser-screenshots/so-close-reveal-guesses-1280x720.png'});
   assert.equal(await tv.page.locator('.so-close-round-winner').count(),0,'No winner during the guesses');
+  assert.doesNotMatch(await tv.page.locator('.phase-caption').innerText(),/revealed/i,'Header must not announce the answer yet');
   // A phone that reloads mid-reveal rejoins the same sequence.
   await phones[1].page.reload({waitUntil:'domcontentloaded'});
   await phones[1].page.locator('#so-close-frame').waitFor({timeout:15000});

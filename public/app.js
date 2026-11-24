@@ -759,6 +759,8 @@ function phaseCaption(s) {
   if (s.pausedAt) return 'Timer paused';
   if (s.phase === 'ready') return s.mode === 'wheel' ? 'Ready to spin' : 'Ready to roll';
   if (s.phase === 'rolling') return s.mode === 'wheel' ? 'Wheel spinning' : 'Dice rolling';
+  // The caption must not announce the answer while So Close guesses are still showing.
+  if (s.mode === 'soclose' && s.phase === 'reveal' && s.estimateReveal?.stage !== 'results') return 'The big reveal';
   return {
     lobby: 'Lobby open',
     waiting: 'Queued to join',

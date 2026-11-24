@@ -1,5 +1,6 @@
 import { boardExpert, boardQuestionOrder } from './board-questions.js';
 import { questionHistoryId } from './public/question-history.js';
+import { soCloseBank } from './so-close-bank.js';
 import { verifiedChoiceQuestions } from './verified-questions.js';
 import { extraChoiceQuestions, extraBooleanQuestions } from './question-expansion-v2.js';
 import { difficultyQuestions } from './difficulty-questions.js';
@@ -582,4 +583,39 @@ export function boardQuestion(category, format, level, seen) {
   const row = shuffled.find(([prompt]) => !hasSeen(seen,prompt)) ?? shuffled[0];
   const question = formatQuestion(category, format, format === 'boolean' ? [row[0], row[1] ? 'True' : 'False'] : row);
   return { ...question, difficulty: level };
+}
+
+/**
+ * So Close draws real-world measurement questions first, unseen before seen,
+ * one category at a time for Mixed Bag. Categories with too few dedicated
+ * prompts are topped up from the general estimate bank, never repeating a
+ * question within the match.
+ */
+export function makeSoCloseQuestions(category, count, seen = new Set(), includeChristmas = true) {
+  const allowed = row => (category === 'mixed' ? includeChristmas || row.category !== 'christmas' : row.category === category);
+  const pool = shuffle(soCloseBank.filter(allowed)).sort((a, b) => Number(hasSeen(seen, a.prompt)) - Number(hasSeen(seen, b.prompt)));
+  const picked = [];
+  const used = new Set();
+  // Spread Mixed Bag across subjects: take round-robin from each category.
+  const byCategory = new Map();
+  for (const row of pool) byCategory.set(row.category, [...(byCategory.get(row.category) ?? []), row]);
+  const queues = shuffle([...byCategory.values()]);
+  while (picked.length < count && queues.some(queue => queue.length)) {
+    for (const queue of queues) {
+      const row = queue.shift();
+      if (!row) continue;
+      // Unseen prompts first: a seen prompt waits until no unseen one is left.
+      picked.push(row);
+      used.add(questionHistoryId(row.prompt));
+      if (picked.length === count) break;
+    }
+  }
+  picked.sort((a, b) => Number(hasSeen(seen, a.prompt)) - Number(hasSeen(seen, b.prompt)));
+  const questions = picked.map(row => ({ category: row.category, prompt: row.prompt, type: 'estimate', correct: row.answer, unit: row.unit, min: row.min, max: row.max }));
+  if (questions.length < count) {
+    const extra = makeQuestions(category, count * 2, seen, 'estimate', includeChristmas)
+      .filter(question => !used.has(questionHistoryId(question.prompt)));
+    questions.push(...extra.slice(0, count - questions.length));
+  }
+  return questions;
 }

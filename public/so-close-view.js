@@ -45,7 +45,10 @@ export function soCloseRevealView(state,frame,host,escape){
   const final=frame.kind==='winner', actual=final||frame.kind==='actual';
   const visible=rows.slice(0,frame.shown);
   const position=value=>Math.max(0,Math.min(100,100*(value-q.min)/Math.max(1,q.max-q.min)));
-  const ruler=host?`<div class="so-close-scale" aria-hidden="true">${visible.map(row=>`<i class="${final&&row.won?'nearest':''}" style="--position:${position(row.guess)}%"></i>`).join('')}${actual?`<span class="so-close-target" style="--position:${position(q.correct)}%"></span>`:''}</div><div class="so-close-bounds"><span>${measure(q.min)}</span><span>${measure(q.max)}</span></div>`:'';
+  // Up to twelve markers carry the player's initials; bigger rooms keep plain ticks.
+  const initials=name=>escape(String(name).trim().split(/\s+/).map(part=>[...part][0]??'').join('').slice(0,2).toUpperCase());
+  const tagged=visible.length<=12;
+  const ruler=host?`<div class="so-close-scale" aria-hidden="true">${visible.map((row,i)=>`<i class="${final&&row.won?'nearest':''}" style="--position:${position(row.guess)}%;--lane:${i%3}">${tagged?`<b>${initials(row.name)}</b>`:''}</i>`).join('')}${actual?`<span class="so-close-target" style="--position:${position(q.correct)}%"></span>`:''}</div><div class="so-close-bounds"><span>${measure(q.min)}</span><span>${measure(q.max)}</span></div>`:'';
   if(frame.kind==='opening')return `<div class="so-close-reveal-head"><div class="eyebrow">GUESSING CLOSED</div><h2>All guesses are locked.</h2><p>${state.estimateReveal.count} guesses submitted. Let's see where they landed.</p></div>`;
   if(frame.kind==='guesses'){
     const current=rows.slice(frame.from,frame.shown);
@@ -59,8 +62,8 @@ export function soCloseRevealView(state,frame,host,escape){
   const winners=rows.filter(row=>row.won);
   const winnerHeading=host?(winners.length? winners.length===1?escape(winners[0].name)+' wins the round!':winners.length+' players share the win!':'No guesses this round')
     :state.answerCorrect?(state.selection===q.correct?'Bang on! Exact answer!':'So close! You win!'):'Round complete';
-  const source=q.source?`<a class="question-source" href="${escape(q.source)}" target="_blank" rel="noopener noreferrer">Verified answer source</a>`:'';
-  return `${actualHeading}<div class="so-close-round-winner"><h3>${winnerHeading}</h3>${host?(winners.length?`<p>${winners.slice(0,5).map(row=>escape(row.name)).join(' · ')}${winners.length>5?' + '+(winners.length-5)+' more':''} · ${difference(winners[0].distance)} away · +${winners[0].points} pts each</p>`:''):(state.selection===undefined?'<p>No guess submitted.</p>':`<p>Your guess: ${measure(state.selection)} · ${difference(Math.abs(state.selection-q.correct))} away · +${state.earned??0} pts</p>`)}</div>
+  const source=q.source?`<a class="question-source" href="${escape(q.source)}" target="_blank" rel="noopener noreferrer">Answer source</a>`:'';
+  return `${actualHeading}<div class="so-close-round-winner"><h3>${winnerHeading}</h3>${host?(winners.length?`<p>${winners.slice(0,5).map(row=>escape(row.name)).join(' · ')}${winners.length>5?' + '+(winners.length-5)+' more':''} · ${difference(winners[0].distance)} away · +${winners[0].points} pts${winners.length>1?' each':''}</p>`:''):(state.selection===undefined?'<p>No guess submitted.</p>':`<p>Your guess: ${measure(state.selection)} · ${difference(Math.abs(state.selection-q.correct))} away · +${state.earned??0} pts</p>`)}</div>
     ${ruler}
     ${host?`<ol class="so-close-guesses" aria-label="All guesses, closest first">${[...rows].sort((a,b)=>a.distance-b.distance).map(row=>`<li data-nearest="${row.won}"><strong>${escape(row.name)}</strong><span>${measure(row.guess)}</span><small>${difference(row.distance)} away · +${row.points} pts</small></li>`).join('')}</ol>`:''}${source}`;
 }

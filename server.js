@@ -19,7 +19,8 @@ import { inviteOriginOptions, qrJoinUrl } from './room-invite.js';
 import { isRoomMember, positiveSetting, readAvatar, requestBudget } from './room-http.js';
 import { fileURLToPath } from 'node:url';
 import { validateQuiz, prepareCustomQuiz } from './public/custom-quiz.js';
-import { boardQuestion, makeQuestions, questionCategories, verifiedSourceFor } from './questions.js';
+import { boardQuestion, makeQuestions, makeSoCloseQuestions, questionCategories, verifiedSourceFor } from './questions.js';
+import { soCloseSourceFor } from './so-close-bank.js';
 import {questionHistoryId, questionHistoryLimit, validQuestionHistoryId} from './public/question-history.js';
 import { modes, themes, formats, difficulties, teams, socialModes, minimumPlayers, boardRollDuration, defaultTheme, fixedQuestionModes, questionCounts, wheelCategories, scoreIntervals, supportsScoreCheckpoints } from './public/game-config.js';
 
@@ -79,6 +80,15 @@ function resetPlayer(player) {
   Object.assign(player, { score: 0, wins: 0, streak: 0, bestStreak: 0, misses: 0, comebacks: 0, fastest: undefined, slowest: undefined, rounds: [] });
 }
 
+function roundQuestions({ mode, category, count, format, includeChristmas, difficulty }, seen) {
+  return mode === 'soclose' ? makeSoCloseQuestions(category, count, seen, includeChristmas)
+    : makeQuestions(category, count, seen, format, includeChristmas, difficulty);
+}
+
+// So Close references are cited sources, labelled separately from the
+// independently verified multiple-choice set.
+const answerSourceFor = (mode, prompt) => verifiedSourceFor(prompt) ?? (mode === 'soclose' ? soCloseSourceFor(prompt) : undefined);
+
 function resetGame(room, settings) {
   // Carry already seen race prompts into the shared per-room history before replaying.
   if (room.race?.issued) for (const prompt of room.race.issued) room.seen.add(prompt);
@@ -92,7 +102,7 @@ function resetGame(room, settings) {
     phase: 'lobby', index: 0, opened: 0, ends: 0, ceremony: undefined, awards: [], motion: null, predictions: new Map(), wheelRemaining: [], teams: [], roundReview: [], party: undefined, privateReview: new Map(), privateRound: undefined, remaining: room.players.size, race: undefined,
     route: settings.mode === 'board' ? boardRoute(settings.boardLength, settings.includeChristmas) : undefined,
     quizTypes: settings.privateQuestions ? ['choice', 'boolean'] : settings.customQuiz ? [...new Set(settings.customQuiz.questions.map(item => item.type))] : undefined,
-    questions: settings.customQuiz ? prepareCustomQuiz(settings.customQuiz) : fixedQuestionModes.includes(settings.mode) ? makeQuestions(settings.category, settings.count, room.seen, settings.format, settings.includeChristmas, settings.difficulty) : [],
+    questions: settings.customQuiz ? prepareCustomQuiz(settings.customQuiz) : fixedQuestionModes.includes(settings.mode) ? roundQuestions(settings, room.seen) : [],
   });
   room.answers.clear();
   for (const player of room.players.values()) {
@@ -266,7 +276,7 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
       : room.estimateGuesses) : undefined,
     breakdown: revealed && isHost && !room.privateQuestions && ['choice', 'boolean'].includes(question.type) ? question.options.map((_, option) =>
       [...answers.values()].filter(entry => entry.option === option).length) : undefined,
-    question: visible && question ? { ...publicQuestion, historyId:questionHistoryId(question.prompt), basePoints: room.motion?.points ?? (question.type === 'estimate' && room.legacyScoring ? 1000 : room.scoring?.base), prompt: isHost || room.phoneView === 'full' ? publicQuestion.prompt : undefined, correct: revealed && !holdAnswer ? correct : undefined, source: revealed && !holdAnswer ? verifiedSourceFor(question.prompt) : undefined } : undefined,
+    question: visible && question ? { ...publicQuestion, historyId:questionHistoryId(question.prompt), basePoints: room.motion?.points ?? (question.type === 'estimate' && room.legacyScoring ? 1000 : room.scoring?.base), prompt: isHost || room.phoneView === 'full' ? publicQuestion.prompt : undefined, correct: revealed && !holdAnswer ? correct : undefined, source: revealed && !holdAnswer ? answerSourceFor(room.mode, question.prompt) : undefined } : undefined,
     qr: isHost ? qr : undefined, joinUrl: isHost ? joinUrl : undefined,
     joinOptions: isHost ? room.joinOptions : undefined };
 }
@@ -579,7 +589,7 @@ function reveal(room) {
   const correct = question.type === 'estimate' ? question.correct
     : question.type === 'order' ? question.correct.map(index => question.options[index])
     : question.options[question.correct];
-  if (!room.privateQuestions) room.roundReview.push({ prompt: question.prompt, type: question.type, correct, unit: question.unit, source: verifiedSourceFor(question.prompt) });
+  if (!room.privateQuestions) room.roundReview.push({ prompt: question.prompt, type: question.type, correct, unit: question.unit, source: answerSourceFor(room.mode, question.prompt) });
   for (const [key, player] of room.players) {
     const answer = room.answers.get(key);
     if (answer) {
@@ -693,7 +703,7 @@ function startGame(room) {
   // The first quiz is selected only after everyone has joined and supplied
   // their previous question history, not when the TV room is first created.
   if (fixedQuestionModes.includes(room.mode) && !room.customQuiz && !room.privateQuestions) {
-    room.questions = makeQuestions(room.category, room.count, room.seen, room.format, room.includeChristmas, room.difficulty);
+    room.questions = roundQuestions(room, room.seen);
   }
   if (room.mode === 'tracks') {
     // Exactly one round per joined player; every player drives once.

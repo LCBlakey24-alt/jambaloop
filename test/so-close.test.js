@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
 import {once} from 'node:events';
 import {estimates} from '../extra-questions.js';
+import {soCloseBank,soCloseAudit,soCloseSourceFor} from '../so-close-bank.js';
+import {makeSoCloseQuestions,questionCategories} from '../questions.js';
 import {modes,minimumPlayers} from '../public/game-config.js';
 import {queuedSettings} from '../public/game-night.js';
 import {revealPlan,revealFrame,stageFrame} from '../public/so-close-reveal.js';
@@ -51,7 +53,7 @@ test('So Close server keeps guesses private and awards exact and tied closest po
     await request(path+'/advance',host,{game,index,phase},204);
   }
   await advance();
-  const answerBank=new Map(Object.values(estimates).flat().map(row=>[row[0],row[1]]));
+  const answerBank=new Map([...Object.values(estimates).flat().map(row=>[row[0],row[1]]),...soCloseBank.map(row=>[row.prompt,row.answer])]);
   for(let round=0;round<2;round++){
     const {question,game,index}=await state();
     assert.equal(question.type,'estimate');
@@ -177,4 +179,29 @@ test('clients hold the previous frame until the server releases that stage',()=>
   assert.deepEqual(stageFrame(winner,{count:3,stage:'answer'}),{kind:'actual',shown:3});
   assert.deepEqual(stageFrame(winner,{count:3,stage:'results'}),winner);
   assert.deepEqual(stageFrame({kind:'guesses',shown:1,from:0},{count:3,stage:'guesses'}),{kind:'guesses',shown:1,from:0});
+});
+
+test('So Close measurement bank is structurally sound, sourced and preferred',()=>{
+  assert.deepEqual(soCloseAudit(),[]);
+  assert.ok(soCloseBank.length>=70,'At least seventy dedicated measurement prompts');
+  for(const row of soCloseBank){
+    assert.ok(questionCategories.includes(row.category),row.category);
+    assert.equal(soCloseSourceFor(row.prompt),row.source);
+    assert.equal(row.status,'sourced','Do not claim verification without a second check');
+  }
+  const prompts=new Set(soCloseBank.map(row=>row.prompt));
+  const mixed=makeSoCloseQuestions('mixed',15,new Set());
+  assert.equal(mixed.length,15);
+  assert.equal(new Set(mixed.map(q=>q.prompt)).size,15,'No repeats in one match');
+  assert.ok(mixed.every(q=>prompts.has(q.prompt)),'Mixed Bag uses the measurement bank');
+  assert.ok(new Set(mixed.map(q=>q.category)).size>=8,'Mixed Bag spreads across subjects');
+  for(const q of mixed)assert.ok(q.type==='estimate'&&q.min<q.correct&&q.correct<q.max);
+  // Unseen prompts come first; a thin category tops up from the estimate bank without repeats.
+  const seen=new Set(soCloseBank.filter(row=>row.category==='space').slice(0,3).map(row=>row.prompt));
+  const space=makeSoCloseQuestions('space',5,seen);
+  assert.ok(space.slice(0,2).every(q=>!seen.has(q.prompt)));
+  const art=makeSoCloseQuestions('art',5,new Set());
+  assert.equal(art.length,5);
+  assert.equal(new Set(art.map(q=>q.prompt)).size,5);
+  assert.ok(art.some(q=>prompts.has(q.prompt)));
 });

@@ -30,7 +30,12 @@ export function playCue(context, mode, cue) {
   const { notes, wave } = modeStyle(mode);
   const start = context.currentTime + .01;
   if (cue === 'rolling' || cue === 'pass') swoosh(context, start);
-  const melody = cue === 'finished' ? [...notes, notes[0] * 2]
+  const melody = cue === 'estimate-opening' ? [notes[0]/2,notes[0]]
+    : cue === 'estimate-guesses' ? [notes[1]]
+    : cue === 'estimate-suspense' ? [notes[0]/2,notes[1]/2,notes[0]/2]
+    : cue === 'estimate-actual' ? [notes[0],notes[1],notes[2]]
+    : cue === 'estimate-winner' ? [...notes,notes[0]*2]
+    : cue === 'finished' ? [...notes, notes[0] * 2]
     : ['reveal', 'party-reveal'].includes(cue) ? notes.slice(1)
     : cue === 'score-break' ? [notes[0] / 2, notes[1] / 2, notes[0]]
     : cue === 'party-vote' ? [notes[1], notes[0]]

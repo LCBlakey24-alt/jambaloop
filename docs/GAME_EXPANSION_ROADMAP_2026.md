@@ -23,7 +23,7 @@ The game catalogue currently lists **18 modes** in `public/game-config.js`: Clas
 ## Additional ideas — keep in backlog, avoid unnecessary duplicate tiles
 
 1. **Doodle Detectives** — One player illustrates an unusual phrase and others identify it or discriminate among invented interpretations. **Initially evaluate as a distinctly labelled mode within a drawing-game collection**, not a new tile by default. Only split from Sketch Relay if live testing shows clearly different play rhythms and repeat value.
-2. **Risk Vault** — A no-trivia push-your-luck collection game: bank incremental rewards or risk losing a round's haul. **Conditional independent title** if prototype differs materially from Dice Rally's dice-based multipliers and cannot be a Dice Rally side mode.
+2. **Bank** — the creator's original higher/lower card game where a player can bank after two cards, may change the first card of a turn, and loses **all previously banked cards when a Joker appears**. Full scoring, ties and turn rules require creator confirmation before implementation. See [Bank design brief](BANK_CARD_GAME_DESIGN.md) and [#46](https://github.com/LCBlakey24-alt/jambaloop/issues/46). **Risk Vault** remains an optional alternative only if it can demonstrate a genuinely distinct core mechanic; don't build both as duplicated push-your-luck modes.
 3. **Picture Perfect** — Spot alterations, missing items and hidden details across original/appropriately licensed visual scenes. **Independent candidate** because observation accuracy and tapping positions are unlike existing questions. Budget content creation, scene licensing and touch accuracy.
 4. **Case Closed** — Cooperative evidence investigation, suspect interviews and final theory submission. **Long-term narrative series**, distinct from Spot the Bluff's secret missing-prompt social deduction and from Escape Together's mechanical lock/puzzle flow. Start with one small original case before promising a library.
 
@@ -39,6 +39,13 @@ The game catalogue currently lists **18 modes** in `public/game-config.js`: Clas
 - **Date Night Quest** — two-player cooperative conversational journey, distinct from high-score trivia and dare selection.
 - **Story Chain** — original collaborative storytelling with secret creative constraints; consider overlap with Sketch Relay (text-only versus picture relay) and distinguish clearly.
 - **Would You Rather?**, **Never Have I Ever** and compatibility questions should start as content packs or closely integrated modes, not automatic additional game tiles.
+
+## Traditional and original card-game expansion — 24 November 2026
+
+- **Bank (creator's original game):** Priority candidate for a card-game category. Confirmed higher/lower selection, optional start-card change, banking eligible after two cards, and **a Joker wiping every card already in the bank**. Do not invent the remaining score, failed-guess, tie or deck rules. See [Bank design](BANK_CARD_GAME_DESIGN.md), [#46](https://github.com/LCBlakey24-alt/jambaloop/issues/46). **Planned only — no implementation or published tile**.
+- Other candidates to evaluate for unique phone/TV play: **Chase the Ace**, **Blackjack/21**, **Cheat** (claim/challenge), **Sevens** (suit sequences). Hold complex Rummy-style hand-management until phone readability is validated.
+- Card games should use a shared reusable deck engine only if it supports each game's distinct rules. Deck order and hidden cards must be server-private. All public cards, countdowns and standings belong on TV; the player's phone is a one-screen controller with an accessible alternate full-card description if the TV is unavailable.
+- Prioritise [the TV-first phone redesign #45](https://github.com/LCBlakey24-alt/jambaloop/issues/45) and [room persistence #41](https://github.com/LCBlakey24-alt/jambaloop/issues/41) before releasing new card-game modes.
 
 ## Newly proposed, distinct social games — 24 November 2026
 

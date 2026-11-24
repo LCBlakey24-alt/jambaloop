@@ -80,23 +80,26 @@ function socialView(state, { host, canControl, escape, reply, icons }) {
       ${canControl ? `<div class="actions">${replayButtons(state, icons)}</div>` : '<p>Stay here if the captain starts another game.</p>'}`;
   } else if (writing) {
     const waiting = party.wrote ? '<p role="status">Entry locked in.</p>' : '';
-    const editor = party.hand ? `<div class="bluff-replies">${party.hand.map((card, option) => `<button class="button outline play-card" data-action="social-card" data-option="${option}">${escape(card)}</button>`).join('')}</div>`
+    const editor = party.hand ? `<div class="bluff-replies">${party.hand.map((card, option) => `<button class="button outline play-card" data-action="social-card" data-option="${option}" data-hand-version="${party.handVersion ?? 0}">${escape(card)}</button>`).join('')}</div>
+        <div class="party-hand-options">${party.redrawAvailable ? '<button class="button outline" type="button" data-action="social-redraw">Refresh my six cards</button><small>One free hand refresh each round, before you lock in.</small>' : '<small>Hand refresh already used for this round.</small>'}</div>`
       : `<form id="bluff-form"><label>Your reply<textarea name="reply" rows="3" maxlength="100" required>${escape(reply ?? '')}</textarea></label><button class="button primary">Lock in reply</button></form>`;
-    body = `<h1>${mode === 'cards' ? 'Complete the sentence' : 'Write a punchline'}</h1>${prompt}
+    body = `<h1>${mode === 'cards' ? 'Complete the sentence' : 'Write a punchline'}</h1>${party.votePoints === 200 ? '<p class="party-final-bonus" role="status">Final round · Every vote earns double points</p>' : ''}${prompt}
       ${host ? `<p role="status">${party.submissions} of ${party.responseTarget} entered</p>` : waiting || editor}
       ${next('Open voting')}`;
   } else {
     const votes = party.trackVotes;
     const leader = votes && votes[0] !== votes[1] ? (votes[0] > votes[1] ? 'Track A' : 'Track B') : '';
     body = `<h1>${voting ? tracks ? 'Which track?' : 'Vote for your favourite' : tracks ? leader ? leader + ' wins the vote' : 'The vote is tied' : 'The votes are in'}</h1>
-      ${prompt}<div class="bluff-replies party-vote-list ${tracks ? 'tracks-grid' : ''}" role="list" aria-label="${voting ? 'Choose an entry to vote for' : 'Voting results'}">
+      ${party.votePoints === 200 ? '<p class="party-final-bonus">Final round · Each vote is worth 200 points</p>' : ''}${prompt}
+      ${!tracks && voting && party.ballot.length > 6 ? `<p class="party-ballot-note">All ${party.ballot.length} entries are included. Scroll to see every choice before voting.</p>` : ''}
+      <div class="bluff-replies party-vote-list ${tracks ? 'tracks-grid' : ''}" role="list" aria-label="${voting ? 'Choose an entry to vote for' : 'Voting results'}">
       ${tracks ? party.tracks.map((track, i) => `<article class="bluff-card party-vote-card" role="listitem"><small>Track ${'AB'[i]}</small><p>${escape(track)}</p>
         ${voting ? vote(i, 'Vote Track ' + 'AB'[i]) : `<strong>${votes[i]} ${votes[i] === 1 ? 'vote' : 'votes'}</strong>`}</article>`).join('')
         : party.ballot.map((entry, i) => `<article class="bluff-card party-vote-card" role="listitem"><small>${voting ? 'Entry ' + (i + 1) : escape(entry.name)}</small>
           <p>${escape(entry.text)}</p>${voting ? entry.yours ? '<small>Your entry</small>' : vote(entry.id, 'Vote for entry ' + (i + 1))
-            : `<strong>${entry.votes} ${entry.votes === 1 ? 'vote' : 'votes'} · ${entry.votes * 100} pts</strong>`}</article>`).join('')}
+            : `<strong>${entry.votes} ${entry.votes === 1 ? 'vote' : 'votes'} · ${entry.votes * (party.votePoints ?? 100)} pts</strong>`}</article>`).join('')}
       </div>
-      ${!tracks && party.shortlisted ? `<p class="shortlist-note">The room submitted ${party.ballot.length + party.shortlisted} entries. Six were drawn at random for the ballot.</p>` : ''}
+      ${!tracks && party.shortlisted ? `<p class="shortlist-note">${party.shortlisted} entries weren't available for voting.</p>` : ''}
       ${voting && !tracks && !party.ballot.length ? '<p>No entries were submitted.</p>' : ''}
       ${voting && host ? `<p role="status">${party.submissions} of ${party.responseTarget} voted</p>` : ''}
       ${voting && !host && party.voted ? '<div class="party-vote-confirmation" role="status"><strong>Vote locked in</strong><span>Your choice is saved. Watch for the results on the big screen.</span></div>' : ''}

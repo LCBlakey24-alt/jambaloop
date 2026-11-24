@@ -1359,16 +1359,24 @@ document.addEventListener('change', async event => {
 let partySubmitting = false;
 async function sendParty(data, button) {
   if (partySubmitting || !session || !state?.party) return;
+  const activeSession = session;
+  const game = state.game;
+  const index = state.index;
   partySubmitting = true;
   button.disabled = true;
   try {
-    await api('/' + session.code + '/party', { ...data, index: state.index, game: state.game });
-    await refresh();
+    await api('/' + activeSession.code + '/party', { ...data, index, game }, activeSession.key);
+    if (session === activeSession) await refresh();
   } catch (error) {
-    document.querySelector('#game-error').textContent = error.message;
-    await refresh();
+    if (session === activeSession) {
+      // The room may rerender when refreshed, so show the original server
+      // error *after* the refresh rather than allowing it to disappear.
+      try { await refresh(); } catch { /* Keep the original action error visible. */ }
+      const notice = document.querySelector('#game-error');
+      if (notice) notice.textContent = error.message;
+    }
   } finally {
-    button.disabled = false;
+    if (button.isConnected) button.disabled = false;
     partySubmitting = false;
   }
 }
@@ -1490,7 +1498,8 @@ document.addEventListener('click', async event => {
   if (action === 'top-poll' || action === 'top-guess') return sendParty({ action: action === 'top-poll' ? 'poll' : 'guess', option: Number(button.dataset.option) }, button);
   if (action === 'brain-answer') return sendParty({ action: 'answer', option: Number(button.dataset.option) }, button);
   if (action === 'spotlight-advice' || action === 'spotlight-answer') return sendParty({ action: action === 'spotlight-advice' ? 'advice' : 'answer', option: Number(button.dataset.option) }, button);
-  if (action === 'social-card') return sendParty({ action: 'card', option: Number(button.dataset.option) }, button);
+  if (action === 'social-card') return sendParty({ action: 'card', option: Number(button.dataset.option), handVersion: Number(button.dataset.handVersion) }, button);
+  if (action === 'social-redraw') return sendParty({ action: 'redraw' }, button);
   if (action === 'bluff-vote') return sendParty({ action: 'vote', id: button.dataset.id }, button);
   if (action === 'potato-skip' || action === 'potato-answer') {
     return sendParty({ action: action === 'potato-skip' ? 'skip' : 'answer', option: Number(button.dataset.option), step: state.party.step }, button);

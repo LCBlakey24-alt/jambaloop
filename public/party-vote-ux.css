@@ -95,3 +95,31 @@
 @media (prefers-reduced-motion: reduce) {
   .game.player-only .party-vote-card, .game.player-only .party-vote-card .party-vote-button { transition: none; }
 }
+/* Party Games 2.0: optional hand reroll and clear last-round stake. */
+.game.player-only .party-hand-options {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px;
+  margin: 8px 0 14px;
+}
+.game.player-only .party-hand-options button {
+  min-height: 48px; border: 2px solid var(--game-accent, var(--pink));
+  border-radius: 11px; font-weight: 800;
+}
+.game.player-only .party-hand-options small {
+  color: var(--muted); font-size: 12px; line-height: 1.35;
+}
+.game .party-final-bonus {
+  border: 1px solid color-mix(in srgb, var(--game-accent, var(--pink)) 45%, var(--edge));
+  border-left: 4px solid var(--game-accent, var(--pink));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--game-accent, var(--pink)) 13%, var(--panel));
+  padding: 10px 12px; margin: 10px 0 13px;
+  font-size: 14px; font-weight: 800; line-height: 1.4;
+}
+.game .party-ballot-note {
+  margin: 9px 0 12px; font-size: 13px; color: var(--muted); line-height: 1.4;
+}
+@media (max-width: 520px) {
+  .game.player-only .party-hand-options { align-items: stretch; flex-direction: column; }
+  .game.player-only .party-hand-options button { width: 100%; }
+  .game .party-final-bonus { font-size: 13px; }
+}

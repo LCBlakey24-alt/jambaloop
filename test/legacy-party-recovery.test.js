@@ -190,8 +190,8 @@ test('Fill the Blank keeps every hand secret, completes five votes and gives gen
    const finale=await game.state();
    assert.equal(finale.phase,'finished');
    assert.equal(finale.players.length,3);
-   assert.equal(finale.players.reduce((n,p)=>n+p.score,0),1500,
-     'Each of the 15 genuine player votes must award 100 points in total');
+   assert.equal(finale.players.reduce((n,p)=>n+p.score,0),1800,
+     'Twelve ordinary votes award 100 each; three final-round votes award 200 each');
  });
 });
 

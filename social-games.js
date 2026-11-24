@@ -3,6 +3,7 @@ import { randomBytes, randomInt } from 'node:crypto';
 import { socialModes } from './public/game-config.js';
 import {refreshGroupScores} from './public/team-play.js';
 import {v2Punchlines,v2Blanks,v2Cards} from './creative-expansion-v2.js';
+import {punchlineV3,blankV3,cardV3} from './party-content-v3.js';
 
 const punchlines = [
   'What is the worst name for a very fancy restaurant?',
@@ -18,6 +19,7 @@ const punchlines = [
   'What should a pigeon say in its campaign to become mayor?',
   'What is a terrible name for a children’s bedtime story?',
   ...v2Punchlines,
+  ...punchlineV3,
 ];
 const blanks = [
   'The holiday brochure promised sunshine and ____.',
@@ -33,6 +35,7 @@ const blanks = [
   'Our new neighbour introduced themselves by bringing ____.',
   'This holiday’s most popular souvenir is ____.',
   ...v2Blanks,
+  ...blankV3,
 ];
 const cards = [
   'a goose in sunglasses', 'a very dramatic potato', 'six minutes of awkward silence', 'a marching band of hamsters',
@@ -45,6 +48,7 @@ const cards = [
   'a bowl of alphabet soup spelling “Help”', 'an umbrella that opens indoors', 'an overly competitive grandma', 'a potato with its own postcode',
   'a lopsided trophy', 'a parade of shopping trolleys', 'an important meeting about snacks', 'a banana wearing a crown',
   ...v2Cards,
+  ...cardV3,
 ];
 const dilemmas = [
   ['The town can fund one annual festival. Which track gets your vote?', 'A parade where all the floats are made of cake', 'A silent disco in the supermarket'],
@@ -74,9 +78,12 @@ export function startSocialRound(room, publish) {
   const item = shuffle(unseen.length ? unseen : bank)[0];
   const [prompt, ...tracks] = Array.isArray(item) ? item : [item];
   room.seen.add(prompt);
-  room.party = { prompt, tracks, entries: new Map(), votes: new Map() };
+  room.party = { prompt, tracks, entries: new Map(), votes: new Map(),
+    // The final round matters; this does not change vote eligibility or anonymity.
+    votePoints: ['punchline', 'cards'].includes(room.mode) && room.index === room.count - 1 ? 200 : 100 };
   if (room.mode === 'cards') {
     room.party.hands = new Map([...room.players.keys()].map(key => [key, shuffle(cards).slice(0, 6)]));
+    room.party.redrawn = new Set();
   }
   room.phase = tracks.length ? 'party-vote' : 'party-write';
   publish(room);
@@ -85,12 +92,20 @@ export function startSocialRound(room, publish) {
 export function advanceSocial(room, publish) {
   const party = room.party;
   if (room.phase === 'party-write') {
-    party.ballot = shuffle(party.entries.values()).slice(0, 6);
+    // Every submitted entry appears in the secret ballot. Previously a random
+    // six-entry shortlist excluded most players in larger rooms from earning votes.
+    party.ballot = shuffle(party.entries.values());
     room.phase = 'party-vote';
+    // An empty ballot (or a lone entry with no other connected voters) cannot
+    // receive a legal vote. Reveal immediately rather than stranding the room.
+    if (socialTarget(room) === 0) {
+      party.totals = new Map();
+      room.phase = 'party-reveal';
+    }
   } else if (room.phase === 'party-vote') {
     party.totals = new Map();
     for (const vote of party.votes.values()) party.totals.set(vote, (party.totals.get(vote) ?? 0) + 1);
-    for (const entry of party.entries.values()) room.players.get(entry.key).score += 100 * (party.totals.get(entry.id) ?? 0);
+    for (const entry of party.entries.values()) room.players.get(entry.key).score += party.votePoints * (party.totals.get(entry.id) ?? 0);
     refreshGroupScores(room);
     room.phase = 'party-reveal';
   } else if (room.phase === 'party-reveal') {
@@ -106,7 +121,21 @@ export function advanceSocial(room, publish) {
 export function submitSocial(room, key, data, publish) {
   if (data.index !== room.index) return [409, 'This round has moved on.'];
   const party = room.party;
+  if (room.mode === 'cards' && room.phase === 'party-write' && data.action === 'redraw') {
+    if (party.entries.has(key) || party.redrawn.has(key)) return [409, 'Your hand is already locked or refreshed.'];
+    const previous = party.hands.get(key);
+    if (!previous) return [403, 'Join the room to choose a card.'];
+    const candidates = cards.filter(card => !previous.includes(card));
+    if (candidates.length < 6) return [409, 'No unused cards are available.'];
+    party.hands.set(key, shuffle(candidates).slice(0, 6));
+    party.redrawn.add(key);
+    publish(room, true);
+    return [204];
+  }
   if (room.phase === 'party-write' && ['write', 'card'].includes(data.action)) {
+    if (room.mode === 'cards' && data.action === 'card' &&
+        (data.handVersion ?? 0) !== (party.redrawn.has(key) ? 1 : 0))
+      return [409, 'Your hand has changed. Select a card from the current hand.'];
     const text = room.mode === 'cards' ? party.hands.get(key)?.[data.option]
       : typeof data.text === 'string' ? data.text.trim() : '';
     if (typeof text !== 'string' || !text || text.length > 100) return [400, room.mode === 'cards' ? 'Choose a card from your hand.' : 'Enter a reply of 1 to 100 characters.'];
@@ -149,7 +178,10 @@ export function publicSocial(room, key) {
     prompt: party.prompt, tracks: party.tracks,
     submissions: writing ? party.entries.size : party.votes.size,
     responseTarget: socialTarget(room),
-    shortlisted: party.ballot ? party.entries.size - party.ballot.length : 0,
+    shortlisted: 0,
+    votePoints: party.votePoints,
+    redrawAvailable: writing && room.mode === 'cards' && party.hands?.has(key) === true && !party.entries.has(key) && !party.redrawn?.has(key),
+    handVersion: writing && room.mode === 'cards' && party.hands?.has(key) ? (party.redrawn.has(key) ? 1 : 0) : undefined,
     wrote: party.entries.has(key), voted: party.votes.has(key),
     hand: writing ? party.hands?.get(key) : undefined,
     ballot: party.ballot?.map(entry => ({

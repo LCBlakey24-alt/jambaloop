@@ -4,35 +4,39 @@
 **Origin:** a card game created by the Jambaloop project owner. **Working title:** Bank.  
 **Tracker:** [GitHub issue #46](https://github.com/LCBlakey24-alt/jambaloop/issues/46).
 
-## Rules supplied by the creator (preserve these)
+## Rules confirmed by the creator (preserve these)
 
-1. The main action is predicting **higher or lower** than the visible card.
-2. Players can **bank their cards after two cards**. The exact eligibility count must be clarified rather than assumed.
-3. **A Joker appearing makes you lose all cards you already have in your bank.** Banking is therefore not a permanent safe zone; this is a defining feature, and must not silently become ordinary push-your-luck banking.
-4. A player has the **choice to change the first card at the start of their turn**. The number of free changes and resulting Joker interaction are not yet specified.
+1. **Win target: 20 cards.** The first player to reach 20 cards wins; cards in the current run also need to be considered during the compulsory finishing stretch (exact automatic win accounting to confirm below).
+2. **Deck:** ordinary playing-card ranks/suits with Jokers included. Ace counts as **1**, the lowest rank.
+3. **Start of each turn:** flip the starting card face-up. The player may **replace it once**, but **must keep the replacement**. If the first card is a Joker, the player may use this replacement option; if the replacement is a Joker, it is unlucky and the Joker consequence applies. Do not offer a second replacement.
+4. **Predict Higher or Lower** for the next card against the current face-up card. Successful guesses allow the player to continue choosing whether to push onward or, when permitted, bank.
+5. **Earliest banking:** after **two cards have been drawn**, the player may call **BANK** to move eligible run cards into their persistent bank. Confirm precise starting-card counting before implementing.
+6. **Banking cut-off:** only bank up to **15 saved cards**. Once a player has 15 cards in their bank, the **BANK button is unavailable** and they must keep predicting to finish the last five cards and win. This is the game's compulsory high-risk finish. Do not offer banking at 16–19 or let a player bypass that final stretch.
+7. **Rank tie/pair:** if the next drawn card has the **same rank/number** as the previous/current card (e.g. two different sevens), this is an automatic **failed turn**. They **get nothing new**, their turn ends immediately and play passes to the next player. No higher/lower success, no extra turn, and **no new banking**. Existing saved cards remain safe because only a Joker removes cards already banked.
+8. **Joker:** a Joker causes the player to lose **all previously banked cards**, even when close to 20. This is different from a failed higher/lower guess or a matching-rank pair. If a Joker is the first card, the player may choose to replace it; if the replacement is another Joker, the risk remains.
+9. **Normal failed guesses:** the creator has explicitly stated that **banked cards are only lost to a Joker**. Whether a wrong higher/lower guess ends the turn and discards all current unbanked progress should still be specified precisely.
 
-**These four statements are the only confirmed rules.** Any full rules, scoring or digital interactions below are proposed until the original creator decides.
+**Do not replace these with an ordinary permanently-safe push-your-luck bank or allow a pair to be a push / draw.**
 
-## Unresolved rules (ask before building the engine)
+## Remaining rules to resolve before implementation
 
-- What counts as 'two cards': the initial face-up card plus one guessed card, or two successful predictions after the starting card?
-- After becoming eligible to bank, can players continue predicting to accumulate more cards in the current run? Is banking optional on every subsequent step?
-- On an incorrect prediction, does the current run vanish, does the turn end, and are previously banked cards unaffected? This is different from the clearly specified Joker penalty.
-- Are cards worth one point each, their face values, or something else? When and how does the overall game end?
-- Can the player change the first card once or any number of times? Is a Joker possible as a replacement?
-- What happens if the next card has the same rank? Is Ace always high, always low, or selectable?
-- Does a Joker also remove the player's *unbanked* run, or only the cards already in their bank?
-- Number of decks and Jokers, shared deck vs individual decks, reshuffle and deck-exhaustion policy, multiplayer turn order and tied outcomes.
+- For banking eligibility, do the **first face-up card and one guessed card** count as the two drawn cards, or must two higher/lower predictions succeed after the starter?
+- Can a player bank an unbanked run only if the resulting saved bank is **15 or fewer**? What if saving the complete run would push the bank from 14 to 17? Confirm whether it must be refused, whether partial banking is possible, or whether the 15-card cap takes effect only at turn boundaries.
+- Does reaching **20** with 15 saved cards plus five cards in the current unbanked run trigger immediate victory without a Bank action? This is the natural interpretation of the compulsory last five, but confirm the exact counting of starting/replacement cards.
+- On a **wrong non-pair** higher/lower guess, does the turn finish and the whole current run disappear? The old bank is safe unless a Joker appears.
+- Does an **initial Joker** immediately wipe the bank before the player gets their one replacement choice, or is its penalty evaluated only if kept/replaced by another Joker? Is a Joker found on the **replacement** an immediate bank wipe and end of turn?
+- Does the Joker also remove the current unbanked run? The saved bank definitely disappears.
+- Does the deck contain two Jokers? Is there a shared deck or separate deck per player? What happens when it runs out, and how are exact simultaneous wins resolved? Confirm J/Q/K values (likely 11/12/13) and whether an Ace drawn after a King is the lowest possible card.
 
-Record confirmed answers on [#46](https://github.com/LCBlakey24-alt/jambaloop/issues/46) before treating this as a completed ruleset.
+Record creator-confirmed answers on [#46](https://github.com/LCBlakey24-alt/jambaloop/issues/46). Do not substitute assumptions from other card games.
 
 ## Proposed Jambaloop version: TV stage + simple phone controller
 
 | TV | Player phone |
 | --- | --- |
 | Current player and face-up card on a large animated card table | Two large touch buttons: **Higher** and **Lower** |
-| Current unbanked cards and each player's bank (not the secret future card) | **Change first card** appears only when eligible at start of turn |
-| Dramatic Joker reveal and clearly visible bank being wiped | **Bank cards** appears only when eligible; brief action confirmation |
+| Current unbanked cards and each player's bank (not the secret future card) | **Change first card** appears only once at start of turn; replacement is final |
+| Dramatic Joker wipe, pair failure and final five-card run | **BANK** appears only when eligible and is disabled once 15 cards have been banked |
 | Scores, countdown/turn order, win screen, optional British presenter | Small status: your turn / locked / wait; no long instructional text |
 
 Use an accessible full-card-text fallback for players who cannot see the television. A normal action should fit entirely on one phone screen without horizontal navigation or page-swiping. Design the 390×844 portrait, 844×390 landscape and tablet player screens *before* building animations.

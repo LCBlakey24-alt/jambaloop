@@ -1,0 +1,133 @@
+/* Game Show Redesign — batch 1. Scoped to three existing mode IDs.
+   No new gameplay controls, hidden information, timers or scoring. */
+.game[data-mode="classic"] {
+  --show-gold:#f5d58d;
+  --ink:#fff9e9;
+  --muted:#d1d9eb;
+  --game-accent:#f5d58d;
+  --mode-backdrop:#080f24;
+  --mode-panel:#14254a;
+  --mode-edge:#9b7843;
+}
+.game.host-screen[data-mode="classic"] {
+  background:radial-gradient(ellipse at 50% -20%,#3763a7 0,transparent 55%),linear-gradient(90deg,#070d1e,#152e58 48%,#070d1e);
+}
+.game[data-mode="classic"] .scene-backdrop {
+  background:repeating-linear-gradient(90deg,transparent 0 9.8%,#dcb36b12 10% 10.2%),radial-gradient(ellipse at 50% 0,#345789 0,#090f25 60%);
+}
+.game[data-mode="classic"] .scene-backdrop > i {display:none}
+.game[data-mode="classic"] .game-top {border-bottom:2px solid #dcb36b;background:linear-gradient(90deg,#101d38,#233b65,#101d38)}
+.game[data-mode="classic"] .screen-mode-title {font-family:'House Serif',Georgia,serif;letter-spacing:.03em}
+.game[data-mode="classic"] :is(.question-panel,.results,.join-panel,.roster-panel,.tv-status,.tv-leaders) {
+  border:1px solid #9b7843;border-radius:8px;
+  background:linear-gradient(150deg,#233e6d,#10203f 62%);
+  box-shadow:inset 0 0 0 3px #0a132a,inset 0 0 0 4px #dcb36b45,0 12px 28px #0005;
+}
+.game[data-mode="classic"] .question-panel .round-kicker {color:#f5d58d;letter-spacing:.11em}
+.game.host-screen[data-mode="classic"] .question-panel > h2 {font-family:'House Serif',Georgia,serif;font-weight:400;text-align:center;margin-inline:auto;max-width:30ch}
+.game[data-mode="classic"] .question-panel .answer {
+  border-radius:4px;border:1px solid #b89759;
+  background:linear-gradient(115deg,#213d70,#132744);color:#fff9e9;
+}
+.game[data-mode="classic"] .question-panel .answer strong {border:1px solid #dcb36b;background:#f5d58d;color:#14213c;border-radius:3px}
+.game[data-mode="classic"] .tv-clock {border-radius:8px;background:#101d38;border:1px solid #dcb36b}
+.game[data-mode="classic"] .tv-clock .timer {color:#f5d58d;font-variant-numeric:tabular-nums}
+.game[data-mode="classic"] .results h1 {font-family:'House Serif',Georgia,serif;font-weight:400;color:#f5d58d}
+
+/* Spin the Wheel: carnival cabinet, circular controls, warm marquee lamps. */
+.game[data-mode="wheel"] {
+  --ink:#fff8ed;--muted:#e1d5ef;--game-accent:#ffcf74;
+  --mode-backdrop:#200e36;--mode-panel:#3d1958;--mode-edge:#9a57ad;
+}
+.game.host-screen[data-mode="wheel"],.game[data-mode="wheel"] .scene-backdrop {
+  background:radial-gradient(ellipse at 50% 30%,#672b87 0,transparent 58%),repeating-conic-gradient(from -15deg at 50% 35%,#290e43 0deg 15deg,#32134c 15deg 30deg);
+}
+.game[data-mode="wheel"] .scene-backdrop > i {display:none}
+.game[data-mode="wheel"] .game-top {border-bottom:2px dotted #ffcf74;background:#2a1048}
+.game[data-mode="wheel"] .screen-mode-icon {border-radius:50%;background:#ffcf74;color:#2a1048}
+.game[data-mode="wheel"] :is(.question-panel,.turn-panel,.results,.join-panel,.roster-panel,.tv-status,.tv-leaders) {
+  border:2px solid #c47adf;border-radius:26px;
+  background:linear-gradient(145deg,#512369,#321448);
+  box-shadow:inset 0 0 0 4px #2a103d,0 8px 28px #0006;
+}
+.game[data-mode="wheel"] .wheel-frame {filter:drop-shadow(0 0 18px #ffce7260)}
+.game[data-mode="wheel"] .wheel-frame .wheel-disk {box-shadow:0 0 0 4px #ffcf74,0 0 0 9px #6a327d,0 0 30px #ffcf7466}
+.game[data-mode="wheel"] .turn-copy .primary {border-radius:999px;border:2px solid #fff0ac;background:#ffcf74;color:#31164a}
+.game[data-mode="wheel"] .question-panel .round-kicker {color:#ffdf99;letter-spacing:.06em}
+.game.host-screen[data-mode="wheel"] .question-panel > h2 {text-align:left;max-width:28ch}
+.game[data-mode="wheel"] .question-panel .answer {border-radius:999px;border:2px solid #d7a0ee;background:#421b61;color:#fff8ed}
+.game[data-mode="wheel"] .question-panel .answer strong {border:0;border-radius:50%;background:var(--answer);color:#241337}
+.game[data-mode="wheel"] .tv-clock {border-radius:50%;border:3px dotted #ffcf74;background:#31164a}
+.game[data-mode="wheel"] .results h1 {color:#ffdf99;text-shadow:0 3px 0 #6c327d}
+
+/* Knockout: industrial elimination arena, segmented life bar, angled panels. */
+.game[data-mode="knockout"] {
+  --ink:#fff4f3;--muted:#e6cbd0;--game-accent:#ff9b91;
+  --mode-backdrop:#190c13;--mode-panel:#30171e;--mode-edge:#88444a;
+}
+.game.host-screen[data-mode="knockout"],.game[data-mode="knockout"] .scene-backdrop {
+  background:linear-gradient(130deg,#110d16,#37131b 50%,#110d16),repeating-linear-gradient(0deg,transparent 0 27px,#ff777710 28px);
+}
+.game[data-mode="knockout"] .scene-backdrop > i {display:none}
+.game[data-mode="knockout"] .game-top {
+  border-bottom:3px solid #ff9b91;
+  background:repeating-linear-gradient(135deg,#2c1520 0 12px,#351922 12px 24px);
+}
+.game[data-mode="knockout"] .screen-mode-title {text-transform:uppercase;letter-spacing:.09em}
+.game[data-mode="knockout"] :is(.question-panel,.results,.join-panel,.roster-panel,.tv-status,.tv-leaders) {
+  border:1px solid #88444a;border-left:5px solid #ff9b91;border-radius:3px;
+  background:linear-gradient(130deg,#3d2029,#21151e);
+  box-shadow:0 8px 22px #0006;
+}
+.game[data-mode="knockout"] .life-info {
+  display:block;width:fit-content;max-width:100%;padding:5px 12px;
+  border:1px solid #ff9b91;border-radius:3px;background:#501d2b;color:#fff1ed;font-weight:800;
+}
+.game.host-screen[data-mode="knockout"] .question-panel > h2 {font-family:'Club Knockout',sans-serif;letter-spacing:.01em}
+.game[data-mode="knockout"] .question-panel .answer {
+  border:1px solid #a45c60;border-left:5px solid var(--answer);
+  border-radius:3px;background:#32212c;color:#fff4f3;
+}
+.game[data-mode="knockout"] .question-panel .answer strong {border:1px solid #ce7e83;border-radius:2px;color:#fff4f3;background:#592a37}
+.game[data-mode="knockout"] .tv-clock {border-radius:3px;border:2px solid #ff9b91;background:#29131e}
+.game[data-mode="knockout"] .results h1 {color:#ffb1a9;text-transform:uppercase;letter-spacing:.035em}
+
+/* Keep semantic feedback and focus visible above the new visual treatments. */
+.game:is([data-mode="classic"],[data-mode="wheel"],[data-mode="knockout"]) .question-panel .answer.correct {
+  border-color:#9febbe;box-shadow:0 0 0 2px #9febbe;
+}
+.game:is([data-mode="classic"],[data-mode="wheel"],[data-mode="knockout"]) .question-panel .answer.selected {
+  border-color:#fff;box-shadow:0 0 0 2px #fff;
+}
+.game:is([data-mode="classic"],[data-mode="wheel"],[data-mode="knockout"]) .question-panel .answer.correct.selected {
+  border-color:#9febbe;box-shadow:0 0 0 2px #9febbe;
+}
+.game:is([data-mode="classic"],[data-mode="wheel"],[data-mode="knockout"]) :is(button,input,select):focus-visible {
+  outline:3px solid #fff;outline-offset:3px;
+}
+
+/* Different host compositions. Compact TV screens keep the established fit rules. */
+@media (min-width:1100px) and (min-height:720px) {
+  body.playing .host-screen[data-mode="classic"] .question-panel .answers {grid-template-columns:repeat(2,minmax(0,1fr));}
+  body.playing .host-screen[data-mode="wheel"] .tv-round {grid-template-columns:minmax(0,1fr) minmax(190px,24%);}
+  body.playing .host-screen[data-mode="knockout"] .question-panel .answers:not(.binary-answers) {
+    grid-template-columns:minmax(0,1fr);
+    gap:clamp(5px,1dvh,10px);
+  }
+  body.playing .host-screen[data-mode="knockout"] .question-panel .answers:not(.binary-answers) .answer {
+    min-height:clamp(40px,6dvh,65px);padding-block:5px;font-size:clamp(16px,2.6dvh,28px);
+  }
+}
+.game.player-only[data-mode="classic"] .question-panel {border-radius:8px}
+.game.player-only[data-mode="wheel"] .question-panel {border-radius:22px}
+.game.player-only[data-mode="knockout"] .question-panel {border-radius:3px}
+.game.player-only[data-mode="wheel"] .player-timer {border-radius:999px}
+.game.player-only[data-mode="knockout"] .player-timer {border-radius:3px;border:1px solid #ff9b91}
+@media(prefers-reduced-motion:no-preference) {
+  .game.host-screen[data-mode="classic"].phase-enter[data-phase="reveal"] .answer.correct {animation:show-classic-reveal .4s ease-out}
+  .game.host-screen[data-mode="wheel"].phase-enter[data-phase="reveal"] .answer.correct {animation:show-wheel-reveal .5s ease-out}
+  .game.host-screen[data-mode="knockout"].phase-enter[data-phase="reveal"] .answer.correct {animation:show-knockout-reveal .35s ease-out}
+}
+@keyframes show-classic-reveal {from{filter:brightness(1.5)}to{filter:brightness(1)}}
+@keyframes show-wheel-reveal {from{transform:scale(.97)}to{transform:none}}
+@keyframes show-knockout-reveal {from{transform:translateX(-5px)}to{transform:none}}

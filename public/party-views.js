@@ -80,7 +80,7 @@ function socialView(state, { host, canControl, escape, reply, icons }) {
       ${canControl ? `<div class="actions">${replayButtons(state, icons)}</div>` : '<p>Stay here if the captain starts another game.</p>'}`;
   } else if (writing) {
     const waiting = party.wrote ? '<p role="status">Entry locked in.</p>' : '';
-    const editor = party.hand ? `<div class="bluff-replies">${party.hand.map((card, option) => `<button class="button outline play-card" data-action="social-card" data-option="${option}">${escape(card)}</button>`).join('')}</div>
+    const editor = party.hand ? `<div class="bluff-replies">${party.hand.map((card, option) => `<button class="button outline play-card" data-action="social-card" data-option="${option}" data-hand-version="${party.handVersion ?? 0}">${escape(card)}</button>`).join('')}</div>
         <div class="party-hand-options">${party.redrawAvailable ? '<button class="button outline" type="button" data-action="social-redraw">Refresh my six cards</button><small>One free hand refresh each round, before you lock in.</small>' : '<small>Hand refresh already used for this round.</small>'}</div>`
       : `<form id="bluff-form"><label>Your reply<textarea name="reply" rows="3" maxlength="100" required>${escape(reply ?? '')}</textarea></label><button class="button primary">Lock in reply</button></form>`;
     body = `<h1>${mode === 'cards' ? 'Complete the sentence' : 'Write a punchline'}</h1>${party.votePoints === 200 ? '<p class="party-final-bonus" role="status">Final round · Every vote earns double points</p>' : ''}${prompt}

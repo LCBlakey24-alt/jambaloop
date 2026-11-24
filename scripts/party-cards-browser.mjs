@@ -68,8 +68,65 @@ try {
   await page.locator('.play-card[data-hand-version="1"]').first().click();
   await page.getByText('Entry locked in.').first().waitFor({timeout:12000});
   assert.equal((await state(keys[0])).party.wrote,true,'Current hand can still be submitted');
+
+  // Finish the entire three-round match; the phone must display a compact
+  // personal outcome and keep the complete scores behind an optional reveal.
+  const partyAction = async (key, data) => {
+    const response = await phone.request.post(site+'/api/rooms/'+code+'/party',{
+      headers:{'x-game-key':key},data:{game:1,...data},
+    });
+    assert.equal(response.status(),204,'Party action: '+await response.text());
+  };
+  for(let round=0;round<3;round++) {
+    if(round===0) {
+      for(const key of keys.slice(1)) await partyAction(key,{index:round,action:'card',option:0,handVersion:0});
+    } else {
+      const writing = await state();
+      assert.equal(writing.phase,'party-write');
+      for(const key of keys) await partyAction(key,{index:round,action:'card',option:0,handVersion:0});
+    }
+    const voting = await state();
+    assert.equal(voting.phase,'party-vote');
+    for(const key of keys) {
+      const playerState = await state(key);
+      const ballot = playerState.party.ballot.find(entry=>!entry.yours);
+      assert.ok(ballot,'Voter must have an eligible option');
+      await partyAction(key,{index:round,action:'vote',id:ballot.id});
+    }
+    const revealed = await state();
+    assert.equal(revealed.phase,'party-reveal');
+    const next = await phone.request.post(site+'/api/rooms/'+code+'/advance',{
+      headers:{'x-game-key':host},data:{game:1,index:round,phase:'party-reveal'},
+    });
+    assert.equal(next.status(),204,'Advance final round: '+await next.text());
+  }
+  assert.equal((await state()).phase,'finished');
+  await page.locator('.party-phone-scores').waitFor({timeout:15000});
+  assert.equal(await page.locator('.results-player-finish').count(),1);
+  assert.equal(await page.locator('.party-phone-score-list').isVisible(),false,
+    'The full ranking must start collapsed on player phones');
+  await page.screenshot({path:'browser-screenshots/cards-personal-finish-390x844.png',fullPage:false});
+  await page.locator('.party-phone-scores summary').click();
+  assert.equal(await page.locator('.party-phone-score-list').isVisible(),true);
+  assert.equal(await page.locator('.party-phone-score-list li').count(),3);
+  const phoneWidth=await page.evaluate(()=>document.querySelector('#app').scrollWidth-document.querySelector('#app').clientWidth);
+  assert.ok(phoneWidth<=2,'Phone results have horizontal overflow: '+phoneWidth);
+
+  const tvContext = await browser.newContext({viewport:{width:1280,height:720}});
+  await tvContext.addInitScript(session=>
+    sessionStorage.setItem('quizmas-session',JSON.stringify(session)),
+    {code,key:host,host:true});
+  const tv = await tvContext.newPage();
+  tv.on('pageerror',error=>errors.push('TV: '+error.message));
+  await tv.goto(site,{waitUntil:'domcontentloaded',timeout:30000});
+  await tv.locator('.game.host-screen .party-panel.results').waitFor({timeout:15000});
+  assert.equal(await tv.locator('.ranking').count(),1,'TV keeps the complete player leaderboard');
+  assert.equal(await tv.locator('.party-phone-scores').count(),0,'No phone-only details on TV');
+  await tv.screenshot({path:'browser-screenshots/cards-tv-finish-1280x720.png',fullPage:false});
+  await tvContext.close();
+
   assert.deepEqual(errors,[]);
-  console.log('PASS: mobile card redraw protects stale taps, preserves errors, and accepts current hand');
+  console.log('PASS: card redraw, stale-tap protection, three full rounds, personal phone results and TV leaderboard');
 } finally {
   await phone.close();
   await browser.close();

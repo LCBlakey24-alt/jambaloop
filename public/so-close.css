@@ -1,0 +1,30 @@
+/* So Close: calibrated measuring-studio identity. */
+.game[data-mode="soclose"] {--ink:#f6f4e6;--muted:#bcd4d1;}
+.game.host-screen[data-mode="soclose"],.game[data-mode="soclose"] .scene-backdrop {background:repeating-linear-gradient(90deg,transparent 0 39px,#8bd4ca12 40px),radial-gradient(ellipse at 50% 0,#245a5d,#08282d 70%);}
+.game[data-mode="soclose"] .question-panel,.game[data-mode="soclose"] .results {border:1px solid #77bcb4;background:linear-gradient(145deg,#19474a,#0e3034);border-radius:5px;}
+.so-close-result {display:grid;gap:8px;min-width:0;padding:clamp(8px,1.5dvh,18px);border:1px solid #559a93;background:#082b30;border-radius:6px;}
+.so-close-actual {font:700 clamp(22px,4dvh,45px)/1.15 var(--head);color:#ffbf68;overflow-wrap:anywhere;}
+.so-close-scale {position:relative;height:40px;margin:4px 8px;background:repeating-linear-gradient(90deg,#dceadd 0 1px,transparent 1px 5%),linear-gradient(#234f51,#193c40);border-block:1px solid #a5c3bb;}
+.so-close-scale i,.so-close-target {position:absolute;left:var(--position);transform:translateX(-50%);bottom:0;height:55%;width:3px;background:#e4eadd;}
+.so-close-scale i.nearest {background:#ffbf68;height:74%;width:5px;}
+.so-close-target {z-index:1;top:0;height:100%;background:#ffbf68;width:4px;box-shadow:0 0 8px #ffbf68;}
+.so-close-bounds {display:flex;justify-content:space-between;gap:8px;font-size:12px;}
+.so-close-guesses {padding:0;margin:0;list-style:none;display:grid;gap:4px;max-height:clamp(76px,19dvh,220px);overflow:auto;}
+.so-close-guesses li {display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 8px;padding:5px 8px;background:#20484b;border-left:3px solid #8db9b4;overflow-wrap:anywhere;}
+.so-close-guesses li small {grid-column:1/-1;color:#c6ddda;}
+.so-close-guesses li[data-nearest="true"] {border-color:#ffbf68;}
+.so-close-editor {display:grid;gap:8px;}
+.so-close-wheel {display:grid;grid-template-columns:minmax(0,1fr) 44px;grid-template-rows:36px auto 36px;align-items:center;gap:3px;padding:6px;border:1px solid #75b3ad;border-radius:8px;background:#09292e;}
+.so-close-wheel>button {grid-column:1;min-height:36px;background:#19464b;border:1px solid #659c98;color:#f1f4e7;border-radius:5px;}
+.so-close-wheel-rows {grid-column:1;grid-row:2;display:grid;gap:2px;touch-action:none;user-select:none;}
+.so-close-number {display:block;text-align:center;font:700 16px/1.3 var(--head);color:#b0cdca;min-height:20px;}
+.so-close-number.current {padding:5px 2px;border-block:2px solid #ffbf68;background:#215459;color:#ffbf68;font-size:26px;overflow-wrap:anywhere;}
+.so-close-wheel input[data-range] {grid-column:2;grid-row:1/4;writing-mode:vertical-lr;direction:rtl;inline-size:100%;block-size:34px;height:100%;width:34px;padding:0;accent-color:#ffbf68;touch-action:none;}
+.so-close-coarse {display:flex;gap:8px;}
+.so-close-coarse button {flex:1;min-height:44px;background:#17454a;border:1px solid #659c98;color:#f1f4e7;border-radius:5px;}
+.so-close-editor .primary {background:#ffbf68;color:#102a2d;}
+.game[data-mode="soclose"] .question-panel h2 {font-size:clamp(22px,4dvh,46px);}
+.game.player-only[data-mode="soclose"] .question-panel h2 {font-size:clamp(19px,4.5vw,26px);}
+.lobby-soclose-art {background:#123e42;color:#ffbf68;font-weight:900;padding:9px;border:1px solid #ffbf68;border-radius:4px;}
+.tile-art[data-show="soclose"] {background:repeating-linear-gradient(90deg,#123e42 0 18px,#80b4ac 19px,#123e42 20px);box-shadow:inset 0 0 0 3px #ffbf68;}
+@media(prefers-reduced-motion:no-preference){.game[data-mode="soclose"].phase-enter[data-phase="reveal"] .so-close-target {animation:so-close-arrive .5s ease-out both;}@keyframes so-close-arrive{from{opacity:0;height:0}to{opacity:1;height:100%}}}

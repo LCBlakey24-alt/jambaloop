@@ -28,3 +28,33 @@ export function soCloseView(question,{draft,selection,revealed,host,disabled,clo
     <small>${formatNumber(min,unit)} to ${formatNumber(max,unit)}</small>
     <button type="button" class="button primary" data-action="submit-special">Lock in my guess</button></div>`;
 }
+
+/* No result information appears in the ordinary presentation until its stage.
+   All answers have already been locked on the server when this sequence begins. */
+export function soCloseRevealView(state,frame,host,escape){
+  const q=state.question, unit=q.unit;
+  const measure=v=>formatNumber(v,unit);
+  const difference=v=>formatNumber(v,unit==='year'?'years':unit);
+  const rows=[...(state.estimateGuesses??[])].sort((a,b)=>a.guess-b.guess||a.id.localeCompare(b.id));
+  const final=frame.kind==='winner', actual=final||frame.kind==='actual';
+  const visible=rows.slice(0,frame.shown);
+  const position=value=>Math.max(0,Math.min(100,100*(value-q.min)/Math.max(1,q.max-q.min)));
+  const ruler=host?`<div class="so-close-scale" aria-hidden="true">${visible.map(row=>`<i class="${final&&row.won?'nearest':''}" style="--position:${position(row.guess)}%"></i>`).join('')}${actual?`<span class="so-close-target" style="--position:${position(q.correct)}%"></span>`:''}</div><div class="so-close-bounds"><span>${measure(q.min)}</span><span>${measure(q.max)}</span></div>`:'';
+  if(frame.kind==='opening')return `<div class="so-close-reveal-head"><div class="eyebrow">GUESSING CLOSED</div><h2>All guesses are locked.</h2><p>${state.estimateReveal.count} guesses submitted. Let's see where they landed.</p></div>`;
+  if(frame.kind==='guesses'){
+    const current=rows.slice(frame.from,frame.shown);
+    return `<div class="so-close-reveal-head"><div class="eyebrow">THE GUESSES · ${frame.shown} / ${state.estimateReveal.count}</div><h2>${host?'Here come the guesses…':'Look at the big screen'}</h2></div>
+      ${host?`<div class="so-close-guess-cards">${current.map(row=>`<div class="so-close-guess-card"><small>${escape(row.name)}</small><strong>${measure(row.guess)}</strong></div>`).join('')}</div>`:`<p>${state.selection===undefined?'No guess submitted.':'Your locked guess: '+measure(state.selection)}</p>`}
+      ${ruler}`;
+  }
+  if(frame.kind==='suspense')return `<div class="so-close-reveal-head"><div class="eyebrow">MOMENT OF TRUTH</div><h2>But what's the actual answer?</h2><strong class="so-close-mystery" aria-hidden="true">?</strong></div>${ruler}`;
+  const actualHeading=`<div class="so-close-reveal-head"><div class="eyebrow">THE ACTUAL ANSWER</div><strong class="so-close-actual">${measure(q.correct)}</strong></div>`;
+  if(!final)return actualHeading+ruler+'<p>Who came closest?</p>';
+  const winners=rows.filter(row=>row.won);
+  const winnerHeading=host?(winners.length? winners.length===1?escape(winners[0].name)+' wins the round!':winners.length+' players share the win!':'No guesses this round')
+    :state.answerCorrect?(state.selection===q.correct?'Bang on! Exact answer!':'So close! You win!'):'Round complete';
+  const source=q.source?`<a class="question-source" href="${escape(q.source)}" target="_blank" rel="noopener noreferrer">Verified answer source</a>`:'';
+  return `${actualHeading}<div class="so-close-round-winner"><h3>${winnerHeading}</h3>${host?(winners.length?`<p>${winners.slice(0,5).map(row=>escape(row.name)).join(' · ')}${winners.length>5?' + '+(winners.length-5)+' more':''} · ${difference(winners[0].distance)} away · +${winners[0].points} pts each</p>`:''):(state.selection===undefined?'<p>No guess submitted.</p>':`<p>Your guess: ${measure(state.selection)} · ${difference(Math.abs(state.selection-q.correct))} away · +${state.earned??0} pts</p>`)}</div>
+    ${ruler}
+    ${host?`<ol class="so-close-guesses" aria-label="All guesses, closest first">${[...rows].sort((a,b)=>a.distance-b.distance).map(row=>`<li data-nearest="${row.won}"><strong>${escape(row.name)}</strong><span>${measure(row.guess)}</span><small>${difference(row.distance)} away · +${row.points} pts</small></li>`).join('')}</ol>`:''}${source}`;
+}

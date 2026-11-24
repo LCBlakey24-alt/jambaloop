@@ -183,16 +183,20 @@ export function mobileDeck(app, dialog, content) {
     root.classList.toggle('mobile-keyboard', height < 365 && Boolean(window.visualViewport && height < innerHeight - 55));
     // Home launcher already has a 4/6/8-card page controller; avoid a second mobile pager.
     if (!dialog.open && app.querySelector('[data-home-shell]')) { appLayout.clear(); keep = undefined; return; }
-    // Live interactions need one continuous phone surface, not hidden deck pages.
-    // This applies to answer selection, long voting ballots and reveals. Keep
-    // the host presentation and setup pagination unchanged.
-    if (!dialog.open && app.querySelector(
-      '.player-only[data-phase="question"], .player-only[data-phase="reveal"], ' +
-      '.player-only[data-phase="party-vote"], .player-only[data-phase="party-reveal"], ' +
-      '.player-only[data-phase="top-poll"], .player-only[data-phase="top-guess"], ' +
-      '.player-only[data-phase="top-reveal"], .player-only[data-phase="finished"], ' +
-      '.game[data-mode="quizrace"], .game[data-mode="tracks"]'
-    )) { appLayout.clear(); keep = undefined; return; }
+    // A player's live gameplay is always one continuous controller surface.
+    // Previously only a handful of phases bypassed pagination: Hot Potato,
+    // Same Page writing, Brain Ladder questions and others could split the
+    // question from the action button, leaving it invisible on another page.
+    // Preserve the existing paged launcher/lobby/setup and neutral TV layout.
+    const livePlayer = app.querySelector(
+      '.game.player-only:not([data-phase="lobby"]):not([data-phase="waiting"])'
+    );
+    if (!dialog.open && (livePlayer ||
+        app.querySelector('.game[data-mode="quizrace"], .game[data-mode="tracks"]'))) {
+      appLayout.clear();
+      keep = undefined;
+      return;
+    }
     active().measure(keep || (document.activeElement?.matches('input,select,textarea') ? document.activeElement : null));
     keep = undefined;
   }

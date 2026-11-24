@@ -171,7 +171,7 @@ export function publicSocial(room, key) {
     responseTarget: socialTarget(room),
     shortlisted: 0,
     votePoints: party.votePoints,
-    redrawAvailable: writing && room.mode === 'cards' && !party.entries.has(key) && !party.redrawn?.has(key),
+    redrawAvailable: writing && room.mode === 'cards' && party.hands?.has(key) === true && !party.entries.has(key) && !party.redrawn?.has(key),
     wrote: party.entries.has(key), voted: party.votes.has(key),
     hand: writing ? party.hands?.get(key) : undefined,
     ballot: party.ballot?.map(entry => ({

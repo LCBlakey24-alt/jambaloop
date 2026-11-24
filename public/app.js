@@ -1342,7 +1342,9 @@ document.addEventListener('pointermove',event=>{
   const context=editorContext(editor);
   if(!context)return;
   const steps=Math.trunc((event.clientY-y)/24);
-  if(steps){setEditorNumber(editor,closestStep(context.question,context.value,-steps));soCloseDrag.y+=steps*24;}
+  // Larger numbers sit above the centre row, so content follows the finger:
+  // dragging down brings the next larger number into the centre.
+  if(steps){setEditorNumber(editor,closestStep(context.question,context.value,steps));soCloseDrag.y+=steps*24;}
 });
 for(const type of ['pointerup','pointercancel','lostpointercapture'])document.addEventListener(type,event=>{if(soCloseDrag?.id===event.pointerId)soCloseDrag=undefined;});
 

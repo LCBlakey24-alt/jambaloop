@@ -107,6 +107,7 @@ jobs:
           node scripts/party-cards-browser.mjs
           node scripts/bluff-browser.mjs
           node scripts/sketch-browser.mjs
+          node scripts/so-close-browser.mjs
           node scripts/tv-all-modes.mjs
       - name: Upload screen captures on success or failure
         if: always()

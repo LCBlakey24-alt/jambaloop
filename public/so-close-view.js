@@ -1,5 +1,11 @@
 import {formatNumber} from './answer-controls.js';
 
+// Fine steps are ±1 (arrows, drag, wheel); coarse buttons cross the range in
+// about a hundred presses, and wide ranges add a ten-times jump.
+export function wheelSteps(min,max){
+  const coarse=Math.max(1,Math.round((max-min)/100));
+  return {coarse,large:max-min>=200?coarse*10:0};
+}
 export function guessRows(value,min,max){
   return [2,1,0,-1,-2].map(offset=>value+offset<min||value+offset>max?null:value+offset);
 }
@@ -19,12 +25,12 @@ export function soCloseView(question,{draft,selection,revealed,host,disabled,clo
   if(host)return `<section class="so-close-result"><div class="eyebrow">ESTIMATION RANGE</div><strong class="so-close-actual">${formatNumber(min,unit)} – ${formatNumber(max,unit)}</strong><div class="so-close-scale" aria-hidden="true"></div><p>Guesses stay secret until the reveal.</p></section>`;
   const value=selection??draft;
   if(selection!==undefined||disabled)return `<section class="so-close-result"><div class="eyebrow">${selection!==undefined?'GUESS LOCKED':'SENDING GUESS'}</div><strong class="so-close-actual">${formatNumber(value,unit)}</strong></section>`;
-  const coarse=Math.max(1,Math.round((max-min)/100));
+  const {coarse,large}=wheelSteps(min,max);
   return `<div class="answer-editor so-close-editor" data-editor="estimate">
     <div class="so-close-wheel"><button type="button" data-step="1" aria-label="Increase guess">▲</button><div class="so-close-wheel-rows" data-so-close-rows aria-hidden="true">${numberWheelRows(question,value)}</div><button type="button" data-step="-1" aria-label="Decrease guess">▼</button>
     <input type="range" min="${min}" max="${max}" step="1" value="${value}" data-range aria-label="Scroll your estimate"></div>
     <label>Your guess ${unit?'('+escape(unit)+')':''}<input type="number" data-number inputmode="numeric" min="${min}" max="${max}" step="1" value="${value}"></label>
-    <div class="so-close-coarse"><button type="button" data-step="-${coarse}">−${coarse}</button><button type="button" data-step="${coarse}">+${coarse}</button></div>
+    <div class="so-close-coarse">${large?`<button type="button" data-step="-${large}" aria-label="Decrease by ${large}">−${formatNumber(large,'')}</button>`:''}<button type="button" data-step="-${coarse}" aria-label="Decrease by ${coarse}">−${formatNumber(coarse,'')}</button><button type="button" data-step="${coarse}" aria-label="Increase by ${coarse}">+${formatNumber(coarse,'')}</button>${large?`<button type="button" data-step="${large}" aria-label="Increase by ${large}">+${formatNumber(large,'')}</button>`:''}</div>
     <small>${formatNumber(min,unit)} to ${formatNumber(max,unit)}</small>
     <button type="button" class="button primary" data-action="submit-special">Lock in my guess</button></div>`;
 }

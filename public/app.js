@@ -314,7 +314,7 @@ function openDialog(mode, value, gameMode, quizId) {
       <output class="duration-preview" aria-live="polite"></output>
       <small>Estimates use dice odds, question time and time between turns.</small>
     </fieldset>
-    <label>Phone display<select name="phoneView">${selected([['full', 'Show question and answers'], ['answers', 'Answer controls only · read the TV']], configured ? state.phoneView : 'full')}</select></label>
+    <label>Phone display<select name="phoneView">${selected([['answers', 'Answer buttons only · follow the TV'], ['full', 'Also show the full question · no TV needed']], configured ? state.phoneView : 'answers')}</select></label>
     <label>Visual style<select name="theme">${selected(themes, configured ? state.theme : previewTheme)}</select></label>
     <label class="switch-row"><input type="checkbox" name="autoReveal" ${configured && state.autoReveal ? 'checked' : ''}><span><strong>Auto-reveal answers</strong><small>Reveal when every eligible player has answered.</small></span></label>
     <label class="switch-row" id="christmas-field"><input type="checkbox" name="includeChristmas" ${configured && state.includeChristmas ? 'checked' : ''}><span>Include Christmas questions</span></label>

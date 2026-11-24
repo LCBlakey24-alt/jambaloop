@@ -11,6 +11,21 @@ Show an invented funny-looking / funny-sounding phrase on the shared TV. Read it
 
 A simple first release should use **original soundalike prompts representing short song titles** (rather than quotes from song verses). Do not include original lyric excerpts, sound recordings, instrumental samples, album art or official logos without cleared rights. A genuine *misheard lyric* variant using actual lyric lines/audio is a separate later rights-and-permissions workstream.
 
+## UK copyright and comparable-game research — 24 November 2026
+
+**Closest comparable published game:** [Lucky Egg's Misheard Music](https://www.luckyegg.co/products/misheard-music-uk) contains 350 song-title and 150 artist-name soundalike cards. Its product description explains 30-second rounds, with players reading the card and racing to identify the song/artist. Other related games include [Incohearent Music Edition](https://relatable.com/collections/all/products/incohearent-music-edition-by-relatable) and [Speak Out: Misheard Song Lyrics](https://instructions.hasbro.com/en-us/instruction/speak-out-expansion-pack-misheard-song-lyrics). These demonstrate a recognisable entertainment format; they do **not** grant us permission to copy any publisher's prompts, card layouts, illustrations, original rules wording or branding.
+
+**What the law distinguishes:**
+
+- The [British Copyright Council's board game guidance](https://www.britishcopyright.org/information/board-games/) distinguishes unprotected general gameplay ideas from protected *expression* (artwork, detailed wording/design and card content). Create Jambaloop's own written rules, cues, visuals and answer phrasing.
+- The [UK Copyright Service guidance on names, titles and short phrases](https://copyrightservice.co.uk/copyright/p18_copyright_names) says song-style short titles/names are generally insufficient to qualify for copyright **as standalone text**, but brands/trade marks and sufficiently original expression may still raise issues. The fact that a game uses a recognisable **song title as a short factual answer** does not automatically mean a lyric licence is required.
+- [GOV.UK's guidance on using another person's copyright](https://www.gov.uk/using-somebody-elses-intellectual-property/copyright) says permission or a valid exception is required for protected source content. [Parody and pastiche exceptions](https://www.gov.uk/guidance/exceptions-to-copyright) are conditional fair-dealing rules, **not** a blanket licence for a commercial catalogue of recognisable altered lyrics.
+- **Preferred low-rights-risk mode:** original, self-authored phonetically mangled prompts of **short song titles or artist names**, with those short identifiers used as answers. No copied original commercial lyric passages, no altered reproductions of longer song verses, no recording clips, no album artwork.
+- **Different/higher-risk proposal:** real lyric lines where most of the source wording remains recognisable despite phonetic substitutions, or display of the original lyrics on reveal. Flag for **specific rights/solicitor review** or use only separately verified public-domain/licensed lyric works. A paid music licence may not be necessary for the title-only mode but could be for such protected text.
+- Verify that the final title **Heard It Wrong** and branded art do not conflict with other games' trade marks or imply affiliation. The presence of similar games is not a copyright clearance; neither is making this mode free. These notes are **not legal advice**.
+
+**Decision for Claude Code:** Do not throw this game away due to a blanket assumption that any mention of a song requires permission. **Proceed with title/artist soundalikes only**, building an original content set. Keep genuine lyric-line conversion out of the release until qualified copyright advice/permissions confirm lawful use.
+
 ## Example rounds for editorial review
 
 | Original phonetic clue | Correct song title | Source |

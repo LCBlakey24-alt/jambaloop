@@ -50,11 +50,11 @@ test('mobile live voting remains scrollable without deck splitting', async () =>
     readFile(new URL('../public/index.html', import.meta.url),'utf8')
   ]);
   for(const phase of ['party-vote','party-reveal','top-poll','top-guess','top-reveal']) {
-    assert.ok(deck.includes('.player-only[data-phase="'+phase+'"]'),phase+' must bypass pagination');
+    assert.match(deck,/\.game\.player-only:not\(\[data-phase="lobby"\]\):not\(\[data-phase="waiting"\]\)/,phase+' must use the universal live-player bypass');
     assert.ok(css.includes('[data-phase="'+phase+'"]'),phase+' should scroll');
   }
   assert.match(css,/overflow-y: auto/);
-  assert.match(app,/const ballotScroll = !enter/);
-  assert.match(app,/app\.scrollTop = ballotScroll/);
+  assert.match(app,/const playerScroll = !enter/);
+  assert.match(app,/app\.scrollTop = playerScroll/);
   assert.match(markup,/href="\/ballot-results\.css"/);
 });

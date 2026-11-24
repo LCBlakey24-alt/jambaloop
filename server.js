@@ -1,4 +1,5 @@
 import { clockExpired, setClockPaused, stopDeadline, watchDeadline } from './room-clock.js';
+import { placementRanks } from './result-ranks.js';
 import { deskAwards } from './awards.js';
 import { answerValue, boardSpeedValues, bonusValues, canSetScore, defaultScoring, doubleSchedules, pointValues, roundMultiplier } from './public/scoring.js';
 import { playlistLimit, queuedSettings } from './public/game-night.js';
@@ -176,6 +177,8 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
   const ownCheckpoint = scoreBreak && player ? room.lastScoreBreak.get(room.teams.length ? player.team : player.id)?.row : undefined;
   const scoresPublished = room.scoreInterval === 1 || phase === 'finished';
   const playerScore = room.lastScoreBreak.get(player?.id)?.row.score ?? 0;
+  const finalRanks = phase === 'finished'
+    ? placementRanks(ranked, comparePlayers, room.mode === 'quizrace' && Boolean(room.race)) : undefined;
   return { revision: room.revision, code, category, phase: waiting ? 'waiting' : phase, index, total: room.count, seconds, game, opened, ends, answered: answers.size,
     connected: counts.connected, waitingCount: room.waiting.size, responseTarget: counts.target,
     readyCount: phase === 'lobby' ? counts.ready : undefined, lobbyVersion: room.lobbyVersion,
@@ -213,7 +216,7 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
       result: player?.rounds[i],
     })) : undefined,
     remaining: room.mode === 'knockout' && phase !== 'lobby' ? room.remaining : undefined,
-    rank: phase === 'finished' && player ? ranked.findIndex(entry => entry.score === player.score && entry.lives === player.lives) + 1 : undefined, selection: answers.get(key)?.option, now: Date.now(),
+    rank: player ? finalRanks?.get(player.id) : undefined, selection: answers.get(key)?.option, now: Date.now(),
     answerCorrect: revealed && answer ? Boolean(answer.won) : undefined,
     earned: revealed && !hiddenScores && answer?.won ? answer.points : undefined,
     closest: revealed && question?.type === 'estimate' ? room.closest : undefined,
@@ -238,12 +241,9 @@ function recordNightResult(room) {
     (room.playStyle === 'teams' || room.mode === 'board');
   const compare = teamResult ? compareTeams(room.mode, room.boardLength) : comparePlayers;
   const rows = teamResult ? [...room.teams].sort(compare) : rankings(room);
-  const ranks = new Map();
-  let rank = 1;
-  rows.forEach((row, index) => {
-    if (index && compare(row, rows[index - 1]) !== 0) rank = index + 1;
-    ranks.set(row.id, rank);
-  });
+  // Quiz Race players all approach 100 score at the finish line. Use their
+  // actual race finishing order; point-based games still preserve shared places.
+  const ranks = placementRanks(rows, compare, room.mode === 'quizrace' && Boolean(room.race));
 
   for (const player of room.players.values()) {
     const resultId = teamResult ? player.team : player.id;

@@ -19,6 +19,10 @@
 - All art, narration and card/question copy must be original or properly licensed, not replications of another show's branded assets.
 - Expand and fact-check content regularly, avoiding immediate repeats; use honest source and answer provenance.
 
+## Future account/statistics feature — **do not build yet**
+
+[Player profiles, lifetime records and optional TV “form guide” #59](https://github.com/LCBlakey24-alt/jambaloop/issues/59) are recorded in [the dedicated roadmap](docs/PLAYER_PROFILES_AND_STATS_ROADMAP.md). An eventual user account can show per-game plays, individual/team wins, streaks and opt-in public highlights, with guest play preserved. Any reported percentage must be labelled a **historical record with sample size**, not an unsupported chance to win. Future implementation needs an audited server-authoritative winner definition for each mode, persistent private storage, secure authentication, age/privacy review, data deletion and idempotent completed-game events. No account database, login provider or paid feature is approved by this documentation. **Keep existing-game code review/reconnection and mobile QA as priority.**
+
 ## Work order
 
 1. Sync and inspect `main`, live deployment, issues, recent CI and most severe reproducible bugs. Fix bugs with failing tests first.

@@ -18,6 +18,11 @@ For the next coding session, read [**CLAUDE.md**](CLAUDE.md) and the [dated Clau
 
 **Deployment warning:** Render currently auto-deploys on changes to `main`. The game server stores rooms, votes and scores in process memory, so a live deployment can interrupt an active session and lose its room state. Finish game sessions before merging where possible and verify the exact Render commit has reached **Live** before announcing release. The missing British narration MP3 pack (15 new files) is still a separate installation task; files in a plan do not imply the audio is bundled.
 
+### Planned music-wordplay game: Heard It Wrong
+
+[Heard It Wrong](docs/HEARD_IT_WRONG_DESIGN.md) ([Issue #51](https://github.com/LCBlakey24-alt/jambaloop/issues/51)) is a **design-only** game in which players decipher original funny soundalike phrases into well-known song titles. The project owner's example is **"Sweed Comb Alibaba" → "Sweet Home Alabama"**. The TV displays and optionally reads the clue, while a phone offers four simple answer buttons. It does not include original song lyrics or licensed audio; those would require separate rights clearance. Read the design brief for full provisional rules, content QA and tests. This is not one of the 18 playable modes.
+
+
 ## Play at home
 
 1. Install Node.js 22 on a laptop. Run `npm ci` and then `npm start` from this folder.

@@ -14,7 +14,7 @@ try{
   const setupContext=await browser.newContext({viewport:{width:1366,height:768}});
   const setupPage=await setupContext.newPage();
   await setupPage.goto(site,{waitUntil:'domcontentloaded',timeout:30000});
-  assert.equal(await setupPage.locator('.game-tile').count(),18,'All games should appear on desktop');
+  assert.equal(await setupPage.locator('.game-tile').count(),19,'All games should appear on desktop');
   await setupPage.locator('.game-tile[data-mode="spotlight"]').click();
   await setupPage.locator('#game-preview [data-action="host"]').click();
   const setupForm=setupPage.locator('#host-form');

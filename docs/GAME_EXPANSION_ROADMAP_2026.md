@@ -59,6 +59,19 @@ A new original social-deduction game using the broad classic night/day hidden-ro
 3. Prototype Secret Suspects and Bloodmoon Council in **separate** design, game-engine, privacy, and UI PRs. Validate their distinct core loops against every existing game.
 4. Continue the original P1–P6 pipeline only as capacity and playtests support it. Do not count any concept as an additional live mode until fully coded, tested and merged/deployed.
 
+## Future platform enhancement — player accounts and statistics (planned only)
+
+[Issue #59](https://github.com/LCBlakey24-alt/jambaloop/issues/59) and [the dedicated player stats roadmap](PLAYER_PROFILES_AND_STATS_ROADMAP.md) record a **later** feature, not a new game or a feature that is coded, merged or deployed.
+
+- Allow **optional accounts** while preserving existing guest-friendly room-code play without registration. Later investigate Google/Microsoft and other secure login methods, with no provider or spending commitment.
+- Track **server-confirmed completed games** and per-mode performance: games played, wins, shared places, team victories separately, personal bests, selected achievements and personal games-night recaps.
+- Give every signed-in user a **private-by-default** My Stats screen. On the TV, show selected player stats before a game **only when the player opts in**, and keep phones almost entirely focused on game controls.
+- Show “8 wins from 20 finished Dice Rally games (40% historical win rate)” rather than “40% chance of winning tonight.” Don't combine different game scoring systems or publish unsupported small-sample odds; any future probability estimate needs specific validation and clear caveats.
+- Write an explicit result/eligibility mapping for all **18 existing games**, including individual ties, team wins, collaborative or non-winner modes and disconnected/aborted matches. Prevent duplicates on refresh, rematch and server retries.
+- Treat account security, persistent database costs, privacy, deletion/export, children's protection and account-linked identity as prerequisites. Existing in-memory room reliability [#41](https://github.com/LCBlakey24-alt/jambaloop/issues/41) is a separate blocker.
+
+**Implementation priority: AFTER** the current multiplayer quality and [single-screen mobile redesign #45](https://github.com/LCBlakey24-alt/jambaloop/issues/45). Do not begin building user accounts or add a new paid data store because this planning section exists.
+
 ## Content filtering, age and accessibility (design requirement)
 
 - Whole-site content metadata must include audience eligibility (Kids, Family, Teen, Adults Only), intensity/subject tags, authored/source provenance, moderation state, pack ID, and stable duplicate-detection ID.

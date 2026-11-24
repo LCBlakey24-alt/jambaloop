@@ -29,8 +29,18 @@ export function partyView(state, { host, canControl, escape, reply, icons }) {
   const replay = canControl ? replayButtons(state, icons)
     : '<p>Stay here if the captain starts another game.</p>';
   if (state.mode === 'potato') {
-    if (finished) return `<section class="game-panel results party-results"><div class="eyebrow">TIME’S UP</div>
-      <h1>${escape(party.holder.name)} got caught with the potato!</h1>${partyFinale(state, { host, escape, variant: 'potato' })}<div class="party-holder">${avatarView(party.holder, escape)}<p>${party.passes} successful ${party.passes === 1 ? 'pass' : 'passes'}</p></div><div class="actions">${replay}</div></section>`;
+    if (finished) {
+      // The TV tells the full story; a player needs only their own outcome.
+      const caught = partyFinale(state, { host, escape, variant: 'potato' });
+      if (!host) return `<section class="game-panel results party-results party-phone-finish">
+        <div class="eyebrow">HOT POTATO · TIME’S UP</div>${caught}
+        <p class="party-phone-hint">Watch the TV for the final reveal.</p><div class="actions">${replay}</div>
+      </section>`;
+      return `<section class="game-panel results party-results"><div class="eyebrow">TIME’S UP</div>
+        <h1>${escape(party.holder.name)} got caught with the potato!</h1>${caught}
+        <div class="party-holder">${avatarView(party.holder, escape)}<p>${party.passes} successful ${party.passes === 1 ? 'pass' : 'passes'}</p></div>
+        <div class="actions">${replay}</div></section>`;
+    }
     const holder = escape(party.holder.name);
     const feedback = party.last && party.last.id === state.player?.id ? { miss: 'Incorrect. You still have the potato.', skip: 'Question skipped. You still have the potato.', pass: 'Correct! You passed the potato.', alone: 'Correct! Waiting for someone else to reconnect before you can pass.', rescue: 'The host moved the potato when your connection dropped. You can rejoin the next turn.' }[party.last.result] : '';
     return `<section class="game-panel party-panel potato-panel">
@@ -75,9 +85,25 @@ function socialView(state, { host, canControl, escape, reply, icons }) {
     const headline = state.playStyle === 'teams'
       ? teamWinners.length === 1 ? 'Team ' + escape(teamWinners[0].name) + ' wins!' : 'The teams are tied!'
       : winners.length === 1 ? escape(winners[0].name) + ' wins!' : 'It’s a tie!';
-    body = `${partyFinale(state, { host, escape })}<h1>${tracks ? 'All tracks explored' : headline}</h1>
-      ${tracks ? '<p>Play again for another set of dilemmas.</p>' : `<ol class="ranking">${state.players.map(player => `<li><span>${avatarView(player, escape)}${escape(player.name)}</span><strong>${player.score.toLocaleString()} pts</strong></li>`).join('')}</ol>`}
-      ${canControl ? `<div class="actions">${replayButtons(state, icons)}</div>` : '<p>Stay here if the captain starts another game.</p>'}`;
+    const outro = canControl ? `<div class="actions">${replayButtons(state, icons)}</div>`
+      : '<p class="party-phone-hint">Stay here if the captain starts another game.</p>';
+    if (!host) {
+      const scoreList = state.players.map(player =>
+        `<li><span>${escape(player.name)}</span><strong>${player.score.toLocaleString('en-GB')} pts</strong></li>`).join('');
+      const teamList = state.playStyle === 'teams'
+        ? `<h3>Team scores</h3><ol class="party-phone-score-list">${[...state.teams].sort((a,b)=>b.score-a.score)
+            .map(team=>`<li><span>Team ${escape(team.name)}</span><strong>${team.score.toLocaleString('en-GB')} pts</strong></li>`).join('')}</ol>`
+        : '';
+      body = `${partyFinale(state, { host, escape })}
+        <p class="party-phone-hint">See the final celebration and leaderboard on the TV.</p>
+        <details class="party-phone-scores"><summary>View all scores without a TV</summary>
+          ${teamList}<ol class="party-phone-score-list">${scoreList}</ol>
+        </details>${outro}`;
+    } else {
+      body = `${partyFinale(state, { host, escape })}<h1>${tracks ? 'All tracks explored' : headline}</h1>
+        ${tracks ? '<p>Play again for another set of dilemmas.</p>' : `<ol class="ranking">${state.players.map(player => `<li><span>${avatarView(player, escape)}${escape(player.name)}</span><strong>${player.score.toLocaleString()} pts</strong></li>`).join('')}</ol>`}
+        ${outro}`;
+    }
   } else if (writing) {
     const waiting = party.wrote ? '<p role="status">Entry locked in.</p>' : '';
     const editor = party.hand ? `<div class="bluff-replies">${party.hand.map((card, option) => `<button class="button outline play-card" data-action="social-card" data-option="${option}" data-hand-version="${party.handVersion ?? 0}">${escape(card)}</button>`).join('')}</div>
@@ -105,7 +131,7 @@ function socialView(state, { host, canControl, escape, reply, icons }) {
       ${voting && !host && party.voted ? '<div class="party-vote-confirmation" role="status"><strong>Vote locked in</strong><span>Your choice is saved. Watch for the results on the big screen.</span></div>' : ''}
       ${next(voting ? 'Reveal votes' : index + 1 < total ? 'Next round' : 'Final results')}`;
   }
-  const teamScores = state.playStyle === 'teams' && state.teams.length && (finished || phase === 'party-reveal')
+  const teamScores = state.playStyle === 'teams' && state.teams.length && ((finished && host) || phase === 'party-reveal')
     ? `<div class="party-team-scores" aria-label="Team standings">${[...state.teams].sort((a,b)=>b.score-a.score).map(team=>
       `<div style="--team:${team.color}"><strong>Team ${escape(team.name)}</strong><span>${team.score.toLocaleString()} pts</span></div>`).join('')}</div>`
     : '';

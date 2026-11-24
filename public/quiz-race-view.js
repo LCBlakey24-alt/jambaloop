@@ -14,6 +14,27 @@ export function quizRaceView(s, {host,canControl,icons,replayButtons,sending}) {
     ? s.teams.find(team=>team.id===s.teamWinners[0]) : undefined;
   const track = `<div class="race-track-wrap" data-track="${r.track}">${raceTrackMarkup()}
     <div class="quiz-race-standings">${r.racers.map(p=>`<div class="race-rank-row" data-race-rank="${p.id}" style="--racer:${p.color}"><span class="race-position">${p.position}</span><span class="race-rank-name">${name(p.name)}</span><span class="race-rank-percent">${percent(p.distance,r.length)}%</span><span class="race-mini-track"><i style="width:${percent(p.distance,r.length)}%"></i></span></div>`).join('')}</div></div>`;
+  if (finished && !host) {
+    const personal = r.racers.find(p => p.id === s.player?.id);
+    const placing = personal?.position;
+    const won = placing === 1;
+    const teamWon = teamRace && s.teamWinners?.includes(s.player?.team);
+    const result = personal?.finishedAt === undefined
+      ? (personal ? percent(personal.distance,r.length)+'% completed' : 'Race complete')
+      : ((personal.finishedAt - 3000)/1000).toFixed(2)+'s finish';
+    return `<section class="game-panel race-phone race-phone-finish" aria-label="Your Quiz Race result">
+      <div class="eyebrow">CHEQUERED FLAG · QUIZ RACE</div>
+      <h1>${teamRace ? teamWon ? 'Your team wins!' : 'Race complete!' : won ? 'You won!' : 'Race complete!'}</h1>
+      <div class="race-personal-finish"><span>YOUR POSITION</span>
+        <strong>#${placing ?? '-'} <small>of ${s.playerCount}</small></strong>
+        <span>${name(result)}</span></div>
+      <p>See the full leaderboard on the TV.</p>
+      <details class="race-phone-results"><summary>View full results without a TV</summary>
+        <ol>${r.racers.map(p=>`<li><strong>#${p.position} ${name(p.name)}</strong><span>${p.finishedAt===undefined?percent(p.distance,r.length)+'%':((p.finishedAt-3000)/1000).toFixed(2)+'s'}</span></li>`).join('')}</ol>
+      </details>
+      <div class="actions">${canControl ? replayButtons(s,icons) : '<button class="button outline" data-action="leave">Back to home</button>'}</div>
+    </section>`;
+  }
   if(finished) return `<section class="game-panel race-finish-panel"><div class="eyebrow">CHEQUERED FLAG</div><h1>${winningTeam ? 'Team ' + name(winningTeam.name) + ' wins Quiz Race!' : name(leader?.name) + ' wins Quiz Race!'}</h1>
     <p>${winningTeam ? name(leader?.name) + ' crossed first to win it for their team.' : 'First across the finish line wins.'} Final order comes from the server, not the animation.</p>
     ${track}${raceTeams}<div class="race-results">${r.racers.map(p=>`<div><strong>#${p.position} · ${name(p.name)}</strong><span>${p.finishedAt === undefined ? percent(p.distance,r.length)+'% completed' : ((p.finishedAt - 3000)/1000).toFixed(2)+'s'}</span></div>`).join('')}</div>

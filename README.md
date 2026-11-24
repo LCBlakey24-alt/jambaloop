@@ -18,6 +18,13 @@ For the next coding session, read [**CLAUDE.md**](CLAUDE.md) and the [dated Clau
 
 **Deployment warning:** Render currently auto-deploys on changes to `main`. The game server stores rooms, votes and scores in process memory, so a live deployment can interrupt an active session and lose its room state. Finish game sessions before merging where possible and verify the exact Render commit has reached **Live** before announcing release. The missing British narration MP3 pack (15 new files) is still a separate installation task; files in a plan do not imply the audio is bundled.
 
+### Next-wave design portfolio — planned only
+
+The [detailed game concepts and implementation priorities](docs/GAME_CONCEPTS_NEXT_WAVE_2026-11-24.md) describe **Question Vault** (limited yes/no cooperative deduction, [#49](https://github.com/LCBlakey24-alt/jambaloop/issues/49)), **Mystery Market** (fictional sealed bids, [#48](https://github.com/LCBlakey24-alt/jambaloop/issues/48)), a full **Sketch Relay** turn loop, and additional traditional card / visual-memory / original sound options. The document includes proposed scoring, TV-versus-phone contracts, content and testing gates. **None of these new games is live.**
+
+Priority stays with [single-screen mobile controls #45](https://github.com/LCBlakey24-alt/jambaloop/issues/45), [room recovery #41](https://github.com/LCBlakey24-alt/jambaloop/issues/41) and [existing social-game depth #40](https://github.com/LCBlakey24-alt/jambaloop/issues/40). Build one distinct prototype at a time; reusable modes and content packs should not automatically become additional tiles.
+
+
 ## Play at home
 
 1. Install Node.js 22 on a laptop. Run `npm ci` and then `npm start` from this folder.

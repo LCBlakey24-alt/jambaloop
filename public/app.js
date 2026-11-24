@@ -1491,6 +1491,7 @@ document.addEventListener('click', async event => {
   if (action === 'brain-answer') return sendParty({ action: 'answer', option: Number(button.dataset.option) }, button);
   if (action === 'spotlight-advice' || action === 'spotlight-answer') return sendParty({ action: action === 'spotlight-advice' ? 'advice' : 'answer', option: Number(button.dataset.option) }, button);
   if (action === 'social-card') return sendParty({ action: 'card', option: Number(button.dataset.option) }, button);
+  if (action === 'social-redraw') return sendParty({ action: 'redraw' }, button);
   if (action === 'bluff-vote') return sendParty({ action: 'vote', id: button.dataset.id }, button);
   if (action === 'potato-skip' || action === 'potato-answer') {
     return sendParty({ action: action === 'potato-skip' ? 'skip' : 'answer', option: Number(button.dataset.option), step: state.party.step }, button);

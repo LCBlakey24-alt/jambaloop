@@ -23,7 +23,7 @@ import { validateQuiz, prepareCustomQuiz } from './public/custom-quiz.js';
 import { boardQuestion, makeQuestions, makeSoCloseQuestions, questionCategories, verifiedSourceFor } from './questions.js';
 import { soCloseSourceFor } from './so-close-bank.js';
 import {questionHistoryId, questionHistoryLimit, validQuestionHistoryId} from './public/question-history.js';
-import { modes, themes, formats, difficulties, teams, socialModes, minimumPlayers, boardRollDuration, defaultTheme, fixedQuestionModes, questionCounts, wheelCategories, scoreIntervals, supportsScoreCheckpoints, maximumPlayers, capacityError } from './public/game-config.js';
+import { modes, themes, isQuestionFormat, formatTypes, difficulties, teams, socialModes, minimumPlayers, boardRollDuration, defaultTheme, fixedQuestionModes, questionCounts, wheelCategories, scoreIntervals, supportsScoreCheckpoints, maximumPlayers, capacityError } from './public/game-config.js';
 
 const app = express();
 const rooms = new Map();
@@ -63,7 +63,7 @@ function readSettings(body = {}) {
   if (difficulty !== 'standard' && (!fixedQuestionModes.includes(mode) || privateTeam || quiz || category !== 'mixed' || format !== 'choice' || includeChristmas)) return;
   const allowedCounts = questionCounts(mode, privateTeam ? 'choice' : format, privateTeam ? 'mixed' : category);
   if (!modes.some(([id]) => id === mode) || !themes.some(([id]) => id === theme)
-    || !formats.some(([id]) => id === format) || !categories.includes(category)
+    || !isQuestionFormat(format) || !categories.includes(category)
     || typeof autoReveal !== 'boolean' || typeof includeChristmas !== 'boolean' || (!quiz && !allowedCounts.includes(count)) || ![0, 15, 20, 30, 45].includes(seconds)) return;
   if (scoring !== undefined && (!scoring || !pointValues.includes(scoring.base) || !bonusValues.includes(scoring.bonus)
     || !doubleSchedules.some(([id]) => id === scoring.doubles))) return;
@@ -807,7 +807,8 @@ app.post('/api/rooms/:code/roll', (req, res) => {
     room.motion = { category };
   }
   if (room.mode !== 'dice') {
-    const format = room.format === 'mixed' ? ['choice', 'boolean', 'estimate', 'order'][room.index % 4] : room.format;
+    const types = formatTypes(room.format);
+    const format = types[room.index % types.length];
     if (room.mode === 'board') room.questions.push(boardQuestion(room.motion.category, format, room.motion.difficulty, room.seen));
     else {
       const recent = new Set(room.questions.map(question => question.prompt));

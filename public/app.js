@@ -28,7 +28,7 @@ import {connectSketchPainter,paintSketchBoard,clearSketch} from './sketch-canvas
 import { openLibrary, savedQuizzes } from './quiz-editor.js';
 import { answerGuide, helpTypes, closestStep, createDraft, formatNumber, orderedItems, setEstimatePrecision, specialAnswer } from './answer-controls.js';
 import { demoView, explainer, hasDemo, practiceView, samples } from './learning.js';
-import { categories, categoryGroups, categoryName, modes, themes, formats, difficulties, defaultTheme, partyModes, fixedQuestionModes, minimumPlayers, questionCounts, scoreIntervals, defaultScoreInterval, supportsScoreCheckpoints } from './game-config.js';
+import { categories, categoryGroups, categoryName, modes, themes, questionTypes, formatTypes, formatId, difficulties, defaultTheme, partyModes, fixedQuestionModes, minimumPlayers, questionCounts, scoreIntervals, defaultScoreInterval, supportsScoreCheckpoints } from './game-config.js';
 import { boardView, diceView, lobbyView, reviewView, rollRecap, teamList, teamScoreboard, wheelView } from './game-views.js';
 
 const icons = (name, css = '') => `<img class="${css}" src="/icons/${name}.svg" alt="">`;
@@ -343,9 +343,12 @@ function openDialog(mode, value, gameMode, quizId) {
       <button type="button" class="button outline small" data-action="library">My quizzes</button></div>
     <label id="difficulty-field">Difficulty<select name="difficulty">${selected(difficulties, configured ? state.difficulty : 'standard')}</select></label>
     <div class="form-row"><label id="category-field">Category<select name="category">${selected(categories, value ?? 'mixed')}</select></label>
-    <label>Question format<select name="format">${selected(formats, configured ? state.format : 'mixed')}</select></label>
     <label><span id="count-label">Questions</span><select name="count" aria-labelledby="count-label"></select></label>
     <label>Time per question<select name="seconds">${selected([15, 20, 30, 45, 0].map(value => [value, value ? value + ' seconds' : 'No timer']), seconds)}</select></label></div>
+    <input type="hidden" name="format" value="${configured ? state.format : 'mixed'}">
+    <fieldset class="format-picks" id="format-field"><legend>Question types <small>Tick as many as you like</small></legend>
+      <div class="format-picks-grid">${questionTypes.map(([id, name]) => `<label><input type="checkbox" name="questionType" value="${id}" ${formatTypes(configured ? state.format : 'mixed').includes(id) ? 'checked' : ''}><span>${name}</span></label>`).join('')}</div>
+      <small class="error format-picks-note" id="format-note" aria-live="polite"></small></fieldset>
     <fieldset id="race-setup" class="race-setup"><legend>Quiz Race</legend><div class="form-row">
       <label>Race length<select name="raceLength">${selected([['short','Short · ~1 min'],['medium','Medium · ~2 min'],['long','Long · ~3 min']],raceSetup.raceLength ?? 'medium')}</select></label>
       <label>Track theme<select name="raceTrack">${selected([['neon','Neon Circuit'],['desert','Desert Run'],['snow','Snow Circuit'],['jungle','Jungle Trail'],['space','Space Route']],raceSetup.raceTrack ?? 'neon')}</select></label>
@@ -411,10 +414,22 @@ function openDialog(mode, value, gameMode, quizId) {
       const board = game === 'board';
       const race = game === 'quizrace';
       const soClose = game === 'soclose';
-      if(soClose){form.elements.format.value='estimate';form.elements.difficulty.value='standard';}
+      if(soClose){form.elements.difficulty.value='standard';}
       form.querySelector('#race-setup').hidden = !race;
       form.querySelector('#race-setup').disabled = !race;
-      if(race){form.elements.format.value='choice';form.elements.seconds.value='0';form.elements.difficulty.value='standard';}
+      if(race){form.elements.seconds.value='0';form.elements.difficulty.value='standard';}
+      // The ticked types become one canonical format; at least one stays ticked.
+      const typeBoxes = [...form.querySelectorAll('[name="questionType"]')];
+      let ticked = typeBoxes.filter(box => box.checked).map(box => box.value);
+      let formatNote = '';
+      if (!ticked.length) {
+        const last = event?.target?.name === 'questionType' ? event.target : typeBoxes[0];
+        last.checked = true;
+        ticked = [last.value];
+        formatNote = 'Keep at least one question type ticked.';
+      }
+      form.querySelector('#format-note').textContent = formatNote;
+      form.elements.format.value = soClose ? 'estimate' : race ? 'choice' : formatId(ticked);
       const timed = form.elements.seconds.value !== '0';
       const scoreFields = form.querySelector('#quiz-scoring');
       scoreFields.hidden = !canSetScore(game);
@@ -472,7 +487,9 @@ function openDialog(mode, value, gameMode, quizId) {
       form.querySelector('#difficulty-field').hidden = form.elements.difficulty.disabled;
       const curated = !form.elements.difficulty.disabled && form.elements.difficulty.value !== 'standard';
       categoryField.hidden = (!supportsCustom && !race && !soClose) || custom || curated;
-      form.elements.format.closest('label').hidden = custom || party || privateQuiz || curated || race || soClose;
+      const formatField = form.querySelector('#format-field');
+      formatField.hidden = custom || party || privateQuiz || curated || race || soClose;
+      formatField.disabled = formatField.hidden;
       form.elements.count.closest('label').hidden = custom || (party && !matching && !spotlight && !brain && !topAnswers && !rare && !creativeRounds) || race;
       form.elements.seconds.closest('label').hidden = party || race;
       form.elements.autoReveal.closest('label').hidden = party || race;
@@ -505,7 +522,7 @@ function openDialog(mode, value, gameMode, quizId) {
       const format = form.elements.format.value;
       const scoringNote = format === 'estimate' ? 'Closest guesses receive equal base points.'
         : form.elements.seconds.value === '0' ? 'No speed bonus.'
-        : format === 'mixed' ? 'Timed correct answers can earn a speed bonus. Closest guesses receive equal base points.'
+        : formatTypes(format).includes('estimate') ? 'Timed correct answers can earn a speed bonus. Closest guesses receive equal base points.'
         : 'Faster correct answers earn more.';
       form.querySelector('#scoring-note').textContent = soClose ? 'Closest guesses earn 100 points; exact guesses earn 200. No speed bonus.' : race ? 'You steer your speed with answers. Correct boosts you, Pass and wrong answers slow you down. First to finish wins.' : party ? (rare ? 'Everyone secretly enters a valid answer that the other players might not think of. A verified unique answer earns 200 points, a pair earns 100 each, three or more matches earn 50 each. Unrecognised answers need the TV host to review them before reveal. Choose 3, 5 or 7 rounds.' : topAnswers ? 'Everyone privately votes for their genuine favourite among four options. Then secretly predicts the room’s most popular answer. The TV reveals real room vote counts (never invented surveys). Score 20 per vote for your prediction, plus 100 when you predict a top-ranked option. Choose 3, 5 or 7 rounds.' : brain ? 'Climb 5, 7 or 10 original reasoning puzzles. Start with 2 lives; a missed or wrong answer costs 1 life. Each higher level earns more points, and eliminated players can watch the remaining climb.' : spotlight ? 'Everyone takes one contestant turn. A randomly selected expert suggests an answer first. Contestants earn 100 points for a correct answer; experts earn 40 for a correct suggestion. Choose one, two or three turns each, for up to twenty players.' : matching ? 'Write a short answer privately. Each other player who matches it earns you 100 points. Choose 3, 5 or 7 rounds.' : trolley ? 'Each round: two teams choose one of three cards in each phase (defend, sabotage, reinforce). The Trolley Driver pulls the lever. One round per player.' : game === 'bluff' ? 'Play 3, 5 or 7 rounds. One player per round never sees the secret prompt, and the bluff role rotates. A correct vote earns +100 points. If the bluff escapes the vote, they earn +100. Strict most votes catches the bluff; tied top votes let them escape.' : game === 'potato' ? 'Two or more players. The potato has one shared two-minute timer.' : creativeRounds ? 'Choose 3, 5 or 7 rounds. Players select cards or write punchlines privately, then vote on the funniest entry each round. The same room and cumulative scores continue throughout.' : 'Players use their phones to enter or vote.')
         : privateQuiz ? 'Each player gets a unique multiple-choice or True or False question in each round.'
@@ -538,7 +555,7 @@ function openDialog(mode, value, gameMode, quizId) {
     });
   } else if (mode === 'practice') {
     if (!value && hasDemo(state?.mode)) showDemo(state.mode, 0);
-    else showPractice(value ?? (samples[state?.format] ? state.format : 'choice'));
+    else showPractice(value ?? (samples[formatTypes(state?.format)[0]] ? formatTypes(state?.format)[0] : 'choice'));
   } else if (mode === 'themes') {
     content.innerHTML = `<div class="eyebrow">VISUAL STYLE</div><h2>Set the mood</h2><div class="theme-options">
       ${themes.map(([id, name, color, panel]) => `<button class="button outline" data-action="theme" data-theme="${id}" aria-pressed="${previewTheme === id}">
@@ -909,7 +926,7 @@ function render(s) {
     if (s.phase === 'party-potato' && !host) timer = '<span class="timer potato-timer" id="timer"></span>';
   } else if (s.phase === 'lobby') {
     body = lobbyView(s, { host, escape, icons, modeName });
-    const types = s.quizTypes ?? (s.format === 'mixed' ? helpTypes : [s.format]);
+    const types = s.quizTypes ?? (s.format === 'mixed' ? helpTypes : formatTypes(s.format));
     if (!partyModes.includes(s.mode)) body += `<section class="game-panel lobby-guide"><h2>How to answer</h2><dl>${types.map(type => {
       const [label, description] = answerGuide(type);
       return `<div><dt>${label}</dt><dd>${description}</dd></div>`;

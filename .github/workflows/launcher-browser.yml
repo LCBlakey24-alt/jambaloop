@@ -68,6 +68,7 @@ on:
       - 'public/mode-style.js'
       - 'public/show-identity.js'
       - 'scripts/so-close-browser.mjs'
+      - 'scripts/question-types-browser.mjs'
       - '.github/workflows/launcher-browser.yml'
   workflow_dispatch:
 
@@ -119,6 +120,7 @@ jobs:
           node scripts/bluff-browser.mjs
           node scripts/sketch-browser.mjs
           node scripts/so-close-browser.mjs
+          node scripts/question-types-browser.mjs
           node scripts/tv-immersive-browser.mjs
           node scripts/tv-all-modes.mjs
       - name: Upload screen captures on success or failure

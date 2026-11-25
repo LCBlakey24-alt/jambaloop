@@ -35,7 +35,7 @@ try{
   await setup.locator('#game-preview [data-action="host"]').click();
   const form=setup.locator('#host-form');
   assert.equal(await form.locator('input[name="mode"]:checked').inputValue(),'soclose');
-  assert.equal(await form.locator('select[name="format"]').isVisible(),false,'Format is fixed to estimates');
+  assert.equal(await form.locator('#format-field').isVisible(),false,'Question types are fixed to estimates');
   assert.match(await form.locator('#scoring-note').innerText(),/100 points.*200/);
   await setupContext.close();
   console.log('PASS: So Close setup from the launcher');

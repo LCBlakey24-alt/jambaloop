@@ -79,6 +79,29 @@ export const formats = [
   ['order', 'Put in order only'],
 ];
 
+// The four question types a quiz can draw on. A room's `format` is either one
+// type id, 'mixed' (all four), or a hand-picked combination joined with '+'
+// in this order, e.g. 'choice+boolean'. One canonical spelling per choice
+// keeps rematches, playlists and saved state comparable.
+export const questionTypes = [
+  ['choice', 'Multiple choice'],
+  ['boolean', 'True or false'],
+  ['estimate', 'Closest number'],
+  ['order', 'Put in order'],
+];
+const typeIds = questionTypes.map(([id]) => id);
+export const formatTypes = format => format === 'mixed' ? [...typeIds]
+  : typeof format === 'string' ? format.split('+') : [];
+export const formatId = types => {
+  const picked = typeIds.filter(id => types.includes(id));
+  return picked.length === typeIds.length ? 'mixed' : picked.join('+');
+};
+export const isQuestionFormat = format => {
+  const types = formatTypes(format);
+  return types.length > 0 && types.every(type => typeIds.includes(type))
+    && new Set(types).size === types.length && formatId(types) === format;
+};
+
 export const teams = [
   ['Ruby', '#ff91ae'],
   ['Sapphire', '#96bcff'],
@@ -101,8 +124,11 @@ export function questionCounts(mode, format, category) {
   // Single topics hold at least 15 multiple-choice and 15 true/false questions
   // (enforced by test/question-supply.test.js) but only five or six estimates
   // and orders, so those formats stay at one five-question round.
+  // A combination that includes multiple choice or true/false tops itself up
+  // from those types, so only estimate/order-only picks are capped.
   const singleTopic = mode !== 'wheel' && category !== 'mixed';
-  return singleTopic && ['estimate', 'order'].includes(format) ? [5] : [5, 10, 15];
+  const scarce = formatTypes(format).every(type => ['estimate', 'order'].includes(type));
+  return singleTopic && scarce ? [5] : [5, 10, 15];
 }
 
 export const categoryGroups = [

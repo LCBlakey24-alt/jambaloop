@@ -8,7 +8,7 @@ import { estimates, orders } from './extra-questions.js';
 import { sportChoice, sportBoolean, sportEstimate, sportOrder } from './trivia-pack-sports.js';
 import { screenChoice, screenBoolean, screenEstimate, screenOrder } from './trivia-pack-screen.js';
 import { topupChoice, topupBoolean } from './trivia-pack-topups.js';
-import { isSpecialist } from './public/game-config.js';
+import { isSpecialist, formatTypes } from './public/game-config.js';
 
 const banks = {
   general: [
@@ -525,11 +525,25 @@ export function makeQuestions(category, count, seen = new Set(), format = 'choic
       return { category: id, prompt, type: 'choice', options, correct: options.indexOf(correct) };
     });
   }
-  if (format === 'mixed') {
-    const types = ['choice', 'boolean', 'estimate', 'order'];
-    const queues = types.map((type, index) =>
-      makeQuestions(category, Math.max(0, Math.ceil((count - index) / types.length)), seen, type, includeChristmas));
-    return Array.from({ length: count }, (_, index) => queues[index % types.length][Math.floor(index / types.length)]).filter(Boolean);
+  const types = formatTypes(format);
+  if (types.length > 1) {
+    // Take the picked types in turn. When one runs dry (a topic has only a
+    // handful of estimates), the others fill its slots so the round is full.
+    const queues = types.map(type => makeQuestions(category, count, seen, type, includeChristmas));
+    const picked = [];
+    const used = new Set();
+    for (let turn = 0; picked.length < count && queues.some(queue => queue.length); turn++) {
+      const queue = queues[turn % queues.length];
+      while (queue.length) {
+        const question = queue.shift();
+        const id = questionHistoryId(question.prompt);
+        if (used.has(id)) continue;
+        used.add(id);
+        picked.push(question);
+        break;
+      }
+    }
+    return picked;
   }
   // Mixed Bag keeps to the everyday topics; specialist packs are chosen on purpose.
   const ids = category === 'mixed' ? questionCategories.filter(id => !isSpecialist(id) && (includeChristmas || id !== 'christmas')) : [category];

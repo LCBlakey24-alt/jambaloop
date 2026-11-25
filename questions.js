@@ -521,8 +521,10 @@ export function makeQuestions(category, count, seen = new Set(), format = 'choic
   }
   const ids = category === 'mixed' ? questionCategories.filter(id => includeChristmas || id !== 'christmas') : [category];
   const groups = ids.map(id => {
-    const binary = trueFalse[id].map(([prompt, correct]) => [prompt, correct ? 'True' : 'False']);
-    const pool = { boolean: binary, estimate: estimates[id], order: orders[id] }[format] ?? banks[id];
+    const binary = (trueFalse[id] ?? []).map(([prompt, correct]) => [prompt, correct ? 'True' : 'False']);
+    // A topic without questions in this format contributes none, rather than
+    // passing its multiple-choice rows off as estimates or orders.
+    const pool = (format === 'choice' ? banks[id] : { boolean: binary, estimate: estimates[id], order: orders[id] }[format]) ?? [];
     const rows = shuffle(pool).map(row => ({ id, row }));
     return {
       fresh: rows.filter(({ row }) => !hasSeen(seen,row[0])),

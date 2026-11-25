@@ -1,4 +1,4 @@
-import { clockExpired, setClockPaused, stopDeadline, watchDeadline } from './room-clock.js';
+import { clockExpired, roomTask, setClockPaused, stopDeadline, watchDeadline } from './room-clock.js';
 import { caughtLast, finishRanks as orderedFinishRanks, nightAward, placementRanks } from './result-ranks.js';
 import { revealPlan as estimateRevealPlan } from './public/so-close-reveal.js';
 import { ESTIMATE_LIMIT } from './public/answer-controls.js';
@@ -76,6 +76,13 @@ function readSettings(body = {}) {
     teamCount, boardLength, playStyle, scoreInterval: supportsScoreCheckpoints(mode) ? scoreInterval : 1, customQuiz: quiz };
 }
 
+// Never promise more questions than the chosen topic and format can supply:
+// the round would otherwise run off the end of the list mid-game.
+function clampToQuestions(room) {
+  if (fixedQuestionModes.includes(room.mode) && !room.customQuiz && !room.privateQuestions && room.questions.length)
+    room.count = Math.min(room.count, room.questions.length);
+}
+
 function resetPlayer(player) {
   Object.assign(player, { score: 0, wins: 0, streak: 0, bestStreak: 0, misses: 0, comebacks: 0, fastest: undefined, slowest: undefined, rounds: [] });
 }
@@ -107,6 +114,7 @@ function resetGame(room, settings) {
     quizTypes: settings.privateQuestions ? ['choice', 'boolean'] : settings.customQuiz ? [...new Set(settings.customQuiz.questions.map(item => item.type))] : undefined,
     questions: settings.customQuiz ? prepareCustomQuiz(settings.customQuiz) : fixedQuestionModes.includes(settings.mode) ? roundQuestions(settings, room.seen) : [],
   });
+  clampToQuestions(room);
   room.answers.clear();
   for (const player of room.players.values()) {
     resetPlayer(player);
@@ -198,7 +206,7 @@ function scheduleEstimateStages(room) {
     if (room.phase === 'reveal' && room.game === game && room.index === index && room.estimateReveal?.starts === starts) publish(room);
   };
   room.estimateTimers = [plan.duration - plan.actual, plan.duration]
-    .map(delay => setTimeout(publishStage, Math.max(0, starts + delay - Date.now())));
+    .map(delay => setTimeout(() => roomTask(room, 'reveal stage', publishStage), Math.max(0, starts + delay - Date.now())));
 }
 
 function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)) {
@@ -377,14 +385,14 @@ function publish(room, hostOnly = false) {
     return;
   }
   if (!room.hostUpdate) {
-    room.hostUpdate = setTimeout(() => {
+    room.hostUpdate = setTimeout(() => roomTask(room, 'host update', () => {
       room.hostUpdate = undefined;
       const ranked = rankings(room);
       const counts = liveCounts(room);
       for (const [client, key] of room.clients) {
         if (room.phase === 'lobby' || controlsRoom(room, key)) sendState(room, key, client, ranked, counts);
       }
-    }, 100);
+    }), 100);
   }
 }
 
@@ -719,6 +727,7 @@ function startGame(room) {
   // their previous question history, not when the TV room is first created.
   if (fixedQuestionModes.includes(room.mode) && !room.customQuiz && !room.privateQuestions) {
     room.questions = roundQuestions(room, room.seen);
+    clampToQuestions(room);
   }
   if (room.mode === 'tracks') {
     // Exactly one round per joined player; every player drives once.
@@ -802,14 +811,16 @@ app.post('/api/rooms/:code/roll', (req, res) => {
     if (room.mode === 'board') room.questions.push(boardQuestion(room.motion.category, format, room.motion.difficulty, room.seen));
     else {
       const recent = new Set(room.questions.map(question => question.prompt));
+      // A topic with nothing in this format falls back to multiple choice.
       const candidates = makeQuestions(room.motion.category, 15, room.seen, format);
-      room.questions.push(candidates.find(question => !recent.has(question.prompt)) ?? candidates[0]);
+      const usable = candidates.length ? candidates : makeQuestions(room.motion.category, 15, room.seen, 'choice');
+      room.questions.push(usable.find(question => !recent.has(question.prompt)) ?? usable[0]);
     }
   }
   room.phase = 'rolling';
   room.motion.duration = room.mode === 'board' ? boardRollDuration : 2600;
   room.motion.ends = Date.now() + room.motion.duration;
-  room.timer = setTimeout(() => openQuestion(room), room.motion.duration);
+  room.timer = setTimeout(() => roomTask(room, 'roll', () => openQuestion(room)), room.motion.duration);
   publish(room);
   res.sendStatus(204);
 });
@@ -930,10 +941,10 @@ app.post('/api/rooms/:code/answer', (req, res) => {
 function scheduleReveal(room) {
   if (room.phase !== 'question' || room.pausedAt || !room.autoReveal || room.autoTimer
     || !room.answers.size || room.answers.size !== responseTarget(room)) return;
-  room.autoTimer = setTimeout(() => {
+  room.autoTimer = setTimeout(() => roomTask(room, 'auto-reveal', () => {
     room.autoTimer = undefined;
     if (room.phase === 'question' && !room.pausedAt && room.answers.size === responseTarget(room)) reveal(room);
-  }, 800);
+  }), 800);
 }
 
 function publicPrediction(room, key) {
@@ -1059,8 +1070,8 @@ app.use('/api', (error, _req, res, next) => {
 });
 
 setInterval(() => {
-  for (const room of rooms.values()) {
-    if (!room.race || !['race-countdown', 'race'].includes(room.phase)) continue;
+  for (const room of rooms.values()) roomTask(room, 'race tick', () => {
+    if (!room.race || !['race-countdown', 'race'].includes(room.phase)) return;
     const phaseWas = room.phase;
     const event = advanceQuizRace(room.race, performance.now());
     if (room.race.finished) {
@@ -1077,7 +1088,7 @@ setInterval(() => {
       room.race.lastBroadcast = now;
       publish(room);
     }
-  }
+  });
 }, 100).unref();
 
 setInterval(() => {
@@ -1096,16 +1107,16 @@ setInterval(() => {
   joinBudget.sweep(now);
 }, Math.min(60_000, idleRoomMs)).unref();
 setInterval(() => {
-  for (const room of rooms.values()) {
-    if (!room.clients.size && Date.now() - room.updated > 60000) continue;
+  for (const room of rooms.values()) roomTask(room, 'presence', () => {
+    if (!room.clients.size && Date.now() - room.updated > 60000) return;
     const counts = liveCounts(room);
     const presence = [...counts.ids].join('/');
-    if (room.presence === presence) continue;
+    if (room.presence === presence) return;
     room.presence = presence;
     publish(room, true);
     scheduleReveal(room);
     advancePartyWhenReady(room, publish);
-  }
+  });
 }, 3000).unref();
 setInterval(() => {
   for (const room of rooms.values()) {

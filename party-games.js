@@ -3,6 +3,7 @@ import { connectedPlayers, isConnected, responseTarget } from './room-presence.j
 import { randomInt } from 'node:crypto';
 import { makeQuestions } from './questions.js';
 import {v2Bluff} from './creative-expansion-v2.js';
+import {bluffV4} from './creative-expansion-v4.js';
 
 import { partyModes, socialModes } from './public/game-config.js';
 import { startSocialRound, advanceSocial, submitSocial, publicSocial, advanceSocialWhenReady } from './social-games.js';
@@ -44,6 +45,7 @@ const prompts = [
   'Name a terrible item to use as a bookmark.',
   'What might a superhero forget to take to work?',
   ...v2Bluff,
+  ...bluffV4,
 ];
 
 const random = list => list[randomInt(list.length)];

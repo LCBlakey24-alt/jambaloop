@@ -54,7 +54,7 @@ Every game now has its own display face, palette and surface style, defined once
 
 | Game | Identity | Face | Page | Accent | Scheme |
 |---|---|---|---|---|---|
-| classic | Golden Hour | Abril Fatface | `#0b1d6b` → `#040b30` | `#ffc93c` | dark |
+| classic | Golden Hour | Outfit (was Abril Fatface; changed for TV legibility) | `#0b1d6b` → `#040b30` | `#ffc93c` | dark |
 | wheel | Carnival Midway | Bungee | `#7412c4` → `#2b0548` | `#ffd23f` | dark |
 | board | Games Table | Cinzel | `#0f5c3c` → `#05281a` | `#f0c060` | dark |
 | dice | Deco Salon | Limelight | `#7d0f2b` → `#2c0410` | `#f2c14e` | dark |

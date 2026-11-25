@@ -8,7 +8,7 @@
 // accent / accent2: highlights. question: whether prompts use the display
 // face ('display') or the readable house sans ('body').
 export const identities = {
-  classic:    { title: 'Golden Hour', display: 'Show Classic', weight: 400, question: 'display', upper: false, scheme: 'dark',
+  classic:    { title: 'Golden Hour', display: 'Show Classic', weight: 700, question: 'display', upper: false, scheme: 'dark',
     bg: ['#0b1d6b', '#040b30'], surface: '#0f2479', surface2: '#18339b', ink: '#fffaf0', muted: '#ccd6ff', accent: '#ffc93c', accent2: '#ff6b5a', radius: '6px' },
   wheel:      { title: 'Carnival Midway', display: 'Show Wheel', weight: 400, question: 'body', upper: true, scheme: 'dark',
     bg: ['#7412c4', '#2b0548'], surface: '#3d0a6b', surface2: '#561092', ink: '#ffffff', muted: '#ead2ff', accent: '#ffd23f', accent2: '#ff3fa4', radius: '22px' },

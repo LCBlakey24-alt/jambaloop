@@ -17,8 +17,22 @@ export const categories = [
   ['space', 'Space & Astronomy', 'Planets, stars, and space exploration.', 'orbit', '#c9b9f5', 'Space'],
   ['language', 'Words & Language', 'Grammar, wordplay, meanings and spelling.', 'book-open', '#f9cf99', 'Words'],
   ['maths', 'Maths & Numbers', 'Quick calculations, number patterns and logic.', 'sigma', '#99e7dc', 'Maths'],
-  ['mixed', 'Mixed Bag', 'A balanced mix of topics in one game.', 'shuffle', '#a8c6f2', 'Mixed'],
+  // Specialist packs (seventh field true): played as a topic of their own, but
+  // kept out of Mixed Bag and Spin the Wheel so everyday games stay balanced.
+  ['football', 'Football', 'World Cups, the Premier League and legendary clubs.', 'goal', '#9be3a8', 'Football', true],
+  ['nba', 'NBA Basketball', 'Dunks, dynasties and the biggest names on court.', 'volleyball', '#ffb27a', 'NBA', true],
+  ['nfl', 'NFL', 'Touchdowns, Super Bowls and gridiron greats.', 'shield', '#a9c4ff', 'NFL', true],
+  ['nhl', 'NHL Ice Hockey', 'The Stanley Cup, the Great One and life on the ice.', 'snowflake', '#bfe9ff', 'NHL', true],
+  ['f1', 'Formula 1', 'Champions, circuits and life in the fast lane.', 'flag-triangle-right', '#ff9f9f', 'F1', true],
+  ['olympics', 'Olympics', 'Summer and Winter Games, legends and host cities.', 'medal', '#ffe08a', 'Olympics', true],
+  ['disney', 'Disney & Pixar', 'Princesses, sidekicks, songs and animated classics.', 'castle', '#d7b8ff', 'Disney', true],
+  ['superheroes', 'Superheroes', 'Comic-book heroes, villains and blockbuster films.', 'zap', '#ffcf6e', 'Heroes', true],
+  ['mixed', 'Mixed Bag', 'A balanced mix of everyday topics in one game.', 'shuffle', '#a8c6f2', 'Mixed'],
 ];
+
+/** Specialist packs are chosen on purpose; Mixed Bag and the wheel skip them. */
+export const specialistCategories = categories.filter(row => row[6]).map(([id]) => id);
+export const isSpecialist = id => specialistCategories.includes(id);
 
 export const modes = [
   ['classic', 'Classic Quiz', 'Pick a topic and play straight through.', 'list-checks', '#f4a9c7'],
@@ -73,7 +87,7 @@ export const teams = [
 ];
 
 export const wheelCategories = includeChristmas => categories.filter(([id]) =>
-  id !== 'mixed' && (includeChristmas || id !== 'christmas'));
+  id !== 'mixed' && !isSpecialist(id) && (includeChristmas || id !== 'christmas'));
 export const categoryName = id => categories.find(category => category[0] === id)?.[1] ?? '';
 
 export function questionCounts(mode, format, category) {
@@ -84,9 +98,11 @@ export function questionCounts(mode, format, category) {
   if (mode === 'spotlight') return [1, 2, 3];
   if (['tracks','samepage'].includes(mode)) return [3, 5, 7];
   if (mode === 'board') return [12, 18, 24, 36, 48, 60];
+  // Single topics hold at least 15 multiple-choice and 15 true/false questions
+  // (enforced by test/question-supply.test.js) but only five or six estimates
+  // and orders, so those formats stay at one five-question round.
   const singleTopic = mode !== 'wheel' && category !== 'mixed';
-  const shortTopic = ['art', 'games', 'animals', 'space'].includes(category);
-  return singleTopic && (['estimate', 'order'].includes(format) || shortTopic && format !== 'mixed') ? [5] : [5, 10, 15];
+  return singleTopic && ['estimate', 'order'].includes(format) ? [5] : [5, 10, 15];
 }
 
 export const categoryGroups = [
@@ -95,6 +111,8 @@ export const categoryGroups = [
   ['Culture', ['art', 'entertainment', 'music', 'books', 'language']],
   ['World & history', ['geography', 'history', 'news']],
   ['Leisure', ['sports', 'games', 'food', 'christmas']],
+  ['Sport', ['sports', 'football', 'nba', 'nfl', 'nhl', 'f1', 'olympics']],
+  ['Fandoms', ['disney', 'superheroes', 'entertainment']],
 ];
 
 export const fixedQuestionModes = ['classic', 'dice', 'knockout', 'showdown', 'soclose'];

@@ -168,9 +168,9 @@ body:not(.playing) .footer { display:none !important; }
 }
 .tile-strap {
   position:relative; z-index:2; margin-top:10%;
-  color:#e5f0ff; opacity:.75;
-  font:800 clamp(7px,4.2cqw,10px)/1.2 'House Sans',sans-serif;
-  letter-spacing:.1em; text-align:center;
+  max-width:90%; color:#e5f0ff; opacity:.95;
+  font:700 clamp(7px,4.2cqw,10px)/1.2 'House Sans',sans-serif;
+  letter-spacing:.015em; text-align:center; text-wrap:balance; overflow-wrap:normal;
 }
 .tile-info { position:absolute; z-index:3; left:12px; right:12px; bottom:9px;
   display:flex; justify-content:space-between; gap:6px; align-items:center;

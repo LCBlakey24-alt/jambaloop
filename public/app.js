@@ -1,5 +1,6 @@
 import { showIdentity } from './show-identity.js';
 import { bindTilt, celebrate, countUp } from './motion.js';
+import { enforceTvLegibility } from './tv-legibility.js';
 import {soCloseView,numberWheelRows,soCloseRevealView} from './so-close-view.js';
 import {revealFrame as soCloseFrame, stageFrame as soCloseStage} from './so-close-reveal.js';
 import { scoreBreakView, updateScoreBreak } from './score-break.js';
@@ -50,7 +51,8 @@ const dialog = document.querySelector('#dialog');
 const content = document.querySelector('#dialog-content');
 const footer = document.querySelector('footer');
 const announcement = document.querySelector('#phase-announcement');
-const colors = ['#f4a9c7', '#aec5f4', '#f5cd88', '#a7dfc5'];
+// Answer colours: strong, distinct and AA-contrast with their ink (answer-colours.css).
+const colors = ['#c8203f', '#1d5fd0', '#f2b01e', '#0d8250'];
 const escape = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 let session;
 let state;
@@ -1052,6 +1054,8 @@ function render(s) {
   if (backdrop) app.querySelector('.scene-backdrop').replaceWith(backdrop);
   renderGraphics(s, stage, animateRoll);
   celebrateMoment(s, host, enter, result);
+  // Sofa distance: no in-game TV text below the height-relative floor.
+  if (immersive && innerWidth > 760) enforceTvLegibility(app.querySelector('section.game'));
   if(s.mode==='sketch')paintSketchBoard(s.party);
   if(s.mode!=='quizrace'&&race3d) disposeRace3d();
   if(s.mode==='quizrace' && s.race){

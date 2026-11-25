@@ -24,3 +24,18 @@ export function courseSegments(path = coursePath) {
   }
   return segments;
 }
+
+/**
+ * 3D TV circuit: a figure-of-eight lap (world units, y = height). The race
+ * starts and finishes on the same straight; the second pass through the
+ * middle crosses over the first on a raised bridge. Placings depend only on
+ * progress as a fraction of the lap, so this can differ from the 2D course.
+ */
+export const circuitPoints = [
+  [-12, 0, 7.6], [-6, 0, 7.2],                // start/finish straight
+  [-2.2, 0, 3.0], [0, 0, 0], [2.6, 0, -2.6],  // first pass through the middle (under the bridge)
+  [6.8, 0, -5.9], [11.8, 0, -7.4], [16.2, 0, -4.9], [17.6, 0, -.2], [16.2, 0, 4.4],
+  [11.6, 0, 7.6], [6.8, .5, 6.4],
+  [3.0, 1.5, 3.2], [0, 1.9, 0], [-3.0, 1.5, -3.1], // second pass: up and over the bridge
+  [-6.8, .5, -6.4], [-11.8, 0, -7.6], [-16.4, 0, -5.2], [-18.0, 0, -.6], [-16.8, 0, 4.2],
+];

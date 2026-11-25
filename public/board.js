@@ -1,8 +1,9 @@
 import { boardPath, boardFork } from './board-route.js';
+import { curvedLayout, TILE_TOP } from './board-layout.js';
 import * as THREE from '/vendor/three.module.js';
 import { boardRollDuration, categories } from './game-config.js';
 import { tableSurface, towerDieScale, towerExit, towerImpacts, towerOrigin, towerPose, towerRamps, towerSettle } from './tower-motion.js';
-import { checkerFace, coated, dieFace, tileFace, woodMaterial } from './table-materials.js';
+import { checkerFace, coated, dieFace, tileDisc, tileFace, woodMaterial } from './table-materials.js';
 
 const diceFaces = [
   [1, [0, 1, 0]], [6, [0, -1, 0]], [2, [0, 0, 1]],
@@ -182,6 +183,33 @@ function flatMesh(width, depth, material, x, y, z) {
   return mesh;
 }
 
+// A flat painted strip that follows a curve, for the printed board path.
+function pathStrip(curve, half, y, material, samples = 220) {
+  const positions = [];
+  const indices = [];
+  const step = 1 / samples;
+  for (let i = 0; i <= samples; i++) {
+    const u = i / samples;
+    const p = curve.getPointAt(u);
+    const t = curve.getTangentAt(u);
+    const n = new THREE.Vector3(-t.z, 0, t.x).normalize();
+    // Never let the inside edge fold over itself on a tight bend: narrow it
+    // to just inside the local radius of curvature.
+    const a = curve.getTangentAt(Math.max(0, u - step)), b = curve.getTangentAt(Math.min(1, u + step));
+    const turn = a.x * b.z - a.z * b.x;
+    const radius = Math.abs(turn) > 1e-6 ? (2 * step * curve.getLength()) / Math.abs(turn) : Infinity;
+    const inner = Math.min(half, radius * .85);
+    const left = turn > 0 ? half : inner, right = turn > 0 ? inner : half;
+    positions.push(p.x - n.x * left, y, p.z - n.z * left, p.x + n.x * right, y, p.z + n.z * right);
+    if (i) { const a = (i - 1) * 2; indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return new THREE.Mesh(geometry, material);
+}
+
 function buildBoard(scene, state, shadowMap) {
   const [baseColor, tableColor, accent] = tableTone(state);
   const board = new THREE.Group();
@@ -220,30 +248,26 @@ function buildBoard(scene, state, shadowMap) {
     questions: boardPath(state.boardLength, state.includeChristmas, 'questions'),
   };
   const fork = boardFork(state.boardLength);
-  const scale = 4.68 / (state.boardLength / 4);
+  const layout = curvedLayout(state.boardLength, fork);
+  const scale = layout.scale;
   const categoryById = new Map(categories.map(row => [row[0], row]));
 
   function tilePosition(index, choice = 'power') {
     const route = paths[choice] ?? paths.power;
-    const {x,z,finish} = route[Math.max(0,Math.min(route.length-1,index))];
-    return new THREE.Vector3(x * scale, finish ? .434 : .36, z * scale);
+    const { x, y, z } = layout.position(Math.max(0, Math.min(route.length - 1, index)), choice in paths ? choice : 'power');
+    return new THREE.Vector3(x, y, z);
   }
 
-  // The entire shared perimeter is one track; two visibly distinct lanes fork
-  // at the first bend and rejoin at the next. Each pawn follows its own path.
-  function addTrack(choice, begin, end, tint) {
-    const route = paths[choice];
-    const points = route.slice(begin,end+1).map(tile => {
-      const position = tilePosition(tile.index,choice);
-      position.y = .199;
-      return position;
-    });
-    const curve = new THREE.CatmullRomCurve3(points,false,'centripetal');
-    const geometry = new THREE.TubeGeometry(curve,Math.max(16,points.length*6),.024,8,false);
-    board.add(new THREE.Mesh(geometry,coated(tint,.35,.4)));
-  }
-  addTrack('power',0,state.boardLength,'#e4b66c');
-  addTrack('questions',fork.start,fork.rejoin+fork.extra,'#49e3d0');
+  // Printed path: a parchment strip with gold edging under the main route,
+  // and a teal strip for the Question Trail where it leaves and rejoins.
+  const parchment = new THREE.MeshStandardMaterial({ color: '#efe0bd', roughness: .75 });
+  const goldLine = coated('#d6a450', .3, .45);
+  const stripHalf = Math.min(layout.radius * 1.25, .33);
+  board.add(pathStrip(layout.main, stripHalf, .19, parchment));
+  board.add(pathStrip(layout.main, stripHalf + .035, .188, goldLine));
+  const trailStrip = new THREE.MeshStandardMaterial({ color: '#7fe3d6', roughness: .7 });
+  board.add(pathStrip(layout.trail, layout.trailRadius * 1.3, .192, trailStrip));
+  board.add(pathStrip(layout.trail, layout.trailRadius * 1.4, .189, coated('#2b9c92', .35, .3)));
 
   const allTiles = [
     ...paths.power.filter(tile => !tile.lane),
@@ -254,27 +278,36 @@ function buildBoard(scene, state, shadowMap) {
     const {index:i,category:id,finish,lane} = tileInfo;
     const original = id ? categoryById.get(id)?.[4] : '#fff0d4';
     const color = lane === 'power' ? '#f9c45d' : lane === 'questions' ? '#54dccc' : original;
-    const width = scale * (finish ? .95 : lane === 'power' ? .60 : lane === 'questions' ? .45 : .93);
-    const tile = roundedBox(width,finish ? .24 : .19,width,.042,8,coated(color,.35));
+    const r = finish ? layout.radius * 1.18 : lane === 'questions' ? layout.trailRadius : layout.radius * (lane ? .86 : 1);
+    const width = r * 2;
+    // Inlaid discs: level with the printed path, like spaces on a real board.
+    const thickness = TILE_TOP + (finish ? .02 : 0) - .19;
+    const tile = new THREE.Mesh(new THREE.CylinderGeometry(r, r, thickness, 40), coated(color,.35));
+    const rimRing = new THREE.Mesh(new THREE.TorusGeometry(r * .99, Math.max(.008, r * .03), 6, 40), goldLine);
+    rimRing.rotation.x = Math.PI / 2;
     const choice = lane === 'questions' ? 'questions' : 'power';
     tile.position.copy(tilePosition(i,choice));
-    tile.position.y = finish ? .31 : .271;
+    const top = tile.position.y;
+    tile.position.y = top - thickness / 2;
+    rimRing.position.set(tile.position.x, top, tile.position.z);
+    board.add(rimRing);
     const labelText = lane === 'power' ? '×2 POWER' : lane === 'questions' ? 'QUIZ TRAIL' :
       id ? categoryById.get(id)?.[5] : 'Start';
     const displayNumber = lane === 'power' ? 'P'+(i-fork.start) :
       lane === 'questions' ? 'Q'+(i-fork.start) : i;
-    const printed = new THREE.Mesh(new THREE.PlaneGeometry(width*.95,width*.95),new THREE.MeshBasicMaterial({
-      map:tileFace(displayNumber,color,finish ? 'Finish' : labelText,finish ? '⚑' : !i ? '✦' : undefined),
+    const printed = new THREE.Mesh(new THREE.CircleGeometry(width*.47,40),new THREE.MeshBasicMaterial({
+      map:tileDisc(displayNumber,color,finish ? 'Finish' : labelText,finish ? '⚑' : !i ? '✦' : undefined),
       transparent:true,
     }));
-    printed.position.set(tile.position.x,tile.position.y+(finish?.122:.097),tile.position.z);
+    printed.position.set(tile.position.x,top+.002,tile.position.z);
     printed.rotation.x=-Math.PI/2;
     board.add(tile,printed);
   }
   const finish = tilePosition(state.boardLength);
   const poleHeight = scale * .55;
   const pole = new THREE.Mesh(new THREE.CylinderGeometry(.017, .017, poleHeight, 12), coated('#e4b66c', .29, .45));
-  pole.position.set(finish.x + scale * .37, finish.y + poleHeight / 2, finish.z - scale * .36);
+  // Planted on the finish disc itself, so it never overlaps a neighbouring space.
+  pole.position.set(finish.x + scale * .12, finish.y + poleHeight / 2, finish.z - scale * .12);
   board.add(pole);
   const flag = new THREE.Group();
   flag.position.set(pole.position.x, finish.y + poleHeight * .78, pole.position.z);
@@ -286,27 +319,7 @@ function buildBoard(scene, state, shadowMap) {
   const finial = new THREE.Mesh(new THREE.SphereGeometry(scale * .05, 12, 8), studMaterial);
   finial.position.set(pole.position.x, pole.position.y + poleHeight / 2, pole.position.z);
   board.add(flag, finial);
-  const center = new THREE.Mesh(new THREE.PlaneGeometry(2.18, 2.18), new THREE.MeshBasicMaterial({
-    map: label('JAMBALOOP', tableColor, accent, 'Board Race'), transparent: true,
-  }));
-  center.position.set(.21, .19, -.14);
-  center.rotation.x = -Math.PI / 2;
-  board.add(center);
-  const dial = new THREE.Mesh(new THREE.RingGeometry(1.25, 1.265, 80), new THREE.MeshBasicMaterial({
-    color: accent, transparent: true, opacity: .5, depthWrite: false,
-  }));
-  dial.position.set(center.position.x, .187, center.position.z);
-  dial.rotation.x = -Math.PI / 2;
-  board.add(dial);
-  const tick = new THREE.BoxGeometry(.035, .005, .11);
-  const tickMaterial = coated(accent, .34, .25);
-  for (let index = 0; index < 12; index++) {
-    const angle = index * Math.PI / 6;
-    const mark = new THREE.Mesh(tick, tickMaterial);
-    mark.position.set(center.position.x + Math.sin(angle) * 1.24, .190, center.position.z + Math.cos(angle) * 1.24);
-    mark.rotation.y = angle;
-    board.add(mark);
-  }
+  // The route spirals into the middle of the board, so the finish owns the centre.
 
   const halo = new THREE.Mesh(new THREE.RingGeometry(scale * .33, scale * .40, 40), new THREE.MeshBasicMaterial({ color: '#fff3bf' }));
   halo.rotation.x = -Math.PI / 2;
@@ -651,24 +664,42 @@ function dressTable(scene, state, rally, accent) {
         card.add(face);
       }
     }
-    // A brass trophy for the winner's corner.
-    const brass = new THREE.MeshStandardMaterial({ color: '#d9a441', metalness: .55, roughness: .28, emissive: '#3a2400', emissiveIntensity: .25 });
-    const cup = new THREE.Mesh(new THREE.LatheGeometry([
-      [0, 0], [.32, 0], [.32, .1], [.12, .16], [.08, .5], [.1, .58], [.36, .72], [.4, 1.1], [.36, 1.12], [.3, .8], [0, .74],
-    ].map(([x, y]) => new THREE.Vector2(x, y)), 28), brass);
-    const plinth = new THREE.Mesh(new THREE.BoxGeometry(.78, .26, .78), new THREE.MeshStandardMaterial({ color: '#2a170b', roughness: .45 }));
-    plinth.position.y = .13;
-    cup.position.y = .26;
-    for (const side of [-1, 1]) {
-      const handle = new THREE.Mesh(new THREE.TorusGeometry(.17, .035, 8, 18, Math.PI), brass);
-      handle.position.set(side * .42, 1.2, 0);
-      handle.rotation.z = side * Math.PI / 2;
-      cup.add(handle);
-    }
+    // A brass trophy: two-tier plinth, stem and knot, flared cup with a lip,
+    // outward-curving handles and a lidded top with a star finial.
+    const brass = new THREE.MeshStandardMaterial({ color: '#d4a24a', metalness: .6, roughness: .26, emissive: '#3a2400', emissiveIntensity: .22 });
+    const darkWood = new THREE.MeshStandardMaterial({ color: '#2a170b', roughness: .45 });
     const trophy = new THREE.Group();
-    trophy.add(plinth, cup);
+    const lower = new THREE.Mesh(new THREE.BoxGeometry(.86, .18, .86), darkWood);
+    lower.position.y = .09;
+    const band = new THREE.Mesh(new THREE.BoxGeometry(.88, .035, .88), brass);
+    band.position.y = .19;
+    const upper = new THREE.Mesh(new THREE.BoxGeometry(.66, .14, .66), darkWood);
+    upper.position.y = .28;
+    const body = new THREE.Mesh(new THREE.LatheGeometry([
+      [0, 0], [.26, 0], [.27, .035], [.12, .07], [.06, .16], [.05, .34], [.1, .39], [.06, .44],
+      [.07, .5], [.2, .58], [.32, .74], [.37, .98], [.39, 1.04], [.35, 1.04], [.33, .98], [.28, .78], [.15, .64], [0, .6],
+    ].map(([x, y]) => new THREE.Vector2(x, y)), 36), brass);
+    body.position.y = .35;
+    trophy.add(lower, band, upper, body);
+    for (const side of [-1, 1]) {
+      // Half-ring in the vertical plane, bulging away from the cup.
+      const handle = new THREE.Mesh(new THREE.TorusGeometry(.14, .026, 10, 24, Math.PI), brass);
+      handle.rotation.z = -side * Math.PI / 2;
+      handle.position.set(side * .34, .35 + .82, 0);
+      trophy.add(handle);
+    }
+    // A domed lid seats the finial, so nothing floats above an open cup.
+    const lid = new THREE.Mesh(new THREE.LatheGeometry([
+      [.39, 0], [.37, .04], [.3, .1], [.17, .15], [.07, .17], [.05, .2], [.08, .23], [.06, .27], [0, .28],
+    ].map(([x, y]) => new THREE.Vector2(x, y)), 36), brass);
+    lid.position.y = .35 + 1.04;
+    trophy.add(lid);
+    const star = new THREE.Mesh(new THREE.OctahedronGeometry(.075), brass);
+    star.position.y = .35 + 1.04 + .28 + .09;
+    star.scale.set(1, 1.3, .55);
+    trophy.add(star);
     trophy.position.set(-4.4, -.42, -1.9);
-    trophy.scale.setScalar(1.25);
+    trophy.scale.setScalar(1.2);
     items.add(trophy);
     // Spare player tokens scattered by the board.
     const tokenGeometry = new THREE.CylinderGeometry(.2, .2, .07, 24);

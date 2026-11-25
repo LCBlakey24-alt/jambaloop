@@ -13,7 +13,7 @@ export function wheelView(state) {
   return `<div class="wheel-frame" role="img" aria-label="${selected < 0 ? 'Category wheel ready to spin' : 'Category wheel landing on ' + categoryName(state.motion.category)}">
     <div class="wheel-pointer"></div>
     <div class="wheel-disk ${selected < 0 ? '' : 'spinning'}" style="--wheel-colors:${colors};--wheel-start:${-slice / 2}deg;--wheel-turn:${turn}deg">
-      ${entries.map(([, , , , , short], index) => `<span class="wheel-label" style="--angle:${index * slice}deg">${short}</span>`).join('')}
+      ${entries.map(([, , , , , short], index) => `<span class="wheel-label" style="--angle:${index * slice}deg;--flip:${index * slice > 180 ? 180 : 0}deg">${short}</span>`).join('')}
     </div>
     <span class="wheel-hub">✦</span>
   </div>`;

@@ -135,3 +135,51 @@
   body.playing .immersive > .turn-panel.board-turn > .board-stage { height:auto; min-height:0; align-self:stretch; }
   body.playing .immersive > .turn-panel.board-turn > .turn-copy { align-self:center; min-height:0; overflow:auto; }
 }
+
+/* ------------------------------------- sofa-sized party game content ---- */
+@media (min-width:761px) and (min-height:560px) {
+  /* Fork in the Tracks: the scenario sentence is the show; give it the panel. */
+  body.playing .immersive .fork-track-sentence { font-size:clamp(20px,3.6dvh,46px); line-height:1.35; letter-spacing:.015em; }
+  body.playing .immersive .fork-track-head, body.playing .immersive .fork-track h2 { font-size:clamp(22px,3.4dvh,44px); }
+  /* Brain Ladder: bigger puzzle and answer plates. */
+  body.playing .immersive .brain-puzzle h1 { font-size:clamp(30px,6dvh,78px); letter-spacing:.012em; }
+  body.playing .immersive .brain-puzzle :is(button,.brain-answer) { font-size:clamp(20px,3.4dvh,42px); min-height:clamp(54px,9dvh,110px); letter-spacing:.02em; }
+}
+
+/* --------------------------------------------- consistency across shows -- */
+@media (min-width:761px) and (min-height:560px) {
+  /* Knockout used thin list rows; match the other quiz shows' tall 2×2 tiles. */
+  body.playing .immersive[data-mode="knockout"] .question-panel .answers:not(.binary-answers) { grid-template-columns:repeat(2,minmax(0,1fr)); gap:clamp(10px,1.8dvh,22px); }
+  body.playing .immersive[data-mode="knockout"] .question-panel .answers:not(.binary-answers) .answer {
+    min-height:clamp(70px,14dvh,170px); font-size:clamp(22px,3.9dvh,50px); padding-block:10px;
+  }
+  /* Writing phases: one big, centred prompt for the room to read. */
+  body.playing .immersive:is([data-mode="punchline"],[data-mode="cards"])[data-phase="party-write"] .party-panel {
+    height:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; gap:clamp(12px,2.4dvh,34px);
+  }
+  body.playing .immersive:is([data-mode="punchline"],[data-mode="cards"])[data-phase="party-write"] .party-panel > h1 { font-size:clamp(40px,8dvh,108px); margin:0; }
+  body.playing .immersive:is([data-mode="punchline"],[data-mode="cards"])[data-phase="party-write"] .bluff-prompt {
+    font-size:clamp(30px,5.6dvh,76px); line-height:1.2; letter-spacing:.012em; max-width:28ch; margin:0; text-wrap:balance;
+    border:0; padding:0;
+  }
+  body.playing .immersive:is([data-mode="punchline"],[data-mode="cards"])[data-phase="party-write"] .party-panel > p[role="status"] { font-size:clamp(22px,3.4dvh,44px); margin:0; }
+  /* Spot the Bluff: the stage headline and counter fill the screen. */
+  body.playing .immersive[data-mode="bluff"] .bluff-show-stage h1,
+  body.playing .immersive[data-mode="bluff"] .bluff-show-stage h2 { font-size:clamp(38px,7.5dvh,100px); }
+  body.playing .immersive[data-mode="bluff"] .bluff-show-stage p { font-size:clamp(22px,3.4dvh,44px); }
+  body.playing .immersive[data-mode="bluff"] .bluff-show-number { font-size:clamp(70px,16dvh,210px); }
+  /* Hot Potato: big countdown and holder, centred. */
+  body.playing .immersive[data-mode="potato"] .potato-panel { height:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; gap:clamp(10px,2dvh,28px); }
+  body.playing .immersive[data-mode="potato"] .potato-panel > h1 { font-size:clamp(42px,8.5dvh,112px); margin:0; }
+  body.playing .immersive[data-mode="potato"] .potato-stage-clock .timer { font-size:clamp(80px,18dvh,240px); }
+  body.playing .immersive[data-mode="potato"] .party-holder p { font-size:clamp(22px,3.4dvh,44px); }
+}
+
+/* Wheels: large enough to read from the sofa; labels scale with the wheel. */
+@media (min-width:761px) and (min-height:560px) {
+  body.playing .immersive .wheel-frame { width:min(72dvh,46vw); max-width:none; }
+  body.playing .immersive .wheel-label { font-size:clamp(14px,3.6cqw,36px); }
+  body.playing .immersive .spotlight-stage { grid-template-columns:minmax(300px,46%) minmax(0,1fr); }
+  body.playing .immersive .spotlight-wheel-wrap { width:min(42vw,66dvh,720px); }
+  body.playing .immersive .spotlight-wheel-label { font-size:clamp(12px,3.1cqw,28px); }
+}

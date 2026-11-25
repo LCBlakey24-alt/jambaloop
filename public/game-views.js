@@ -1,6 +1,6 @@
 import { boardRoute, boardPath, boardPathChoices, boardFinish, boardFork, boardMappedPosition, boardDuration, durationLabel } from './board-route.js';
 import { avatarView } from './party-views.js';
-import { categories, categoryName, partyModes, minimumPlayers, wheelCategories } from './game-config.js';
+import { categories, categoryName, modes, partyModes, minimumPlayers, wheelCategories } from './game-config.js';
 import {requiredPlayers} from './team-play.js';
 import { launcherSteps } from './home-launcher.js';
 
@@ -84,6 +84,14 @@ export function diceView(state) {
 export function lobbyView(state, { host, escape, icons, modeName }) {
   const canControl = host || state.isCaptain;
   const config = `<button class="button outline" data-action="configure">${icons('settings')} Choose game</button>`;
+  // Flick between games from the captain's phone (or the TV): the TV lobby
+  // re-themes to each show as it arrives. Saved quizzes keep their own setup.
+  const order = modes.map(([id]) => id);
+  const at = order.indexOf(state.mode);
+  const neighbour = step => order[(at + step + order.length) % order.length];
+  const switcher = canControl && !state.quizTitle && at >= 0 ? `<div class="lobby-switcher" role="group" aria-label="Switch game">
+    <button type="button" class="button outline" data-action="lobby-mode" data-mode="${neighbour(-1)}" aria-label="Previous game: ${escape(modeName(neighbour(-1)))}"><span aria-hidden="true">‹</span> ${escape(modeName(neighbour(-1)))}</button>
+    <button type="button" class="button outline" data-action="lobby-mode" data-mode="${neighbour(1)}" aria-label="Next game: ${escape(modeName(neighbour(1)))}">${escape(modeName(neighbour(1)))} <span aria-hidden="true">›</span></button></div>` : '';
   const minimum = requiredPlayers(state.mode,state.playStyle,state.teamCount,minimumPlayers(state.mode));
   const start = `<button class="button primary" data-action="advance" ${state.connected < minimum ? 'disabled' : ''}>Start ${state.mode === 'board' ? 'race' : partyModes.includes(state.mode) ? 'game' : 'quiz'} ${icons('play')}</button>`;
   const practice = `<button class="button outline" data-action="practice">${partyModes.includes(state.mode) || ['board', 'wheel', 'dice'].includes(state.mode) ? 'Try a practice round' : 'Practice answers'}</button>`;
@@ -126,7 +134,7 @@ export function lobbyView(state, { host, escape, icons, modeName }) {
     <div class="lobby-eyebrow"><span class="eyebrow">ROOM ${state.code}</span>${state.isCaptain ? '<span class="captain-tag">★ Captain</span>' : ''}</div>
     <h2>${state.game > 1 ? 'Rematch ready, ' : 'You’re in, '}${escape(state.player.name)}!</h2>
     <p>${state.isCaptain ? 'Choose a game for the room and start when everyone is ready.' : 'Stay here while the captain sets up the game.'}</p>
-    ${summary}${teamPreview}${playerGuide}
+    ${switcher}${summary}${teamPreview}${playerGuide}
     <div class="ready-actions"><button class="button outline" data-action="ready-toggle" aria-label="I’m ready" aria-pressed="${Boolean(state.player.ready)}">
       ${icons(state.player.ready ? 'circle-check' : 'circle')}${state.player.ready ? 'Ready' : 'I’m ready'}</button><span role="status">${readyText}</span></div>
     ${state.isCaptain ? '' : captain}
@@ -150,7 +158,7 @@ export function lobbyView(state, { host, escape, icons, modeName }) {
         ${state.connected < state.playerCount ? `<span>${state.playerCount - state.connected} away</span>` : ''}</div>
       ${state.connected ? `<div class="ready-meter"><strong>${readyText}</strong><progress value="${readyCount}" max="${state.connected}" aria-label="Players ready"></progress></div>` : ''}
       ${state.players.length ? `<ul class="players">${state.players.map(player => `<li data-connected="${player.connected}" data-ready="${Boolean(player.ready && player.connected)}">${avatarView(player, escape)}${escape(player.name)}${player.id === state.captainId ? '<span aria-label="Captain">★</span>' : ''}${player.connected ? player.ready ? '<small class="ready-badge">Ready</small>' : '' : '<small>Away</small>'}</li>`).join('')}</ul>` : '<p>Waiting for players to join…</p>'}
-      ${transfer}${summary}${teamPreview}${state.autoReveal ? '<p class="lobby-rule">Auto-reveal is on</p>' : ''}
+      ${transfer}${switcher}${summary}${teamPreview}${state.autoReveal ? '<p class="lobby-rule">Auto-reveal is on</p>' : ''}
       <div class="actions">${config}${start}${practice}</div></div></div>`;
 }
 

@@ -50,3 +50,27 @@ Branch `ccr-f45d5751-1l0u82` integrates the open stability, redesign, So Close a
 3. Hot Potato result/star placement and a central player-cap check across join/configure/start/playlist/rematch (handoff items still open).
 4. Batch 2 redesign (Board Race, Dice Rally, Quiz Race) on its own branch, reusing the server-staged reveal pattern where a mode has secret submissions.
 5. Integrate the 15 previously exported narrator MP3s before generating anything new.
+
+## Visual and motion polish (follow-up on the same branch)
+
+Built:
+- **Launcher:** every show now has its own original vector emblem (`public/show-identity.js`). Studio and finale identities remain Batch 1 only. Tiles deal in with a stagger, their emblems draw themselves in, cards tilt towards the pointer with a moving specular light, and the preview cover lifts out.
+- **Launcher bug fixed:** at 1920×1080 the seven-column grid was 21px wider than its 1400px shell and clipped the last column. A legacy `body:not(.playing) .mode-list {gap:13px}` outranked the launcher gap. The grid now also sits under its heading instead of floating mid-panel.
+- **Game UI** (`public/visual-polish.css`, `public/motion.js`):
+  - bolder stage entrances (starting at 20% opacity, never fully hidden);
+  - answers deal in; the correct answer pops while the rest step back; a wrong pick shakes on the phone;
+  - the timer gets a heartbeat in the last five seconds;
+  - podium places rise third→first with a crown pop and sheen, and podium scores count up;
+  - scene backdrops drift; a canvas confetti burst fires at the finale (TV and winning phones), on a So Close winner, and lightly for a phone round win.
+- **TV reveal bug fixed (also on main):** with live scores, a second full-width Leaderboard panel squeezed the question until its answers were cut off at 1280×720. Standings now live in the sidebar (up to 8, single-line, scrolling) with "+N more".
+- **3D:**
+  - neutral tone mapping and a warm rim light;
+  - a 1.3s camera intro sweep on mount;
+  - an idle camera drift on the TV only, throttled to ~30fps, paused in hidden tabs.
+
+  A prefiltered environment map was tried and **rejected**: it raised the longest main-thread task per mount from ~0.35s to ~1.8s, and the stage remounts every phase.
+- Everything decorative is disabled under `prefers-reduced-motion`: verified 0 running animations and no tilt on the launcher.
+
+Tested: `npm test` 173/173; all 17 browser scripts pass; `tv-all-modes` (now measuring after entrance animations settle) has 0 layout warnings. Screenshots were reviewed for the launcher at 1920×1080, 1280×720 and 390×844; Classic Quiz question, reveal and finale; Board Race; and Dice Rally.
+
+Not done: a physical TV performance check (the idle drift and confetti need a real-device look), and a per-show bespoke motion language beyond Batch 1.

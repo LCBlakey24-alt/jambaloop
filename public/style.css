@@ -137,7 +137,9 @@
 }
 .wheel-disk { position: absolute; inset: 0; overflow: hidden; border: 8px solid #fce9d3; border-radius: 50%; background: conic-gradient(from var(--wheel-start),var(--wheel-colors)); box-shadow: 0 0 0 3px #352539,0 18px 36px #11091490; }
 .wheel-disk::after { content: ''; position: absolute; inset: 4%; border: 1px solid #251a2f37; border-radius: 50%; }
-.wheel-label { position: absolute; left: 50%; top: 50%; display: grid; place-items: center; width: 23%; height: 12%; transform: translate(-50%,-50%) rotate(var(--angle)) translateY(-33cqw) rotate(calc(0deg - var(--angle))); font: 700 clamp(11px,3.1cqw,16px)/1 var(--head); color: #221931; }
+/* Radial labels, like a real prize wheel: each reads along its own segment, so
+   neighbours never collide; the left half is turned to stay readable. */
+.wheel-label { position: absolute; left: 50%; top: 50%; display: grid; place-items: center; width: 31%; height: 8%; white-space: nowrap; transform: translate(-50%,-50%) rotate(var(--angle)) translateY(-30cqw) rotate(calc(var(--flip, 0deg) - 90deg)); font: 700 clamp(11px,3.1cqw,16px)/1 var(--head); color: #221931; }
 .wheel-pointer { position: absolute; z-index: 2; left: 50%; top: -12px; transform: translateX(-50%); width: 37px; height: 39px; background: #fcf0de; clip-path: polygon(7% 0,93% 0,50% 100%); }
 .wheel-hub { position: absolute; display: grid; place-items: center; width: 17%; aspect-ratio: 1; left: 50%; top: 50%; transform: translate(-50%,-50%); background: #281c32; border: 3px solid #fce9d3; border-radius: 50%; color: #fce9d3; font: 700 8cqw/1 var(--head); }
 .wheel-disk.spinning { animation: spin-wheel 2.05s cubic-bezier(.14,.78,.2,1) both; }

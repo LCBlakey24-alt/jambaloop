@@ -1,6 +1,6 @@
 /* Lightweight arc-length SVG race track. Visual coordinates never decide who wins. */
 const ns = 'http://www.w3.org/2000/svg';
-const pathData = 'M80 280 C130 80 300 90 365 225 S555 350 635 210 S815 65 897 205 S1035 345 1080 180';
+import { coursePath as pathData } from './race-course.js';
 const createSvg = (tag, attrs = {}) => {
   const node = document.createElementNS(ns, tag);
   for (const [name, value] of Object.entries(attrs)) node.setAttribute(name, value);

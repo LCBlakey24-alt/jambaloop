@@ -111,3 +111,26 @@ export function checkerFace() {
     }
   });
 }
+
+// Round board-space face: number in the middle, topic on a curved band that
+// stays inside the disc, so nothing is cropped on round tiles.
+export function tileDisc(number, background, category, marker) {
+  const ink = '#251e22';
+  return canvasTexture(256, 256, (context) => {
+    const tint = context.createRadialGradient(100, 90, 10, 128, 128, 128);
+    tint.addColorStop(0, '#fff8ea');
+    tint.addColorStop(.55, background);
+    tint.addColorStop(1, background);
+    context.fillStyle = tint;
+    context.beginPath(); context.arc(128, 128, 126, 0, Math.PI * 2); context.fill();
+    context.strokeStyle = '#32222d55'; context.lineWidth = 4;
+    context.beginPath(); context.arc(128, 128, 116, 0, Math.PI * 2); context.stroke();
+    context.fillStyle = ink; context.textAlign = 'center'; context.textBaseline = 'middle';
+    context.font = '900 92px system-ui';
+    context.fillText(marker || number, 128, 112, 170);
+    context.fillStyle = '#362227dc';
+    context.beginPath(); context.roundRect(46, 160, 164, 40, 20); context.fill();
+    context.fillStyle = '#fff4dd'; context.font = '800 24px system-ui';
+    context.fillText(String(category).toUpperCase(), 128, 181, 150);
+  });
+}

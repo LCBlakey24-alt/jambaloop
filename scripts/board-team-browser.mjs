@@ -18,6 +18,9 @@ try {
     const page=await context.newPage();
     page.on('pageerror',error=>console.error('Browser runtime error:',error.message));
     await page.goto(site,{waitUntil:'networkidle',timeout:30000});
+    // Big screens open on the game shelf; this workflow starts from the tile gallery.
+    await page.locator('#game-carousel .carousel-card, .game-tile').first().waitFor({timeout:15000});
+    if(await page.locator('[data-action="carousel-view"]').isVisible())await page.locator('[data-action="carousel-view"]').click();
     await page.locator('[data-action="preview-mode"][data-mode="board"]').click();
     await page.locator('#game-preview [data-action="host"]').click();
     const form=page.locator('#host-form');

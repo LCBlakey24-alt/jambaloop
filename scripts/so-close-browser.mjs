@@ -27,6 +27,9 @@ try{
   const setup=await setupContext.newPage();
   watch(setup);
   await setup.goto(site,{waitUntil:'domcontentloaded',timeout:30000});
+  // Big screens open on the game shelf; this workflow starts from the tile gallery.
+  await setup.locator('#game-carousel .carousel-card, .game-tile').first().waitFor({timeout:15000});
+  if(await setup.locator('[data-action="carousel-view"]').isVisible())await setup.locator('[data-action="carousel-view"]').click();
   await setup.locator('.game-tile[data-mode="soclose"]').click();
   assert.match(await setup.locator('#game-preview').innerText(),/So Close/i);
   await setup.locator('#game-preview [data-action="host"]').click();
@@ -68,7 +71,7 @@ try{
   const start=await api.request.post(site+'/api/rooms/'+code+'/advance',{headers:{'x-game-key':hostKey},data:{phase:'lobby',game:1,index:0}});
   assert.equal(start.status(),204);
 
-  // 3. Phones show only the wheel controller (TV-first), with units and range.
+  // 3. Phones show only the wheel controller (TV-first), with units but no range.
   const round=await snap(hostKey);
   const {question}=round;
   assert.equal(question.type,'estimate');
@@ -89,7 +92,14 @@ try{
   const value=async page=>Number(await page.locator('.so-close-editor [data-number]').inputValue());
   const startValue=await value(ada);
   await ada.locator('.so-close-wheel [data-step="1"]').click();
-  assert.equal(await value(ada),Math.min(question.max,startValue+1),'Up arrow adds one');
+  assert.equal(startValue,0,'Guesses start at zero: no range hint');
+  assert.equal(question.min,undefined,'The range stays on the server while guessing');
+  assert.equal(await value(ada),1,'Up arrow adds one');
+  // A bigger step size: the arrows then move by a thousand.
+  await ada.locator('.so-close-precision [data-precision="1000"]').click();
+  await ada.locator('.so-close-wheel [data-step="1"]').click();
+  assert.equal(await value(ada),1001,'Up arrow adds one step of 1,000');
+  assert.doesNotMatch(await tv.page.locator('.game').innerText(),/ESTIMATION RANGE|Guess range/,'The TV shows no range');
   // Dragging down brings the larger number above the centre into view.
   const rows=ada.locator('[data-so-close-rows]');
   const box=await rows.boundingBox();
@@ -99,13 +109,13 @@ try{
   await ada.mouse.move(box.x+box.width/2,box.y+box.height/2+75,{steps:6});
   await ada.mouse.up();
   const dragged=await value(ada);
-  assert.ok(dragged>before||dragged===question.max,'Dragging down increases the guess: '+before+' -> '+dragged);
+  assert.ok(dragged>before,'Dragging down increases the guess: '+before+' -> '+dragged);
   await ada.screenshot({path:'browser-screenshots/so-close-phone-390x844.png'});
   await phones[1].page.screenshot({path:'browser-screenshots/so-close-phone-320x640.png'});
   await phones[2].page.screenshot({path:'browser-screenshots/so-close-phone-844x390.png'});
 
-  // Direct entry: out-of-range values are rejected, Enter locks a valid one.
-  const guesses=[question.min,Math.round((question.min+question.max)/2),question.max];
+  // Direct entry: Enter locks any whole number, however far out.
+  const guesses=[0,537,2_000_000];
   for(const [i,{page}] of phones.entries()){
     const input=page.locator('.so-close-editor [data-number]');
     await input.fill(String(guesses[i]));

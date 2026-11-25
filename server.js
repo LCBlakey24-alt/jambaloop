@@ -1,6 +1,7 @@
 import { clockExpired, setClockPaused, stopDeadline, watchDeadline } from './room-clock.js';
-import { placementRanks } from './result-ranks.js';
+import { caughtLast, finishRanks as orderedFinishRanks, nightAward, placementRanks } from './result-ranks.js';
 import { revealPlan as estimateRevealPlan } from './public/so-close-reveal.js';
+import { ESTIMATE_LIMIT } from './public/answer-controls.js';
 import { deskAwards } from './awards.js';
 import { answerValue, boardSpeedValues, bonusValues, canSetScore, defaultScoring, doubleSchedules, pointValues, roundMultiplier } from './public/scoring.js';
 import { playlistLimit, queuedSettings } from './public/game-night.js';
@@ -22,12 +23,11 @@ import { validateQuiz, prepareCustomQuiz } from './public/custom-quiz.js';
 import { boardQuestion, makeQuestions, makeSoCloseQuestions, questionCategories, verifiedSourceFor } from './questions.js';
 import { soCloseSourceFor } from './so-close-bank.js';
 import {questionHistoryId, questionHistoryLimit, validQuestionHistoryId} from './public/question-history.js';
-import { modes, themes, formats, difficulties, teams, socialModes, minimumPlayers, boardRollDuration, defaultTheme, fixedQuestionModes, questionCounts, wheelCategories, scoreIntervals, supportsScoreCheckpoints } from './public/game-config.js';
+import { modes, themes, formats, difficulties, teams, socialModes, minimumPlayers, boardRollDuration, defaultTheme, fixedQuestionModes, questionCounts, wheelCategories, scoreIntervals, supportsScoreCheckpoints, maximumPlayers, capacityError } from './public/game-config.js';
 
 const app = express();
 const rooms = new Map();
 const port = process.env.PORT || 3000;
-const maxPlayers = 300;
 const maxRooms = positiveSetting('MAX_ROOMS', 128);
 const idleRoomMs = positiveSetting('ROOM_IDLE_MS', 4 * 60 * 60 * 1000);
 // Full game-night and visual QA legitimately create more than 30 short-lived
@@ -79,6 +79,9 @@ function readSettings(body = {}) {
 function resetPlayer(player) {
   Object.assign(player, { score: 0, wins: 0, streak: 0, bestStreak: 0, misses: 0, comebacks: 0, fastest: undefined, slowest: undefined, rounds: [] });
 }
+
+// Everyone who will play the next game: current players plus anyone queued.
+const groupSize = room => room.players.size + room.waiting.size;
 
 function roundQuestions({ mode, category, count, format, includeChristmas, difficulty }, seen) {
   return mode === 'soclose' ? makeSoCloseQuestions(category, count, seen, includeChristmas)
@@ -225,8 +228,7 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
   const ownCheckpoint = scoreBreak && player ? room.lastScoreBreak.get(room.teams.length ? player.team : player.id)?.row : undefined;
   const scoresPublished = room.scoreInterval === 1 || phase === 'finished';
   const playerScore = room.lastScoreBreak.get(player?.id)?.row.score ?? 0;
-  const finalRanks = phase === 'finished'
-    ? placementRanks(ranked, comparePlayers, room.mode === 'quizrace' && Boolean(room.race)) : undefined;
+  const finalRanks = phase === 'finished' ? finishRanks(room, ranked, comparePlayers) : undefined;
   return { revision: room.revision, code, category, phase: waiting ? 'waiting' : phase, index, total: room.count, seconds, game, opened, ends, answered: answers.size,
     connected: counts.connected, waitingCount: room.waiting.size, responseTarget: counts.target,
     readyCount: phase === 'lobby' ? counts.ready : undefined, lobbyVersion: room.lobbyVersion,
@@ -276,7 +278,7 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
       : room.estimateGuesses) : undefined,
     breakdown: revealed && isHost && !room.privateQuestions && ['choice', 'boolean'].includes(question.type) ? question.options.map((_, option) =>
       [...answers.values()].filter(entry => entry.option === option).length) : undefined,
-    question: visible && question ? { ...publicQuestion, historyId:questionHistoryId(question.prompt), basePoints: room.motion?.points ?? (question.type === 'estimate' && room.legacyScoring ? 1000 : room.scoring?.base), prompt: isHost || room.phoneView === 'full' ? publicQuestion.prompt : undefined, correct: revealed && !holdAnswer ? correct : undefined, source: revealed && !holdAnswer ? answerSourceFor(room.mode, question.prompt) : undefined } : undefined,
+    question: visible && question ? { ...publicQuestion, ...(question.type === 'estimate' && !revealed ? { min: undefined, max: undefined } : {}), historyId:questionHistoryId(question.prompt), basePoints: room.motion?.points ?? (question.type === 'estimate' && room.legacyScoring ? 1000 : room.scoring?.base), prompt: isHost || room.phoneView === 'full' ? publicQuestion.prompt : undefined, correct: revealed && !holdAnswer ? correct : undefined, source: revealed && !holdAnswer ? answerSourceFor(room.mode, question.prompt) : undefined } : undefined,
     qr: isHost ? qr : undefined, joinUrl: isHost ? joinUrl : undefined,
     joinOptions: isHost ? room.joinOptions : undefined };
 }
@@ -285,8 +287,18 @@ const comparePlayers = (a, b) => (b.lives ?? 0) - (a.lives ?? 0) || b.score - a.
 const compareTeams = (mode, spaces) => (a, b) => (mode === 'board'
   ? boardMappedPosition(spaces, b.position, b.pathChoice) - boardMappedPosition(spaces, a.position, a.pathChoice) : 0) || b.score - a.score;
 
+// Hot Potato awards no points: whoever is caught holding it finishes last and
+// everyone else shares first. Ranking by score would tie the whole room, so the
+// caught player used to collect a win and three Game Night stars.
+const caughtHolder = room => room.mode === 'potato' ? room.players.get(room.party?.holder)?.id : undefined;
+
 function rankings(room) {
-  return room.mode === 'quizrace' && room.race ? racePlacings(room.race).map(r => [...room.players.values()].find(p => p.id === r.id)) : [...room.players.values()].sort(comparePlayers);
+  if (room.mode === 'quizrace' && room.race) return racePlacings(room.race).map(r => [...room.players.values()].find(p => p.id === r.id));
+  return caughtLast([...room.players.values()], comparePlayers, caughtHolder(room));
+}
+
+function finishRanks(room, rows, compare) {
+  return orderedFinishRanks(rows, compare, { distinctPositions: room.mode === 'quizrace' && Boolean(room.race), caughtId: caughtHolder(room) });
 }
 
 function recordNightResult(room) {
@@ -297,7 +309,8 @@ function recordNightResult(room) {
   const rows = teamResult ? [...room.teams].sort(compare) : rankings(room);
   // Quiz Race players all approach 100 score at the finish line. Use their
   // actual race finishing order; point-based games still preserve shared places.
-  const ranks = placementRanks(rows, compare, room.mode === 'quizrace' && Boolean(room.race));
+  const ranks = teamResult ? placementRanks(rows, compare) : finishRanks(room, rows, compare);
+  const caught = caughtHolder(room);
 
   for (const player of room.players.values()) {
     const resultId = teamResult ? player.team : player.id;
@@ -311,9 +324,10 @@ function recordNightResult(room) {
     standing.name = player.name;
     standing.avatar = player.avatar;
     standing.games++;
-    standing.stars += Math.max(0, 4 - placing);
-    if (placing === 1) standing.wins++;
-    if (placing <= 3) standing.podiums++;
+    const award = nightAward(placing, player.id === caught);
+    standing.stars += award.stars;
+    if (award.win) standing.wins++;
+    if (award.podium) standing.podiums++;
   }
   room.night.standings.sort((a, b) => b.stars - a.stars || b.wins - a.wins || a.name.localeCompare(b.name));
   room.night.results.push({
@@ -417,7 +431,8 @@ app.post('/api/rooms/:code/join', (req, res) => {
   if (!name || name.length > 24 || /[\p{Cc}\p{Bidi_Control}]/u.test(name)) {
     return res.status(400).json({ error: 'Enter a nickname of up to 24 characters with no control characters.' });
   }
-  if (room.players.size + room.waiting.size >= (room.mode === 'quizrace' ? 12 : room.mode === 'spotlight' ? 20 : ['brain','topanswers','rare'].includes(room.mode) ? 30 : maxPlayers)) return res.status(409).json({ error: 'This room is full.' });
+  // Joining counts queued players too; Board Race keeps room for a Teams switch.
+  if (room.players.size + room.waiting.size >= maximumPlayers(room.mode)) return res.status(409).json({ error: 'This room is full.' });
   if ([...room.players.values(), ...room.waiting.values()].some(player => player.name.toLowerCase() === name.toLowerCase())) {
     return res.status(409).json({ error: 'That nickname is taken.' });
   }
@@ -849,10 +864,8 @@ app.post('/api/rooms/:code/advance', (req, res) => {
   if (room.phase === 'lobby') {
     const minimum = requiredPlayers(room.mode,room.playStyle,room.teamCount,minimumPlayers(room.mode));
     if (liveCounts(room).connected < minimum) return res.status(409).json({ error: `You need at least ${minimum} connected ${minimum === 1 ? 'player' : 'players'} to start.` });
-    if (room.mode === 'board' && room.playStyle === 'individual' && room.players.size > 4) {
-      return res.status(409).json({error:'Individual Board Race supports up to four racers. Choose Teams for larger groups.'});
-    }
-    if (room.mode === 'quizrace' && room.players.size > 12) return res.status(409).json({error:'Quiz Race supports up to twelve racers. Please choose another mode or a smaller group.'});
+    const tooMany = capacityError(room.mode, room.playStyle, room.players.size);
+    if (tooMany) return res.status(409).json({ error: tooMany });
     startGame(room);
   } else if (partyModes.includes(room.mode)) {
     advanceParty(room, publish);
@@ -898,7 +911,8 @@ app.post('/api/rooms/:code/answer', (req, res) => {
   if (room.phase !== 'question' || game !== room.game || index !== room.index || clockExpired(room)) return res.status(409).json({ error: 'This question has closed.' });
   if (room.pausedAt) return res.status(409).json({ error: 'The timer is paused. Try again when it resumes.' });
   const question = room.privateRound?.get(key) ?? room.questions[index];
-  const valid = question.type === 'estimate' ? Number.isSafeInteger(option) && option >= question.min && option <= question.max
+  // Estimates show no range while guessing, so any whole number is a fair guess.
+  const valid = question.type === 'estimate' ? Number.isSafeInteger(option) && option >= Math.min(0, question.min) && option <= ESTIMATE_LIMIT
     : question.type === 'order' ? Array.isArray(option) && option.length === question.options.length
       && new Set(option).size === option.length && option.every(item => Number.isInteger(item) && item >= 0 && item < question.options.length)
     : Number.isInteger(option) && option >= 0 && option < question.options.length;
@@ -964,6 +978,8 @@ app.post('/api/rooms/:code/playlist', (req, res) => {
   if (!Array.isArray(queue) || queue.length > playlistLimit || queue.some(id => !modes.some(([mode]) => mode === id))) {
     return res.status(400).json({ error: 'Choose up to ' + playlistLimit + ' games for the playlist.' });
   }
+  const unfit = queue.map(mode => capacityError(mode, queuedSettings(mode, room.theme).playStyle, groupSize(room))).find(Boolean);
+  if (unfit) return res.status(409).json({ error: unfit });
   room.night.queue = queue;
   room.night.version++;
   publish(room);
@@ -977,11 +993,14 @@ app.post('/api/rooms/:code/playlist/next', (req, res) => {
   if (room.phase !== 'finished' || game !== room.game || version !== room.night.version || !room.night.queue.length) {
     return res.status(409).json({ error: 'Check the current game and playlist before loading the next game.' });
   }
-  const mode = room.night.queue.shift();
+  const nextSettings = readSettings(queuedSettings(room.night.queue[0], room.theme));
+  const tooMany = capacityError(nextSettings.mode, nextSettings.playStyle, groupSize(room));
+  if (tooMany) return res.status(409).json({ error: tooMany + ' Edit the playlist to continue.' });
+  room.night.queue.shift();
   room.night.played++;
   room.night.version++;
   room.game++;
-  resetGame(room, readSettings(queuedSettings(mode, room.theme)));
+  resetGame(room, nextSettings);
   publish(room);
   res.sendStatus(204);
 });
@@ -995,7 +1014,8 @@ app.post('/api/rooms/:code/configure', (req, res) => {
   const body = req.body?.useRoomQuiz === true && room.customQuiz ? { ...req.body, customQuiz: room.customQuiz } : req.body;
   const settings = readSettings(body);
   if (!settings) return res.status(400).json({ error: 'Check the game settings or saved quiz.' });
-  if (settings.mode === 'quizrace' && room.players.size > 12) return res.status(409).json({error:'Quiz Race supports up to twelve racers.'});
+  const tooMany = capacityError(settings.mode, settings.playStyle, groupSize(room));
+  if (tooMany) return res.status(409).json({ error: tooMany });
   resetGame(room, settings);
   publish(room);
   res.sendStatus(204);
@@ -1021,6 +1041,8 @@ app.post('/api/rooms/:code/rematch', (req, res) => {
   const body = req.body?.useRoomQuiz === true && room.customQuiz ? { ...req.body, customQuiz: room.customQuiz } : req.body;
   const settings = body?.sameGame === true ? room.settings : readSettings(body);
   if (!settings) return res.status(400).json({ error: 'Check the game settings.' });
+  const tooMany = capacityError(settings.mode, settings.playStyle, groupSize(room));
+  if (tooMany) return res.status(409).json({ error: tooMany });
   room.game++;
   resetGame(room, settings);
   publish(room);

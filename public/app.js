@@ -1,27 +1,32 @@
 import { showIdentity } from './show-identity.js';
+import { bindTilt, celebrate, countUp } from './motion.js';
+import { enforceTvLegibility } from './tv-legibility.js';
 import {soCloseView,numberWheelRows,soCloseRevealView} from './so-close-view.js';
 import {revealFrame as soCloseFrame, stageFrame as soCloseStage} from './so-close-reveal.js';
 import { scoreBreakView, updateScoreBreak } from './score-break.js';
 import { winnerBanner, playerFinish } from './result-highlights.js';
 import { bindRoomAvatars } from './room-avatars.js';
+import { animatePotato, potatoHeat } from './potato-stage.js';
 import { quizRaceView } from './quiz-race-view.js';
 import { mountQuizRaceTrack } from './quiz-race-track.js';
 import { mobileDeck } from './mobile-deck.js';
 import { awardView, currentFrame, frameView, revealFrames, scoreReveal } from './ceremony.js';
 import { boardSpeedValues, bonusValues, canSetScore, defaultScoring, doubleSchedules, pointValues } from './scoring.js';
-import { gameNightPresets, gameNightView, playlistEditor, playlistLimit, replayButtons } from './game-night.js';
+import { gameNightPresets, gameNightView, playlistEditor, playlistLimit, queuedSettings, replayButtons } from './game-night.js';
 import { clearRoomSession, forgetPlayer, parseRoomCode, recentRooms, rememberPlayer, rememberedPlayer, restoreRoomSession, saveRoomSession } from './room-session.js';
 import {readQuestionHistory, rememberQuestion} from './question-history.js';
 import { modeVariables, sceneBackdrop } from './mode-style.js';
 import { launcherTile, launcherPreview, launcherModes, launcherSetupArtwork, LAUNCHER_PAGE_SIZE } from './home-launcher.js';
+import { carouselView, moveCarousel, themeHome, wrapIndex } from './game-carousel.js';
+import { playSting, stingFor } from './show-sting.js';
 import { stopNarration, toggleNarration } from './narrator.js';
-import { playCue, playTowerImpact } from './sound-cues.js';
+import { playCue, playTick, playTowerImpact } from './sound-cues.js';
 import { boardLengths, boardRoute, boardDuration, durationLabel, suggestedTurnCap, boardRequiresChoice, boardPathChoices } from './board-route.js';
 import {teamPlayModes, defaultPlayStyle} from './team-play.js';
 import { avatarView, partyView } from './party-views.js';
 import {connectSketchPainter,paintSketchBoard,clearSketch} from './sketch-canvas.js';
 import { openLibrary, savedQuizzes } from './quiz-editor.js';
-import { answerGuide, helpTypes, closestStep, createDraft, formatNumber, orderedItems, specialAnswer } from './answer-controls.js';
+import { answerGuide, helpTypes, closestStep, createDraft, formatNumber, orderedItems, setEstimatePrecision, specialAnswer } from './answer-controls.js';
 import { demoView, explainer, hasDemo, practiceView, samples } from './learning.js';
 import { categories, categoryGroups, categoryName, modes, themes, formats, difficulties, defaultTheme, partyModes, fixedQuestionModes, minimumPlayers, questionCounts, scoreIntervals, defaultScoreInterval, supportsScoreCheckpoints } from './game-config.js';
 import { boardView, diceView, lobbyView, reviewView, rollRecap, teamList, teamScoreboard, wheelView } from './game-views.js';
@@ -30,12 +35,27 @@ const icons = (name, css = '') => `<img class="${css}" src="/icons/${name}.svg" 
 const modeName = id => modes.find(mode => mode[0] === id)?.[1] ?? '';
 const app = document.querySelector('#app');
 const switchAvatarSession = bindRoomAvatars(app);
+bindTilt();
+bindImmersiveChrome();
+
+// Immersive TV: show host controls briefly on mouse, key or touch activity.
+function bindImmersiveChrome() {
+  let hideTimer;
+  const reveal = () => {
+    if (!document.querySelector('.game.immersive')) return;
+    document.body.classList.add('tv-chrome-visible');
+    clearTimeout(hideTimer);
+    hideTimer = setTimeout(() => document.body.classList.remove('tv-chrome-visible'), 2600);
+  };
+  for (const type of ['mousemove', 'keydown', 'touchstart', 'wheel']) document.addEventListener(type, reveal, { passive: true });
+}
 const home = app.innerHTML;
 const dialog = document.querySelector('#dialog');
 const content = document.querySelector('#dialog-content');
 const footer = document.querySelector('footer');
 const announcement = document.querySelector('#phase-announcement');
-const colors = ['#f4a9c7', '#aec5f4', '#f5cd88', '#a7dfc5'];
+// Answer colours: strong, distinct and AA-contrast with their ink (answer-colours.css).
+const colors = ['#c8203f', '#1d5fd0', '#f2b01e', '#0d8250'];
 const escape = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 let session;
 let state;
@@ -49,6 +69,10 @@ let offset = 0;
 let submittingAnswer;
 let raceSending = false;
 let raceTrackView;
+// One persistent WebGL circuit per race on the TV; re-attached after renders.
+let race3d;
+let race3dLoading;
+function disposeRace3d() { race3d?.dispose(); race3d = undefined; race3dLoading = undefined; }
 let raceAnimationFrame = 0;
 let raceSnapshotLocal = 0;
 let sound;
@@ -65,6 +89,16 @@ let categoryGroup = 0;
 let homeFilter = 'all';
 let homePage = 0;
 let homeSelected;
+// Home carousel (big screens): which game is centred, shelf or tile view, and
+// the opt-in voice guide. Preferences are per-device conveniences only.
+let carouselIndex = 0;
+let lastLobbyMode;
+let carouselTimer;
+const stored = key => { try { return localStorage.getItem(key); } catch { return null; } };
+const store = (key, value) => { try { localStorage.setItem(key, value); } catch { /* private mode */ } };
+let homeView = stored('jambaloop-home-view') === 'grid' ? 'grid' : 'carousel';
+let carouselVoice = false;
+const carouselScreen = matchMedia('(min-width: 1000px) and (min-height: 600px)');
 let homeTab = 'games';
 let tvFocus = false;
 let partyReply = '';
@@ -122,7 +156,7 @@ function updateQuizRaceVisuals() {
   const elapsed=snapshot.paused ? 0 : Math.min(320,Math.max(0, Date.now()-raceSnapshotLocal));
   const sim=snapshot.time+(snapshot.paused?0:Math.max(0,Date.now()-raceSnapshotLocal));
   const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  raceTrackView?.update(snapshot.racers,snapshot.length,reduced?0:elapsed,reduced);
+  raceTrackView?.update(snapshot.racers,snapshot.length,reduced?0:elapsed,reduced,sim);
   const set=(selector,text)=>{const item=app.querySelector(selector);if(item&&item.textContent!==String(text))item.textContent=String(text);};
   set('[data-race-clock]',`${Math.floor(Math.max(0,sim-3000)/60000)}:${String(Math.floor(Math.max(0,sim-3000)/1000)%60).padStart(2,'0')}`);
   set('[data-race-countdown]',Math.max(1,Math.ceil((3000-sim)/1000)));
@@ -150,7 +184,7 @@ function renderHome() {
   stopNarration();
   boardDisplay?.dispose();
   boardDisplay = undefined;
-  raceTrackView?.dispose(); raceTrackView = undefined;
+  raceTrackView?.dispose(); raceTrackView = undefined; disposeRace3d();
   cancelAnimationFrame(raceAnimationFrame); raceAnimationFrame = 0;
   setTheme(previewTheme);
   app.innerHTML = home;
@@ -199,12 +233,38 @@ function homePageSize() {
   return LAUNCHER_PAGE_SIZE;
 }
 
+function carouselActive() {
+  return homeView === 'carousel' && carouselScreen.matches && !homeSelected;
+}
+
 function renderModeCards(group = homeFilter) {
   stopNarration();
   const list = app.querySelector('#mode-list');
   if (!list) return;
   homeFilter = group;
   const matches = launcherModes(homeFilter);
+  const shell = app.querySelector('[data-home-shell]');
+  const carousel = app.querySelector('#game-carousel');
+  const toggle = app.querySelector('[data-action="carousel-view"]');
+  if (toggle) {
+    toggle.hidden = !carouselScreen.matches;
+    toggle.textContent = homeView === 'carousel' ? 'Show all tiles' : 'Show the shelf';
+  }
+  if (carousel && carouselActive()) {
+    carouselIndex = wrapIndex(carouselIndex, matches.length);
+    carousel.innerHTML = carouselView(matches, carouselIndex, carouselVoice);
+    carousel.hidden = false;
+    list.hidden = true;
+    app.querySelector('#game-preview').hidden = true;
+    app.querySelector('#mode-pager').hidden = true;
+    shell.dataset.homeView = 'carousel';
+    themeHome(shell, matches[carouselIndex][0]);
+    const count = app.querySelector('#mode-count');
+    if (count) count.textContent = 'Use ← → or swipe to browse';
+    return;
+  }
+  if (carousel) { carousel.hidden = true; carousel.innerHTML = ''; }
+  if (shell) { delete shell.dataset.homeView; delete shell.dataset.carouselScheme; shell.removeAttribute('style'); }
   const size = homePageSize();
   const pages = Math.max(1, Math.ceil(matches.length / size));
   homePage = Math.max(0, Math.min(homePage, pages - 1));
@@ -470,7 +530,7 @@ function openDialog(mode, value, gameMode, quizId) {
     update();
   } else if (mode === 'night') {
     playlistDraft = { queue: [...state.night.queue], version: state.night.version, game: state.game };
-    content.innerHTML = playlistEditor(playlistDraft.queue, escape, icons);
+    content.innerHTML = playlistEditor(playlistDraft.queue, escape, icons, (state?.playerCount ?? 0) + (state?.waitingCount ?? 0));
   } else if (mode === 'library') {
     content.innerHTML = '<div id="quiz-library"></div>';
     openLibrary(content.firstElementChild, escape, id => {
@@ -577,7 +637,7 @@ function startSession(next) {
   dialog.close();
   boardDisplay?.dispose();
   boardDisplay = undefined;
-  raceTrackView?.dispose(); raceTrackView = undefined;
+  raceTrackView?.dispose(); raceTrackView = undefined; disposeRace3d();
   cancelAnimationFrame(raceAnimationFrame); raceAnimationFrame = 0;
   app.innerHTML = `<section class="game connection-screen"><div class="game-panel">
     <div class="eyebrow">ROOM ${escape(next.code)}</div><h1>Joining the lobby<span class="brand-dot">.</span></h1>
@@ -594,7 +654,7 @@ function leave() {
   switchAvatarSession();
   tvFocus = false;
   submittingAnswer = undefined;
-  raceSending = false; raceTrackView?.dispose(); raceTrackView = undefined;
+  raceSending = false; raceTrackView?.dispose(); raceTrackView = undefined; disposeRace3d();
   cancelAnimationFrame(raceAnimationFrame);raceAnimationFrame=0;
   document.body.classList.remove('playing');
   clearRoomSession();
@@ -710,7 +770,7 @@ function standings(players) {
   return players.slice(0, 3).map((player, index) => {
     const rank = rankOf(players, player);
     return `<div class="podium-place place-${index + 1}"><span>${rank === 1 ? '★' : '#' + rank}</span>
-      <strong>${escape(player.name)}</strong><small>${player.score.toLocaleString()} pts</small></div>`;
+      <strong>${escape(player.name)}</strong><small data-count-up>${player.score.toLocaleString()} pts</small></div>`;
   }).join('');
 }
 
@@ -742,7 +802,9 @@ function checkpointNote(s) {
 function tvRoundHud(s, timer, progress, host) {
   if (!host) return '';
   const revealed = s.phase === 'reveal';
-  const leaders = revealed && showsScoresEachQuestion(s) && !s.teams.length ? s.players.slice(0, 3) : [];
+  // The TV sidebar carries the standings; a second full-width board used to
+  // squeeze the question panel until its answers were cut off at 720p.
+  const leaders = revealed && showsScoresEachQuestion(s) && !s.teams.length ? s.players.slice(0, 8) : [];
   const groupPlay = showsScoresEachQuestion(s) && s.teams.length && s.mode !== 'board';
   return `<aside class="tv-round-hud">
     <section class="game-panel tv-status">
@@ -751,7 +813,7 @@ function tvRoundHud(s, timer, progress, host) {
       <p class="status" id="host-answer-count" role="status">${answerCount(s)}</p>${progress}
     </section>
     ${groupPlay ? `<section class="game-panel tv-leaders"><div class="eyebrow">TEAM SCORES</div>${teamScoreboard(s.teams)}</section>` : ''}
-    ${leaders.length ? `<section class="game-panel tv-leaders"><div class="eyebrow">TOP SCORES</div>${leaderboard(leaders)}</section>` : ''}
+    ${leaders.length ? `<section class="game-panel tv-leaders"><div class="eyebrow">${s.players.length > leaders.length ? 'TOP SCORES' : 'LEADERBOARD'}</div>${leaderboard(leaders)}${s.players.length > leaders.length ? `<p class="tv-leaders-more">+${s.players.length - leaders.length} more players</p>` : ''}</section>` : ''}
   </aside>`;
 }
 
@@ -785,10 +847,27 @@ function phaseCaption(s) {
     'rare-review': 'Host reviewing unusual Rare Find answers',
     'rare-reveal': 'Real Rare Find answer reveal',
     'party-potato': 'Potato in play',
+    'sketch-draw': 'Artist drawing',
+    'sketch-reveal': 'Drawing revealed',
     'race-countdown': 'Race about to start',
     race: 'Quiz Race in progress',
     finished: 'Final results',
   }[s.phase];
+}
+
+// Decorative celebration for genuine winning moments; keys stop repeats on re-render.
+function celebrateMoment(s, host, enter, result) {
+  const view = app.querySelector('.game');
+  if (!view) return;
+  const key = `${s.code}/${s.game}`;
+  if (s.phase === 'finished') {
+    if (enter) countUp(view);
+    if (host && !document.querySelector('#post-ceremony[hidden]')) celebrate(key + '/finale', { source: view, origin: 'sides' });
+    const teamWin = s.teams?.length && s.teamWinners?.includes(s.player?.team);
+    if (!host && enter && (s.rank === 1 || teamWin)) celebrate(key + '/finale/player', { source: view, intensity: .45 });
+  } else if (!host && enter && result === 'win') {
+    celebrate(`${key}/${s.index}/round`, { source: view, intensity: .22 });
+  }
 }
 
 function render(s) {
@@ -943,7 +1022,7 @@ function render(s) {
       ${pauseButton}
       ${canControl ? `<button class="button primary captain-next" data-action="advance">${nextQuestionLabel(s)} ${icons('arrow-right')}</button>` : ''}</div>
       </div>${tvRoundHud(s, timer, response, host)}${host ? '</div>' : ''}${revealed && board && showLiveScores ? `<div class="game-panel round-leaders"><h2>Race standings</h2>${teamList(s, ownTeam?.id, true)}</div>` : ''}
-      ${host && revealed && showLiveScores && !board && !s.teams.length ? `<div class="game-panel round-leaders"><h2>Leaderboard</h2>${fullLeaderboard(s.players, 'View full leaderboard')}</div>` : ''}`;
+`;
   }
   if (s.phase === 'finished') {
     const nextUp = gameNightView(s, { canControl, escape, icons });
@@ -959,6 +1038,9 @@ function render(s) {
   } else if (['lobby', 'waiting'].includes(s.phase)) body += gameNightView(s, { canControl, escape, icons });
   const phaseKey = `${s.code}/${s.game}/${s.index}/${s.phase}${s.pausedAt ? '/paused' : ''}${s.party?.holding || s.party?.type === 'fork' ? '/' + s.party.step : ''}`;
   const enter = renderedPhase !== phaseKey;
+  // TV broadcast stings: the show's title card at kick-off, a band before the last round.
+  if (enter) playSting(stingFor(renderedPhase, s, host), s, { reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
+    onStart: () => { if (soundEnabled) playCue(sound, s.mode, 'rolling'); } });
   const animateRoll = Boolean(boardDisplay && s.phase === 'rolling' && renderedPhase === `${s.code}/${s.game}/${s.index}/ready`);
   renderedPhase = phaseKey;
   const stage = enter && !animateRoll ? null : app.querySelector('#board-stage, .wheel-frame');
@@ -984,7 +1066,9 @@ function render(s) {
   const completed = ['reveal', 'score-break', 'party-reveal','sketch-reveal'].includes(s.phase) ? s.index + 1 : s.index;
   const track = showProgress ? `<div class="round-track" role="img" aria-label="${completed} of ${s.total} rounds completed">
     ${Array.from({ length: s.total }, (_, index) => `<i class="${index < completed ? 'done' : index === s.index ? 'current' : ''}"></i>`).join('')}</div>` : '';
-  app.innerHTML = `<section class="game ${host ? 'host-screen' : 'player-only'} ${host && tvFocus ? 'tv-focus' : ''} ${enter ? 'phase-enter' : ''}" data-deck-key="${phaseKey}" data-phase="${s.phase}" data-paused="${Boolean(s.pausedAt)}" data-mode="${s.mode}" data-result="${result}" style="${modeVariables(s.mode)}">${sceneBackdrop(s.mode, enter && (s.phase === 'finished' || result === 'win'))}<div class="game-top">
+  // Once play starts, the TV is locked to the game: chrome hides until summoned.
+  const immersive = host && !['lobby', 'waiting'].includes(s.phase);
+  app.innerHTML = `<section class="game ${host ? 'host-screen' : 'player-only'} ${immersive ? 'immersive' : ''} ${host && tvFocus ? 'tv-focus' : ''} ${enter ? 'phase-enter' : ''}" data-deck-key="${phaseKey}" data-phase="${s.phase}" data-paused="${Boolean(s.pausedAt)}" data-mode="${s.mode}" data-result="${result}" style="${modeVariables(s.mode)}">${sceneBackdrop(s.mode, enter && (s.phase === 'finished' || result === 'win'))}<div class="game-top">
     <div class="screen-identity"><span class="screen-mode-icon" aria-hidden="true">${icons(mode[3])}</span>
       <div><div class="screen-mode-title">${escape(s.quizTitle || (s.mode === 'classic' ? categoryName(s.category) : modeName(s.mode)))}</div>
       <div class="screen-status">${host && s.phase === 'lobby' && showIdentity(s.mode) ? `<span class="show-studio-label">${showIdentity(s.mode).studio}</span>` : ''}<span class="phase-caption">${caption}</span>
@@ -1013,9 +1097,38 @@ function render(s) {
   switchAvatarSession.refresh();
   if (backdrop) app.querySelector('.scene-backdrop').replaceWith(backdrop);
   renderGraphics(s, stage, animateRoll);
+  celebrateMoment(s, host, enter, result);
+  // Sofa distance: no in-game TV text below the height-relative floor.
+  if (immersive && innerWidth > 760) enforceTvLegibility(app.querySelector('section.game'));
+  // The lobby's game card slides in from the side the switcher moved towards.
+  if (s.phase === 'lobby' && lastLobbyMode && lastLobbyMode !== s.mode) {
+    const order = modes.map(([id]) => id);
+    const step = (order.indexOf(s.mode) - order.indexOf(lastLobbyMode) + order.length) % order.length;
+    const card = app.querySelector('.lobby-game');
+    if (card) { card.style.setProperty('--swap-from', step <= order.length / 2 ? '1' : '-1'); card.classList.add('is-swapping'); }
+  }
+  lastLobbyMode = s.phase === 'lobby' ? s.mode : undefined;
   if(s.mode==='sketch')paintSketchBoard(s.party);
+  // Hot Potato: the potato arcs from the old holder's seat to the new one.
+  animatePotato(host?app:null, s.code+'/'+s.game, matchMedia('(prefers-reduced-motion: reduce)').matches);
+  if(s.mode!=='quizrace'&&race3d) disposeRace3d();
   if(s.mode==='quizrace' && s.race){
-    raceTrackView?.dispose(); raceTrackView=mountQuizRaceTrack(app);
+    raceTrackView?.dispose();
+    const svgTrack=mountQuizRaceTrack(app);
+    const raceKey=s.code+'/'+s.game;
+    const stage=host?app.querySelector('.race-track-wrap'):null;
+    if(!stage||race3d?.key!==raceKey&&race3dLoading!==raceKey) disposeRace3d();
+    if(stage&&!race3d&&race3dLoading!==raceKey){
+      race3dLoading=raceKey;
+      import('./race-3d.js').then(({mountRace3D})=>{
+        if(race3dLoading!==raceKey||race3d)return;
+        race3d=mountRace3D({key:raceKey,track:s.raceTrack,reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches});
+        race3d.attach(app.querySelector('.race-track-wrap'));
+      }).catch(()=>{ race3dLoading=undefined; /* No WebGL: the SVG track remains. */ });
+    }
+    race3d?.attach(stage);
+    // The 3D circuit draws when ready; otherwise the SVG track does.
+    raceTrackView={update:(...args)=>race3d?.update(...args)||svgTrack.update(...args),dispose:()=>svgTrack.dispose()};
     raceSnapshotLocal=Date.now();
     if(!raceAnimationFrame) raceAnimationFrame=requestAnimationFrame(updateQuizRaceVisuals);
   }
@@ -1052,6 +1165,8 @@ function updateSoCloseReveal(s=state){
   target.dataset.frame=key;
   target.innerHTML=soCloseRevealView(s,frame,Boolean(session?.host),escape);
   const done=frame.kind==='winner';
+  if(done&&(session?.host?(s.estimateGuesses??[]).some(row=>row.won):s.answerCorrect))
+    celebrate(`${s.code}/${s.game}/${s.index}/soclose`,{source:target.closest('.game'),intensity:session?.host?.8:.4});
   const actions=target.parentElement.querySelector('.so-close-reveal-actions');
   if(actions){actions.querySelector('[data-action="estimate-reveal-skip"]').hidden=done;actions.querySelector('[data-action="advance"]').hidden=!done;}
   const cueKey=s.code+'/'+s.game+'/'+s.index+'/'+key;
@@ -1073,7 +1188,10 @@ function updateCeremony() {
   if (frame.dataset.index !== String(index)) {
     frame.dataset.index = index;
     frame.innerHTML = frameView(ceremonyFrames[index], escape, icons);
-    if (ceremonyFrames[index].rows[0]?.rank === 1 && soundEnabled) playCue(sound, state.mode, 'finished');
+    if (ceremonyFrames[index].rows[0]?.rank === 1) {
+      if (soundEnabled) playCue(sound, state.mode, 'finished');
+      celebrate(`${state.code}/${state.game}/finale`, { source: frame.closest('.game'), origin: 'sides' });
+    }
   }
 }
 
@@ -1091,7 +1209,16 @@ function updateTimer() {
   const fill = document.querySelector('#time-fill');
   if (fill) fill.style.transform = `scaleX(${fraction})`;
   timer.closest('.tv-clock, .potato-stage-clock')?.style.setProperty('--clock-fill', `${fraction * 100}%`);
+  if (state.phase === 'party-potato') {
+    potatoHeat(app, fraction);
+    // A tick each second on the TV (sound is opt-in), quicker in the last ten.
+    if (session?.host && soundEnabled && !state.pausedAt && remaining > 0) {
+      const beat = remaining < 10000 ? Math.ceil(remaining / 500) : secondsLeft;
+      if (beat !== lastPotatoTick) { lastPotatoTick = beat; playTick(sound, remaining < 10000); }
+    }
+  }
 }
+let lastPotatoTick;
 
 function boardPrediction(state, host) {
   const prediction = state.prediction;
@@ -1295,7 +1422,6 @@ function editorContext(editor) {
 
 function setEditorNumber(editor, value) {
   editor.querySelector('[data-number]').value = value;
-  editor.querySelector('[data-range]').value = value;
   const context=editorContext(editor);
   context?.save(value);
   const rows=editor.querySelector('[data-so-close-rows]');
@@ -1313,14 +1439,13 @@ document.addEventListener('input', event => {
   const context = editorContext(editor);
   if (!context) return;
   const value = event.target.valueAsNumber;
-  if (event.target.matches('[data-range]')) setEditorNumber(editor, value);
-  else if (event.target.validity.valid && Number.isSafeInteger(value)) {
+  if (event.target.validity.valid && Number.isSafeInteger(value)) {
     setEditorNumber(editor,value);
   }
 });
 
 document.addEventListener('wheel', event => {
-  const target = event.target.closest('[data-range], [data-so-close-rows]');
+  const target = event.target.closest('[data-so-close-rows], .number-scroller');
   if (!target || !event.deltaY) return;
   const editor = target.closest('[data-editor]');
   const context = editorContext(editor);
@@ -1437,6 +1562,17 @@ async function sendParty(data, button) {
 }
 
 document.addEventListener('click', async event => {
+  // Estimate step size: every arrow, drag and scroll then moves by this much.
+  const chip = event.target.closest('[data-precision]');
+  if (chip) {
+    const editor = chip.closest('[data-editor]');
+    const step = setEstimatePrecision(Number(chip.dataset.precision));
+    for (const button of editor.querySelectorAll('[data-precision]')) button.setAttribute('aria-pressed', String(Number(button.dataset.precision) === step));
+    const context = editorContext(editor);
+    const rows = editor.querySelector('[data-so-close-rows]');
+    if (rows && context) rows.innerHTML = numberWheelRows(context.question, context.value);
+    return;
+  }
   const edit = event.target.closest('[data-step], [data-move]');
   if (edit) {
     const editor = edit.closest('[data-editor]');
@@ -1468,7 +1604,7 @@ document.addEventListener('click', async event => {
       const to = Number(index) + (nightEdit === 'up' ? -1 : 1);
       [queue[index], queue[to]] = [queue[to], queue[index]];
     }
-    content.innerHTML = playlistEditor(playlistDraft.queue, escape, icons);
+    content.innerHTML = playlistEditor(playlistDraft.queue, escape, icons, (state?.playerCount ?? 0) + (state?.waitingCount ?? 0));
     const focused = nightEdit === 'preset' ? content.querySelector(`[data-minutes="${minutes}"]`)
       : nightEdit === 'add' || nightEdit === 'remove' ? content.querySelector('[name="queuedMode"]')
       : content.querySelector(`[data-index="${Number(index) + (nightEdit === 'up' ? -1 : 1)}"]:not(:disabled)`);
@@ -1512,6 +1648,32 @@ document.addEventListener('click', async event => {
   }
   if (action === 'mode-page') {
     homePage += Number(button.dataset.direction);
+    renderModeCards(homeFilter);
+    return;
+  }
+  if (action === 'carousel-step' || action === 'carousel-go') {
+    if (action === 'carousel-go' && performance.now() - carouselSwipedAt < 400) return;
+    const list = launcherModes(homeFilter);
+    if (action === 'carousel-go') {
+      const target = list.findIndex(([id]) => id === button.dataset.mode);
+      if (target === wrapIndex(carouselIndex, list.length)) return button.closest('#game-carousel')?.querySelector('.carousel-info [data-action="host"]')?.click();
+      stepCarousel(target - wrapIndex(carouselIndex, list.length));
+    } else stepCarousel(Number(button.dataset.direction));
+    return;
+  }
+  if (action === 'carousel-voice') {
+    carouselVoice = !carouselVoice;
+    const list = launcherModes(homeFilter);
+    stopNarration();
+    moveCarousel(app.querySelector('#game-carousel'), list, carouselIndex, carouselVoice);
+    if (carouselVoice) toggleNarration(list[wrapIndex(carouselIndex, list.length)][0]);
+    app.querySelector('.carousel-voice')?.focus({ preventScroll: true });
+    return;
+  }
+  if (action === 'carousel-view') {
+    homeView = homeView === 'carousel' ? 'grid' : 'carousel';
+    store('jambaloop-home-view', homeView);
+    homePage = 0;
     renderModeCards(homeFilter);
     return;
   }
@@ -1629,6 +1791,20 @@ document.addEventListener('click', async event => {
   if (action === 'close') return dialog.close();
   if (action === 'night' && session && state) return openDialog('night');
   if (action === 'leave') return leave();
+  if (action === 'lobby-mode' && session && state?.phase === 'lobby') {
+    // Quick switch from the lobby: the new game arrives with sensible defaults
+    // (the full setup is still one tap away under Choose game).
+    const buttons = [...(button.closest('.lobby-switcher')?.querySelectorAll('button') ?? [])];
+    buttons.forEach(item => { item.disabled = true; });
+    try {
+      await api('/' + session.code + '/configure', { ...queuedSettings(button.dataset.mode, state.theme), game: state.game, lobbyVersion: state.lobbyVersion });
+    } catch (error) {
+      buttons.forEach(item => { item.disabled = false; });
+      const notice = document.querySelector('#game-error');
+      if (notice) notice.textContent = error.message;
+    }
+    return;
+  }
   if (action === 'again' || action === 'configure') return openDialog(action === 'again' ? 'rematch' : 'configure', state.category);
   if (action === 'party') {
     button.disabled = true;
@@ -1777,6 +1953,63 @@ matchMedia('(max-width: 760px)').addEventListener('change', () => {
   homePage = 0;
   homeSelected = undefined;
   renderModeCards(homeFilter);
+});
+
+/** Turn the shelf by `delta` games; the page and voice guide follow. */
+function stepCarousel(delta) {
+  const carousel = app.querySelector('#game-carousel');
+  if (!carousel || carousel.hidden || !delta) return;
+  const list = launcherModes(homeFilter);
+  carouselIndex = wrapIndex(carouselIndex + delta, list.length);
+  if (!moveCarousel(carousel, list, carouselIndex, carouselVoice)) carousel.innerHTML = carouselView(list, carouselIndex, carouselVoice);
+  const mode = list[carouselIndex][0];
+  themeHome(app.querySelector('[data-home-shell]'), mode);
+  stopNarration();
+  clearTimeout(carouselTimer);
+  // Speak only once the shelf settles, so quick browsing stays quiet.
+  if (carouselVoice) carouselTimer = setTimeout(() => { if (!carousel.hidden) toggleNarration(mode); }, 700);
+}
+
+function carouselInput(event) {
+  const carousel = app.querySelector('#game-carousel');
+  return !session && !dialog.open && carousel && !carousel.hidden && carousel.offsetParent !== null
+    && !event.target.closest?.('input, textarea, select, [contenteditable="true"]');
+}
+// A TV remote's left/right arrives as arrow keys.
+document.addEventListener('keydown', event => {
+  if (!['ArrowLeft', 'ArrowRight'].includes(event.key) || !carouselInput(event)) return;
+  event.preventDefault();
+  stepCarousel(event.key === 'ArrowLeft' ? -1 : 1);
+  const centre = app.querySelector('.carousel-card[aria-current="true"]');
+  if (document.activeElement?.classList.contains('carousel-card')) centre?.focus({ preventScroll: true });
+});
+let carouselWheelAt = 0;
+document.addEventListener('wheel', event => {
+  if (!event.target.closest?.('.carousel-stage') || !carouselInput(event)) return;
+  const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+  if (Math.abs(delta) < 8) return;
+  event.preventDefault();
+  if (performance.now() - carouselWheelAt < 380) return;
+  carouselWheelAt = performance.now();
+  stepCarousel(Math.sign(delta));
+}, { passive: false });
+let carouselSwipe;
+// The click that follows a swipe must not also pick the card under the finger.
+let carouselSwipedAt = 0;
+document.addEventListener('pointerdown', event => {
+  if (event.target.closest?.('.carousel-track') && event.isPrimary) carouselSwipe = { x: event.clientX, id: event.pointerId };
+});
+document.addEventListener('pointerup', event => {
+  if (!carouselSwipe || carouselSwipe.id !== event.pointerId) return;
+  const dx = event.clientX - carouselSwipe.x;
+  carouselSwipe = undefined;
+  if (Math.abs(dx) > 50 && carouselInput(event)) {
+    stepCarousel(dx < 0 ? 1 : -1);
+    carouselSwipedAt = performance.now();
+  }
+});
+carouselScreen.addEventListener('change', () => {
+  if (!session && app.querySelector('[data-home-shell]')) renderModeCards(homeFilter);
 });
 
 renderHome();

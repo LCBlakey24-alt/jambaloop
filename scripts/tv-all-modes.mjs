@@ -45,6 +45,11 @@ async function stageFor(mode,width,height) {
       timeout:15000,
     });
     await page.evaluate(()=>document.fonts.ready);
+    // Measure the settled layout: finite entrance animations move panels with transforms.
+    await page.evaluate(()=>Promise.race([
+      Promise.all(document.getAnimations().filter(a=>a.effect?.getComputedTiming().iterations!==Infinity).map(a=>a.finished.catch(()=>{}))),
+      new Promise(resolve=>setTimeout(resolve,2500)),
+    ]));
     const metrics=await page.evaluate(()=>{
       const root=document.querySelector('section.game');
       const panels=[...root.querySelectorAll('.game-panel')].map(panel=>{

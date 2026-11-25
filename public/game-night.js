@@ -1,4 +1,4 @@
-import { defaultScoreInterval, fixedQuestionModes, minimumPlayers, modes, supportsScoreCheckpoints } from './game-config.js';
+import { capacityError, defaultScoreInterval, fixedQuestionModes, maximumPlayers, minimumPlayers, modes, supportsScoreCheckpoints } from './game-config.js';
 
 export const playlistLimit = 12;
 
@@ -46,10 +46,12 @@ export function gameNightView(state, { canControl, escape, icons }) {
     </div>` : ''}</section>`;
 }
 
-export function playlistEditor(queue, escape, icons) {
+// `players` is the current group size; games it exceeds are flagged and cannot be added.
+export function playlistEditor(queue, escape, icons, players = 0) {
+  const tooBig = id => players > maximumPlayers(id);
   const ordered = queue.map((id, index) => {
     const mode = modes.find(([mode]) => mode === id);
-    return `<li><span class="playlist-number">${index + 1}</span><strong>${escape(mode[1])}</strong><div class="playlist-buttons">
+    return `<li ${tooBig(id) ? 'class="playlist-unfit"' : ''}><span class="playlist-number">${index + 1}</span><strong>${escape(mode[1])}${tooBig(id) ? `<small>Up to ${maximumPlayers(id)} players · remove to save</small>` : ''}</strong><div class="playlist-buttons">
       <button type="button" class="button outline small" data-night-edit="up" data-index="${index}" ${index ? '' : 'disabled'} aria-label="Move ${escape(mode[1])} up">${icons('arrow-up')}</button>
       <button type="button" class="button outline small" data-night-edit="down" data-index="${index}" ${index < queue.length - 1 ? '' : 'disabled'} aria-label="Move ${escape(mode[1])} down">${icons('arrow-down')}</button>
       <button type="button" class="button outline small" data-night-edit="remove" data-index="${index}" aria-label="${index ? 'Remove' : 'Skip'} ${escape(mode[1])}">${icons('x')}</button>
@@ -61,7 +63,7 @@ export function playlistEditor(queue, escape, icons) {
       `<button class="button outline small" data-night-edit="preset" data-minutes="${minutes}">About ${minutes} min</button>`).join('')}</div>
     ${queue.length ? `<ol class="playlist-editor">${ordered}</ol>` : '<p class="playlist-empty">Your playlist is empty.</p>'}
     <form id="night-form"><div class="playlist-add"><label>Add a game<select name="queuedMode">
-      ${modes.map(([id, name]) => `<option value="${id}">${escape(name)}</option>`).join('')}</select></label>
+      ${modes.map(([id, name]) => `<option value="${id}" ${tooBig(id) ? 'disabled' : ''}>${escape(name)}${tooBig(id) ? ' (up to ' + maximumPlayers(id) + ' players)' : ''}</option>`).join('')}</select></label>
       <button type="button" class="button outline small" data-night-edit="add" ${queue.length >= playlistLimit ? 'disabled' : ''}>Add ${icons('plus')}</button></div>
       <p class="lobby-rule">Times are estimates and depend on your group’s pace.</p><p class="error" role="alert"></p>
       <button class="button primary" type="submit">Save playlist ${icons('check')}</button></form>`;

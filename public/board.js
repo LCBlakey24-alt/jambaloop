@@ -1,8 +1,9 @@
 import { boardPath, boardFork } from './board-route.js';
+import { curvedLayout, TILE_TOP } from './board-layout.js';
 import * as THREE from '/vendor/three.module.js';
 import { boardRollDuration, categories } from './game-config.js';
 import { tableSurface, towerDieScale, towerExit, towerImpacts, towerOrigin, towerPose, towerRamps, towerSettle } from './tower-motion.js';
-import { checkerFace, coated, dieFace, tileFace, woodMaterial } from './table-materials.js';
+import { checkerFace, coated, dieFace, tileDisc, tileFace, woodMaterial } from './table-materials.js';
 
 const diceFaces = [
   [1, [0, 1, 0]], [6, [0, -1, 0]], [2, [0, 0, 1]],
@@ -182,6 +183,33 @@ function flatMesh(width, depth, material, x, y, z) {
   return mesh;
 }
 
+// A flat painted strip that follows a curve, for the printed board path.
+function pathStrip(curve, half, y, material, samples = 220) {
+  const positions = [];
+  const indices = [];
+  const step = 1 / samples;
+  for (let i = 0; i <= samples; i++) {
+    const u = i / samples;
+    const p = curve.getPointAt(u);
+    const t = curve.getTangentAt(u);
+    const n = new THREE.Vector3(-t.z, 0, t.x).normalize();
+    // Never let the inside edge fold over itself on a tight bend: narrow it
+    // to just inside the local radius of curvature.
+    const a = curve.getTangentAt(Math.max(0, u - step)), b = curve.getTangentAt(Math.min(1, u + step));
+    const turn = a.x * b.z - a.z * b.x;
+    const radius = Math.abs(turn) > 1e-6 ? (2 * step * curve.getLength()) / Math.abs(turn) : Infinity;
+    const inner = Math.min(half, radius * .85);
+    const left = turn > 0 ? half : inner, right = turn > 0 ? inner : half;
+    positions.push(p.x - n.x * left, y, p.z - n.z * left, p.x + n.x * right, y, p.z + n.z * right);
+    if (i) { const a = (i - 1) * 2; indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return new THREE.Mesh(geometry, material);
+}
+
 function buildBoard(scene, state, shadowMap) {
   const [baseColor, tableColor, accent] = tableTone(state);
   const board = new THREE.Group();
@@ -220,30 +248,26 @@ function buildBoard(scene, state, shadowMap) {
     questions: boardPath(state.boardLength, state.includeChristmas, 'questions'),
   };
   const fork = boardFork(state.boardLength);
-  const scale = 4.68 / (state.boardLength / 4);
+  const layout = curvedLayout(state.boardLength, fork);
+  const scale = layout.scale;
   const categoryById = new Map(categories.map(row => [row[0], row]));
 
   function tilePosition(index, choice = 'power') {
     const route = paths[choice] ?? paths.power;
-    const {x,z,finish} = route[Math.max(0,Math.min(route.length-1,index))];
-    return new THREE.Vector3(x * scale, finish ? .434 : .36, z * scale);
+    const { x, y, z } = layout.position(Math.max(0, Math.min(route.length - 1, index)), choice in paths ? choice : 'power');
+    return new THREE.Vector3(x, y, z);
   }
 
-  // The entire shared perimeter is one track; two visibly distinct lanes fork
-  // at the first bend and rejoin at the next. Each pawn follows its own path.
-  function addTrack(choice, begin, end, tint) {
-    const route = paths[choice];
-    const points = route.slice(begin,end+1).map(tile => {
-      const position = tilePosition(tile.index,choice);
-      position.y = .199;
-      return position;
-    });
-    const curve = new THREE.CatmullRomCurve3(points,false,'centripetal');
-    const geometry = new THREE.TubeGeometry(curve,Math.max(16,points.length*6),.024,8,false);
-    board.add(new THREE.Mesh(geometry,coated(tint,.35,.4)));
-  }
-  addTrack('power',0,state.boardLength,'#e4b66c');
-  addTrack('questions',fork.start,fork.rejoin+fork.extra,'#49e3d0');
+  // Printed path: a parchment strip with gold edging under the main route,
+  // and a teal strip for the Question Trail where it leaves and rejoins.
+  const parchment = new THREE.MeshStandardMaterial({ color: '#efe0bd', roughness: .75 });
+  const goldLine = coated('#d6a450', .3, .45);
+  const stripHalf = Math.min(layout.radius * 1.25, .33);
+  board.add(pathStrip(layout.main, stripHalf, .19, parchment));
+  board.add(pathStrip(layout.main, stripHalf + .035, .188, goldLine));
+  const trailStrip = new THREE.MeshStandardMaterial({ color: '#7fe3d6', roughness: .7 });
+  board.add(pathStrip(layout.trail, layout.trailRadius * 1.3, .192, trailStrip));
+  board.add(pathStrip(layout.trail, layout.trailRadius * 1.4, .189, coated('#2b9c92', .35, .3)));
 
   const allTiles = [
     ...paths.power.filter(tile => !tile.lane),
@@ -254,27 +278,36 @@ function buildBoard(scene, state, shadowMap) {
     const {index:i,category:id,finish,lane} = tileInfo;
     const original = id ? categoryById.get(id)?.[4] : '#fff0d4';
     const color = lane === 'power' ? '#f9c45d' : lane === 'questions' ? '#54dccc' : original;
-    const width = scale * (finish ? .95 : lane === 'power' ? .60 : lane === 'questions' ? .45 : .93);
-    const tile = roundedBox(width,finish ? .24 : .19,width,.042,8,coated(color,.35));
+    const r = finish ? layout.radius * 1.18 : lane === 'questions' ? layout.trailRadius : layout.radius * (lane ? .86 : 1);
+    const width = r * 2;
+    // Inlaid discs: level with the printed path, like spaces on a real board.
+    const thickness = TILE_TOP + (finish ? .02 : 0) - .19;
+    const tile = new THREE.Mesh(new THREE.CylinderGeometry(r, r, thickness, 40), coated(color,.35));
+    const rimRing = new THREE.Mesh(new THREE.TorusGeometry(r * .99, Math.max(.008, r * .03), 6, 40), goldLine);
+    rimRing.rotation.x = Math.PI / 2;
     const choice = lane === 'questions' ? 'questions' : 'power';
     tile.position.copy(tilePosition(i,choice));
-    tile.position.y = finish ? .31 : .271;
+    const top = tile.position.y;
+    tile.position.y = top - thickness / 2;
+    rimRing.position.set(tile.position.x, top, tile.position.z);
+    board.add(rimRing);
     const labelText = lane === 'power' ? '×2 POWER' : lane === 'questions' ? 'QUIZ TRAIL' :
       id ? categoryById.get(id)?.[5] : 'Start';
     const displayNumber = lane === 'power' ? 'P'+(i-fork.start) :
       lane === 'questions' ? 'Q'+(i-fork.start) : i;
-    const printed = new THREE.Mesh(new THREE.PlaneGeometry(width*.95,width*.95),new THREE.MeshBasicMaterial({
-      map:tileFace(displayNumber,color,finish ? 'Finish' : labelText,finish ? '⚑' : !i ? '✦' : undefined),
+    const printed = new THREE.Mesh(new THREE.CircleGeometry(width*.47,40),new THREE.MeshBasicMaterial({
+      map:tileDisc(displayNumber,color,finish ? 'Finish' : labelText,finish ? '⚑' : !i ? '✦' : undefined),
       transparent:true,
     }));
-    printed.position.set(tile.position.x,tile.position.y+(finish?.122:.097),tile.position.z);
+    printed.position.set(tile.position.x,top+.002,tile.position.z);
     printed.rotation.x=-Math.PI/2;
     board.add(tile,printed);
   }
   const finish = tilePosition(state.boardLength);
   const poleHeight = scale * .55;
   const pole = new THREE.Mesh(new THREE.CylinderGeometry(.017, .017, poleHeight, 12), coated('#e4b66c', .29, .45));
-  pole.position.set(finish.x + scale * .37, finish.y + poleHeight / 2, finish.z - scale * .36);
+  // Planted on the finish disc itself, so it never overlaps a neighbouring space.
+  pole.position.set(finish.x + scale * .12, finish.y + poleHeight / 2, finish.z - scale * .12);
   board.add(pole);
   const flag = new THREE.Group();
   flag.position.set(pole.position.x, finish.y + poleHeight * .78, pole.position.z);
@@ -286,27 +319,7 @@ function buildBoard(scene, state, shadowMap) {
   const finial = new THREE.Mesh(new THREE.SphereGeometry(scale * .05, 12, 8), studMaterial);
   finial.position.set(pole.position.x, pole.position.y + poleHeight / 2, pole.position.z);
   board.add(flag, finial);
-  const center = new THREE.Mesh(new THREE.PlaneGeometry(2.18, 2.18), new THREE.MeshBasicMaterial({
-    map: label('JAMBALOOP', tableColor, accent, 'Board Race'), transparent: true,
-  }));
-  center.position.set(.21, .19, -.14);
-  center.rotation.x = -Math.PI / 2;
-  board.add(center);
-  const dial = new THREE.Mesh(new THREE.RingGeometry(1.25, 1.265, 80), new THREE.MeshBasicMaterial({
-    color: accent, transparent: true, opacity: .5, depthWrite: false,
-  }));
-  dial.position.set(center.position.x, .187, center.position.z);
-  dial.rotation.x = -Math.PI / 2;
-  board.add(dial);
-  const tick = new THREE.BoxGeometry(.035, .005, .11);
-  const tickMaterial = coated(accent, .34, .25);
-  for (let index = 0; index < 12; index++) {
-    const angle = index * Math.PI / 6;
-    const mark = new THREE.Mesh(tick, tickMaterial);
-    mark.position.set(center.position.x + Math.sin(angle) * 1.24, .190, center.position.z + Math.cos(angle) * 1.24);
-    mark.rotation.y = angle;
-    board.add(mark);
-  }
+  // The route spirals into the middle of the board, so the finish owns the centre.
 
   const halo = new THREE.Mesh(new THREE.RingGeometry(scale * .33, scale * .40, 40), new THREE.MeshBasicMaterial({ color: '#fff3bf' }));
   halo.rotation.x = -Math.PI / 2;
@@ -579,6 +592,127 @@ function positionRallyDie(mesh, result, index, progress) {
   }
 }
 
+const easeOutCubic = t => 1 - Math.pow(1 - t, 3);
+
+function canvasMap(size, draw, repeat = [1, 1]) {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  draw(canvas.getContext('2d'), size);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(...repeat);
+  texture.anisotropy = 4;
+  return texture;
+}
+
+// The game sits on a real surface instead of floating on the page: a walnut
+// games table with cards, a trophy and tokens for Board Race; a velvet salon
+// cloth with a brass Deco inlay for Dice Rally. Built once per mount.
+function dressTable(scene, state, rally, accent) {
+  const items = new THREE.Group();
+  const surface = rally
+    ? new THREE.MeshStandardMaterial({ roughness: .95, map: canvasMap(256, (ctx, s) => {
+        const velvet = ctx.createRadialGradient(s / 2, s / 2, 20, s / 2, s / 2, s * .7);
+        velvet.addColorStop(0, '#6a1f33'); velvet.addColorStop(1, '#2a0911');
+        ctx.fillStyle = velvet; ctx.fillRect(0, 0, s, s);
+        ctx.strokeStyle = '#e9c46a'; ctx.globalAlpha = .55; ctx.lineWidth = 2;
+        for (let r = 75; r <= 115; r += 20) { ctx.beginPath(); ctx.arc(s / 2, s / 2, r, 0, Math.PI * 2); ctx.stroke(); }
+        ctx.globalAlpha = .22;
+        for (let a = 0; a < 32; a++) {
+          const angle = a * Math.PI / 16;
+          ctx.beginPath(); ctx.moveTo(s / 2 + Math.cos(angle) * 80, s / 2 + Math.sin(angle) * 80);
+          ctx.lineTo(s / 2 + Math.cos(angle) * 125, s / 2 + Math.sin(angle) * 125); ctx.stroke();
+        }
+      }) })
+    : new THREE.MeshStandardMaterial({ roughness: .55, metalness: .05, map: canvasMap(256, (ctx, s) => {
+        ctx.fillStyle = '#4a2c18'; ctx.fillRect(0, 0, s, s);
+        let seed = 7;
+        const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+        for (let y = 0; y < s; y += 2) {
+          const wave = Math.sin(y / 23) * 8 + Math.sin(y / 7) * 2;
+          ctx.fillStyle = `rgba(${90 + rand() * 40},${52 + rand() * 24},${28 + rand() * 14},${.25 + rand() * .3})`;
+          ctx.fillRect(0, y + wave * .1, s, 1 + rand() * 1.5);
+        }
+        ctx.globalAlpha = .18; ctx.fillStyle = '#1e0f06';
+        for (let i = 0; i < 6; i++) { ctx.beginPath(); ctx.ellipse(rand() * s, rand() * s, 5 + rand() * 9, 2 + rand() * 3, 0, 0, Math.PI * 2); ctx.fill(); }
+      }, [3, 2]) });
+  const top = new THREE.Mesh(new THREE.PlaneGeometry(34, 24), surface);
+  top.rotation.x = -Math.PI / 2;
+  top.position.y = rally ? -.05 : -.42;
+  items.add(top);
+  if (!rally) {
+    // A stack of question cards with the Jambaloop back.
+    const back = canvasMap(256, (ctx, s) => {
+      ctx.fillStyle = '#f4ead2'; ctx.fillRect(0, 0, s, s);
+      ctx.strokeStyle = accent; ctx.lineWidth = 10; ctx.strokeRect(14, 14, s - 28, s - 28);
+      ctx.fillStyle = '#2b2419'; ctx.font = '800 34px Georgia, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('JAMBALOOP', s / 2, s / 2 - 16); ctx.font = '600 22px Georgia, serif'; ctx.fillText('QUESTION CARD', s / 2, s / 2 + 22);
+    });
+    const cardMaterial = new THREE.MeshStandardMaterial({ color: '#f4ead2', roughness: .6 });
+    const cardTop = new THREE.MeshStandardMaterial({ map: back, roughness: .5 });
+    for (let i = 0; i < 6; i++) {
+      const card = new THREE.Mesh(new THREE.BoxGeometry(1.05, .03, 1.5), cardMaterial);
+      card.position.set(-4.55 + Math.sin(i) * .03, -.4 + i * .032, 1.2 + Math.cos(i * 2) * .03);
+      card.rotation.y = .18 + i * .025;
+      items.add(card);
+      if (i === 5) {
+        // One material per mesh: disposeScene() expects single materials.
+        const face = new THREE.Mesh(new THREE.PlaneGeometry(1.02, 1.47), cardTop);
+        face.rotation.x = -Math.PI / 2;
+        face.position.y = .017;
+        card.add(face);
+      }
+    }
+    // A brass trophy: two-tier plinth, stem and knot, flared cup with a lip,
+    // outward-curving handles and a lidded top with a star finial.
+    const brass = new THREE.MeshStandardMaterial({ color: '#d4a24a', metalness: .6, roughness: .26, emissive: '#3a2400', emissiveIntensity: .22 });
+    const darkWood = new THREE.MeshStandardMaterial({ color: '#2a170b', roughness: .45 });
+    const trophy = new THREE.Group();
+    const lower = new THREE.Mesh(new THREE.BoxGeometry(.86, .18, .86), darkWood);
+    lower.position.y = .09;
+    const band = new THREE.Mesh(new THREE.BoxGeometry(.88, .035, .88), brass);
+    band.position.y = .19;
+    const upper = new THREE.Mesh(new THREE.BoxGeometry(.66, .14, .66), darkWood);
+    upper.position.y = .28;
+    const body = new THREE.Mesh(new THREE.LatheGeometry([
+      [0, 0], [.26, 0], [.27, .035], [.12, .07], [.06, .16], [.05, .34], [.1, .39], [.06, .44],
+      [.07, .5], [.2, .58], [.32, .74], [.37, .98], [.39, 1.04], [.35, 1.04], [.33, .98], [.28, .78], [.15, .64], [0, .6],
+    ].map(([x, y]) => new THREE.Vector2(x, y)), 36), brass);
+    body.position.y = .35;
+    trophy.add(lower, band, upper, body);
+    for (const side of [-1, 1]) {
+      // Half-ring in the vertical plane, bulging away from the cup.
+      const handle = new THREE.Mesh(new THREE.TorusGeometry(.14, .026, 10, 24, Math.PI), brass);
+      handle.rotation.z = -side * Math.PI / 2;
+      handle.position.set(side * .34, .35 + .82, 0);
+      trophy.add(handle);
+    }
+    // A domed lid seats the finial, so nothing floats above an open cup.
+    const lid = new THREE.Mesh(new THREE.LatheGeometry([
+      [.39, 0], [.37, .04], [.3, .1], [.17, .15], [.07, .17], [.05, .2], [.08, .23], [.06, .27], [0, .28],
+    ].map(([x, y]) => new THREE.Vector2(x, y)), 36), brass);
+    lid.position.y = .35 + 1.04;
+    trophy.add(lid);
+    const star = new THREE.Mesh(new THREE.OctahedronGeometry(.075), brass);
+    star.position.y = .35 + 1.04 + .28 + .09;
+    star.scale.set(1, 1.3, .55);
+    trophy.add(star);
+    trophy.position.set(-4.4, -.42, -1.9);
+    trophy.scale.setScalar(1.2);
+    items.add(trophy);
+    // Spare player tokens scattered by the board.
+    const tokenGeometry = new THREE.CylinderGeometry(.2, .2, .07, 24);
+    for (const [i, team] of (state.teams ?? []).slice(0, 4).entries()) {
+      const token = new THREE.Mesh(tokenGeometry, coated(team.color, .25, .2));
+      token.position.set(-3.6 + i * .5, -.385, 3.7 - (i % 2) * .35);
+      items.add(token);
+    }
+  }
+  scene.add(items);
+  return items;
+}
+
 export function mountTable(container, state, duration, onImpact) {
   let start = performance.now();
   const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
@@ -592,12 +726,26 @@ export function mountTable(container, state, duration, onImpact) {
   let lastProgress;
   const rally = state.mode === 'dice';
   renderer.setPixelRatio(Math.min(1.75, window.devicePixelRatio));
+  renderer.toneMapping = THREE.NeutralToneMapping;
+  renderer.toneMappingExposure = 1.08;
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Only the shared TV screen breathes between rolls; phones render on demand.
+  const idleMotion = !reducedMotion && Boolean(container.closest('.host-screen'));
+  const mountedAt = performance.now();
+  const introLength = reducedMotion ? 0 : 1300;
+  let lastIdleFrame = 0;
   renderer.domElement.setAttribute('aria-hidden', 'true');
   container.append(renderer.domElement);
   let usable = true;
   let frame;
 
+  // No environment map: prefiltering one blocked the main thread for ~1.5s
+  // per mount in profiling, and the stage remounts every phase. A warm rim
+  // light gives brass and lacquer their highlights for free instead.
   const fill = new THREE.HemisphereLight('#eae5ff', '#4e3c4c', 1.8);
+  const rim = new THREE.DirectionalLight('#ffd9a0', 1.1);
+  rim.position.set(-6, 3.5, -5);
+  scene.add(rim);
   const key = new THREE.DirectionalLight('#fff2df', 2.55);
   key.position.set(-3, 8, 6);
   const edge = new THREE.DirectionalLight(accent, 1.46);
@@ -611,6 +759,7 @@ export function mountTable(container, state, duration, onImpact) {
   const movePawns = rally ? undefined : buildBoard(scene, state, shadowMap);
   const lightTower = rally ? undefined : buildTower(scene, baseColor, accent);
   if (rally) buildRallyTray(scene, baseColor, tableColor, accent);
+  dressTable(scene, state, rally, accent);
   const dice = Array.from({ length: rally ? 2 : 1 }, (_, index) => {
     const mesh = makeDie(index ? accent : '#fff0d7', '#7b4e41');
     if (!rally) mesh.scale.setScalar(towerDieScale);
@@ -623,21 +772,33 @@ export function mountTable(container, state, duration, onImpact) {
     return { mesh, result, yaw, contact };
   });
 
-  function frameCamera(progress) {
+  const lookTarget = new THREE.Vector3();
+  const orbit = new THREE.Vector3();
+  function frameCamera(progress, now = performance.now()) {
     const aspect = camera.aspect;
     if (rally) {
       const push = rolling ? Math.sin(progress * Math.PI) * .12 : 0;
       const distance = Math.max(1, 1.41 / aspect);
       camera.position.set((1.5 - push) * distance, (6.55 - push) * distance, (7 - push) * distance);
-      camera.lookAt(0, .36, 0);
+      lookTarget.set(0, .36, 0);
       camera.zoom = 1.10 + push;
     } else {
       const pan = rolling ? THREE.MathUtils.smoothstep(progress, 0, .24) * (1 - THREE.MathUtils.smoothstep(progress, .43, .69)) : 0;
       const distance = Math.max(1, 1.39 / aspect);
       camera.position.set((4.42 + pan * .82) * distance, (10.55 - pan * .8) * distance, (12.25 - pan * .8) * distance);
-      camera.lookAt((aspect < 1.08 ? .76 : 1.08) + pan * Math.min(1.34, aspect), 1.48 + pan * .42, -.07);
+      lookTarget.set((aspect < 1.08 ? .76 : 1.08) + pan * Math.min(1.34, aspect), 1.48 + pan * .42, -.07);
       camera.zoom = 1.14 + pan * .18;
     }
+    // Intro: swing in from a wider, higher angle; then a slow idle drift.
+    const intro = introLength ? 1 - easeOutCubic(Math.min(1, (now - mountedAt) / introLength)) : 0;
+    const drift = idleMotion ? Math.sin(now / 5200) * .045 : 0;
+    const bob = idleMotion ? Math.sin(now / 6900) * .06 : 0;
+    orbit.copy(camera.position).sub(lookTarget)
+      .applyAxisAngle(yAxis, intro * .42 + drift)
+      .multiplyScalar(1 + intro * .28);
+    camera.position.copy(lookTarget).add(orbit);
+    camera.position.y += intro * 1.4 + bob;
+    camera.lookAt(lookTarget);
     camera.updateProjectionMatrix();
   }
 
@@ -668,7 +829,7 @@ export function mountTable(container, state, duration, onImpact) {
     if (!usable) return;
     cancelAnimationFrame(frame);
     const progress = rolling ? Math.min(1, initialProgress + (now - start) / rollDuration) : 1;
-    frameCamera(progress);
+    frameCamera(progress, now);
     for (const [index, { mesh, result, contact }] of dice.entries()) {
       if (rally) {
         positionRallyDie(mesh, result, index, Math.min(1, progress / (.72 + index * .095)));
@@ -697,8 +858,18 @@ export function mountTable(container, state, duration, onImpact) {
       if (game.motion) container.dataset.settled = String(settled);
     }
     renderer.render(scene, camera);
-    container.dataset.rendered = 'true';
-    if (progress < 1) frame = requestAnimationFrame(draw);
+    if (container.dataset.rendered !== 'true') container.dataset.rendered = 'true';
+    const introRunning = now - mountedAt < introLength;
+    if (progress < 1 || introRunning) frame = requestAnimationFrame(draw);
+    else if (idleMotion) frame = requestAnimationFrame(idle);
+  }
+
+  // Idle drift renders at about 30fps; the browser pauses it in hidden tabs.
+  function idle(now) {
+    if (!usable) return;
+    if (now - lastIdleFrame < 32) { frame = requestAnimationFrame(idle); return; }
+    lastIdleFrame = now;
+    draw(now);
   }
 
   function lost(event) {

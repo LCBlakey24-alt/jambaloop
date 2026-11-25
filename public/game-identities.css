@@ -1,0 +1,138 @@
+/*
+ * Show identities. Each game's palette, display face and surface style come
+ * from game-identities.js as --id-* custom properties on .game (TV and phone).
+ * This layer paints the big planes — page, panels, headings, accents — so
+ * every show reads as its own programme; each game's own stylesheet still
+ * draws its set pieces (wheels, boards, cards, circuits).
+ */
+
+/* ---------------------------------------------------------------- page -- */
+/* The page behind each show (generated from game-identities.js; a test keeps them in step). */
+body.playing:has(.game[data-mode="classic"]) { background:#040b30; }
+body.playing:has(.game[data-mode="wheel"]) { background:#2b0548; }
+body.playing:has(.game[data-mode="board"]) { background:#05281a; }
+body.playing:has(.game[data-mode="dice"]) { background:#2c0410; }
+body.playing:has(.game[data-mode="knockout"]) { background:#000000; }
+body.playing:has(.game[data-mode="bluff"]) { background:#0a0c0f; }
+body.playing:has(.game[data-mode="punchline"]) { background:#ffb703; }
+body.playing:has(.game[data-mode="cards"]) { background:#e3cfb2; }
+body.playing:has(.game[data-mode="tracks"]) { background:#101113; }
+body.playing:has(.game[data-mode="potato"]) { background:#a8220a; }
+body.playing:has(.game[data-mode="showdown"]) { background:#001660; }
+body.playing:has(.game[data-mode="samepage"]) { background:#08636e; }
+body.playing:has(.game[data-mode="spotlight"]) { background:#22020a; }
+body.playing:has(.game[data-mode="brain"]) { background:#010d18; }
+body.playing:has(.game[data-mode="topanswers"]) { background:#74270d; }
+body.playing:has(.game[data-mode="rare"]) { background:#022419; }
+body.playing:has(.game[data-mode="sketch"]) { background:#ebe6d8; }
+body.playing:has(.game[data-mode="quizrace"]) { background:#05010f; }
+body.playing:has(.game[data-mode="soclose"]) { background:#052a2d; }
+body .game[data-mode] {
+  --pink:var(--id-accent); --ink:var(--id-ink); --muted:var(--id-muted); --panel:var(--id-surface); --edge:color-mix(in srgb,var(--id-accent) 40%,transparent);
+  color:var(--id-ink);
+  background:radial-gradient(ellipse at 50% -10%, var(--id-bg1), var(--id-bg2) 72%) fixed;
+}
+body .game[data-mode] > .scene-backdrop { opacity:.55; mix-blend-mode:soft-light; }
+
+/* -------------------------------------------------------------- panels -- */
+body .game[data-mode] .game-panel {
+  background:linear-gradient(160deg, var(--id-surface2), var(--id-surface)) !important;
+  border-color:color-mix(in srgb,var(--id-accent) 45%,transparent) !important;
+  border-radius:var(--id-radius) !important;
+  color:var(--id-ink);
+}
+body .game[data-mode] .game-top { color:var(--id-ink); }
+
+/* ---------------------------------------------------------------- type -- */
+body .game[data-mode] :is(h1, .game-panel > h2, .eyebrow, .tv-clock .timer, .potato-timer, .timer,
+  [class$="-brand"], [class*="-brand "], [class$="-kicker"], .spotlight-up-next h1, .so-close-actual, .room-code) {
+  font-family:var(--id-display), var(--head), sans-serif !important;
+  font-weight:var(--id-weight) !important;
+  text-transform:var(--id-case);
+}
+body .game[data-mode] .eyebrow { color:var(--id-accent); letter-spacing:.14em; }
+body .game[data-mode] :is(.question-panel h2, .question-panel .question-text, .brain-question h2, .spotlight-question h2,
+  .top-question h2, .rare-question h2, .samepage-prompt, .bluff-prompt, .so-close-reveal-prompt) {
+  font-family:var(--id-question), var(--head), sans-serif !important;
+}
+
+/* ------------------------------------------------------------- accents -- */
+body .game[data-mode] .button.primary { background:var(--id-accent) !important; border-color:var(--id-accent) !important;
+  color:color-mix(in srgb,var(--id-bg2) 92%,#000) !important; border-radius:var(--id-radius); }
+body .game[data-mode] .button.outline { border-color:color-mix(in srgb,var(--id-ink) 45%,transparent) !important; color:var(--id-ink) !important; border-radius:var(--id-radius); }
+body .game[data-mode] :is(.tv-clock, .potato-stage-clock) { --clock-colour:var(--id-accent); }
+
+/* ------------------------------------------------------ light schemes -- */
+/* Comic Strip, Card Parlour and Sketch Pad are printed-paper shows. */
+body .game:is([data-mode="punchline"],[data-mode="cards"],[data-mode="sketch"]) { color-scheme:light; }
+body .game:is([data-mode="punchline"],[data-mode="cards"],[data-mode="sketch"]) .game-panel :is(h1,h2,h3,p,span,strong,li,label,small,div):not(.answer *):not(.button):not(.button *) { color:inherit; }
+body .game:is([data-mode="punchline"],[data-mode="cards"],[data-mode="sketch"]) :is(input, textarea, select) {
+  background:#ffffff; color:var(--id-ink); border:2px solid color-mix(in srgb,var(--id-ink) 35%,transparent); }
+body .game:is([data-mode="punchline"],[data-mode="cards"],[data-mode="sketch"]) .button.primary { color:#ffffff !important; background:var(--id-accent) !important; }
+body .game:is([data-mode="punchline"],[data-mode="cards"],[data-mode="sketch"]) :is(.game-top, .game-top *) { color:var(--id-ink); }
+/* Pills and chips that were dark-on-dark: paper versions. */
+body .game:is([data-mode="punchline"],[data-mode="cards"],[data-mode="sketch"]) :is(.game-top .status, .game-top .phase-caption, .players > li) {
+  background:var(--id-surface2) !important; color:var(--id-ink) !important; border:1px solid color-mix(in srgb,var(--id-ink) 30%,transparent) !important; }
+body .game:is([data-mode="punchline"],[data-mode="cards"],[data-mode="sketch"]) .players > li .player-avatar { background:var(--id-accent); color:#fff; }
+
+/* Comic Strip: halftone dots, thick ink outlines and a hard drop shadow. */
+body .game[data-mode="punchline"] { background:radial-gradient(circle, #0000001a 1.5px, transparent 1.7px) 0 0 / 14px 14px, linear-gradient(135deg, var(--id-bg1), var(--id-bg2)); }
+body .game[data-mode="punchline"] .game-panel { border:4px solid var(--id-ink) !important; box-shadow:10px 10px 0 var(--id-ink) !important; }
+body .game[data-mode="punchline"] :is(h1, .game-panel > h2) { letter-spacing:.04em; }
+
+/* Card Parlour: cream card stock with a printed border. */
+body .game[data-mode="cards"] { background:repeating-linear-gradient(45deg, #00000008 0 2px, transparent 2px 10px), linear-gradient(160deg, var(--id-bg1), var(--id-bg2)); }
+body .game[data-mode="cards"] .game-panel { border:2px solid var(--id-accent) !important; box-shadow:inset 0 0 0 6px var(--id-surface), inset 0 0 0 7px color-mix(in srgb,var(--id-accent) 50%,transparent), 0 18px 40px #3a1e0f2e !important; }
+
+/* Sketch Pad: ruled paper with a red margin line. */
+body .game[data-mode="sketch"] { background:linear-gradient(90deg, transparent 0 64px, #e0294c55 64px 66px, transparent 66px),
+  repeating-linear-gradient(180deg, transparent 0 31px, #2a6fdb22 31px 32px), linear-gradient(var(--id-bg1), var(--id-bg2)); }
+body .game[data-mode="sketch"] .game-panel { border:2px solid var(--id-ink) !important; box-shadow:4px 6px 0 #1d243322 !important; }
+
+/* Sketch Pad set pieces, redrawn for paper. */
+body .game[data-mode="sketch"] { --sketch-blue:var(--id-accent2); }
+body .game[data-mode="sketch"] .sketch-head h1 { color:var(--id-ink); font-family:var(--id-display), cursive; }
+body .game[data-mode="sketch"] :is(.sketch-head p, .sketch-hint, .sketch-guess small) { color:var(--id-muted); }
+body .game[data-mode="sketch"] .sketch-kicker { color:var(--id-accent); }
+body .game[data-mode="sketch"] .sketch-timer { background:var(--id-surface2); border:2px solid var(--id-ink); color:var(--id-ink); }
+body .game[data-mode="sketch"] .sketch-timer .timer { color:var(--id-accent); background:none; box-shadow:none; border:0; }
+body .game[data-mode="sketch"] :is(.sketch-artist-tools, .sketch-guess, .sketch-reveal) { background:var(--id-surface2); border:2px dashed color-mix(in srgb,var(--id-ink) 30%,transparent); color:var(--id-ink); }
+body .game[data-mode="sketch"] :is(.sketch-secret, .sketch-guess p, .sketch-guess label) { color:var(--id-ink); }
+body .game[data-mode="sketch"] .sketch-secret strong { color:var(--id-accent); font-family:var(--id-display), cursive; font-size:clamp(22px,4vw,32px); }
+body .game[data-mode="sketch"] .sketch-tools [data-action="sketch-weight"][aria-pressed="true"] { background:var(--id-accent2); border-color:var(--id-accent2); color:#fff; }
+body .game[data-mode="sketch"] .sketch-colour { border-color:var(--id-ink); box-shadow:none; }
+body .game[data-mode="sketch"] .sketch-colour.selected { outline-color:var(--id-accent); }
+body .game[data-mode="sketch"] .sketch-correct { background:#d8f5e6; border-color:#1d8a5a; color:#0b3d27; }
+body .game[data-mode="sketch"] .sketch-frame { border-color:#ffffff; box-shadow:0 10px 26px #1d243333, 0 0 0 2px var(--id-ink); }
+
+/* ---------------------------------------------- dark signature surfaces -- */
+/* Fight Night: ring ropes. */
+body .game[data-mode="knockout"] { background:repeating-linear-gradient(180deg, transparent 0 22%, #ff2a2a 22% 22.8%, transparent 22.8% 23.6%, #ffffff33 23.6% 24.2%, transparent 24.2% 33.3%), radial-gradient(ellipse at 50% 0, #3a0c0f, #000 70%); }
+body .game[data-mode="knockout"] .game-panel { border-width:3px !important; border-color:var(--id-accent) !important; }
+/* Carnival Midway: tent stripes. */
+body .game[data-mode="wheel"] { background:repeating-conic-gradient(from 0deg at 50% -20%, #ffffff0d 0 6deg, transparent 6deg 12deg), radial-gradient(ellipse at 50% -10%, var(--id-bg1), var(--id-bg2) 75%); }
+/* Case Files: a manila folder tab and typed rules. */
+body .game[data-mode="bluff"] .game-panel { box-shadow:inset 0 3px 0 var(--id-accent), 0 18px 40px #0008 !important; }
+/* Neon Lab: blueprint grid. */
+body .game[data-mode="brain"] { background:linear-gradient(#2ef2ff10 1px, transparent 1px) 0 0 / 40px 40px, linear-gradient(90deg, #2ef2ff10 1px, transparent 1px) 0 0 / 40px 40px, radial-gradient(ellipse at 50% 0, var(--id-bg1), var(--id-bg2) 75%); }
+/* Seventies Survey: sunburst bands. */
+body .game[data-mode="topanswers"] { background:repeating-radial-gradient(circle at 50% 120%, #ffc14512 0 40px, transparent 40px 80px), radial-gradient(ellipse at 50% -10%, var(--id-bg1), var(--id-bg2) 75%); }
+/* Velvet Theatre: curtain folds. */
+body .game[data-mode="spotlight"] { background:radial-gradient(ellipse at 50% 0, #ffd27a33, transparent 45%), repeating-linear-gradient(90deg, #00000033 0 3%, transparent 3% 6%, #ffffff0a 6% 7%), linear-gradient(var(--id-bg1), var(--id-bg2)); }
+/* Arena Lights: floodlight beams. */
+body .game[data-mode="showdown"] { background:conic-gradient(from 200deg at 15% -10%, transparent, #ffffff1a 8deg, transparent 18deg), conic-gradient(from 140deg at 85% -10%, transparent, #ffffff1a 8deg, transparent 18deg), radial-gradient(ellipse at 50% -10%, var(--id-bg1), var(--id-bg2) 75%); }
+/* Lagoon: ripples. */
+body .game[data-mode="samepage"] { background:repeating-radial-gradient(circle at 30% 20%, #ffffff0d 0 2px, transparent 2px 36px), radial-gradient(ellipse at 50% -10%, var(--id-bg1), var(--id-bg2) 75%); }
+/* Hot Seat: heat shimmer from below. */
+body .game[data-mode="potato"] { background:radial-gradient(ellipse at 50% 120%, #ffd23f66, transparent 55%), radial-gradient(ellipse at 50% -10%, var(--id-bg1), var(--id-bg2) 80%); }
+/* Treasure Vault: gold glints. */
+body .game[data-mode="rare"] { background:radial-gradient(circle at 20% 30%, #e8c35a22, transparent 12%), radial-gradient(circle at 80% 70%, #7ee8ff1a, transparent 14%), radial-gradient(ellipse at 50% -10%, var(--id-bg1), var(--id-bg2) 75%); }
+/* Junction Box: hazard stripe along the top. */
+body .game[data-mode="tracks"] { background:repeating-linear-gradient(-45deg, var(--id-accent) 0 18px, #111 18px 36px) top / 100% 10px no-repeat, radial-gradient(ellipse at 50% -10%, var(--id-bg1), var(--id-bg2) 75%); }
+/* Deco Salon: fan rays. */
+body .game[data-mode="dice"] { background:repeating-conic-gradient(from -90deg at 50% 110%, #f2c14e14 0 4deg, transparent 4deg 10deg), radial-gradient(ellipse at 50% -10%, var(--id-bg1), var(--id-bg2) 75%); }
+
+@media (prefers-reduced-motion:no-preference) {
+  body .game[data-mode="punchline"].phase-enter .game-panel { animation:id-comic-pop .42s cubic-bezier(.2,1.6,.4,1) both; }
+}
+@keyframes id-comic-pop { from { transform:scale(.92) rotate(-1.5deg); } }

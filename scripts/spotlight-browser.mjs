@@ -15,6 +15,9 @@ try{
   const setupContext=await browser.newContext({viewport:{width:1366,height:768}});
   const setupPage=await setupContext.newPage();
   await setupPage.goto(site,{waitUntil:'domcontentloaded',timeout:30000});
+  // Big screens open on the game shelf; this workflow starts from the tile gallery.
+  await setupPage.locator('#game-carousel .carousel-card, .game-tile').first().waitFor({timeout:15000});
+  if(await setupPage.locator('[data-action="carousel-view"]').isVisible())await setupPage.locator('[data-action="carousel-view"]').click();
   assert.deepEqual(await setupPage.locator('.game-tile').evaluateAll(tiles=>tiles.map(tile=>tile.dataset.mode)),[...releasedGameIds],'All released games should appear on desktop');
   await setupPage.locator('.game-tile[data-mode="spotlight"]').click();
   await setupPage.locator('#game-preview [data-action="host"]').click();

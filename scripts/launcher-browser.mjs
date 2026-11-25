@@ -16,10 +16,68 @@ const sizes=[
   [1024,768,8],[800,768,6],[390,844,4]
 ];
 await mkdir('browser-screenshots',{recursive:true});
+// Big screens open on the game shelf: a 3D carousel whose centred game themes
+// the page. It must fit, respond to a remote's arrow keys, swipes and clicks,
+// keep the voice guide opt-in, then hand over to the tile grid on request.
+async function checkCarousel(page,width,height){
+  const cards=page.locator('#game-carousel .carousel-card');
+  await cards.first().waitFor({timeout:15000});
+  await page.evaluate(()=>document.fonts.ready);
+  assert.equal(await cards.count(),modes.length,'Every game sits on the shelf');
+  const centre=()=>page.locator('.carousel-card[aria-current="true"]').getAttribute('data-mode');
+  assert.equal(await centre(),modes[0][0]);
+  const fit=await page.evaluate(()=>({info:document.querySelector('.carousel-info').getBoundingClientRect().bottom,
+    track:document.querySelector('.carousel-track').getBoundingClientRect().bottom,doc:document.scrollingElement.scrollHeight,
+    shell:document.querySelector('[data-home-shell]').dataset.homeView}));
+  assert.ok(fit.info<=height+1&&fit.doc<=height+1&&fit.shell==='carousel','Shelf fits at '+width+'×'+height+': '+JSON.stringify(fit));
+  await page.keyboard.press('ArrowRight');
+  assert.equal(await centre(),modes[1][0],'Remote right arrow turns the shelf');
+  assert.match(await page.locator('.carousel-theme.is-active').getAttribute('style'),new RegExp("--id-display:'"+'Show Wheel'),'Page takes the centred game\'s identity');
+  await page.keyboard.press('ArrowLeft');
+  assert.equal(await centre(),modes[0][0]);
+  if(width===1920){
+    const track=await page.locator('.carousel-track').boundingBox();
+    await page.mouse.move(track.x+track.width*.7,track.y+track.height/2);await page.mouse.down();
+    await page.mouse.move(track.x+track.width*.3,track.y+track.height/2,{steps:6});await page.mouse.up();
+    assert.equal(await centre(),modes[1][0],'Swiping left brings the next game in');
+    // Light "paper" shows switch the whole home screen to ink.
+    const cardsAt=modes.findIndex(([id])=>id==='cards');
+    for(let i=1;i<cardsAt;i++) await page.keyboard.press('ArrowRight');
+    await page.waitForTimeout(800);
+    assert.equal(await page.locator('[data-home-shell]').getAttribute('data-carousel-scheme'),'light');
+    const ink=await page.locator('.home-intro h1').evaluate(el=>getComputedStyle(el).color);
+    assert.equal(ink,'rgb(42, 18, 48)','Home title switches to the paper show\'s ink');
+    await page.screenshot({path:'browser-screenshots/carousel-cards-1920x1080.png'});
+    // Voice guide: nothing downloads until it is switched on.
+    const raceAt=modes.findIndex(([id])=>id==='quizrace');
+    for(let i=cardsAt;i<raceAt;i++) await page.keyboard.press('ArrowRight');
+    assert.equal(await centre(),'quizrace');
+    const early=await page.evaluate(()=>performance.getEntriesByType('resource').filter(e=>e.name.includes('/audio/narrator/')).length);
+    assert.equal(early,0,'The voice guide is opt-in');
+    const audio=page.waitForRequest(request=>request.url().endsWith('/audio/narrator/quizrace.mp3'),{timeout:8000});
+    await page.locator('[data-action="carousel-voice"]').click();
+    await audio;
+    assert.equal(await page.locator('[data-action="carousel-voice"]').getAttribute('aria-pressed'),'true');
+    await page.locator('[data-action="carousel-voice"]').click();
+    await page.screenshot({path:'browser-screenshots/carousel-quizrace-1920x1080.png'});
+    // Choosing the centred card opens setup for that game.
+    await page.locator('.carousel-card[aria-current="true"]').click();
+    assert.equal(await page.locator('#dialog').evaluate(el=>el.open),true,'Setup opens from the shelf');
+    assert.equal(await page.locator('input[name="mode"]:checked').inputValue(),'quizrace');
+    await page.locator('#dialog [data-action="close"]').click();
+    console.log('PASS: shelf swipe, remote arrows, paper theme, opt-in voice and setup from the centre card');
+  }
+  await page.screenshot({path:`browser-screenshots/carousel-${width}x${height}.png`,fullPage:false});
+  await page.locator('[data-action="carousel-view"]').click();
+  assert.equal(await page.locator('#game-carousel').isVisible(),false,'Tile view replaces the shelf');
+  console.log(`PASS: game shelf at ${width}×${height}`);
+}
+
 try {
   for(const [width,height,count] of sizes) {
     const page=await browser.newPage({viewport:{width,height},deviceScaleFactor:1});
     await page.goto(base,{waitUntil:'networkidle',timeout:30000});
+    if(width>=1000&&height>=600) await checkCarousel(page,width,height);
     await page.locator('.game-tile').first().waitFor({timeout:15000});
     await page.evaluate(()=>document.fonts.ready);
     assert.match(await page.title(),/Jambaloop.*Rookie Quest Games/);
@@ -146,6 +204,9 @@ try {
   console.log('PASS: all three pre-recorded ElevenLabs MP3 files are bundled and served');
   const page=await browser.newPage({viewport:{width:1366,height:768},reducedMotion:'reduce'});
   await page.goto(base,{waitUntil:'networkidle',timeout:30000});
+  await page.locator('.carousel-card').first().waitFor();
+  assert.equal(await page.locator('.carousel-card').first().evaluate(el=>getComputedStyle(el).transitionDuration),'0s','Reduce motion stops the shelf gliding');
+  await page.locator('[data-action="carousel-view"]').click();
   await page.locator('.game-tile').first().waitFor();
   const animation=await page.locator('.game-tile .tile-motion i').first().evaluate(el=>getComputedStyle(el).animationName);
   assert.equal(animation,'none','Reduce motion must disable card animations');

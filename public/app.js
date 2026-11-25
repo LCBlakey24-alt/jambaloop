@@ -18,6 +18,7 @@ import {readQuestionHistory, rememberQuestion} from './question-history.js';
 import { modeVariables, sceneBackdrop } from './mode-style.js';
 import { launcherTile, launcherPreview, launcherModes, launcherSetupArtwork, LAUNCHER_PAGE_SIZE } from './home-launcher.js';
 import { carouselView, moveCarousel, themeHome, wrapIndex } from './game-carousel.js';
+import { playSting, stingFor } from './show-sting.js';
 import { stopNarration, toggleNarration } from './narrator.js';
 import { playCue, playTick, playTowerImpact } from './sound-cues.js';
 import { boardLengths, boardRoute, boardDuration, durationLabel, suggestedTurnCap, boardRequiresChoice, boardPathChoices } from './board-route.js';
@@ -529,7 +530,7 @@ function openDialog(mode, value, gameMode, quizId) {
     update();
   } else if (mode === 'night') {
     playlistDraft = { queue: [...state.night.queue], version: state.night.version, game: state.game };
-    content.innerHTML = playlistEditor(playlistDraft.queue, escape, icons);
+    content.innerHTML = playlistEditor(playlistDraft.queue, escape, icons, (state?.playerCount ?? 0) + (state?.waitingCount ?? 0));
   } else if (mode === 'library') {
     content.innerHTML = '<div id="quiz-library"></div>';
     openLibrary(content.firstElementChild, escape, id => {
@@ -1037,6 +1038,9 @@ function render(s) {
   } else if (['lobby', 'waiting'].includes(s.phase)) body += gameNightView(s, { canControl, escape, icons });
   const phaseKey = `${s.code}/${s.game}/${s.index}/${s.phase}${s.pausedAt ? '/paused' : ''}${s.party?.holding || s.party?.type === 'fork' ? '/' + s.party.step : ''}`;
   const enter = renderedPhase !== phaseKey;
+  // TV broadcast stings: the show's title card at kick-off, a band before the last round.
+  if (enter) playSting(stingFor(renderedPhase, s, host), s, { reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
+    onStart: () => { if (soundEnabled) playCue(sound, s.mode, 'rolling'); } });
   const animateRoll = Boolean(boardDisplay && s.phase === 'rolling' && renderedPhase === `${s.code}/${s.game}/${s.index}/ready`);
   renderedPhase = phaseKey;
   const stage = enter && !animateRoll ? null : app.querySelector('#board-stage, .wheel-frame');
@@ -1600,7 +1604,7 @@ document.addEventListener('click', async event => {
       const to = Number(index) + (nightEdit === 'up' ? -1 : 1);
       [queue[index], queue[to]] = [queue[to], queue[index]];
     }
-    content.innerHTML = playlistEditor(playlistDraft.queue, escape, icons);
+    content.innerHTML = playlistEditor(playlistDraft.queue, escape, icons, (state?.playerCount ?? 0) + (state?.waitingCount ?? 0));
     const focused = nightEdit === 'preset' ? content.querySelector(`[data-minutes="${minutes}"]`)
       : nightEdit === 'add' || nightEdit === 'remove' ? content.querySelector('[name="queuedMode"]')
       : content.querySelector(`[data-index="${Number(index) + (nightEdit === 'up' ? -1 : 1)}"]:not(:disabled)`);

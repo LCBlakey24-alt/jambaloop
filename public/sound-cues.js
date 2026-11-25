@@ -30,7 +30,12 @@ export function playCue(context, mode, cue) {
   const { notes, wave } = modeStyle(mode);
   const start = context.currentTime + .01;
   if (cue === 'rolling' || cue === 'pass') swoosh(context, start);
-  const melody = cue === 'finished' ? [...notes, notes[0] * 2]
+  const melody = cue === 'estimate-opening' ? [notes[0]/2,notes[0]]
+    : cue === 'estimate-guesses' ? [notes[1]]
+    : cue === 'estimate-suspense' ? [notes[0]/2,notes[1]/2,notes[0]/2]
+    : cue === 'estimate-actual' ? [notes[0],notes[1],notes[2]]
+    : cue === 'estimate-winner' ? [...notes,notes[0]*2]
+    : cue === 'finished' ? [...notes, notes[0] * 2]
     : ['reveal', 'party-reveal'].includes(cue) ? notes.slice(1)
     : cue === 'score-break' ? [notes[0] / 2, notes[1] / 2, notes[0]]
     : cue === 'party-vote' ? [notes[1], notes[0]]
@@ -48,6 +53,22 @@ export function playCue(context, mode, cue) {
     oscillator.start(offset);
     oscillator.stop(offset + .22);
   }
+}
+
+/** A short clock tick for Hot Potato; higher and sharper when time is short. */
+export function playTick(context, urgent = false) {
+  if (context?.state !== 'running') return;
+  const start = context.currentTime + .005;
+  const oscillator = context.createOscillator();
+  const gain = context.createGain();
+  oscillator.type = 'square';
+  oscillator.frequency.value = urgent ? 2100 : 1500;
+  gain.gain.setValueAtTime(.0001, start);
+  gain.gain.exponentialRampToValueAtTime(urgent ? .06 : .035, start + .004);
+  gain.gain.exponentialRampToValueAtTime(.0001, start + .04);
+  oscillator.connect(gain).connect(context.destination);
+  oscillator.start(start);
+  oscillator.stop(start + .05);
 }
 
 export function playTowerImpact(context, hit) {

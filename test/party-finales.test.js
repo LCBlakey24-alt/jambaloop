@@ -52,8 +52,53 @@ test('Hot Potato reports the player caught rather than declaring a winner', () =
   assert.doesNotMatch(result, /GAME WINNER|SHARED VICTORY|YOUR FINISH/);
   const seen = partyView(state, phone);
   assert.match(seen, /THE TIMER RAN OUT/);
-  assert.match(seen, /got caught with the potato/);
+  assert.match(seen, /You got caught!/);
+  assert.match(seen, /party-phone-finish/);
+  assert.doesNotMatch(seen, /got caught with the potato!/);
   assert.doesNotMatch(seen, /GAME WINNER/);
+  const tv = partyView(state,host);
+  assert.match(tv, /Bailey got caught with the potato!/);
+  assert.match(tv, /class="party-holder"/);
+});
+
+test('Punchline Party phones show personal result with optional full scores, TV retains public podium', () => {
+  const state = room('punchline', { tracks: [] });
+  const personal = partyView(state,phone);
+  assert.match(personal,/YOUR FINISH/);
+  assert.match(personal,/#1/);
+  assert.match(personal,/View all scores without a TV/);
+  assert.match(personal,/<details class="party-phone-scores">/);
+  assert.doesNotMatch(personal,/<ol class="ranking">/);
+  assert.doesNotMatch(personal,/SHARED VICTORY/);
+  const tv = partyView(state,host);
+  assert.match(tv,/SHARED VICTORY/);
+  assert.match(tv,/<ol class="ranking">/);
+  assert.doesNotMatch(tv,/party-phone-scores/);
+});
+
+test('Fill the Blank phone hides detailed team scores by default and escapes names', () => {
+  const state = {...room('cards', { tracks: [] }), playStyle: 'teams',
+    teamWinners: ['blue'],
+    teams: [
+      {id:'blue',name:'Blue <test>',score:500,color:'#abcdef'},
+      {id:'red',name:'Red',score:250,color:'#fedcba'},
+    ],
+    players: [
+      {...players[0],name:'Alex <img src=x onerror=alert(1)>'},
+      players[1],players[2],
+    ],
+  };
+  const personal = partyView(state,phone);
+  assert.match(personal,/YOUR FINISH/);
+  assert.match(personal,/View all scores without a TV/);
+  assert.match(personal,/Team Blue &lt;test&gt;/);
+  assert.match(personal,/Alex &lt;img src=x onerror=alert\(1\)&gt;/);
+  assert.doesNotMatch(personal,/<img src=x/);
+  assert.doesNotMatch(personal,/class="party-team-scores"/);
+  const tv = partyView(state,host);
+  assert.match(tv,/WINNING TEAM/);
+  assert.match(tv,/class="party-team-scores"/);
+  assert.doesNotMatch(tv,/party-phone-scores/);
 });
 
 test('Fork in the Tracks presents the judge result without inventing a winning team', () => {
@@ -104,7 +149,7 @@ test('all party finale integrations, continuous scroll and reduced motion are pr
     readFile(new URL('party-finales.css',dir),'utf8'),
     readFile(new URL('index.html',dir),'utf8')
   ]);
-  assert.match(deck,/\.player-only\[data-phase="finished"\]/);
+  assert.match(deck,/\.game\.player-only:not\(\[data-phase="lobby"\]\):not\(\[data-phase="waiting"\]\)/);
   assert.match(css,/overflow-y: auto/);
   assert.match(css,/prefers-reduced-motion: reduce/);
   assert.match(app,/'finished'\]\.includes\(s.phase\)/);

@@ -20,6 +20,7 @@ on:
       - 'scripts/rare-find-browser.mjs'
       - 'scripts/game-night-browser.mjs'
       - 'scripts/player-live-browser.mjs'
+      - 'scripts/quiz-race-error-browser.mjs'
       - 'public/player-live.css'
       - 'scripts/legacy-party-browser.mjs'
       - 'scripts/party-cards-browser.mjs'
@@ -50,6 +51,23 @@ on:
       - 'fork-game.js'
       - 'public/board-*.js'
       - 'public/team-play*'
+      - 'released-games.js'
+      - 'public/tv-immersive.css'
+      - 'public/race-3d.js'
+      - 'public/race-course.js'
+      - 'public/quiz-race*'
+      - 'scripts/tv-immersive-browser.mjs'
+      - 'public/visual-polish.css'
+      - 'public/motion.js'
+      - 'public/board.js'
+      - 'public/presentation.css'
+      - 'public/so-close*'
+      - 'public/game-config.js'
+      - 'public/game-show-batch-1.css'
+      - 'public/game-show-batch-2.css'
+      - 'public/mode-style.js'
+      - 'public/show-identity.js'
+      - 'scripts/so-close-browser.mjs'
       - '.github/workflows/launcher-browser.yml'
   workflow_dispatch:
 
@@ -95,10 +113,13 @@ jobs:
           node scripts/rare-find-browser.mjs
           node scripts/game-night-browser.mjs
           node scripts/player-live-browser.mjs
+          node scripts/quiz-race-error-browser.mjs
           node scripts/legacy-party-browser.mjs
           node scripts/party-cards-browser.mjs
           node scripts/bluff-browser.mjs
           node scripts/sketch-browser.mjs
+          node scripts/so-close-browser.mjs
+          node scripts/tv-immersive-browser.mjs
           node scripts/tv-all-modes.mjs
       - name: Upload screen captures on success or failure
         if: always()

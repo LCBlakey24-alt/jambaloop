@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {mkdir} from 'node:fs/promises';
+import { releasedGameIds } from '../released-games.js';
 
 const site=process.env.SITE||'http://127.0.0.1:32000';
 const browser=await chromium.launch({
@@ -26,7 +27,10 @@ try{
   const menu=await browser.newContext({viewport:{width:1366,height:768}});
   const launcher=await menu.newPage();
   await launcher.goto(site,{waitUntil:'domcontentloaded',timeout:30000});
-  assert.equal(await launcher.locator('.game-tile').count(),18,'All games should appear on desktop');
+  // Big screens open on the game shelf; this workflow starts from the tile gallery.
+  await launcher.locator('#game-carousel .carousel-card, .game-tile').first().waitFor({timeout:15000});
+  if(await launcher.locator('[data-action="carousel-view"]').isVisible())await launcher.locator('[data-action="carousel-view"]').click();
+  assert.deepEqual(await launcher.locator('.game-tile').evaluateAll(tiles=>tiles.map(tile=>tile.dataset.mode)),[...releasedGameIds],'All released games should appear on desktop');
   await launcher.locator('.game-tile[data-mode="topanswers"]').click();
   assert.match(await launcher.locator('#game-preview').innerText(),/Top Answers/);
   await launcher.locator('#game-preview [data-action="host"]').click();

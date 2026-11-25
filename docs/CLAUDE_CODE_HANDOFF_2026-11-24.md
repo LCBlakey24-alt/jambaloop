@@ -61,6 +61,14 @@ Both concepts are **planning-only** and should have standalone small design/engi
 - Later: safe Friends & Couples Truth or Dare and Who Knows Me Best?, optional family/teen/adult metadata and UK-compliant age assurance. **Do not ship adults-only mode or accounts before legal/privacy architecture.**
 - Update three categories continuously: verified multiple-choice/true-false/number/order questions, source-checked genre packs, and original creative prompts/phrase cards. Don't claim estimates (such as global doors vs windows) are sourced facts.
 
+## Future narrated game-show experience — planning only
+
+The owner wants more British presenter coverage across **all 18 existing games**: preview/rules, known public questions or prompts where a matching recorded asset exists, each stage/round, votes, results and repeat play, with on-screen captions. Later, offer an optional **Double Act** of two original British co-host characters exchanging prerecorded funny dialogue. The [full event/TV-first audio roadmap](FULL_MATCH_NARRATION_AND_DUO_ROADMAP.md) and [Issue #61](https://github.com/LCBlakey24-alt/jambaloop/issues/61) explain the event manifest, per-game cue candidates, limits, UX and tests. Current code supports only brief opt-in previews and exactly **3 committed MP3s**; 15 further intro MP3s are known from the previous chat exports but not in GitHub. Do not spend ElevenLabs credits, create an account integration or claim finished recordings without verifying actual files and rights. Keep existing-game reliability and minimal phones as first priorities.
+
+## Longer-term profiles, stats and pre-game introductions — design only
+
+The owner wants **optional returning-player accounts** that keep games played, wins, per-game stats and achievements, with an optional friendly player intro on the TV before each match. See [profile and stats brief](PLAYER_PROFILES_AND_STATS_ROADMAP.md) and [Issue #59](https://github.com/LCBlakey24-alt/jambaloop/issues/59). Guest join must remain fully functional. “8 wins in 20 completed games = 40% historic win rate” is not an evidence-backed “40% probability of winning this match”. Any comparison needs fair game-specific result definitions, sample sizes, privacy-by-default consent, separation of team/co-op results, secure storage/account linking and child-appropriate safeguards. This is **not an instruction to implement accounts now**; do not divert from current bugs, reconnects, phone simplicity or room-restart reliability.
+
 ## Coding and verification guardrails
 
 - For each issue: verify the bug exists on latest `main`; write a failing test first; implement minimal fix; run all affected tests; add browser acceptance on actual phone and host sizes; document known constraints; put into a descriptive feature branch and PR.

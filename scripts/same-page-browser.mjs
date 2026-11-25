@@ -44,7 +44,26 @@ try{
     assert.equal(started.status(),204,await started.text());
     await host.locator('.samepage-game[data-samepage-phase="party-write"]').waitFor({timeout:15000});
     await phone.locator('.samepage-answer-form').waitFor({timeout:15000});
-    assert.equal(await host.locator('.samepage-group').count(),0,'No private answers on TV before reveal');
+    // Player-only writing must never be split into deck pages. The phone has
+    // one continuous vertical surface even when the on-screen keyboard opens.
+    await phone.waitForFunction(() =>
+      getComputedStyle(document.querySelector('#app')).overflowY === 'auto' &&
+      [...document.querySelectorAll('.mobile-pager')].every(nav => nav.hidden),
+      {timeout:10000});
+    const controller = await phone.evaluate(() => ({
+      phase:document.querySelector('.game.player-only')?.dataset.phase,
+      overflow:getComputedStyle(document.querySelector('#app')).overflowY,
+      hiddenActions:[...document.querySelectorAll('.samepage-answer-form button')].filter(b=>b.closest('[data-deck-hidden]')).length,
+      pager:[...document.querySelectorAll('.mobile-pager')].some(nav=>!nav.hidden),
+      width:document.querySelector('#app').scrollWidth,
+      clientWidth:document.querySelector('#app').clientWidth,
+    }));
+    assert.equal(controller.phase,'party-write');
+    assert.equal(controller.overflow,'auto');
+    assert.equal(controller.hiddenActions,0);
+    assert.equal(controller.pager,false);
+    assert.ok(controller.width<=controller.clientWidth+2,'Phone answer overflows horizontally: '+JSON.stringify(controller));
+        assert.equal(await host.locator('.samepage-group').count(),0,'No private answers on TV before reveal');
     const stats=await host.evaluate(()=>{
       const root=document.querySelector('.samepage-game').getBoundingClientRect();
       return {width:document.scrollingElement.scrollWidth,height:document.scrollingElement.scrollHeight,bottom:root.bottom};
@@ -65,7 +84,13 @@ try{
     }
     await host.locator('.samepage-game[data-samepage-phase="party-reveal"]').waitFor({timeout:15000});
     await phone.locator('.samepage-matches').waitFor({timeout:15000});
-    assert.equal(await host.locator('.samepage-group.matched').count(),1);
+    const revealController = await phone.evaluate(() => ({
+      overflow:getComputedStyle(document.querySelector('#app')).overflowY,
+      pager:[...document.querySelectorAll('.mobile-pager')].some(nav=>!nav.hidden),
+    }));
+    assert.equal(revealController.overflow,'auto','Result should use the same continuous phone surface');
+    assert.equal(revealController.pager,false);
+        assert.equal(await host.locator('.samepage-group.matched').count(),1);
     const text=await host.locator('.samepage-group.matched').innerText();
     assert.match(text,/100/);
     assert.match(text,/Avery/);

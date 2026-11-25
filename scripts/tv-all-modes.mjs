@@ -14,7 +14,7 @@ await mkdir('browser-screenshots',{recursive:true});
 const report=[];
 
 async function stageFor(mode,width,height) {
-  const setup={mode,format:'choice',category:'mixed',
+  const setup={mode,format:mode==='soclose'?'estimate':'choice',category:'mixed',
     count:mode==='board'?12:mode==='spotlight'?1:['tracks','samepage'].includes(mode)?3:5,
     seconds:mode==='quizrace'||['tracks','samepage'].includes(mode)?0:20,
     ...(mode==='board'||mode==='tracks'||mode==='showdown'?{playStyle:'teams',teamCount:2}:{playStyle:'individual'}),
@@ -45,6 +45,11 @@ async function stageFor(mode,width,height) {
       timeout:15000,
     });
     await page.evaluate(()=>document.fonts.ready);
+    // Measure the settled layout: finite entrance animations move panels with transforms.
+    await page.evaluate(()=>Promise.race([
+      Promise.all(document.getAnimations().filter(a=>a.effect?.getComputedTiming().iterations!==Infinity).map(a=>a.finished.catch(()=>{}))),
+      new Promise(resolve=>setTimeout(resolve,2500)),
+    ]));
     const metrics=await page.evaluate(()=>{
       const root=document.querySelector('section.game');
       const panels=[...root.querySelectorAll('.game-panel')].map(panel=>{
@@ -88,3 +93,7 @@ const samePage=report.filter(x=>x.mode==='samepage');
 assert.equal(samePage.length,2);
 assert.ok(samePage.every(x=>!x.warning.length),
   'New Same Page TV layout must fit 720p and 1080p without JS errors: '+JSON.stringify(samePage));
+
+const soClose=report.filter(x=>x.mode==='soclose');
+assert.equal(soClose.length,2,'So Close must be captured at both TV resolutions');
+assert.ok(soClose.every(x=>!x.warning.length),'So Close TV must fit 720p and 1080p: '+JSON.stringify(soClose));

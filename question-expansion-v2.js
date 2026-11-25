@@ -286,7 +286,11 @@ export const extraChoiceQuestions = Object.freeze({
       "512",
       "1000",
       "2048"
-    ]
+    ],
+    ["A theatre has 17 rows with 14 seats in each row. How many seats are there?","238","228","248","258"],
+    ["A £48 board game is reduced by one eighth of its price. What is the new price?","£42","£40","£44","£46"],
+    ["A game begins at 18:35 and lasts 95 minutes. What time does it finish?","20:10","19:50","20:00","20:20"],
+    ["A quiz awards 7 points for each correct answer. How many points are earned for 13 correct answers?","91","81","84","98"]
   ],
   "general": [
     [
@@ -948,7 +952,11 @@ export const extraBooleanQuestions = Object.freeze({
     [
       "The number 100 is a multiple of 10.",
       true
-    ]
+    ],
+    ["A bag with 5 red and 15 blue counters contains 25% red counters.",true],
+    ["The mean of 6, 12 and 21 is 14.",false],
+    ["A rectangle measuring 11 cm by 4 cm has a perimeter of 30 cm.",true],
+    ["Three fifths of 90 is 45.",false]
   ]
 });
 export const extraEstimateQuestions = Object.freeze({
@@ -1038,7 +1046,11 @@ export const extraEstimateQuestions = Object.freeze({
       "degrees",
       200,
       900
-    ]
+    ],
+    ["A quiz night has 8 teams of 9 players. How many players are there altogether?",72,"players",0,150],
+    ["A rectangular game board is 19 cm long and 12 cm wide. What is its area in square centimetres?",228,"cm²",0,500],
+    ["How many seconds are in 13 minutes?",780,"seconds",0,1500],
+    ["A player earns 125 points in each of 6 rounds. How many points do they earn?",750,"points",0,1500]
   ]
 });
 export const extraOrderQuestions = Object.freeze({
@@ -1128,6 +1140,10 @@ export const extraOrderQuestions = Object.freeze({
       "2!",
       "3!",
       "4!"
-    ]
+    ],
+    ["Order these game scores from lowest to highest.","74","109","156","201"],
+    ["Arrange these percentages from smallest to largest.","17%","28%","43%","65%"],
+    ["Order these durations from shortest to longest.","45 seconds","2 minutes","180 seconds","4 minutes"],
+    ["Arrange these fractions from smallest to largest.","1/10","3/10","7/10","9/10"]
   ]
 });

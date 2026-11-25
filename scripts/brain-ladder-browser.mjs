@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {mkdir} from 'node:fs/promises';
 import {brainPuzzleBank} from '../brain-ladder.js';
+import { releasedGameIds } from '../released-games.js';
 
 const site=process.env.SITE||'http://127.0.0.1:32000';
 const browser=await chromium.launch({
@@ -31,7 +32,10 @@ try {
   const startCtx=await browser.newContext({viewport:{width:1366,height:768}});
   const setup=await startCtx.newPage();
   await setup.goto(site,{waitUntil:'domcontentloaded',timeout:30000});
-  assert.equal(await setup.locator('.game-tile').count(),18,'All games should appear on desktop');
+  // Big screens open on the game shelf; this workflow starts from the tile gallery.
+  await setup.locator('#game-carousel .carousel-card, .game-tile').first().waitFor({timeout:15000});
+  if(await setup.locator('[data-action="carousel-view"]').isVisible())await setup.locator('[data-action="carousel-view"]').click();
+  assert.deepEqual(await setup.locator('.game-tile').evaluateAll(tiles=>tiles.map(tile=>tile.dataset.mode)),[...releasedGameIds],'All released games should appear on desktop');
   await setup.locator('.game-tile[data-mode="brain"]').click();
   assert.match(await setup.locator('#game-preview').innerText(),/Brain Ladder/i);
   await setup.locator('#game-preview [data-action="host"]').click();

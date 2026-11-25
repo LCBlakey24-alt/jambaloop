@@ -186,7 +186,6 @@ html.mobile-deck body:not(.playing) .header .nav, html.mobile-deck body.playing 
 .mobile-deck .order-list .item-rank { width: 23px; height: 23px; }
 .mobile-deck .order-actions button { width: 42px; height: 40px; }
 .mobile-deck .number-scroller { gap: 4px; }
-.mobile-deck .number-scroller [data-range] { height: min(59px,14dvh); }
 .mobile-deck .number-scroller button { width: 44px; height: 41px; }
 .mobile-deck .game .bluff-replies { margin: 4px 0; gap: 6px; grid-template-columns: 1fr; }
 .mobile-deck .game .bluff-card, .mobile-deck .game .party-holder { padding: 6px 8px; }
@@ -219,4 +218,32 @@ html.mobile-deck body:not(.playing) .header .nav, html.mobile-deck body.playing 
   .mobile-deck .game.player-only { max-width: min(700px,calc(100% - 16px)); }
   .mobile-deck body.playing .game .question-panel h2 { font-size: clamp(18px,5.6dvh,25px); }
   .mobile-deck .game .turn-panel { grid-template-columns: 1fr 1fr; }
+}
+
+
+/* Every live player phase is one continuous controller surface. Never clip a
+   private action behind a second Back/Next page; when large text, a keyboard
+   or a long ballot requires more room, scroll vertically within this view. */
+html.mobile-deck #app:has(.game.player-only:not([data-phase="lobby"]):not([data-phase="waiting"])) {
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.mobile-deck body.playing .game.player-only:not([data-phase="lobby"]):not([data-phase="waiting"]) {
+  min-height: 0;
+  margin-bottom: max(14px, env(safe-area-inset-bottom));
+}
+.mobile-deck .game.player-only:not([data-phase="lobby"]):not([data-phase="waiting"]) .game-top {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  background: var(--panel);
+}
+@media (orientation: landscape) and (max-height: 490px) {
+  .mobile-deck .game.player-only:not([data-phase="lobby"]):not([data-phase="waiting"]) .game-top {
+    padding-block: 3px;
+  }
 }

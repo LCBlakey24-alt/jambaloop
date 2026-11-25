@@ -25,3 +25,89 @@ html.mobile-deck body:has(.game[data-mode="quizrace"]) {position:static;min-heig
 html.mobile-deck body:has(.game[data-mode="quizrace"]) #app {overflow:visible;min-height:0}
 html.mobile-deck body:has(.game[data-mode="quizrace"]) > .mobile-pager {display:none!important}
 html.mobile-deck .game[data-mode="quizrace"] {margin:6px auto 24px}
+
+
+/* Keep player finish screens simple; the TV retains the cinematic racetrack. */
+.game[data-mode="quizrace"] .race-phone-finish {
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: clamp(14px, 4vw, 24px);
+}
+.game[data-mode="quizrace"] .race-phone-finish h1 {
+  font-size: clamp(22px, 5vw, 34px);
+  line-height: 1.15;
+  margin: 2px 0 5px;
+}
+.game[data-mode="quizrace"] .race-phone-finish > p {
+  color: #c7d6e9;
+  margin: 0;
+  font-size: 13px;
+}
+.game[data-mode="quizrace"] .race-personal-finish {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  text-align: center;
+  border: 1px solid #405077;
+  border-radius: 14px;
+  background: #1b2741;
+  padding: 14px;
+}
+.game[data-mode="quizrace"] .race-personal-finish > span:first-child {
+  font-size: 11px;
+  color: #b6c7e1;
+  font-weight: 800;
+  letter-spacing: .1em;
+}
+.game[data-mode="quizrace"] .race-personal-finish strong {
+  color: #1dd9be;
+  font-size: clamp(36px, 8vw, 56px);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.game[data-mode="quizrace"] .race-personal-finish small {
+  font-size: 15px;
+  color: #d0e0f2;
+}
+.game[data-mode="quizrace"] .race-phone-results {
+  border: 1px solid #405077;
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+.game[data-mode="quizrace"] .race-phone-results summary {
+  cursor: pointer;
+  font-weight: 700;
+  min-height: 36px;
+  padding-block: 5px;
+}
+.game[data-mode="quizrace"] .race-phone-results summary:focus-visible {
+  outline: 3px solid #1dd9be;
+  outline-offset: 3px;
+}
+.game[data-mode="quizrace"] .race-phone-results ol {
+  padding-left: 24px;
+  margin: 10px 0 0;
+}
+.game[data-mode="quizrace"] .race-phone-results li {
+  padding: 6px 2px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.game[data-mode="quizrace"] .race-phone-results li span {
+  color: #bcefe5;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.game[data-mode="quizrace"] .race-phone-finish .actions {
+  margin-top: 4px;
+}
+@media (orientation: landscape) and (max-height: 490px) {
+  .game[data-mode="quizrace"] .race-phone-finish { gap: 7px; padding: 10px 14px; }
+  .game[data-mode="quizrace"] .race-personal-finish { padding: 7px; }
+  .game[data-mode="quizrace"] .race-personal-finish strong { font-size: 31px; }
+}

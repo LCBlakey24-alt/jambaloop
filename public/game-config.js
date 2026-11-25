@@ -38,6 +38,7 @@ export const modes = [
   ['brain', 'Brain Ladder', 'Solve fresh original logic puzzles, protect your two lives and climb ten levels.', 'brain-circuit', '#86e7fa'],
   ['topanswers', 'Top Answers', 'Vote for your favourite, predict the room’s most popular choice, and reveal the real results.', 'chart-no-axes-column-increasing', '#ffca83'],
   ['rare', 'Rare Find', 'Find the correct answer nobody else picks. Unusual valid answers earn the most.', 'gem', '#a2f4cd'],
+  ['soclose', 'So Close', 'Scroll to your best numerical estimate; the closest guess wins.', 'ruler', '#ffbf68'],
   ['sketch', 'Sketch Sprint', 'One person draws a secret prompt live; everyone else races to guess it.', 'paintbrush', '#a4dcff'],
 ];
 
@@ -96,14 +97,32 @@ export const categoryGroups = [
   ['Leisure', ['sports', 'games', 'food', 'christmas']],
 ];
 
-export const fixedQuestionModes = ['classic', 'dice', 'knockout', 'showdown'];
+export const fixedQuestionModes = ['classic', 'dice', 'knockout', 'showdown', 'soclose'];
 
 export const socialModes = ['punchline', 'cards', 'tracks'];
 export const partyModes = ['bluff', 'potato', 'samepage', 'spotlight', 'brain', 'topanswers', 'rare', 'sketch', ...socialModes];
 export const scoreIntervals = [0, 1, 3, 5];
 export const defaultScoreInterval = 3;
-export const supportsScoreCheckpoints = mode => mode !== 'quizrace' && modes.some(([id]) => id === mode) && !partyModes.includes(mode);
-export const minimumPlayers = mode => mode === 'quizrace' ? 2 : ['bluff', 'punchline', 'cards', 'samepage', 'spotlight', 'topanswers', 'rare', 'sketch'].includes(mode) ? 3
+export const supportsScoreCheckpoints = mode => mode !== 'quizrace' && mode !== 'soclose' && modes.some(([id]) => id === mode) && !partyModes.includes(mode);
+export const minimumPlayers = mode => ['quizrace','soclose'].includes(mode) ? 2 : ['bluff', 'punchline', 'cards', 'samepage', 'spotlight', 'topanswers', 'rare', 'sketch'].includes(mode) ? 3
   : mode === 'brain' ? 2
   : mode === 'tracks' ? 3 : ['potato', 'showdown'].includes(mode) ? 2 : 1;
+// One shared rule for how many players a game supports. `playStyle` matters
+// only for Board Race, where individual racing uses at most four pieces; the
+// room itself can still hold a larger group that switches to Teams.
+export const roomCapacity = 300;
+export const maximumPlayers = (mode, playStyle) =>
+  mode === 'quizrace' ? 12
+  : mode === 'spotlight' ? 20
+  : ['brain', 'topanswers', 'rare'].includes(mode) ? 30
+  : mode === 'board' && playStyle === 'individual' ? 4
+  : roomCapacity;
+export const capacityError = (mode, playStyle, players) => {
+  const limit = maximumPlayers(mode, playStyle);
+  if (players <= limit) return undefined;
+  const name = modes.find(([id]) => id === mode)?.[1] ?? 'This game';
+  return mode === 'board' && playStyle === 'individual'
+    ? 'Individual Board Race supports up to four racers. Choose Teams for larger groups.'
+    : `${name} supports up to ${limit} players; this room has ${players}. Choose another game or a smaller group.`;
+};
 export const boardRollDuration = 5400;

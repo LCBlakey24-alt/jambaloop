@@ -1,0 +1,185 @@
+/*
+ * Immersive TV: once a game is under way the host screen belongs to that game
+ * alone. The toolbar, presence/lineup strips and leaderboard sidebar step
+ * away; host controls slide down from the top only while the mouse moves, a
+ * key is pressed or a control has focus. Phones and the lobby are unchanged.
+ */
+@media (min-width:761px) and (min-height:560px) {
+  body.playing .game.host-screen.immersive {
+    width:100%; max-width:none; margin:0;
+    padding:clamp(10px,1.8vh,26px) clamp(12px,1.8vw,34px);
+    gap:clamp(8px,1.2vh,16px);
+    position:relative;
+  }
+  /* Host controls: hidden overlay, summoned on demand, always keyboard-reachable. */
+  body.playing .immersive > .game-top {
+    position:fixed; z-index:60; top:clamp(6px,1vh,12px); left:50%;
+    width:min(1180px,calc(100% - 24px));
+    transform:translate(-50%,calc(-100% - 24px)); opacity:0; pointer-events:none;
+    transition:transform .35s cubic-bezier(.16,1,.3,1), opacity .25s;
+    box-shadow:0 18px 50px #000a; border-radius:14px;
+    backdrop-filter:blur(8px);
+  }
+  body.tv-chrome-visible.playing .immersive > .game-top,
+  body.playing .immersive > .game-top:focus-within {
+    transform:translate(-50%,0); opacity:1; pointer-events:auto;
+  }
+  body.playing .immersive > :is(.stage-presence,.live-lineup) { display:none !important; }
+  body.playing .immersive > .connection-strip:not([hidden]) {
+    position:fixed; z-index:61; left:50%; bottom:14px; transform:translateX(-50%);
+    width:auto; padding:8px 16px; border-radius:999px;
+  }
+  /* The game takes the whole stage: no scoreboard column. */
+  body.playing .immersive .tv-round { grid-template-columns:minmax(0,1fr); grid-template-rows:minmax(0,1fr); align-items:stretch; position:relative; gap:0; height:100%; }
+  /* Timer ring and answer count sit bottom-centre, between Pause and Reveal. */
+  body.playing .immersive .tv-round-hud {
+    position:absolute; z-index:3; left:50%; bottom:clamp(14px,2.2dvh,30px); transform:translateX(-50%);
+    display:flex; gap:8px; width:auto; max-width:46%;
+  }
+  /* The question card fills the stage; its content centres between top row and footer. */
+  body.playing .immersive .tv-round > .question-panel { display:flex; flex-direction:column; min-height:0; height:100%; overflow:hidden; }
+  body.playing .immersive .tv-round > .question-panel > h2 { margin-top:auto; }
+  body.playing .immersive .tv-round > .question-panel > .round-footer { margin-top:auto; min-height:clamp(64px,10dvh,120px); align-items:center; }
+  body.playing .immersive .tv-round-hud .tv-leaders { display:none !important; }
+  body.playing .immersive .tv-round-hud .tv-status {
+    display:flex; align-items:center; gap:14px; padding:8px 16px; border-radius:999px;
+    min-height:0; background:color-mix(in srgb,var(--mode-backdrop,#0b1020) 82%,transparent);
+  }
+  body.playing .immersive .tv-round-hud .tv-status > .eyebrow,
+  body.playing .immersive .tv-round-hud .tv-status-title { display:none; }
+  body.playing .immersive .tv-round-hud .tv-status .status { margin:0; font-size:clamp(14px,1.9dvh,20px); font-weight:700; white-space:nowrap; }
+  body.playing .immersive .tv-round-hud .response-progress { width:clamp(70px,8vw,140px); }
+  /* A true countdown ring in every show, whatever the mode skin sets. */
+  body.playing .immersive .tv-round-hud .tv-clock {
+    width:clamp(58px,9dvh,104px); margin:0; clip-path:none !important; border:0 !important; border-radius:50% !important;
+    background:conic-gradient(var(--clock-color,var(--game-accent,#ffd27a)) var(--clock-fill,100%),#ffffff1f 0) !important;
+  }
+  body.playing .immersive .tv-round-hud .tv-clock::before { background:var(--mode-backdrop,#0b1020); }
+  body.playing .immersive .tv-round-hud .tv-clock .timer { font-size:clamp(20px,3.6dvh,40px); line-height:1; }
+  body.playing .immersive .tv-round-hud .tv-clock small { display:none; }
+  body.playing .immersive .tv-round-hud .tv-status:has(.tv-clock) { padding:4px 18px 4px 4px; }
+  /* Stage panels stretch edge to edge. */
+  body.playing .immersive .tv-round > .question-panel,
+  body.playing .immersive > :is(.game-panel,.party-panel,.results) {
+    width:100%; max-width:none;
+  }
+
+  /* ------------------------------------------------- big, airy type ---- */
+  body.playing .immersive .question-panel > h2,
+  body.playing .immersive .question-panel h2 {
+    font-size:clamp(32px,6.4dvh,86px); line-height:1.14; letter-spacing:.018em; word-spacing:.06em;
+    max-width:min(34ch,100%); margin-inline:auto; text-align:center; text-wrap:balance;
+    margin-block:clamp(10px,2.4dvh,34px);
+  }
+  body.playing .immersive .question-panel .answers { gap:clamp(10px,1.8dvh,22px); }
+  body.playing .immersive .question-panel .answer {
+    min-height:clamp(70px,14dvh,170px); padding-inline:clamp(14px,1.6vw,30px);
+    font-size:clamp(22px,3.9dvh,50px); letter-spacing:.025em; word-spacing:.06em; line-height:1.15;
+  }
+  body.playing .immersive .question-panel .answer strong {
+    width:clamp(40px,6.4dvh,78px); height:clamp(40px,6.4dvh,78px); min-width:0; font-size:clamp(20px,3.4dvh,42px); letter-spacing:0;
+  }
+  body.playing .immersive .question-panel :is(.eyebrow,.round-kicker) { font-size:clamp(13px,1.9dvh,22px); letter-spacing:.16em; }
+  body.playing .immersive .question-panel .round-value { font-size:clamp(12px,1.6dvh,18px); }
+  body.playing .immersive .question-guide { font-size:clamp(15px,2.1dvh,24px); letter-spacing:.02em; }
+  body.playing .immersive :is(.turn-copy h1,.party-panel h1,.party-panel h2,.results h1,.race-broadcast-head h1) { letter-spacing:.015em; }
+  body.playing .immersive :is(.turn-copy p,.party-panel p,.race-broadcast-foot p) { font-size:clamp(15px,2.2dvh,26px); letter-spacing:.02em; line-height:1.35; }
+  body.playing .immersive .turn-copy h1 { font-size:clamp(40px,8dvh,104px); }
+
+  /* -------------------------------------------- 3D stage choreography -- */
+  body.playing .immersive .tv-round { perspective:1400px; }
+}
+
+@media (min-width:761px) and (min-height:560px) and (prefers-reduced-motion:no-preference) {
+  /* The question card swings up into place like a studio flip-board. */
+  body.playing .immersive.phase-enter[data-phase="question"] .question-panel {
+    animation:tv-card-swing .85s cubic-bezier(.16,1,.3,1) backwards; transform-origin:50% 100%;
+  }
+  body.playing .immersive.phase-enter[data-phase="question"] .question-panel h2 { animation:tv-headline-rise .8s .12s cubic-bezier(.16,1,.3,1) backwards; }
+  /* Answers flip over one by one. */
+  body.playing .immersive.phase-enter[data-phase="question"] .answers .answer { animation:tv-answer-flip .6s cubic-bezier(.2,.8,.2,1) backwards; transform-origin:50% 50%; }
+  body.playing .immersive.phase-enter[data-phase="question"] .answers .answer:nth-child(1) { animation-delay:.28s; }
+  body.playing .immersive.phase-enter[data-phase="question"] .answers .answer:nth-child(2) { animation-delay:.38s; }
+  body.playing .immersive.phase-enter[data-phase="question"] .answers .answer:nth-child(3) { animation-delay:.48s; }
+  body.playing .immersive.phase-enter[data-phase="question"] .answers .answer:nth-child(4) { animation-delay:.58s; }
+  /* Reveal: the correct answer pushes out of the screen towards the room. */
+  body.playing .immersive.phase-enter[data-phase="reveal"] .answers .answer.correct { animation:tv-answer-pop 1s cubic-bezier(.34,1.56,.64,1) backwards; }
+  body.playing .immersive.phase-enter[data-phase="reveal"] .answers .answer:not(.correct) { animation:tv-answer-sink .6s cubic-bezier(.65,0,.35,1) backwards; }
+}
+@keyframes tv-card-swing { from { opacity:.2; transform:perspective(1400px) rotateX(-58deg) translateY(40px) scale(.94); } }
+@keyframes tv-headline-rise { from { opacity:.2; transform:translateY(24px); letter-spacing:.1em; } }
+@keyframes tv-answer-flip { from { opacity:.15; transform:perspective(900px) rotateY(-95deg) translateX(-20px); } 60% { transform:perspective(900px) rotateY(10deg); } }
+@keyframes tv-answer-pop { 0% { transform:perspective(900px) translateZ(0); } 40% { transform:perspective(900px) translateZ(70px) rotateX(6deg); } 100% { transform:none; } }
+@keyframes tv-answer-sink { from { transform:perspective(900px) translateZ(30px); opacity:1; } }
+
+/* ------------------------------------------------ Quiz Race 3D circuit --- */
+.race-track-wrap > .race-3d-canvas { position:absolute; inset:0; width:100%; height:100%; display:block; z-index:1; border-radius:inherit; }
+.race-track-wrap[data-race3d="ready"] .quiz-race-scene { visibility:hidden; }
+.race-track-wrap[data-race3d="ready"]::before { display:none; }
+.race-track-wrap[data-race3d="ready"] .quiz-race-standings { position:relative; z-index:2; }
+.race-track-wrap[data-race3d="ready"] .race-team-strip { position:relative; z-index:2; }
+/* On the immersive TV the circuit gets the whole stage. */
+@media (min-width:761px) and (min-height:560px) {
+  body.playing .immersive .race-broadcast { display:flex; flex-direction:column; height:100%; min-height:0; }
+  body.playing .immersive .race-broadcast > .race-track-wrap { flex:1 1 auto; min-height:0; display:flex; flex-direction:column; justify-content:flex-end; }
+  body.playing .immersive .race-broadcast > .race-track-wrap[data-race3d="ready"] .quiz-race-scene { position:absolute; inset:0; }
+}
+
+/* ---------------------------------------- Board Race / Dice Rally stages --- */
+@media (min-width:761px) and (min-height:560px) {
+  /* The 3D table fills the screen height; the turn copy is a slim column. */
+  body.playing .immersive > .turn-panel.board-turn {
+    height:100%; min-height:0; align-items:stretch;
+    grid-template-columns:minmax(0,2.4fr) minmax(300px,.9fr);
+  }
+  body.playing .immersive > .turn-panel.board-turn > .board-stage { height:auto; min-height:0; align-self:stretch; }
+  body.playing .immersive > .turn-panel.board-turn > .turn-copy { align-self:center; min-height:0; overflow:auto; }
+}
+
+/* ------------------------------------- sofa-sized party game content ---- */
+@media (min-width:761px) and (min-height:560px) {
+  /* Fork in the Tracks: the scenario sentence is the show; give it the panel. */
+  body.playing .immersive .fork-track-sentence { font-size:clamp(20px,3.6dvh,46px); line-height:1.35; letter-spacing:.015em; }
+  body.playing .immersive .fork-track-head, body.playing .immersive .fork-track h2 { font-size:clamp(22px,3.4dvh,44px); }
+  /* Brain Ladder: bigger puzzle and answer plates. */
+  body.playing .immersive .brain-puzzle h1 { font-size:clamp(30px,6dvh,78px); letter-spacing:.012em; }
+  body.playing .immersive .brain-puzzle :is(button,.brain-answer) { font-size:clamp(20px,3.4dvh,42px); min-height:clamp(54px,9dvh,110px); letter-spacing:.02em; }
+}
+
+/* --------------------------------------------- consistency across shows -- */
+@media (min-width:761px) and (min-height:560px) {
+  /* Knockout used thin list rows; match the other quiz shows' tall 2×2 tiles. */
+  body.playing .immersive[data-mode="knockout"] .question-panel .answers:not(.binary-answers) { grid-template-columns:repeat(2,minmax(0,1fr)); gap:clamp(10px,1.8dvh,22px); }
+  body.playing .immersive[data-mode="knockout"] .question-panel .answers:not(.binary-answers) .answer {
+    min-height:clamp(70px,14dvh,170px); font-size:clamp(22px,3.9dvh,50px); padding-block:10px;
+  }
+  /* Writing phases: one big, centred prompt for the room to read. */
+  body.playing .immersive:is([data-mode="punchline"],[data-mode="cards"])[data-phase="party-write"] .party-panel {
+    height:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; gap:clamp(12px,2.4dvh,34px);
+  }
+  body.playing .immersive:is([data-mode="punchline"],[data-mode="cards"])[data-phase="party-write"] .party-panel > h1 { font-size:clamp(40px,8dvh,108px); margin:0; }
+  body.playing .immersive:is([data-mode="punchline"],[data-mode="cards"])[data-phase="party-write"] .bluff-prompt {
+    font-size:clamp(30px,5.6dvh,76px); line-height:1.2; letter-spacing:.012em; max-width:28ch; margin:0; text-wrap:balance;
+    border:0; padding:0;
+  }
+  body.playing .immersive:is([data-mode="punchline"],[data-mode="cards"])[data-phase="party-write"] .party-panel > p[role="status"] { font-size:clamp(22px,3.4dvh,44px); margin:0; }
+  /* Spot the Bluff: the stage headline and counter fill the screen. */
+  body.playing .immersive[data-mode="bluff"] .bluff-show-stage h1,
+  body.playing .immersive[data-mode="bluff"] .bluff-show-stage h2 { font-size:clamp(38px,7.5dvh,100px); }
+  body.playing .immersive[data-mode="bluff"] .bluff-show-stage p { font-size:clamp(22px,3.4dvh,44px); }
+  body.playing .immersive[data-mode="bluff"] .bluff-show-number { font-size:clamp(70px,16dvh,210px); }
+  /* Hot Potato: big countdown and holder, centred. */
+  body.playing .immersive[data-mode="potato"] .potato-panel { height:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; gap:clamp(10px,2dvh,28px); }
+  body.playing .immersive[data-mode="potato"] .potato-panel > h1 { font-size:clamp(42px,8.5dvh,112px); margin:0; }
+  body.playing .immersive[data-mode="potato"] .potato-stage-clock .timer { font-size:clamp(80px,18dvh,240px); }
+  body.playing .immersive[data-mode="potato"] .party-holder p { font-size:clamp(22px,3.4dvh,44px); }
+}
+
+/* Wheels: large enough to read from the sofa; labels scale with the wheel. */
+@media (min-width:761px) and (min-height:560px) {
+  body.playing .immersive .wheel-frame { width:min(72dvh,46vw); max-width:none; }
+  body.playing .immersive .wheel-label { font-size:clamp(14px,3.6cqw,36px); }
+  body.playing .immersive .spotlight-stage { grid-template-columns:minmax(300px,46%) minmax(0,1fr); }
+  body.playing .immersive .spotlight-wheel-wrap { width:min(42vw,66dvh,720px); }
+  body.playing .immersive .spotlight-wheel-label { font-size:clamp(12px,3.1cqw,28px); }
+}

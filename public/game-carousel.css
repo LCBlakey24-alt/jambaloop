@@ -1,0 +1,97 @@
+/* Home carousel (big screens): a curved 3D shelf of games. The page behind
+   cross-fades to the centred game's identity (two layers, one active). */
+.home-shell { position:relative; }
+.carousel-theme { position:fixed; inset:0; z-index:-1; opacity:0; pointer-events:none; transition:opacity .7s ease;
+  background:radial-gradient(ellipse at 50% 120%, color-mix(in srgb,var(--id-accent,#7c5cff) 35%,transparent), transparent 60%),
+    radial-gradient(ellipse at 50% -20%, var(--id-bg1,#1b1b3a), var(--id-bg2,#0c0c1c) 75%); }
+.carousel-theme.is-active { opacity:1; }
+.home-shell:not([data-home-view="carousel"]) .carousel-theme { display:none; }
+
+.game-carousel { --card:clamp(190px,min(31dvh,24vw),400px); display:grid; gap:clamp(8px,1.6dvh,20px); min-height:0; }
+.game-carousel[hidden] { display:none; }
+.carousel-stage { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:12px; }
+.carousel-track { position:relative; height:var(--card); perspective:1500px; transform-style:preserve-3d; touch-action:pan-y; }
+.carousel-card { position:absolute; left:50%; top:0; width:var(--card); height:var(--card); margin-left:calc(var(--card) / -2);
+  padding:0; border:2px solid color-mix(in srgb,var(--id-accent) 55%,transparent); border-radius:clamp(14px,1.6vw,22px); overflow:hidden; cursor:pointer;
+  container-type:inline-size; background:var(--id-bg2);
+  --mode-type:var(--id-display); --mode-weight:var(--id-weight); --game-accent:var(--id-accent); --mode-panel:var(--id-bg1); --mode-backdrop:var(--id-bg2);
+  transform:translateX(calc(var(--offset) * var(--card) * .74)) translateZ(calc(var(--distance) * -170px)) rotateY(calc(var(--offset) * -28deg));
+  opacity:calc(1 - var(--distance) * .3); z-index:calc(10 - var(--distance));
+  filter:brightness(calc(1 - var(--distance) * .16)) saturate(calc(1 - var(--distance) * .2));
+  box-shadow:0 24px 50px #0008;
+  transition:transform .6s cubic-bezier(.2,.8,.2,1), opacity .5s ease, filter .5s ease, box-shadow .5s ease; }
+.carousel-card[aria-current="true"] { border-color:var(--id-accent); box-shadow:0 0 0 4px color-mix(in srgb,var(--id-accent) 40%,transparent), 0 30px 70px #000a, 0 0 90px color-mix(in srgb,var(--id-accent) 35%,transparent); }
+.carousel-card[aria-hidden="true"] { opacity:0; pointer-events:none; }
+.carousel-card:focus-visible { outline:3px solid var(--id-accent); outline-offset:4px; }
+.carousel-card .tile-wordmark { font-size:clamp(24px,17cqw,64px); }
+.carousel-arrow { width:clamp(44px,4vw,64px); aspect-ratio:1; border-radius:50%; border:2px solid color-mix(in srgb,var(--id-ink,#fff) 40%,transparent);
+  background:color-mix(in srgb,var(--id-surface,#111) 70%,transparent); color:var(--id-ink,#fff); font:700 clamp(26px,2.6vw,40px)/1 var(--head); cursor:pointer; z-index:20; }
+.carousel-arrow:hover, .carousel-arrow:focus-visible { background:var(--id-accent); color:var(--id-bg2); border-color:var(--id-accent); }
+
+.carousel-info { justify-self:center; width:min(1100px,100%); display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); column-gap:clamp(16px,3vw,48px);
+  align-items:start; padding:clamp(12px,1.8dvh,22px) clamp(14px,2vw,28px); border-radius:var(--id-radius); color:var(--id-ink);
+  background:color-mix(in srgb,var(--id-surface) 88%,transparent); border:1px solid color-mix(in srgb,var(--id-accent) 45%,transparent);
+  box-shadow:0 18px 46px #0006; backdrop-filter:blur(10px); }
+.carousel-info > :not(.carousel-steps) { grid-column:1; }
+.carousel-steps { grid-column:2; grid-row:1 / span 5; margin:0; padding-left:1.3em; display:grid; gap:.45em; color:var(--id-ink); font-size:clamp(13px,1.7dvh,19px); line-height:1.35; }
+.carousel-steps li::marker { color:var(--id-accent); font-weight:900; }
+.carousel-kind { margin:0; color:var(--id-accent); font:800 clamp(11px,1.4dvh,15px)/1.2 var(--head); letter-spacing:.14em; text-transform:uppercase; }
+.carousel-name { margin:.1em 0 .15em; font:var(--id-weight) clamp(30px,6dvh,72px)/1 var(--id-display), var(--head); text-transform:var(--id-case); color:var(--id-ink); letter-spacing:.01em; }
+.carousel-description { margin:0 0 .6em; color:var(--id-muted); font-size:clamp(14px,1.9dvh,21px); line-height:1.35; }
+.carousel-actions { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.carousel-actions .button.primary { background:var(--id-accent); border-color:var(--id-accent); color:color-mix(in srgb,var(--id-bg2) 90%,#000); }
+.carousel-info[data-mode="punchline"] .carousel-actions .button.primary,
+.carousel-info[data-mode="cards"] .carousel-actions .button.primary,
+.carousel-info[data-mode="sketch"] .carousel-actions .button.primary { color:#fff; }
+.carousel-actions .button.outline { color:var(--id-ink); border-color:color-mix(in srgb,var(--id-ink) 40%,transparent); }
+.carousel-voice[aria-pressed="true"] { background:color-mix(in srgb,var(--id-accent) 25%,transparent); border-color:var(--id-accent); }
+.carousel-voice-note { margin-top:.6em; display:block; color:var(--id-muted); font-size:12px; }
+.carousel-count { margin:0; justify-self:center; color:var(--id-muted,#aab); font:700 13px/1 var(--head); letter-spacing:.12em; }
+.carousel-count span { color:var(--id-accent,#fff); }
+
+/* The rest of the home screen takes the centred game's colours too. */
+.home-shell[data-home-view="carousel"] :is(.home-intro, .home-tabs, .launcher-toolbar) { color:var(--id-ink); }
+.home-shell[data-home-view="carousel"] .home-intro h1 em { color:var(--id-accent); -webkit-text-fill-color:var(--id-accent); background:none; }
+.home-shell[data-home-view="carousel"] .home-ambient { opacity:.25; }
+/* Paper shows (light schemes): every home element switches to ink. */
+.home-shell[data-carousel-scheme="light"] :is(.home-intro h1, .launcher-heading h2, .home-tab, .topic-filter, .home-intro p, .launcher-heading p, .home-tabs-note, .home-publisher) { color:var(--id-ink) !important; -webkit-text-fill-color:currentColor; }
+.home-shell[data-carousel-scheme="light"] .home-intro h1 em { -webkit-text-fill-color:var(--id-accent); }
+.home-shell[data-carousel-scheme="light"] :is(.mode-filters, .category-filters) { background:color-mix(in srgb,var(--id-surface) 80%,transparent) !important; border-color:color-mix(in srgb,var(--id-ink) 25%,transparent) !important; }
+.home-shell[data-carousel-scheme="light"] .topic-filter[aria-pressed="true"] { background:var(--id-ink) !important; color:var(--id-surface) !important; }
+.home-shell[data-carousel-scheme="light"] .home-actions .button.outline { background:transparent !important; color:var(--id-ink) !important; border-color:color-mix(in srgb,var(--id-ink) 40%,transparent) !important; }
+.home-shell[data-carousel-scheme="light"] .home-actions .button.outline img { filter:invert(1); }
+.home-shell[data-carousel-scheme="light"] .carousel-arrow { background:var(--id-surface); }
+.home-shell[data-home-view="carousel"] .home-actions .button.primary { background:var(--id-accent); border-color:var(--id-accent); color:color-mix(in srgb,var(--id-bg2) 90%,#000); }
+
+/* Laptops and short TVs: tighter shelf, one row of actions. */
+@media (max-height:820px) {
+  .game-carousel { --card:clamp(170px,30dvh,260px); gap:8px; }
+  .carousel-info { padding:10px 18px; }
+  .carousel-name { font-size:clamp(26px,5.2dvh,48px); }
+  .carousel-description { margin-bottom:.4em; font-size:clamp(13px,1.9dvh,17px); }
+  .carousel-steps { font-size:clamp(12px,1.75dvh,15px); gap:.3em; }
+  .carousel-actions .button { min-height:38px; padding:6px 14px; font-size:14px; }
+  .carousel-voice-note, .carousel-count { display:none; }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  .carousel-card, .carousel-theme { transition:none; }
+}
+
+/* Launcher tiles everywhere wear their show's identity. */
+.tile-art { background:radial-gradient(circle at 52% 66%,color-mix(in srgb,var(--game-accent) 22%,transparent),transparent 58%),
+  linear-gradient(135deg,var(--id-bg1,var(--mode-panel)),var(--id-bg2,var(--mode-backdrop)) 85%); }
+:is(.game-tile,.carousel-card)[data-mode] .tile-wordmark,
+:is(.game-preview,.tile-setup-art) .tile-wordmark { font-family:var(--id-display),var(--head),sans-serif; font-weight:var(--id-weight); text-transform:var(--id-case); letter-spacing:0; font-style:normal; transform:none; }
+:is(.game-tile,.carousel-card,.game-preview):is([data-mode="punchline"],[data-mode="cards"],[data-mode="sketch"]) :is(.tile-wordmark, .tile-strap, .tile-info) { color:var(--id-ink); text-shadow:none; }
+:is(.game-tile,.carousel-card,.game-preview):is([data-mode="punchline"],[data-mode="cards"],[data-mode="sketch"]) .tile-wordmark > span:last-child { color:var(--id-accent); filter:none; }
+
+/* Lobby game switcher: the captain's phone (or the TV) flicks between shows. */
+.lobby-switcher { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:10px 0 6px; }
+.lobby-switcher .button { min-width:0; justify-content:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:800; }
+.lobby-switcher .button:first-child { justify-content:flex-start; }
+.lobby-switcher .button:last-child { justify-content:flex-end; }
+@media (prefers-reduced-motion:no-preference) {
+  .lobby-game.is-swapping { animation:lobby-swap-in .5s cubic-bezier(.2,.8,.2,1) both; }
+}
+@keyframes lobby-swap-in { from { transform:translateX(calc(var(--swap-from,1) * 60px)) rotateY(calc(var(--swap-from,1) * -14deg)); opacity:0; } }

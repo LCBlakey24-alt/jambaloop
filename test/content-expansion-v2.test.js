@@ -8,6 +8,7 @@ import {topAnswersPrompts} from '../top-answers.js';
 import {samePagePrompts} from '../same-page.js';
 import {rareFindBank,answerMapFor} from '../rare-find-bank.js';
 import {brainPuzzleBank} from '../brain-ladder.js';
+import { releasedGameIds } from '../released-games.js';
 
 const normalise = str=>String(str).normalize('NFKC').toLocaleLowerCase('en-GB').replace(/\s+/g,' ').trim();
 const unique=(values,description)=>{
@@ -56,7 +57,7 @@ test('Evergreen content pack is additive and every original question has a uniqu
 test('Two added genres are playable in every trivia format, including Board Race level six and mixed Wheel',()=>{
  const configured=new Set(categories.map(row=>row[0]));
  assert.equal(configured.size,categories.length,'Category IDs must be unique');
- assert.equal(modes.length,18,'The game library must retain all 17 existing games and the new Sketch Sprint');
+ assert.deepEqual(modes.map(([id])=>id),[...releasedGameIds],'The game library must retain every released game');
  assert.equal(categories.length,19,'The library must expose 18 named topics and Mixed Bag');
  assert.equal(questionCategories.length,18);
  for(const category of newCategories){

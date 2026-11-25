@@ -69,6 +69,9 @@ on:
       - 'public/show-identity.js'
       - 'scripts/so-close-browser.mjs'
       - 'scripts/question-types-browser.mjs'
+      - 'scripts/show-moments-browser.mjs'
+      - 'public/show-moments.*'
+      - 'public/score-break.js'
       - '.github/workflows/launcher-browser.yml'
   workflow_dispatch:
 
@@ -121,6 +124,7 @@ jobs:
           node scripts/sketch-browser.mjs
           node scripts/so-close-browser.mjs
           node scripts/question-types-browser.mjs
+          node scripts/show-moments-browser.mjs
           node scripts/tv-immersive-browser.mjs
           node scripts/tv-all-modes.mjs
       - name: Upload screen captures on success or failure

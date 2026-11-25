@@ -44,7 +44,7 @@ test('only the TV becomes immersive, and only once play starts', () => {
   assert.match(app, /const immersive = host && !\['lobby', 'waiting'\]\.includes\(s\.phase\);/);
   assert.match(app, /\$\{immersive \? 'immersive' : ''\}/);
   const sheets = [...html.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)].map(match => match[1]);
-  assert.deepEqual(sheets.slice(-2), ['/tv-immersive.css', '/answer-colours.css']);
+  assert.deepEqual(sheets.slice(-3), ['/tv-immersive.css', '/answer-colours.css', '/show-moments.css']);
 });
 
 test('immersive mode hides chrome and scoreboards but keeps controls reachable', () => {

@@ -50,9 +50,9 @@ function rowView(entry, {
   return `<li class="score-break-row" data-score-id="${escape(entry.id)}" data-score-new="${newScore}" data-spotlit="${featured}"${animate ? ' data-score-flash' : ''}${color ? ` style="--score-row-accent:${color}"` : ''}>
     <span class="score-break-rank"><span aria-hidden="true">#${rank}</span><span class="sr-only">Place ${rank}</span></span>
     <div class="score-break-player">${color ? '<span class="score-break-team" aria-hidden="true"></span>' : avatarView(entry, escape)}
-      <div><strong>${escape(entry.name)}</strong><small class="score-break-history">${finding(entry, newScore, moving)}</small></div>
+      <div><strong>${escape(entry.name)}${newScore && entry.streak >= 3 ? `<i class="streak-flame" title="${entry.streak} correct in a row">🔥${entry.streak}</i>` : ''}</strong><small class="score-break-history">${finding(entry, newScore, moving)}</small></div>
     </div>
-    <span class="score-break-total">${number.format(newScore ? entry.score : entry.previousScore)} <small>pts</small></span>
+    <span class="score-break-total">${newScore && entry.score > entry.previousScore ? `<em class="score-break-gain"${animate ? ' data-pop' : ''} aria-hidden="true">+${number.format(Math.round((entry.score - entry.previousScore) * 100) / 100)}</em>` : ''}${number.format(newScore ? entry.score : entry.previousScore)} <small>pts</small></span>
     ${movement(entry, moving)}
   </li>`;
 }

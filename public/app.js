@@ -1,5 +1,5 @@
 import { showIdentity } from './show-identity.js';
-import { bindTilt, celebrate, countUp } from './motion.js';
+import { bindTilt, celebrate, countUp, prefersReducedMotion } from './motion.js';
 import { enforceTvLegibility } from './tv-legibility.js';
 import {soCloseView,numberWheelRows,soCloseRevealView} from './so-close-view.js';
 import {revealFrame as soCloseFrame, stageFrame as soCloseStage} from './so-close-reveal.js';
@@ -24,6 +24,7 @@ import { playCue, playTick, playTowerImpact } from './sound-cues.js';
 import { boardLengths, boardRoute, boardDuration, durationLabel, suggestedTurnCap, boardRequiresChoice, boardPathChoices } from './board-route.js';
 import {teamPlayModes, defaultPlayStyle} from './team-play.js';
 import { avatarView, partyView } from './party-views.js';
+import { bumpCount, clockTension, lockRail, stageReveal, stageable, updateLockRail } from './show-moments.js';
 import {connectSketchPainter,paintSketchBoard,clearSketch} from './sketch-canvas.js';
 import { openLibrary, savedQuizzes } from './quiz-editor.js';
 import { answerGuide, helpTypes, closestStep, createDraft, formatNumber, orderedItems, setEstimatePrecision, specialAnswer } from './answer-controls.js';
@@ -827,7 +828,7 @@ function tvRoundHud(s, timer, progress, host) {
     <section class="game-panel tv-status">
       <div class="eyebrow">${revealed ? 'ROUND COMPLETE' : 'LIVE ROUND'}</div>
       ${timer || `<strong class="tv-status-title">${revealed ? 'Answer revealed' : 'No timer'}</strong>`}
-      <p class="status" id="host-answer-count" role="status">${answerCount(s)}</p>${progress}
+      <p class="status" id="host-answer-count" role="status">${answerCount(s)}</p>${progress}${lockRail(s, escape, avatarView)}
     </section>
     ${groupPlay ? `<section class="game-panel tv-leaders"><div class="eyebrow">TEAM SCORES</div>${teamScoreboard(s.teams)}</section>` : ''}
     ${leaders.length ? `<section class="game-panel tv-leaders"><div class="eyebrow">${s.players.length > leaders.length ? 'TOP SCORES' : 'LEADERBOARD'}</div>${leaderboard(leaders)}${s.players.length > leaders.length ? `<p class="tv-leaders-more">+${s.players.length - leaders.length} more players</p>` : ''}</section>` : ''}
@@ -873,7 +874,7 @@ function phaseCaption(s) {
 }
 
 // Decorative celebration for genuine winning moments; keys stop repeats on re-render.
-function celebrateMoment(s, host, enter, result) {
+function celebrateMoment(s, host, enter, result, held = 0) {
   const view = app.querySelector('.game');
   if (!view) return;
   const key = `${s.code}/${s.game}`;
@@ -882,7 +883,7 @@ function celebrateMoment(s, host, enter, result) {
     if (host && !document.querySelector('#post-ceremony[hidden]')) celebrate(key + '/finale', { source: view, origin: 'sides' });
     const teamWin = s.teams?.length && s.teamWinners?.includes(s.player?.team);
     if (!host && enter && (s.rank === 1 || teamWin)) celebrate(key + '/finale/player', { source: view, intensity: .45 });
-  } else if (!host && enter && result === 'win') {
+  } else if (!host && enter && result === 'win' && !held) {
     celebrate(`${key}/${s.index}/round`, { source: view, intensity: .22 });
   }
 }
@@ -1020,6 +1021,7 @@ function render(s) {
         <span class="feedback-mark" aria-hidden="true">${revealed ? won ? '✓' : '!' : eliminated ? '•' : locked ? '✓' : '…'}</span>
         <span><strong>${revealed ? won ? 'Correct answer!' : 'Round complete' : eliminated ? 'Spectating' : locked ? 'Answer locked in' : 'Sending your answer'}</strong>
         <small>${revealed ? revealStatus : eliminated ? 'You can watch the remaining rounds.' : locked ? 'You can relax while everyone else finishes.' : 'Hold on while we save your choice.'}</small></span>
+        ${revealed && won && showLiveScores && s.earned ? `<b class="points-pop" aria-hidden="true">+${s.earned.toLocaleString()}</b>` : ''}
       </div>` : '';
     body = `${host ? '<div class="tv-round">' : ''}<div class="game-panel question-panel ${revealed ? 'is-reveal' : ''}">
       <div class="eyebrow round-kicker"><span>${board ? 'TURN' : 'QUESTION'} ${s.index + 1} OF ${s.total}</span>
@@ -1032,7 +1034,7 @@ function render(s) {
       ${promptHelp}
       ${s.mode === 'soclose' ? soCloseView(question,{draft,selection,revealed,host,disabled:eliminated || sending,closest:s.closest,guesses:s.estimateGuesses},escape) : special ? specialAnswer(question, { draft, selection, revealed, host, disabled: eliminated || sending, closest: s.closest }, escape) : `<div class="answers ${s.question.options.length === 2 ? 'binary-answers' : ''}">${s.question.options.map((option, index) => `<button style="--answer:${colors[index]};--share:${s.breakdown && s.answered ? s.breakdown[index] * 100 / s.answered : 0}%" class="answer ${selection === index ? 'selected' : ''} ${revealed && s.question.correct === index ? 'correct' : ''}"
        data-dim="${revealed ? s.question.correct !== index : !host && selection !== undefined && selection !== index}" data-action="answer" data-option="${index}" ${host || revealed || locked || sending || eliminated ? 'disabled' : ''}>
-      <strong>${'ABCD'[index]}</strong><span>${escape(option)}${revealed && s.question.correct === index ? ' ✓' : ''}</span>
+      <strong>${'ABCD'[index]}</strong><span>${escape(option)}${revealed && s.question.correct === index ? '<b class="answer-tick" aria-hidden="true"> ✓</b>' : ''}</span>
       ${s.breakdown ? `<small class="answer-count"><b class="vote-share">${s.answered ? Math.round(100 * s.breakdown[index] / s.answered) : 0}%</b><span>${s.breakdown[index]} ${s.breakdown[index] === 1 ? 'vote' : 'votes'}</span></small>` : ''}</button>`).join('')}</div>`}
       ${revealed && s.question.source ? `<a class="question-source" href="${escape(s.question.source)}" target="_blank" rel="noopener noreferrer">Verified answer source</a>` : ''}
        ${checkpointNote(s)}<div class="round-footer">${host ? '' : `<div class="round-status"><p class="status" ${playerFeedback ? '' : 'role="status"'}>${revealed ? revealStatus + (showLiveScores ? ' Total: ' + s.player.score.toLocaleString() + ' pts.' : '') : answerStatus}</p>${revealed && s.player.streak >= 2 ? `<span class="streak-tag">${s.player.streak} in a row</span>` : ''}</div>`}
@@ -1114,7 +1116,12 @@ function render(s) {
   switchAvatarSession.refresh();
   if (backdrop) app.querySelector('.scene-backdrop').replaceWith(backdrop);
   renderGraphics(s, stage, animateRoll);
-  celebrateMoment(s, host, enter, result);
+  // Reveal beat: TV drum-roll and flare; phones hold their verdict to match.
+  const held = stageReveal(app, s, { host, enter, onFlare: verdict => {
+    if (host) { if (soundEnabled) playCue(sound, s.mode, 'reveal'); }
+    else if (verdict === 'win') celebrate(`${s.code}/${s.game}/${s.index}/round`, { source: app.querySelector('.game'), intensity: .22 });
+  } });
+  celebrateMoment(s, host, enter, result, held);
   // Sofa distance: no in-game TV text below the height-relative floor.
   if (immersive && innerWidth > 760) enforceTvLegibility(app.querySelector('section.game'));
   // The lobby's game card slides in from the side the switcher moved towards.
@@ -1226,6 +1233,12 @@ function updateTimer() {
   const fill = document.querySelector('#time-fill');
   if (fill) fill.style.transform = `scaleX(${fraction})`;
   timer.closest('.tv-clock, .potato-stage-clock')?.style.setProperty('--clock-fill', `${fraction * 100}%`);
+  const final = clockTension(timer.closest('.game'), { fraction, remaining, paused: Boolean(state.pausedAt), live: state.phase === 'question' });
+  // A tick each second through the last five on the TV (sound is opt-in).
+  if (final && session?.host && soundEnabled) {
+    const beat = `${state.game}/${state.index}/${secondsLeft}`;
+    if (beat !== lastQuestionTick) { lastQuestionTick = beat; playTick(sound, true); }
+  }
   if (state.phase === 'party-potato') {
     potatoHeat(app, fraction);
     // A tick each second on the TV (sound is opt-in), quicker in the last ten.
@@ -1236,6 +1249,7 @@ function updateTimer() {
   }
 }
 let lastPotatoTick;
+let lastQuestionTick;
 
 function boardPrediction(state, host) {
   const prediction = state.prediction;
@@ -1284,7 +1298,8 @@ function receive(next, current) {
   setConnectionStatus(false);
   if (soundEnabled && current.host && state) {
     if (state.phase !== next.phase || state.index !== next.index) {
-      if (!(next.mode==='soclose' && next.phase==='reveal') && (!next.ceremony || matchMedia('(prefers-reduced-motion: reduce)').matches)) playCue(sound, next.mode, next.phase);
+      const staged = stageable(next) && !prefersReducedMotion();
+      if (!(next.mode==='soclose' && next.phase==='reveal') && !staged && (!next.ceremony || matchMedia('(prefers-reduced-motion: reduce)').matches)) playCue(sound, next.mode, next.phase);
     }
     else if (next.mode === 'potato' && next.party?.passes > state.party?.passes) playCue(sound, next.mode, 'pass');
   }
@@ -1306,7 +1321,7 @@ function receive(next, current) {
     Object.assign(current, { name: next.player.name, mode: next.mode });
     rememberPlayer(current);
   }
-  const { now, revision, answered, connected, waitingCount, responseTarget, race, ...stable } = next;
+  const { now, revision, answered, connected, waitingCount, responseTarget, race, lockIns, ...stable } = next;
   const raceSignature = race && { question:race.own?.question?.id, feedback:race.own?.feedback?.outcome, paused:race.paused, finished:race.finished };
   const lobbyStatus = next.phase === 'lobby' ? { connected } : undefined;
   const raceStable = next.mode==='quizrace' ? { ...stable, players: next.phase==='finished' ? stable.players : undefined, player: stable.player ? {...stable.player, score: undefined} : undefined } : stable;
@@ -1322,7 +1337,8 @@ function receive(next, current) {
   }
   const counter = current.host && document.querySelector('#host-answer-count');
   const countText = answerCount(next);
-  if (counter && counter.textContent !== countText) counter.textContent = countText;
+  if (counter && counter.textContent !== countText) { counter.textContent = countText; bumpCount(counter); }
+  if (current.host) updateLockRail(app, next, escape, avatarView);
   const responseProgress = document.querySelector('#response-progress');
   if (responseProgress) {
     responseProgress.max = Math.max(1, next.responseTarget);

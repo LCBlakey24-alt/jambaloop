@@ -126,6 +126,13 @@ Closest-number and put-in-order sessions offer five questions when you choose on
 
 - **Team Showdown** lets the host or captain choose two, three, or four balanced teams. Everyone answers on their own phone. Each round, a team earns the average of its players’ points, including misses. Highest team score wins, and players retain their individual scores.
 
+**Show moments (quiz rounds):**
+- **Lock-ins:** each player's face stamps onto the TV as they lock in; it never shows what they chose.
+- **Reveal:** a short drum-roll, then the wrong answers drop out one by one before the right answer flares. Phones hold their verdict for the same beat, and right/wrong badges then flip onto the stamps.
+- **Scoreboard:** each player's gain pops beside their new total, and streaks of three or more earn a 🔥.
+- **Last five seconds:** the clock beats like a heart, with a red glow at the screen edges. With sound on, the TV ticks.
+- **Reduced motion:** everything shows its final state at once.
+
 For quiz modes, the TV counts up from last place to first. Larger rooms see several scores at a time until the podium. **Skip to full results** opens the full standings immediately. With reduced motion enabled, the app shows results immediately. Awards include the fastest and slowest submitted answers, most correct and incorrect answers, best streak, and correct answers after a miss.
 
 After a quiz game, **Review questions** shows the answers and each player’s results. Phones get a personal scorecard with rounds won, best streak, and final rank. With **Answer controls only**, the TV retains the full prompts in the review.

@@ -237,7 +237,15 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
   const scoresPublished = room.scoreInterval === 1 || phase === 'finished';
   const playerScore = room.lastScoreBreak.get(player?.id)?.row.score ?? 0;
   const finalRanks = phase === 'finished' ? finishRanks(room, ranked, comparePlayers) : undefined;
+  // TV only: who has locked in, in lock order, never what they chose. After the
+  // reveal each stamp says right or wrong; So Close stages its own reveal.
+  const lockIns = isHost && visible && !(revealed && room.mode === 'soclose')
+    ? [...answers].flatMap(([playerKey, entry]) => {
+      const participant = players.get(playerKey);
+      return participant ? [{ id: participant.id, name: participant.name, avatar: participant.avatar, ...(revealed ? { won: Boolean(entry.won) } : {}) }] : [];
+    }) : undefined;
   return { revision: room.revision, code, category, phase: waiting ? 'waiting' : phase, index, total: room.count, seconds, game, opened, ends, answered: answers.size,
+    lockIns,
     connected: counts.connected, waitingCount: room.waiting.size, responseTarget: counts.target,
     readyCount: phase === 'lobby' ? counts.ready : undefined, lobbyVersion: room.lobbyVersion,
     pausedAt: !waiting && room.pausedAt ? room.pausedAt : undefined, clockVersion: room.clockVersion,
@@ -556,6 +564,8 @@ function openScoreBreak(room) {
     const older = previous.get(row.id);
     return {
       id: row.id, name: row.name, avatar: row.avatar, color: row.color,
+      // Individual hot streaks earn a flame on the TV scoreboard.
+      streak: room.teams.length ? undefined : row.streak,
       score: row.score, previousScore: older?.row.score ?? 0, rank, previousRank: older?.row.rank ?? 1,
       previousIndex: older?.index ?? initialOrder.get(row.id),
       position: board ? row.position : undefined, previousPosition: board ? older?.row.position ?? 0 : undefined,

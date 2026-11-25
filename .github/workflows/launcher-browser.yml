@@ -52,6 +52,11 @@ on:
       - 'public/board-*.js'
       - 'public/team-play*'
       - 'released-games.js'
+      - 'public/tv-immersive.css'
+      - 'public/race-3d.js'
+      - 'public/race-course.js'
+      - 'public/quiz-race*'
+      - 'scripts/tv-immersive-browser.mjs'
       - 'public/visual-polish.css'
       - 'public/motion.js'
       - 'public/board.js'
@@ -114,6 +119,7 @@ jobs:
           node scripts/bluff-browser.mjs
           node scripts/sketch-browser.mjs
           node scripts/so-close-browser.mjs
+          node scripts/tv-immersive-browser.mjs
           node scripts/tv-all-modes.mjs
       - name: Upload screen captures on success or failure
         if: always()

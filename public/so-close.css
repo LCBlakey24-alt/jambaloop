@@ -14,14 +14,11 @@
 .so-close-guesses li small {grid-column:1/-1;color:#c6ddda;}
 .so-close-guesses li[data-nearest="true"] {border-color:#ffbf68;}
 .so-close-editor {display:grid;gap:8px;}
-.so-close-wheel {display:grid;grid-template-columns:minmax(0,1fr) 44px;grid-template-rows:36px auto 36px;align-items:center;gap:3px;padding:6px;border:1px solid #75b3ad;border-radius:8px;background:#09292e;}
+.so-close-wheel {display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:36px auto 36px;align-items:center;gap:3px;padding:6px;border:1px solid #75b3ad;border-radius:8px;background:#09292e;}
 .so-close-wheel>button {grid-column:1;min-height:36px;background:#19464b;border:1px solid #659c98;color:#f1f4e7;border-radius:5px;}
 .so-close-wheel-rows {grid-column:1;grid-row:2;display:grid;gap:2px;touch-action:none;user-select:none;}
 .so-close-number {display:block;text-align:center;font:700 16px/1.3 var(--head);color:#b0cdca;min-height:20px;}
 .so-close-number.current {padding:5px 2px;border-block:2px solid #ffbf68;background:#215459;color:#ffbf68;font-size:26px;overflow-wrap:anywhere;}
-.so-close-wheel input[data-range] {grid-column:2;grid-row:1/4;writing-mode:vertical-lr;direction:rtl;inline-size:100%;block-size:34px;height:100%;width:34px;padding:0;accent-color:#ffbf68;touch-action:none;}
-.so-close-coarse {display:flex;gap:8px;}
-.so-close-coarse button {flex:1;min-height:44px;background:#17454a;border:1px solid #659c98;color:#f1f4e7;border-radius:5px;}
 .so-close-editor .primary {background:#ffbf68;color:#102a2d;}
 .game[data-mode="soclose"] .question-panel h2 {font-size:clamp(22px,4dvh,46px);}
 .game.player-only[data-mode="soclose"] .question-panel h2 {font-size:clamp(19px,4.5vw,26px);}
@@ -66,3 +63,18 @@
 @media (min-width:900px) {
   .game.host-screen .so-close-broadcast .so-close-guesses {grid-template-columns:repeat(auto-fill,minmax(250px,1fr));max-height:clamp(96px,26dvh,330px);}
 }
+
+/* Estimates: no range is shown, so the player picks the step size instead. */
+.estimate-precision {display:flex;gap:4px;min-width:0;overflow-x:auto;scrollbar-width:none;}
+.estimate-precision button {flex:1 0 auto;min-width:42px;min-height:40px;padding:0 6px;border-radius:8px;border:1px solid var(--edge,#659c98);
+  background:transparent;color:inherit;font:800 14px/1 var(--head);font-variant-numeric:tabular-nums;}
+.estimate-precision button[aria-pressed="true"] {background:var(--pink,#ffbf68);border-color:transparent;color:#14111d;}
+.so-close-precision {display:grid;gap:4px;}
+.so-close-precision > span {font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#bcd4d1;}
+.so-close-precision .estimate-precision button {border-color:#659c98;background:#17454a;color:#f1f4e7;}
+.so-close-precision .estimate-precision button[aria-pressed="true"] {background:#ffbf68;color:#102a2d;}
+.number-editor:has(.estimate-precision) {grid-template-columns:minmax(0,1fr);}
+.number-scroller:has(.estimate-precision) {grid-template-columns:44px minmax(0,1fr) 44px;justify-items:stretch;}
+.number-scroller:has(.estimate-precision) > button {width:44px;height:44px;}
+.so-close-no-range {text-align:center;justify-items:center;}
+.so-close-no-range .so-close-actual {font-size:clamp(28px,6dvh,72px);}

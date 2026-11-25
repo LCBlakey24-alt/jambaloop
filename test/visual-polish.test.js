@@ -9,9 +9,9 @@ const html = read('public/index.html');
 const app = read('public/app.js');
 const board = read('public/board.js');
 
-test('visual polish loads after every other stylesheet', () => {
+test('visual polish loads after every game stylesheet; only the immersive TV layer follows it', () => {
   const sheets = [...html.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)].map(match => match[1]);
-  assert.equal(sheets.at(-1), '/visual-polish.css');
+  assert.deepEqual(sheets.slice(sheets.indexOf('/visual-polish.css') + 1), ['/tv-immersive.css']);
 });
 
 test('every decorative animation has a reduced-motion opt-out', () => {

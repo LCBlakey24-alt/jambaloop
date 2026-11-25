@@ -32,6 +32,19 @@ const modeName = id => modes.find(mode => mode[0] === id)?.[1] ?? '';
 const app = document.querySelector('#app');
 const switchAvatarSession = bindRoomAvatars(app);
 bindTilt();
+bindImmersiveChrome();
+
+// Immersive TV: show host controls briefly on mouse, key or touch activity.
+function bindImmersiveChrome() {
+  let hideTimer;
+  const reveal = () => {
+    if (!document.querySelector('.game.immersive')) return;
+    document.body.classList.add('tv-chrome-visible');
+    clearTimeout(hideTimer);
+    hideTimer = setTimeout(() => document.body.classList.remove('tv-chrome-visible'), 2600);
+  };
+  for (const type of ['mousemove', 'keydown', 'touchstart', 'wheel']) document.addEventListener(type, reveal, { passive: true });
+}
 const home = app.innerHTML;
 const dialog = document.querySelector('#dialog');
 const content = document.querySelector('#dialog-content');
@@ -51,6 +64,10 @@ let offset = 0;
 let submittingAnswer;
 let raceSending = false;
 let raceTrackView;
+// One persistent WebGL circuit per race on the TV; re-attached after renders.
+let race3d;
+let race3dLoading;
+function disposeRace3d() { race3d?.dispose(); race3d = undefined; race3dLoading = undefined; }
 let raceAnimationFrame = 0;
 let raceSnapshotLocal = 0;
 let sound;
@@ -124,7 +141,7 @@ function updateQuizRaceVisuals() {
   const elapsed=snapshot.paused ? 0 : Math.min(320,Math.max(0, Date.now()-raceSnapshotLocal));
   const sim=snapshot.time+(snapshot.paused?0:Math.max(0,Date.now()-raceSnapshotLocal));
   const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  raceTrackView?.update(snapshot.racers,snapshot.length,reduced?0:elapsed,reduced);
+  raceTrackView?.update(snapshot.racers,snapshot.length,reduced?0:elapsed,reduced,sim);
   const set=(selector,text)=>{const item=app.querySelector(selector);if(item&&item.textContent!==String(text))item.textContent=String(text);};
   set('[data-race-clock]',`${Math.floor(Math.max(0,sim-3000)/60000)}:${String(Math.floor(Math.max(0,sim-3000)/1000)%60).padStart(2,'0')}`);
   set('[data-race-countdown]',Math.max(1,Math.ceil((3000-sim)/1000)));
@@ -152,7 +169,7 @@ function renderHome() {
   stopNarration();
   boardDisplay?.dispose();
   boardDisplay = undefined;
-  raceTrackView?.dispose(); raceTrackView = undefined;
+  raceTrackView?.dispose(); raceTrackView = undefined; disposeRace3d();
   cancelAnimationFrame(raceAnimationFrame); raceAnimationFrame = 0;
   setTheme(previewTheme);
   app.innerHTML = home;
@@ -579,7 +596,7 @@ function startSession(next) {
   dialog.close();
   boardDisplay?.dispose();
   boardDisplay = undefined;
-  raceTrackView?.dispose(); raceTrackView = undefined;
+  raceTrackView?.dispose(); raceTrackView = undefined; disposeRace3d();
   cancelAnimationFrame(raceAnimationFrame); raceAnimationFrame = 0;
   app.innerHTML = `<section class="game connection-screen"><div class="game-panel">
     <div class="eyebrow">ROOM ${escape(next.code)}</div><h1>Joining the lobby<span class="brand-dot">.</span></h1>
@@ -596,7 +613,7 @@ function leave() {
   switchAvatarSession();
   tvFocus = false;
   submittingAnswer = undefined;
-  raceSending = false; raceTrackView?.dispose(); raceTrackView = undefined;
+  raceSending = false; raceTrackView?.dispose(); raceTrackView = undefined; disposeRace3d();
   cancelAnimationFrame(raceAnimationFrame);raceAnimationFrame=0;
   document.body.classList.remove('playing');
   clearRoomSession();
@@ -1003,7 +1020,9 @@ function render(s) {
   const completed = ['reveal', 'score-break', 'party-reveal','sketch-reveal'].includes(s.phase) ? s.index + 1 : s.index;
   const track = showProgress ? `<div class="round-track" role="img" aria-label="${completed} of ${s.total} rounds completed">
     ${Array.from({ length: s.total }, (_, index) => `<i class="${index < completed ? 'done' : index === s.index ? 'current' : ''}"></i>`).join('')}</div>` : '';
-  app.innerHTML = `<section class="game ${host ? 'host-screen' : 'player-only'} ${host && tvFocus ? 'tv-focus' : ''} ${enter ? 'phase-enter' : ''}" data-deck-key="${phaseKey}" data-phase="${s.phase}" data-paused="${Boolean(s.pausedAt)}" data-mode="${s.mode}" data-result="${result}" style="${modeVariables(s.mode)}">${sceneBackdrop(s.mode, enter && (s.phase === 'finished' || result === 'win'))}<div class="game-top">
+  // Once play starts, the TV is locked to the game: chrome hides until summoned.
+  const immersive = host && !['lobby', 'waiting'].includes(s.phase);
+  app.innerHTML = `<section class="game ${host ? 'host-screen' : 'player-only'} ${immersive ? 'immersive' : ''} ${host && tvFocus ? 'tv-focus' : ''} ${enter ? 'phase-enter' : ''}" data-deck-key="${phaseKey}" data-phase="${s.phase}" data-paused="${Boolean(s.pausedAt)}" data-mode="${s.mode}" data-result="${result}" style="${modeVariables(s.mode)}">${sceneBackdrop(s.mode, enter && (s.phase === 'finished' || result === 'win'))}<div class="game-top">
     <div class="screen-identity"><span class="screen-mode-icon" aria-hidden="true">${icons(mode[3])}</span>
       <div><div class="screen-mode-title">${escape(s.quizTitle || (s.mode === 'classic' ? categoryName(s.category) : modeName(s.mode)))}</div>
       <div class="screen-status">${host && s.phase === 'lobby' && showIdentity(s.mode) ? `<span class="show-studio-label">${showIdentity(s.mode).studio}</span>` : ''}<span class="phase-caption">${caption}</span>
@@ -1034,8 +1053,24 @@ function render(s) {
   renderGraphics(s, stage, animateRoll);
   celebrateMoment(s, host, enter, result);
   if(s.mode==='sketch')paintSketchBoard(s.party);
+  if(s.mode!=='quizrace'&&race3d) disposeRace3d();
   if(s.mode==='quizrace' && s.race){
-    raceTrackView?.dispose(); raceTrackView=mountQuizRaceTrack(app);
+    raceTrackView?.dispose();
+    const svgTrack=mountQuizRaceTrack(app);
+    const raceKey=s.code+'/'+s.game;
+    const stage=host?app.querySelector('.race-track-wrap'):null;
+    if(!stage||race3d?.key!==raceKey&&race3dLoading!==raceKey) disposeRace3d();
+    if(stage&&!race3d&&race3dLoading!==raceKey){
+      race3dLoading=raceKey;
+      import('./race-3d.js').then(({mountRace3D})=>{
+        if(race3dLoading!==raceKey||race3d)return;
+        race3d=mountRace3D({key:raceKey,track:s.raceTrack,reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches});
+        race3d.attach(app.querySelector('.race-track-wrap'));
+      }).catch(()=>{ race3dLoading=undefined; /* No WebGL: the SVG track remains. */ });
+    }
+    race3d?.attach(stage);
+    // The 3D circuit draws when ready; otherwise the SVG track does.
+    raceTrackView={update:(...args)=>race3d?.update(...args)||svgTrack.update(...args),dispose:()=>svgTrack.dispose()};
     raceSnapshotLocal=Date.now();
     if(!raceAnimationFrame) raceAnimationFrame=requestAnimationFrame(updateQuizRaceVisuals);
   }

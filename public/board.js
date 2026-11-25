@@ -581,6 +581,107 @@ function positionRallyDie(mesh, result, index, progress) {
 
 const easeOutCubic = t => 1 - Math.pow(1 - t, 3);
 
+function canvasMap(size, draw, repeat = [1, 1]) {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  draw(canvas.getContext('2d'), size);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(...repeat);
+  texture.anisotropy = 4;
+  return texture;
+}
+
+// The game sits on a real surface instead of floating on the page: a walnut
+// games table with cards, a trophy and tokens for Board Race; a velvet salon
+// cloth with a brass Deco inlay for Dice Rally. Built once per mount.
+function dressTable(scene, state, rally, accent) {
+  const items = new THREE.Group();
+  const surface = rally
+    ? new THREE.MeshStandardMaterial({ roughness: .95, map: canvasMap(256, (ctx, s) => {
+        const velvet = ctx.createRadialGradient(s / 2, s / 2, 20, s / 2, s / 2, s * .7);
+        velvet.addColorStop(0, '#6a1f33'); velvet.addColorStop(1, '#2a0911');
+        ctx.fillStyle = velvet; ctx.fillRect(0, 0, s, s);
+        ctx.strokeStyle = '#e9c46a'; ctx.globalAlpha = .55; ctx.lineWidth = 2;
+        for (let r = 75; r <= 115; r += 20) { ctx.beginPath(); ctx.arc(s / 2, s / 2, r, 0, Math.PI * 2); ctx.stroke(); }
+        ctx.globalAlpha = .22;
+        for (let a = 0; a < 32; a++) {
+          const angle = a * Math.PI / 16;
+          ctx.beginPath(); ctx.moveTo(s / 2 + Math.cos(angle) * 80, s / 2 + Math.sin(angle) * 80);
+          ctx.lineTo(s / 2 + Math.cos(angle) * 125, s / 2 + Math.sin(angle) * 125); ctx.stroke();
+        }
+      }) })
+    : new THREE.MeshStandardMaterial({ roughness: .55, metalness: .05, map: canvasMap(256, (ctx, s) => {
+        ctx.fillStyle = '#4a2c18'; ctx.fillRect(0, 0, s, s);
+        let seed = 7;
+        const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+        for (let y = 0; y < s; y += 2) {
+          const wave = Math.sin(y / 23) * 8 + Math.sin(y / 7) * 2;
+          ctx.fillStyle = `rgba(${90 + rand() * 40},${52 + rand() * 24},${28 + rand() * 14},${.25 + rand() * .3})`;
+          ctx.fillRect(0, y + wave * .1, s, 1 + rand() * 1.5);
+        }
+        ctx.globalAlpha = .18; ctx.fillStyle = '#1e0f06';
+        for (let i = 0; i < 6; i++) { ctx.beginPath(); ctx.ellipse(rand() * s, rand() * s, 5 + rand() * 9, 2 + rand() * 3, 0, 0, Math.PI * 2); ctx.fill(); }
+      }, [3, 2]) });
+  const top = new THREE.Mesh(new THREE.PlaneGeometry(34, 24), surface);
+  top.rotation.x = -Math.PI / 2;
+  top.position.y = rally ? -.05 : -.42;
+  items.add(top);
+  if (!rally) {
+    // A stack of question cards with the Jambaloop back.
+    const back = canvasMap(256, (ctx, s) => {
+      ctx.fillStyle = '#f4ead2'; ctx.fillRect(0, 0, s, s);
+      ctx.strokeStyle = accent; ctx.lineWidth = 10; ctx.strokeRect(14, 14, s - 28, s - 28);
+      ctx.fillStyle = '#2b2419'; ctx.font = '800 34px Georgia, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('JAMBALOOP', s / 2, s / 2 - 16); ctx.font = '600 22px Georgia, serif'; ctx.fillText('QUESTION CARD', s / 2, s / 2 + 22);
+    });
+    const cardMaterial = new THREE.MeshStandardMaterial({ color: '#f4ead2', roughness: .6 });
+    const cardTop = new THREE.MeshStandardMaterial({ map: back, roughness: .5 });
+    for (let i = 0; i < 6; i++) {
+      const card = new THREE.Mesh(new THREE.BoxGeometry(1.05, .03, 1.5), cardMaterial);
+      card.position.set(-4.55 + Math.sin(i) * .03, -.4 + i * .032, 1.2 + Math.cos(i * 2) * .03);
+      card.rotation.y = .18 + i * .025;
+      items.add(card);
+      if (i === 5) {
+        // One material per mesh: disposeScene() expects single materials.
+        const face = new THREE.Mesh(new THREE.PlaneGeometry(1.02, 1.47), cardTop);
+        face.rotation.x = -Math.PI / 2;
+        face.position.y = .017;
+        card.add(face);
+      }
+    }
+    // A brass trophy for the winner's corner.
+    const brass = new THREE.MeshStandardMaterial({ color: '#d9a441', metalness: .55, roughness: .28, emissive: '#3a2400', emissiveIntensity: .25 });
+    const cup = new THREE.Mesh(new THREE.LatheGeometry([
+      [0, 0], [.32, 0], [.32, .1], [.12, .16], [.08, .5], [.1, .58], [.36, .72], [.4, 1.1], [.36, 1.12], [.3, .8], [0, .74],
+    ].map(([x, y]) => new THREE.Vector2(x, y)), 28), brass);
+    const plinth = new THREE.Mesh(new THREE.BoxGeometry(.78, .26, .78), new THREE.MeshStandardMaterial({ color: '#2a170b', roughness: .45 }));
+    plinth.position.y = .13;
+    cup.position.y = .26;
+    for (const side of [-1, 1]) {
+      const handle = new THREE.Mesh(new THREE.TorusGeometry(.17, .035, 8, 18, Math.PI), brass);
+      handle.position.set(side * .42, 1.2, 0);
+      handle.rotation.z = side * Math.PI / 2;
+      cup.add(handle);
+    }
+    const trophy = new THREE.Group();
+    trophy.add(plinth, cup);
+    trophy.position.set(-4.4, -.42, -1.9);
+    trophy.scale.setScalar(1.25);
+    items.add(trophy);
+    // Spare player tokens scattered by the board.
+    const tokenGeometry = new THREE.CylinderGeometry(.2, .2, .07, 24);
+    for (const [i, team] of (state.teams ?? []).slice(0, 4).entries()) {
+      const token = new THREE.Mesh(tokenGeometry, coated(team.color, .25, .2));
+      token.position.set(-3.6 + i * .5, -.385, 3.7 - (i % 2) * .35);
+      items.add(token);
+    }
+  }
+  scene.add(items);
+  return items;
+}
+
 export function mountTable(container, state, duration, onImpact) {
   let start = performance.now();
   const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
@@ -627,6 +728,7 @@ export function mountTable(container, state, duration, onImpact) {
   const movePawns = rally ? undefined : buildBoard(scene, state, shadowMap);
   const lightTower = rally ? undefined : buildTower(scene, baseColor, accent);
   if (rally) buildRallyTray(scene, baseColor, tableColor, accent);
+  dressTable(scene, state, rally, accent);
   const dice = Array.from({ length: rally ? 2 : 1 }, (_, index) => {
     const mesh = makeDie(index ? accent : '#fff0d7', '#7b4e41');
     if (!rally) mesh.scale.setScalar(towerDieScale);

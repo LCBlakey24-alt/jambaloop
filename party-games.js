@@ -255,6 +255,8 @@ export function publicParty(room, key) {
     const { correct, ...question } = party.question;
     return {
       holder: { id: holder.id, name: holder.name, avatar: holder.avatar },
+      // Everyone in join order, so seats round the TV circle never reshuffle.
+      seats: [...players.entries()].map(([seatKey, seat]) => ({ id: seat.id, name: seat.name, avatar: seat.avatar, connected: isConnected(room, seatKey) })),
       holding: key === party.holder,
       step: party.step, passes: party.passes, rescues: party.rescues??0, last: party.last,
       holderConnected: key===room.host ? isConnected(room,party.holder) : undefined,

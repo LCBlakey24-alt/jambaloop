@@ -809,6 +809,8 @@ function phaseCaption(s) {
     'rare-review': 'Host reviewing unusual Rare Find answers',
     'rare-reveal': 'Real Rare Find answer reveal',
     'party-potato': 'Potato in play',
+    'sketch-draw': 'Artist drawing',
+    'sketch-reveal': 'Drawing revealed',
     'race-countdown': 'Race about to start',
     race: 'Quiz Race in progress',
     finished: 'Final results',

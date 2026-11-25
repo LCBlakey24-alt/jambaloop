@@ -67,3 +67,6 @@ body .game.host-screen :is(.question-panel .answers > .answer, .brain-answers > 
   box-shadow:0 6px 0 color-mix(in srgb,var(--solid) 55%,#000), 0 16px 30px #0006;
 }
 body .game.host-screen :is(.question-panel .answers > .answer, .brain-answers > .brain-answer, .spotlight-options > .spotlight-choice, .top-options > .top-option:not(.is-revealed)) :is(span, small, strong):not(.answer-count):not(.answer-count *):not(.spotlight-choice-letter):not(.top-option-letter):not(.answers > .answer > strong):not(.brain-answer > strong) { color:inherit !important; }
+/* TV letter discs stay round whatever the show's face. */
+body .game.host-screen :is(.question-panel .answers > .answer, .brain-answers > .brain-answer) > strong,
+body .game.host-screen :is(.spotlight-choice-letter, .top-option-letter) { aspect-ratio:1; width:auto; min-width:1.7em; height:1.7em; padding:0; flex:0 0 auto; line-height:1; }

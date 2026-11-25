@@ -1,6 +1,6 @@
 import { boardRoute, boardPath, boardPathChoices, boardFinish, boardFork, boardMappedPosition, boardDuration, durationLabel } from './board-route.js';
 import { avatarView } from './party-views.js';
-import { categories, categoryName, modes, partyModes, minimumPlayers, wheelCategories } from './game-config.js';
+import { categories, categoryName, modes, partyModes, minimumPlayers, wheelCategories, capacityError } from './game-config.js';
 import {requiredPlayers} from './team-play.js';
 import { launcherSteps } from './home-launcher.js';
 
@@ -108,7 +108,7 @@ export function lobbyView(state, { host, escape, icons, modeName }) {
       ${state.scoring.doubles === 'final' ? ' · Double scheduled finale' : state.scoring.doubles === 'third' ? ' · Double every third question' : ''}</small>` : ''}
     ${boardPlan && state.boardSpeed ? `<small>Up to +${state.boardSpeed}% for speed · Difficulty follows the die</small>` : ''}
     ${boardPlan ? `<small>${state.boardLength} spaces · ${boardPlan.teams} ${boardPlan.teams === 1 ? 'piece' : 'pieces'} · About ${durationLabel(boardPlan)}${state.playerCount ? '' : ' with ' + state.teamCount + ' players'}</small>` : ''}
-    ${state.connected < minimum && party ? `<small>Needs at least ${minimum} players</small>` : ''}${state.playStyle === 'teams' ? `<small>${state.teamCount} balanced teams · players automatically allocated</small>` : state.mode === 'board' ? '<small>Individual racers · up to 4 pieces</small>' : '<small>Everyone plays individually</small>'}</div></div>`;
+    ${state.connected < minimum && party ? `<small>Needs at least ${minimum} players</small>` : ''}${capacityError(state.mode, state.playStyle, state.playerCount ?? 0) ? `<small class="lobby-capacity" role="status">${escape(capacityError(state.mode, state.playStyle, state.playerCount))}</small>` : ''}${state.playStyle === 'teams' ? `<small>${state.teamCount} balanced teams · players automatically allocated</small>` : state.mode === 'board' ? '<small>Individual racers · up to 4 pieces</small>' : '<small>Everyone plays individually</small>'}</div></div>`;
 
   const teamPreview = state.teamPreview?.length ? `<div class="lobby-team-preview" aria-label="Automatic team allocation">
     ${state.teamPreview.map(t => `<div class="lobby-team" style="--team:${t.color}">

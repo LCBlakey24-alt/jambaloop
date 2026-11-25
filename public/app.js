@@ -6,6 +6,7 @@ import {revealFrame as soCloseFrame, stageFrame as soCloseStage} from './so-clos
 import { scoreBreakView, updateScoreBreak } from './score-break.js';
 import { winnerBanner, playerFinish } from './result-highlights.js';
 import { bindRoomAvatars } from './room-avatars.js';
+import { animatePotato, potatoHeat } from './potato-stage.js';
 import { quizRaceView } from './quiz-race-view.js';
 import { mountQuizRaceTrack } from './quiz-race-track.js';
 import { mobileDeck } from './mobile-deck.js';
@@ -17,7 +18,7 @@ import {readQuestionHistory, rememberQuestion} from './question-history.js';
 import { modeVariables, sceneBackdrop } from './mode-style.js';
 import { launcherTile, launcherPreview, launcherModes, launcherSetupArtwork, LAUNCHER_PAGE_SIZE } from './home-launcher.js';
 import { stopNarration, toggleNarration } from './narrator.js';
-import { playCue, playTowerImpact } from './sound-cues.js';
+import { playCue, playTick, playTowerImpact } from './sound-cues.js';
 import { boardLengths, boardRoute, boardDuration, durationLabel, suggestedTurnCap, boardRequiresChoice, boardPathChoices } from './board-route.js';
 import {teamPlayModes, defaultPlayStyle} from './team-play.js';
 import { avatarView, partyView } from './party-views.js';
@@ -1057,6 +1058,8 @@ function render(s) {
   // Sofa distance: no in-game TV text below the height-relative floor.
   if (immersive && innerWidth > 760) enforceTvLegibility(app.querySelector('section.game'));
   if(s.mode==='sketch')paintSketchBoard(s.party);
+  // Hot Potato: the potato arcs from the old holder's seat to the new one.
+  animatePotato(host?app:null, s.code+'/'+s.game, matchMedia('(prefers-reduced-motion: reduce)').matches);
   if(s.mode!=='quizrace'&&race3d) disposeRace3d();
   if(s.mode==='quizrace' && s.race){
     raceTrackView?.dispose();
@@ -1155,7 +1158,16 @@ function updateTimer() {
   const fill = document.querySelector('#time-fill');
   if (fill) fill.style.transform = `scaleX(${fraction})`;
   timer.closest('.tv-clock, .potato-stage-clock')?.style.setProperty('--clock-fill', `${fraction * 100}%`);
+  if (state.phase === 'party-potato') {
+    potatoHeat(app, fraction);
+    // A tick each second on the TV (sound is opt-in), quicker in the last ten.
+    if (session?.host && soundEnabled && !state.pausedAt && remaining > 0) {
+      const beat = remaining < 10000 ? Math.ceil(remaining / 500) : secondsLeft;
+      if (beat !== lastPotatoTick) { lastPotatoTick = beat; playTick(sound, remaining < 10000); }
+    }
+  }
 }
+let lastPotatoTick;
 
 function boardPrediction(state, host) {
   const prediction = state.prediction;

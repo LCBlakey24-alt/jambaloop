@@ -27,6 +27,9 @@ try{
   const setup=await setupContext.newPage();
   watch(setup);
   await setup.goto(site,{waitUntil:'domcontentloaded',timeout:30000});
+  // Big screens open on the game shelf; this workflow starts from the tile gallery.
+  await setup.locator('#game-carousel .carousel-card, .game-tile').first().waitFor({timeout:15000});
+  if(await setup.locator('[data-action="carousel-view"]').isVisible())await setup.locator('[data-action="carousel-view"]').click();
   await setup.locator('.game-tile[data-mode="soclose"]').click();
   assert.match(await setup.locator('#game-preview').innerText(),/So Close/i);
   await setup.locator('#game-preview [data-action="host"]').click();

@@ -1,0 +1,24 @@
+/* Title and final-round stings: diagonal bars wipe across in the show's
+   colours, the wordmark punches in, then everything clears. */
+.show-sting { position:fixed; inset:0; z-index:900; pointer-events:none; display:grid; place-items:center; overflow:hidden;
+  animation:sting-out 1.6s ease both; }
+.show-sting[data-kind="final"] { animation-duration:1.2s; }
+.sting-bar { position:absolute; left:-10%; width:120%; height:40%; transform:translateX(-110%) skewX(-18deg); }
+.sting-bar:nth-child(1) { top:0; background:var(--id-bg1); animation:sting-bar 1.6s cubic-bezier(.7,0,.3,1) both; }
+.sting-bar:nth-child(2) { top:24%; height:52%; background:var(--id-surface2); border-block:clamp(6px,1vh,12px) solid var(--id-accent); z-index:1; animation:sting-bar 1.6s .07s cubic-bezier(.7,0,.3,1) both; }
+.sting-bar:nth-child(3) { top:62%; height:42%; background:var(--id-bg2); animation:sting-bar 1.6s .14s cubic-bezier(.7,0,.3,1) both; }
+.show-sting[data-kind="final"] .sting-bar { animation-duration:1.2s; }
+.sting-card { position:relative; z-index:2; display:grid; justify-items:center; gap:1.2vh; text-align:center; color:var(--id-ink);
+  animation:sting-card 1.6s cubic-bezier(.2,1.3,.4,1) both; }
+.show-sting[data-kind="final"] .sting-card { animation-duration:1.2s; }
+.sting-kicker { font:800 clamp(14px,2.2vh,28px)/1 var(--head); letter-spacing:.3em; text-transform:uppercase; color:var(--id-accent);
+  background:var(--id-surface); padding:.5em 1em; border-radius:999px; }
+.sting-title { display:grid; font:var(--id-weight) clamp(56px,15vh,190px)/.9 var(--id-display), var(--head); text-transform:var(--id-case);
+  letter-spacing:.01em; text-shadow:0 .06em 0 color-mix(in srgb,var(--id-bg2) 70%,#000), 0 .2em .6em #0007; }
+.sting-title > span:last-child { color:var(--id-accent); }
+.show-sting:is([data-mode="punchline"],[data-mode="cards"],[data-mode="sketch"]) .sting-title { text-shadow:0 .05em 0 #0002; }
+.sting-strap { margin-top:1.2vh; font:800 clamp(14px,2.4vh,30px)/1 var(--head); letter-spacing:.22em; text-transform:uppercase; color:var(--id-ink); opacity:.9; }
+@keyframes sting-bar { 0% { transform:translateX(-110%) skewX(-18deg); } 22%, 70% { transform:translateX(0) skewX(-18deg); } 100% { transform:translateX(110%) skewX(-18deg); } }
+@keyframes sting-card { 0%, 14% { transform:scale(.6); opacity:0; } 28% { transform:scale(1.04); opacity:1; } 34%, 68% { transform:scale(1); opacity:1; } 82%, 100% { transform:scale(1.08); opacity:0; } }
+@keyframes sting-out { 0%, 99% { opacity:1; } 100% { opacity:0; } }
+@media (prefers-reduced-motion:reduce) { .show-sting { display:none; } }

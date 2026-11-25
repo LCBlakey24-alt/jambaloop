@@ -107,4 +107,22 @@ export const supportsScoreCheckpoints = mode => mode !== 'quizrace' && mode !== 
 export const minimumPlayers = mode => ['quizrace','soclose'].includes(mode) ? 2 : ['bluff', 'punchline', 'cards', 'samepage', 'spotlight', 'topanswers', 'rare', 'sketch'].includes(mode) ? 3
   : mode === 'brain' ? 2
   : mode === 'tracks' ? 3 : ['potato', 'showdown'].includes(mode) ? 2 : 1;
+// One shared rule for how many players a game supports. `playStyle` matters
+// only for Board Race, where individual racing uses at most four pieces; the
+// room itself can still hold a larger group that switches to Teams.
+export const roomCapacity = 300;
+export const maximumPlayers = (mode, playStyle) =>
+  mode === 'quizrace' ? 12
+  : mode === 'spotlight' ? 20
+  : ['brain', 'topanswers', 'rare'].includes(mode) ? 30
+  : mode === 'board' && playStyle === 'individual' ? 4
+  : roomCapacity;
+export const capacityError = (mode, playStyle, players) => {
+  const limit = maximumPlayers(mode, playStyle);
+  if (players <= limit) return undefined;
+  const name = modes.find(([id]) => id === mode)?.[1] ?? 'This game';
+  return mode === 'board' && playStyle === 'individual'
+    ? 'Individual Board Race supports up to four racers. Choose Teams for larger groups.'
+    : `${name} supports up to ${limit} players; this room has ${players}. Choose another game or a smaller group.`;
+};
 export const boardRollDuration = 5400;

@@ -16,7 +16,7 @@ function wheelFaces(roster,escape) {
   const visible=roster;
   return visible.map((player,index) => {
     const angle=index*360/visible.length;
-    return '<span class="spotlight-wheel-label" style="--angle:'+angle+'deg">'+escape(player.name)+'</span>';
+    return '<span class="spotlight-wheel-label" style="--angle:'+angle+'deg;--flip:'+(angle>180?180:0)+'deg">'+escape(player.name)+'</span>';
   }).join('');
 }
 

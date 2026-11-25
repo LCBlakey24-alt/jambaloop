@@ -46,6 +46,9 @@ const shows = Object.freeze({
   classic: Object.freeze({ studio: 'THE GRAND QUIZ STUDIO', finale: 'THE CHAMPIONS’ PODIUM', mark: marks.classic }),
   wheel: Object.freeze({ studio: 'THE CATEGORY CARNIVAL', finale: 'THE GRAND FINALE', mark: marks.wheel }),
   knockout: Object.freeze({ studio: 'THE ELIMINATION ARENA', finale: 'THE SURVIVORS’ STANDINGS', mark: marks.knockout }),
+  board: Object.freeze({ studio: 'THE GRAND TABLETOP', finale: 'THE FINISH LINE', mark: marks.board }),
+  dice: Object.freeze({ studio: 'THE BRASS DICE SALON', finale: 'THE HIGH ROLLERS’ TABLE', mark: marks.dice }),
+  quizrace: Object.freeze({ studio: 'THE NEON CIRCUIT', finale: 'THE VICTORY LAP', mark: marks.quizrace }),
 });
 export function showIdentity(mode) {
   return Object.hasOwn(shows, mode) ? shows[mode] : undefined;

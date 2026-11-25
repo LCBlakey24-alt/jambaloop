@@ -55,6 +55,22 @@ export function playCue(context, mode, cue) {
   }
 }
 
+/** A short clock tick for Hot Potato; higher and sharper when time is short. */
+export function playTick(context, urgent = false) {
+  if (context?.state !== 'running') return;
+  const start = context.currentTime + .005;
+  const oscillator = context.createOscillator();
+  const gain = context.createGain();
+  oscillator.type = 'square';
+  oscillator.frequency.value = urgent ? 2100 : 1500;
+  gain.gain.setValueAtTime(.0001, start);
+  gain.gain.exponentialRampToValueAtTime(urgent ? .06 : .035, start + .004);
+  gain.gain.exponentialRampToValueAtTime(.0001, start + .04);
+  oscillator.connect(gain).connect(context.destination);
+  oscillator.start(start);
+  oscillator.stop(start + .05);
+}
+
 export function playTowerImpact(context, hit) {
   if (context?.state !== 'running') return;
   const start = context.currentTime;

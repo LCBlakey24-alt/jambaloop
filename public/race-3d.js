@@ -2,17 +2,14 @@
 // course as the SVG track and places cars from the server's race snapshot.
 // Visual positions never decide who wins.
 import * as THREE from '/vendor/three.module.js';
-import { courseSegments } from './race-course.js';
+import { circuitPoints } from './race-course.js';
 
-const SCALE = 40;
-const toWorld = ([x, y]) => new THREE.Vector3((x - 580) / SCALE, 0, (y - 210) / SCALE);
 export function courseCurve() {
-  const path = new THREE.CurvePath();
-  for (const [a, b, c, d] of courseSegments()) path.add(new THREE.CubicBezierCurve3(toWorld(a), toWorld(b), toWorld(c), toWorld(d)));
-  return path;
+  return new THREE.CatmullRomCurve3(circuitPoints.map(([x, y, z]) => new THREE.Vector3(x, y, z)), true, 'centripetal', .5);
 }
 
-const ROAD_HALF = 1.5;
+const ROAD_HALF = 1.85;
+const LANES = 6;
 const themes = {
   neon:   { ground: '#07061a', grid: ['#ff3fb4', '#1dfbe0'], road: '#120d38', edge: '#1dfbe0', line: '#ff3fb4', sky: '#0b0927' },
   desert: { ground: '#b88a52', road: '#3b3330', edge: '#f4f1ea', kerb: '#d6452f', line: '#f2d16b', sky: '#e9b979' },
@@ -64,7 +61,7 @@ function ribbon(curve, from, to, y, material, samples = 320, start = 0, end = 1)
     const t = curve.getTangentAt(u);
     const n = new THREE.Vector3(-t.z, 0, t.x).normalize();
     for (const [side, offset] of [[0, from], [1, to]]) {
-      positions.push(p.x + n.x * offset, y, p.z + n.z * offset);
+      positions.push(p.x + n.x * offset, p.y + y, p.z + n.z * offset);
       uvs.push(side, u * 40);
     }
     if (i) {
@@ -106,7 +103,7 @@ function sharedParts() {
   shared.light = new THREE.BoxGeometry(0.04, 0.05, 0.1);
   shared.spoiler = new THREE.BoxGeometry(0.16, 0.03, 0.56);
   shared.flame = new THREE.ConeGeometry(0.07, 0.42, 10).rotateZ(Math.PI / 2);
-  shared.glow = new THREE.PlaneGeometry(1.25, 0.75).rotateX(-Math.PI / 2);
+  shared.glow = new THREE.PlaneGeometry(1.25, 0.6).rotateX(-Math.PI / 2);
   shared.tyre = new THREE.MeshStandardMaterial({ color: '#111216', roughness: 0.6 });
   shared.glassMaterial = new THREE.MeshStandardMaterial({ color: '#0b1222', roughness: 0.15, metalness: 0.6 });
   shared.head = new THREE.MeshBasicMaterial({ color: '#fff6d8' });
@@ -214,44 +211,120 @@ export function mountRace3D({ key, track = 'neon', reducedMotion = false }) {
   scene.add(keep(ribbon(curve, ROAD_HALF, ROAD_HALF + 0.14, 0.012, edgeMaterial)));
   // Dashed centre line: short ribbons along the course.
   const lineMaterial = new THREE.MeshBasicMaterial({ color: theme.line });
-  for (let u = 0.03; u < 0.97; u += 0.022) scene.add(keep(ribbon(curve, -0.035, 0.035, 0.014, lineMaterial, 6, u, u + 0.011)));
+  for (let u = 0.02; u < 0.985; u += 0.012) scene.add(keep(ribbon(curve, -0.04, 0.04, 0.014, lineMaterial, 4, u, u + 0.006)));
   // Start grid and chequered finish line across the road.
   const flag = chequer();
   flag.wrapS = flag.wrapT = THREE.RepeatWrapping;
   flag.repeat.set(1, 0.18);
-  scene.add(keep(ribbon(curve, -ROAD_HALF, ROAD_HALF, 0.016, new THREE.MeshBasicMaterial({ map: flag }), 4, 0.988, 1)));
-  scene.add(keep(ribbon(curve, -ROAD_HALF, ROAD_HALF, 0.016, new THREE.MeshBasicMaterial({ color: '#f4f4f4' }), 2, 0.012, 0.016)));
-  // Finish arch.
-  const end = curve.getPointAt(0.994);
-  const tangent = curve.getTangentAt(0.994);
+  // One lap: the chequered start/finish line sits at u = 0 on the main straight.
+  scene.add(keep(ribbon(curve, -ROAD_HALF, ROAD_HALF, 0.016, new THREE.MeshBasicMaterial({ map: flag }), 4, 0.994, 1)));
+  // Finish arch over the line.
+  const end = curve.getPointAt(0.997);
+  const tangent = curve.getTangentAt(0.997);
   const arch = new THREE.Group();
-  const postMaterial = new THREE.MeshStandardMaterial({ color: '#d9dde6', metalness: 0.6, roughness: 0.3 });
+  const postMaterial = new THREE.MeshStandardMaterial({ color: '#4a5066', metalness: 0.55, roughness: 0.35 });
+  // Start/finish gantry: a post either side of the road (clear of the kerbs)
+  // carrying a deep beam with the FINISH board on both faces and a row of
+  // start lights, so it reads as one square-on structure from any angle.
+  const span = ROAD_HALF + .45;
   for (const side of [-1, 1]) {
-    const post = keep(new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 2.1, 12), postMaterial));
-    post.position.set(0, 1.05, side * (ROAD_HALF + 0.3));
+    const post = keep(new THREE.Mesh(new THREE.BoxGeometry(.2, 2.5, .2), postMaterial));
+    post.position.set(0, 1.25, side * span);
     arch.add(post);
+    const foot = keep(new THREE.Mesh(new THREE.BoxGeometry(.42, .14, .42), postMaterial));
+    foot.position.set(0, .07, side * span);
+    arch.add(foot);
   }
-  const bannerTexture = canvasTexture(256, (ctx, s) => {
-    ctx.fillStyle = '#0b0920'; ctx.fillRect(0, 0, s, s);
-    ctx.fillStyle = theme.edge; ctx.fillRect(0, s * 0.36, s, s * 0.28);
-    ctx.fillStyle = '#0b0920'; ctx.font = '900 54px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('FINISH', s / 2, s / 2 + 2);
-  });
-  const banner = keep(new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.5, (ROAD_HALF + 0.3) * 2), [
-    postMaterial, postMaterial, postMaterial, postMaterial,
-    new THREE.MeshBasicMaterial({ map: bannerTexture }), new THREE.MeshBasicMaterial({ map: bannerTexture }),
+  // The board is long and shallow (about 8:1), so its canvas is too; the
+  // text faces along the road (the long sides) and the top is chequered.
+  const bannerCanvas = document.createElement('canvas');
+  bannerCanvas.width = 1024; bannerCanvas.height = 128;
+  const bctx = bannerCanvas.getContext('2d');
+  bctx.fillStyle = '#0b0920'; bctx.fillRect(0, 0, 1024, 128);
+  bctx.fillStyle = theme.edge; bctx.fillRect(0, 10, 1024, 108);
+  bctx.fillStyle = '#0b0920'; bctx.font = '900 84px system-ui, sans-serif'; bctx.textAlign = 'center'; bctx.textBaseline = 'middle';
+  bctx.fillText('FINISH', 512, 68);
+  const bannerTexture = new THREE.CanvasTexture(bannerCanvas);
+  bannerTexture.colorSpace = THREE.SRGBColorSpace;
+  bannerTexture.anisotropy = 4;
+  const bannerFace = new THREE.MeshBasicMaterial({ map: bannerTexture });
+  const topChequer = chequer();
+  topChequer.wrapS = topChequer.wrapT = THREE.RepeatWrapping;
+  topChequer.repeat.set(.25, 3.5);
+  const bannerTop = new THREE.MeshBasicMaterial({ map: topChequer });
+  // BoxGeometry faces: +x, -x (the long sides facing along the road), +y, -y, +z, -z (the ends).
+  const banner = keep(new THREE.Mesh(new THREE.BoxGeometry(.34, .62, span * 2 + .2), [
+    bannerFace, bannerFace, bannerTop, postMaterial, postMaterial, postMaterial,
   ]));
-  banner.position.y = 2.05;
+  banner.position.y = 2.35;
   arch.add(banner);
+  const lamp = keep(new THREE.SphereGeometry(.07, 12, 8));
+  const lampMaterial = new THREE.MeshBasicMaterial({ color: '#ff2d55' });
+  for (let k = 0; k < 5; k++) {
+    const light = keep(new THREE.Mesh(lamp, lampMaterial));
+    light.position.set(-.2, 2.02, (k - 2) * .34);
+    arch.add(light);
+  }
   arch.position.copy(end);
   arch.rotation.y = Math.atan2(-tangent.z, tangent.x);
   scene.add(arch);
+
+  // The bridge: walls along the raised section, pillars down to the ground
+  // (kept clear of the road passing underneath).
+  const wallMaterial = new THREE.MeshStandardMaterial({ color: theme.kerb ? '#d9dde6' : theme.edge, roughness: .5, metalness: .2,
+    emissive: theme.kerb ? '#000000' : theme.edge, emissiveIntensity: theme.kerb ? 0 : .35 });
+  const pillarMaterial = new THREE.MeshStandardMaterial({ color: '#8b93a6', roughness: .6 });
+  const pillar = keep(new THREE.CylinderGeometry(.16, .2, 1, 10));
+  const wallGeometry = new THREE.BoxGeometry(.2, .34, .1);
+  let raisedFrom = 1, raisedTo = 0;
+  for (let i = 0; i < 400; i++) {
+    const u = i / 400;
+    const p = curve.getPointAt(u);
+    if (p.y < .22) continue;
+    raisedFrom = Math.min(raisedFrom, u); raisedTo = Math.max(raisedTo, u);
+    const t = curve.getTangentAt(u);
+    const n = new THREE.Vector3(-t.z, 0, t.x).normalize();
+    for (const side of [-1, 1]) {
+      const wall = new THREE.Mesh(wallGeometry, wallMaterial);
+      wall.position.set(p.x + n.x * side * (ROAD_HALF + .2), p.y + .17, p.z + n.z * side * (ROAD_HALF + .2));
+      wall.rotation.y = Math.atan2(-t.z, t.x);
+      scene.add(keep(wall));
+      if (i % 14 === 0 && p.y > .6 && Math.hypot(p.x, p.z) > ROAD_HALF * 2.1) {
+        const post = new THREE.Mesh(pillar, pillarMaterial);
+        post.scale.y = p.y;
+        post.position.set(p.x + n.x * side * (ROAD_HALF - .3), p.y / 2, p.z + n.z * side * (ROAD_HALF - .3));
+        scene.add(keep(post));
+      }
+    }
+  }
+  // Underside of the raised deck so the bridge reads as solid from the side.
+  const deck = new THREE.MeshStandardMaterial({ color: '#2a2f3d', roughness: .8, side: THREE.DoubleSide });
+  if (raisedTo > raisedFrom) scene.add(keep(ribbon(curve, -ROAD_HALF - .3, ROAD_HALF + .3, -.18, deck, 120, raisedFrom, raisedTo)));
+
+  // A grandstand overlooking the right-hand loop.
+  const stand = new THREE.Group();
+  const seatColours = ['#ff3fb4', '#1dfbe0', '#ffd34d', '#8f6bff', '#ff8f5a'];
+  for (let row = 0; row < 4; row++) {
+    const step = keep(new THREE.Mesh(new THREE.BoxGeometry(9, .32, .7), new THREE.MeshStandardMaterial({ color: '#30354a', roughness: .7 })));
+    step.position.set(0, .16 + row * .32, -row * .62);
+    stand.add(step);
+    for (let seat = 0; seat < 18; seat++) {
+      const fan = keep(new THREE.Mesh(new THREE.BoxGeometry(.28, .3, .22), new THREE.MeshStandardMaterial({ color: seatColours[(seat * 7 + row * 3) % seatColours.length], roughness: .6 })));
+      fan.position.set(-4.2 + seat * .5, .47 + row * .32, -row * .62);
+      stand.add(fan);
+    }
+  }
+  // Behind the far side of the circuit, facing the TV camera: always in
+  // shot as a backdrop and never hidden under the standings strip.
+  stand.position.set(11.6, 0, -10.4);
+  scene.add(stand);
 
   const cars = new Map();
   let container;
   let observer;
   let lost = false;
-  const COURSE_HALF_WIDTH = 15.5;
+  const COURSE_HALF_WIDTH = 19.5;
+  const courseLength = curve.getLength();
   // Looking down at about 40 degrees from behind the start-side of the course.
   const viewDirection = new THREE.Vector3(0, 0.64, 0.77).normalize();
   const desiredTarget = new THREE.Vector3();
@@ -275,32 +348,49 @@ export function mountRace3D({ key, track = 'neon', reducedMotion = false }) {
     let leader;
     let packMin = Infinity;
     let packMax = -Infinity;
+    let packNear = -Infinity;
+    let packFar = Infinity;
     players.forEach(racer => {
       let car = cars.get(racer.id);
       if (!car) { car = makeCar(racer); cars.set(racer.id, car); scene.add(car); }
-      // Side-by-side lanes across the 3-unit road; cars shrink only for big fields.
-      const spacing = Math.min(0.58, 2.7 / Math.max(1, count));
-      const lane = (racer.marker - 1 - (count - 1) / 2) * spacing;
-      car.scale.setScalar(Math.min(1, spacing / 0.58));
+      // Up to six lanes across the road; bigger fields form a staggered second
+      // row so all twelve cars stay clear of each other.
+      const perRow = Math.min(LANES, count);
+      const slot = (racer.marker - 1) % perRow;
+      const row = Math.floor((racer.marker - 1) / perRow);
+      // Lanes as wide as the road allows (a car is ~0.6 wide), never touching.
+      const spacing = Math.min(0.95, (ROAD_HALF * 2 - .5) / perRow);
+      const lane = (slot - (perRow - 1) / 2) * spacing;
+      car.scale.setScalar(Math.min(1, spacing / 0.66));
       const ahead = racer.finishedAt !== undefined ? 0 : racer.speed * msAhead / 1000;
-      const u = THREE.MathUtils.clamp((racer.distance + ahead) / Math.max(1, trackLength), 0, 1) * 0.985 + 0.01;
+      const progress = THREE.MathUtils.clamp((racer.distance + ahead) / Math.max(1, trackLength), 0, 1);
+      // The grid lines up a car-length past the start/finish arch.
+      // Staggered like a real grid: alternate slots sit half a car further
+      // back, and the whole grid starts clear of the start/finish gantry.
+      const back = (Math.ceil(count / perRow) - 1) * 1.5 + (perRow > 1 ? .55 : 0);
+      const gridStart = (back + .9) / courseLength;
+      const u = THREE.MathUtils.euclideanModulo(gridStart + progress * (1 - gridStart) - (row * 1.5 + (slot % 2) * .55) / courseLength, 1);
       const p = curve.getPointAt(u);
       const t = curve.getTangentAt(u);
       const n = new THREE.Vector3(-t.z, 0, t.x).normalize();
-      car.position.set(p.x + n.x * lane, 0, p.z + n.z * lane);
+      car.position.set(p.x + n.x * lane, p.y, p.z + n.z * lane);
+      car.rotation.order = 'YXZ';
       car.rotation.y = Math.atan2(-t.z, t.x);
+      car.rotation.z = Math.asin(THREE.MathUtils.clamp(t.y, -1, 1));
       const boosting = racer.speed > 1.02;
       const { wheels, flame, flameMaterial } = car.userData;
       flame.visible = boosting && racer.finishedAt === undefined;
       if (!reducedMotion) {
-        car.position.y = Math.abs(Math.sin((sim ?? performance.now()) / 90 + racer.marker)) * 0.02;
+        car.position.y += Math.abs(Math.sin((sim ?? performance.now()) / 90 + racer.marker)) * 0.02;
         flame.scale.x = 0.7 + Math.random() * 0.6;
         flameMaterial.opacity = 0.6 + Math.random() * 0.4;
         for (const wheel of wheels) wheel.rotation.z = -u * 260;
       }
-      if (!leader || u > leader.u) leader = { u, p };
+      if (!leader || progress > leader.progress) leader = { progress, p };
       packMin = Math.min(packMin, car.position.x);
       packMax = Math.max(packMax, car.position.x);
+      packNear = Math.max(packNear, car.position.z);
+      packFar = Math.min(packFar, car.position.z);
     });
     for (const [id, car] of cars) {
       if (players.some(racer => racer.id === id)) continue;
@@ -310,15 +400,22 @@ export function mountRace3D({ key, track = 'neon', reducedMotion = false }) {
     // drift that leans towards the leader without losing the course.
     // Broadcast camera: frame the whole pack with a margin and pan along the
     // course at a low, dramatic angle; reduced motion keeps a static overview.
-    let centre = 0.4;
-    let half = COURSE_HALF_WIDTH;
+    const tanV = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+    const tanH = tanV * camera.aspect;
+    // Whole course: the overview distance, used for reduced motion and as a cap.
+    const overviewDistance = Math.max(COURSE_HALF_WIDTH / tanH, 11.5 / tanV);
+    let centre = -0.3;
+    let depth = 0;
+    let distance = overviewDistance;
     if (!reducedMotion && Number.isFinite(packMin)) {
-      half = THREE.MathUtils.clamp((packMax - packMin) / 2 + 5.5, 7.5, COURSE_HALF_WIDTH);
-      centre = THREE.MathUtils.clamp((packMin + packMax) / 2, -COURSE_HALF_WIDTH + half, COURSE_HALF_WIDTH - half + 0.8);
+      // Fit the pack across (horizontal FOV) and into the screen (vertical FOV).
+      const across = (packMax - packMin) / 2 + 5.5;
+      const into = (packNear - packFar) / 2 * .85 + 3.6;
+      distance = THREE.MathUtils.clamp(Math.max(across / tanH, into / tanV), 8 / tanH, overviewDistance);
+      centre = (packMin + packMax) / 2;
+      depth = THREE.MathUtils.clamp((packNear + packFar) / 2, -6, 6);
     }
-    const tanHalf = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect;
-    const distance = half / tanHalf;
-    desiredTarget.set(centre, 0, -0.35);
+    desiredTarget.set(centre, 0, depth);
     desiredPosition.copy(desiredTarget).addScaledVector(viewDirection, distance);
     if (reducedMotion || !cameraReady) { cameraTarget.copy(desiredTarget); cameraPosition.copy(desiredPosition); cameraReady = true; }
     else {

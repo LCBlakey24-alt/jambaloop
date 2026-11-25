@@ -1,0 +1,72 @@
+/*
+ * Distinct answer colours. Each option keeps one strong colour on every phone
+ * and TV so players can find and tap it at a glance: A raspberry, B blue,
+ * C amber, D emerald. Letters stay on every answer, so colour is never the
+ * only cue. Ink colours meet WCAG AA contrast on their backgrounds.
+ */
+:root {
+  --answer-a:#c8203f; --answer-a-ink:#ffffff;
+  --answer-b:#1d5fd0; --answer-b-ink:#ffffff;
+  --answer-c:#f2b01e; --answer-c-ink:#1b1206;
+  --answer-d:#0d8250; --answer-d-ink:#ffffff;
+}
+:is(.answers > .answer, .brain-answers > .brain-answer, .spotlight-options > .spotlight-choice, .top-options > .top-option):nth-child(4n+1) { --solid:var(--answer-a); --solid-ink:var(--answer-a-ink); }
+:is(.answers > .answer, .brain-answers > .brain-answer, .spotlight-options > .spotlight-choice, .top-options > .top-option):nth-child(4n+2) { --solid:var(--answer-b); --solid-ink:var(--answer-b-ink); }
+:is(.answers > .answer, .brain-answers > .brain-answer, .spotlight-options > .spotlight-choice, .top-options > .top-option):nth-child(4n+3) { --solid:var(--answer-c); --solid-ink:var(--answer-c-ink); }
+:is(.answers > .answer, .brain-answers > .brain-answer, .spotlight-options > .spotlight-choice, .top-options > .top-option):nth-child(4n+4) { --solid:var(--answer-d); --solid-ink:var(--answer-d-ink); }
+
+/*
+ * Selectors use the answer classes, not <button>: once a player locks in (or
+ * on the TV) the same answers render as <div>s and must keep their colour.
+ * Top Answers results keep their own bar chart, so only open polls are blocks.
+ */
+/* ------------------------------------------------------------- phones -- */
+body .game.player-only :is(.answers > .answer, .brain-answers > .brain-answer, .spotlight-options > .spotlight-choice, .top-options > .top-option:not(.is-revealed)) {
+  background:var(--solid) !important; color:var(--solid-ink) !important;
+  border:0 !important; border-radius:16px !important; clip-path:none !important;
+  min-height:72px; font-size:clamp(18px,5vw,24px); font-weight:800; letter-spacing:.01em;
+  box-shadow:0 4px 0 color-mix(in srgb,var(--solid) 60%,#000), 0 10px 20px #0005 !important;
+  text-shadow:none;
+  transition:transform .12s, box-shadow .12s, opacity .25s, filter .25s;
+}
+/* Letter discs (answer text elements keep the plain coloured block). */
+body .game :is(:is(.answers > .answer, .brain-answers > .brain-answer) > strong, .spotlight-choice-letter, .top-option-letter) {
+  background:#ffffff !important; color:var(--solid) !important; border:0 !important; border-radius:50% !important;
+  clip-path:none !important; transform:none !important; display:inline-grid; place-items:center;
+  font-weight:900; box-shadow:0 2px 0 #0003; text-shadow:none !important;
+}
+body .game.player-only :is(:is(.answers > .answer, .brain-answers > .brain-answer) > strong, .spotlight-choice-letter, .top-option-letter) { min-width:40px; height:40px; }
+body .game.player-only :is(.answers > .answer, .brain-answers > .brain-answer, .spotlight-options > .spotlight-choice, .top-options > .top-option:not(.is-revealed)) :is(small, span, strong, .top-option-body, .top-option-body *):not(.spotlight-choice-letter):not(.top-option-letter):not(.answers > .answer > strong):not(.brain-answer > strong):not(.answer-count):not(.answer-count *) { color:inherit !important; background:transparent !important; box-shadow:none !important; }
+body .game.player-only :is(.answers > .answer, .brain-answers > .brain-answer, .spotlight-options > .spotlight-choice, .top-options > .top-option):is(button):not(:disabled):active {
+  transform:translateY(3px); box-shadow:0 1px 0 color-mix(in srgb,var(--solid) 60%,#000) !important;
+}
+/* Your pick: a white ring; the rest step back once you have locked in. */
+body .game.player-only :is(.answers, .brain-answers, .spotlight-options, .top-options) > :is(.selected, .is-chosen, .is-selected, [aria-pressed="true"]) {
+  box-shadow:0 0 0 4px #ffffff, 0 0 0 8px color-mix(in srgb,var(--solid) 55%,transparent), 0 10px 20px #0006 !important;
+}
+body .game.player-only :is(.answers, .brain-answers, .spotlight-options, .top-options:not(.top-revealed)):has(> :is(.selected, .is-chosen, .is-selected, [aria-pressed="true"])) > :not(.selected):not(.is-chosen):not(.is-selected):not([aria-pressed="true"]) {
+  opacity:.38; filter:saturate(.6);
+}
+
+/* ------------------------------------------------------- phones and TV -- */
+/* Reveal: the right answer stays bright with a white ring; the others fade. */
+body .game[data-phase="reveal"] .answers:has(> .correct) > .answer:not(.correct),
+body .game :is(.brain-answers, .spotlight-options):has(> .is-correct) > :not(.is-correct) { opacity:.32 !important; filter:saturate(.5); }
+body .game[data-phase="reveal"] .answers > .answer.correct,
+body .game :is(.brain-answers, .spotlight-options) > .is-correct { opacity:1 !important; filter:none !important; box-shadow:0 0 0 4px #ffffff, 0 10px 22px #0007 !important; }
+/* Top Answers results: each bar and tally in its answer's colour. */
+body .game .top-option.is-revealed .top-bar-track > span { background:var(--solid) !important; }
+
+/* ----------------------------------------------------------------- TV -- */
+/* The same solid colour blocks as the phones, in every quiz show, so the
+   room can match the TV to the phone in their hand. Each show keeps its own
+   stage, type and motion; vote shares draw as a light bar over the colour. */
+body .game.host-screen :is(.question-panel .answers > .answer, .brain-answers > .brain-answer, .spotlight-options > .spotlight-choice, .top-options > .top-option:not(.is-revealed)) {
+  background:linear-gradient(90deg,#ffffff38 0 var(--share,0%),transparent var(--share,0%)),var(--solid) !important;
+  color:var(--solid-ink) !important; border-color:transparent !important; clip-path:none !important; text-shadow:none !important;
+  box-shadow:0 6px 0 color-mix(in srgb,var(--solid) 55%,#000), 0 16px 30px #0006;
+}
+body .game.host-screen :is(.question-panel .answers > .answer, .brain-answers > .brain-answer, .spotlight-options > .spotlight-choice, .top-options > .top-option:not(.is-revealed)) :is(span, small, strong):not(.answer-count):not(.answer-count *):not(.spotlight-choice-letter):not(.top-option-letter):not(.answers > .answer > strong):not(.brain-answer > strong) { color:inherit !important; }
+/* TV letter discs stay round whatever the show's face. */
+body .game.host-screen :is(.question-panel .answers > .answer, .brain-answers > .brain-answer) > strong,
+body .game.host-screen :is(.spotlight-choice-letter, .top-option-letter) { aspect-ratio:1; width:auto; min-width:1.7em; height:1.7em; padding:0; flex:0 0 auto; line-height:1; }

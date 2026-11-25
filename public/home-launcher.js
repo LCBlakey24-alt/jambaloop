@@ -40,7 +40,7 @@ function identity(id) {
   return identities[id] ?? {lines:[id.toUpperCase()],strap:'PLAY TOGETHER',kind:'GAME',steps:[]};
 }
 
-function tileArt(id, isPreview = false) {
+export function tileArt(id, isPreview = false) {
   const style = modeStyle(id);
   const {lines,strap} = identity(id);
   return `<span class="tile-art ${isPreview?'tile-art-preview':''}" data-motif="${style.motif}" data-show="${id}" aria-hidden="true">
@@ -105,3 +105,6 @@ export function launcherSetupArtwork(id) {
 export function launcherSteps(id) { return [...identity(id).steps]; }
 
 export function allLauncherIdentities() { return Object.keys(identities); }
+
+/** Launcher copy for one game: wordmark lines, strapline, kind and steps. */
+export function launcherCopy(id) { return identity(id); }

@@ -186,7 +186,6 @@ html.mobile-deck body:not(.playing) .header .nav, html.mobile-deck body.playing 
 .mobile-deck .order-list .item-rank { width: 23px; height: 23px; }
 .mobile-deck .order-actions button { width: 42px; height: 40px; }
 .mobile-deck .number-scroller { gap: 4px; }
-.mobile-deck .number-scroller [data-range] { height: min(59px,14dvh); }
 .mobile-deck .number-scroller button { width: 44px; height: 41px; }
 .mobile-deck .game .bluff-replies { margin: 4px 0; gap: 6px; grid-template-columns: 1fr; }
 .mobile-deck .game .bluff-card, .mobile-deck .game .party-holder { padding: 6px 8px; }

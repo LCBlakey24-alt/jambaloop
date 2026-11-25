@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { coursePath, courseSegments } from '../public/race-course.js';
+import { circuitPoints, coursePath, courseSegments } from '../public/race-course.js';
 import { raceTrackMarkup } from '../public/quiz-race-track.js';
 
 const read = path => readFileSync(new URL('../' + path, import.meta.url), 'utf8');
@@ -24,14 +24,27 @@ test('the 2D and 3D race tracks share one course with reflected S controls', () 
     assert.deepEqual(segments[i][1], [2 * jx - px, 2 * jy - py]);
   }
   assert.ok(raceTrackMarkup().includes(`d="${coursePath}"`), 'the SVG fallback draws the same road');
-  assert.match(race3d, /import \{ courseSegments \} from '\.\/race-course\.js'/);
+});
+
+test('the 3D circuit is a figure-of-eight lap whose second pass bridges the first', () => {
+  assert.match(race3d, /import \{ circuitPoints \} from '\.\/race-course\.js'/);
+  assert.match(race3d, /CatmullRomCurve3\(circuitPoints[^\n]*, true, 'centripetal'/, 'closed lap: start and finish share a line');
+  const middle = circuitPoints.map((point, order) => ({ point, order })).filter(({ point: [x, , z] }) => Math.hypot(x, z) < .5);
+  assert.equal(middle.length, 2, 'the course crosses the middle twice');
+  const [under, over] = middle;
+  assert.ok(over.order > under.order + 4, 'the crossing passes are far apart in the lap');
+  assert.ok(over.point[1] - under.point[1] >= 1.5, 'cars clear the bridge');
+  // Grandstand, gantry and pillars dress the circuit; twelve cars fit in rows of six.
+  assert.match(race3d, /const LANES = 6;/);
+  assert.match(race3d, /Start\/finish gantry: a post either side/);
+  for (const [x, y, z] of circuitPoints) assert.ok(Math.abs(x) < 19.5 && Math.abs(z) < 9 && y >= 0);
 });
 
 test('only the TV becomes immersive, and only once play starts', () => {
   assert.match(app, /const immersive = host && !\['lobby', 'waiting'\]\.includes\(s\.phase\);/);
   assert.match(app, /\$\{immersive \? 'immersive' : ''\}/);
   const sheets = [...html.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)].map(match => match[1]);
-  assert.equal(sheets.at(-1), '/tv-immersive.css');
+  assert.deepEqual(sheets.slice(-2), ['/tv-immersive.css', '/answer-colours.css']);
 });
 
 test('immersive mode hides chrome and scoreboards but keeps controls reachable', () => {

@@ -16,6 +16,9 @@ try {
     const errors=[];
     host.on('pageerror',err=>errors.push(err.message));
     await host.goto(site,{waitUntil:'networkidle',timeout:30000});
+    // Big screens open on the game shelf; this workflow starts from the tile gallery.
+    await host.locator('#game-carousel .carousel-card, .game-tile').first().waitFor({timeout:15000});
+    if(await host.locator('[data-action="carousel-view"]').isVisible())await host.locator('[data-action="carousel-view"]').click();
     await host.locator('[data-action="preview-mode"][data-mode="tracks"]').click();
     assert.match(await host.locator('#game-preview').innerText(),/three|sabotage|driver/i);
     await host.locator('#game-preview [data-action="host"]').click();

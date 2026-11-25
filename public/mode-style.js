@@ -1,4 +1,5 @@
 // Display fonts and scene colours share the same palette on every device.
+import { identityOf, identityVariables } from './game-identities.js';
 const styles = {
   soclose: { font:'Club Tracks', weight:700, accent:'#ffbf68', backdrop:'#08282d', panel:'#123e42', edge:'#559a93', motif:'tiles', notes:[330,440,550], wave:'triangle' },
   quizrace: { font: 'Club Knockout', weight: 700, accent: '#1dd9be', backdrop: '#07061a', panel: '#120f33', edge: '#3a2f86', motif: 'orbit', notes: [523, 622, 784], wave: 'triangle' },
@@ -21,13 +22,17 @@ const styles = {
   sketch: {font:'Club Classic',weight:850,accent:'#a4dcff',backdrop:'#101d34',panel:'#203857',edge:'#567b98',motif:'bubbles',notes:[523,659,784],wave:'sine'},
 };
 
+// Each show's identity (game-identities.js) supplies its face and palette;
+// the motif, notes and wave above stay with the scene and sound cues.
 export function modeStyle(mode) {
-  return styles[mode] ?? styles.classic;
+  const base = styles[mode] ?? styles.classic;
+  const id = identityOf(mode);
+  return { ...base, font: id.display, weight: id.weight, accent: id.accent, backdrop: id.bg[1], panel: id.surface, edge: id.accent + '66' };
 }
 
 export function modeVariables(mode) {
   const style = modeStyle(mode);
-  return `--mode-type:'${style.font}';--mode-weight:${style.weight};--game-accent:${style.accent};--mode-backdrop:${style.backdrop};--mode-panel:${style.panel};--mode-edge:${style.edge}`;
+  return `--mode-type:'${style.font}';--mode-weight:${style.weight};--game-accent:${style.accent};--mode-backdrop:${style.backdrop};--mode-panel:${style.panel};--mode-edge:${style.edge};${identityVariables(mode)}`;
 }
 
 export function sceneBackdrop(mode, celebration) {

@@ -1,19 +1,15 @@
-import {formatNumber} from './answer-controls.js';
+import {ESTIMATE_LIMIT,estimatePrecision,formatNumber,precisionChips} from './answer-controls.js';
 
-// Fine steps are ±1 (arrows, drag, wheel); coarse buttons cross the range in
-// about a hundred presses, and wide ranges add a ten-times jump.
-export function wheelSteps(min,max){
-  const coarse=Math.max(1,Math.round((max-min)/100));
-  return {coarse,large:max-min>=200?coarse*10:0};
-}
-export function guessRows(value,min,max){
-  return [2,1,0,-1,-2].map(offset=>value+offset<min||value+offset>max?null:value+offset);
+// No range is shown while guessing: the wheel starts at zero and every arrow,
+// drag or scroll moves by the step size the player picks (1, 10, 100 … 1M).
+export function guessRows(value,step=1,floor=0){
+  return [2,1,0,-1,-2].map(offset=>{const n=value+offset*step;return n<floor||n>ESTIMATE_LIMIT?null:n;});
 }
 export function numberWheelRows(question,value){
-  return guessRows(value,question.min,question.max).map((number,i)=>`<span class="so-close-number ${i===2?'current':''}">${number===null?'&nbsp;':formatNumber(number,i===2?question.unit:'')}</span>`).join('');
+  return guessRows(value,estimatePrecision(),Math.min(0,question.min??0)).map((number,i)=>`<span class="so-close-number ${i===2?'current':''}">${number===null?'&nbsp;':formatNumber(number,i===2?question.unit:'')}</span>`).join('');
 }
 export function soCloseView(question,{draft,selection,revealed,host,disabled,closest,guesses},escape){
-  const {min,max,unit,correct}=question;
+  const {min,max,unit,correct}=question; // min and max arrive only with the reveal
   if(revealed){
     const rows=Array.isArray(guesses)?guesses:[];
     const position=value=>Math.max(0,Math.min(100,100*(value-min)/Math.max(1,max-min)));
@@ -22,16 +18,13 @@ export function soCloseView(question,{draft,selection,revealed,host,disabled,clo
         <ol class="so-close-guesses" aria-label="Guesses, closest first">${rows.map(row=>`<li data-nearest="${row.won}"><strong>${escape(row.name)}</strong><span>${formatNumber(row.guess,unit)}</span><small>${formatNumber(row.distance,unit==='year'?'years':unit)} away${row.won?' · +'+row.points+' pts':''}</small></li>`).join('')}</ol>`:selection===undefined?'<p>No guess submitted.</p>':`<p>Your guess: <b>${formatNumber(selection,unit)}</b></p><p>${formatNumber(Math.abs(selection-correct),unit==='year'?'years':unit)} away</p>`}
       <p>${closest?closest.count+' closest · '+formatNumber(closest.distance,unit==='year'?'years':unit)+' away':'No guesses submitted.'}</p></section>`;
   }
-  if(host)return `<section class="so-close-result"><div class="eyebrow">ESTIMATION RANGE</div><strong class="so-close-actual">${formatNumber(min,unit)} – ${formatNumber(max,unit)}</strong><div class="so-close-scale" aria-hidden="true"></div><p>Guesses stay secret until the reveal.</p></section>`;
+  if(host)return `<section class="so-close-result so-close-no-range"><div class="eyebrow">NO RANGE · NO CLUES</div><strong class="so-close-actual">${unit?(unit==='year'?'Name the year':'Answer in '+escape(unit)):'Name the number'}</strong><p>Every guess stays secret until the reveal.</p></section>`;
   const value=selection??draft;
   if(selection!==undefined||disabled)return `<section class="so-close-result"><div class="eyebrow">${selection!==undefined?'GUESS LOCKED':'SENDING GUESS'}</div><strong class="so-close-actual">${formatNumber(value,unit)}</strong></section>`;
-  const {coarse,large}=wheelSteps(min,max);
   return `<div class="answer-editor so-close-editor" data-editor="estimate">
-    <div class="so-close-wheel"><button type="button" data-step="1" aria-label="Increase guess">▲</button><div class="so-close-wheel-rows" data-so-close-rows aria-hidden="true">${numberWheelRows(question,value)}</div><button type="button" data-step="-1" aria-label="Decrease guess">▼</button>
-    <input type="range" min="${min}" max="${max}" step="1" value="${value}" data-range aria-label="Scroll your estimate"></div>
-    <label>Your guess ${unit?'('+escape(unit)+')':''}<input type="number" data-number inputmode="numeric" min="${min}" max="${max}" step="1" value="${value}"></label>
-    <div class="so-close-coarse">${large?`<button type="button" data-step="-${large}" aria-label="Decrease by ${large}">−${formatNumber(large,'')}</button>`:''}<button type="button" data-step="-${coarse}" aria-label="Decrease by ${coarse}">−${formatNumber(coarse,'')}</button><button type="button" data-step="${coarse}" aria-label="Increase by ${coarse}">+${formatNumber(coarse,'')}</button>${large?`<button type="button" data-step="${large}" aria-label="Increase by ${large}">+${formatNumber(large,'')}</button>`:''}</div>
-    <small>${formatNumber(min,unit)} to ${formatNumber(max,unit)}</small>
+    <div class="so-close-wheel"><button type="button" data-step="1" aria-label="Increase guess by one step">▲</button><div class="so-close-wheel-rows" data-so-close-rows aria-hidden="true">${numberWheelRows(question,value)}</div><button type="button" data-step="-1" aria-label="Decrease guess by one step">▼</button></div>
+    <div class="so-close-precision"><span>Step size</span>${precisionChips()}</div>
+    <label>Your guess ${unit?'('+escape(unit)+')':''}<input type="number" data-number inputmode="numeric" min="${Math.min(0,question.min??0)}" max="${ESTIMATE_LIMIT}" step="1" value="${value}"></label>
     <button type="button" class="button primary" data-action="submit-special">Lock in my guess</button></div>`;
 }
 

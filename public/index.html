@@ -47,8 +47,13 @@
 <link rel="stylesheet" href="/game-show-batch-1.css">
 <link rel="stylesheet" href="/game-show-batch-2.css">
 <link rel="stylesheet" href="/so-close.css">
+<link rel="stylesheet" href="/potato-stage.css">
+<link rel="stylesheet" href="/game-carousel.css">
+<link rel="stylesheet" href="/show-sting.css">
 <link rel="stylesheet" href="/visual-polish.css">
+<link rel="stylesheet" href="/game-identities.css">
 <link rel="stylesheet" href="/tv-immersive.css">
+<link rel="stylesheet" href="/answer-colours.css">
 <script type="module" src="/app.js"></script>
 </head>
 <body>
@@ -59,6 +64,7 @@
 <div class="sr-only" id="phase-announcement" role="status"></div>
 <main id="app">
 <div class="home-shell" data-home-shell>
+  <div class="carousel-theme" aria-hidden="true"></div><div class="carousel-theme" aria-hidden="true"></div>
   <div class="home-ambient" aria-hidden="true"><i></i><i></i><i></i></div>
   <section class="home-intro" aria-labelledby="home-title">
     <div class="home-heading">
@@ -89,9 +95,11 @@
         <button type="button" class="topic-filter" data-action="filter-modes" data-group="all" aria-pressed="true">All</button>
         <button type="button" class="topic-filter" data-action="filter-modes" data-group="quiz" aria-pressed="false">Trivia &amp; racing</button>
         <button type="button" class="topic-filter" data-action="filter-modes" data-group="party" aria-pressed="false">Party games</button>
+        <button type="button" class="topic-filter carousel-view-toggle" data-action="carousel-view" hidden>Show all tiles</button>
       </div>
     </div>
     <div class="launcher-content">
+      <div id="game-carousel" class="game-carousel" aria-label="Browse games" hidden></div>
       <div id="mode-list" class="mode-list" aria-label="Choose a game to preview"></div>
       <section id="game-preview" class="home-preview" aria-labelledby="preview-title" hidden></section>
     </div>

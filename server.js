@@ -1,6 +1,7 @@
 import { clockExpired, setClockPaused, stopDeadline, watchDeadline } from './room-clock.js';
 import { placementRanks } from './result-ranks.js';
 import { revealPlan as estimateRevealPlan } from './public/so-close-reveal.js';
+import { ESTIMATE_LIMIT } from './public/answer-controls.js';
 import { deskAwards } from './awards.js';
 import { answerValue, boardSpeedValues, bonusValues, canSetScore, defaultScoring, doubleSchedules, pointValues, roundMultiplier } from './public/scoring.js';
 import { playlistLimit, queuedSettings } from './public/game-night.js';
@@ -276,7 +277,7 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
       : room.estimateGuesses) : undefined,
     breakdown: revealed && isHost && !room.privateQuestions && ['choice', 'boolean'].includes(question.type) ? question.options.map((_, option) =>
       [...answers.values()].filter(entry => entry.option === option).length) : undefined,
-    question: visible && question ? { ...publicQuestion, historyId:questionHistoryId(question.prompt), basePoints: room.motion?.points ?? (question.type === 'estimate' && room.legacyScoring ? 1000 : room.scoring?.base), prompt: isHost || room.phoneView === 'full' ? publicQuestion.prompt : undefined, correct: revealed && !holdAnswer ? correct : undefined, source: revealed && !holdAnswer ? answerSourceFor(room.mode, question.prompt) : undefined } : undefined,
+    question: visible && question ? { ...publicQuestion, ...(question.type === 'estimate' && !revealed ? { min: undefined, max: undefined } : {}), historyId:questionHistoryId(question.prompt), basePoints: room.motion?.points ?? (question.type === 'estimate' && room.legacyScoring ? 1000 : room.scoring?.base), prompt: isHost || room.phoneView === 'full' ? publicQuestion.prompt : undefined, correct: revealed && !holdAnswer ? correct : undefined, source: revealed && !holdAnswer ? answerSourceFor(room.mode, question.prompt) : undefined } : undefined,
     qr: isHost ? qr : undefined, joinUrl: isHost ? joinUrl : undefined,
     joinOptions: isHost ? room.joinOptions : undefined };
 }
@@ -898,7 +899,8 @@ app.post('/api/rooms/:code/answer', (req, res) => {
   if (room.phase !== 'question' || game !== room.game || index !== room.index || clockExpired(room)) return res.status(409).json({ error: 'This question has closed.' });
   if (room.pausedAt) return res.status(409).json({ error: 'The timer is paused. Try again when it resumes.' });
   const question = room.privateRound?.get(key) ?? room.questions[index];
-  const valid = question.type === 'estimate' ? Number.isSafeInteger(option) && option >= question.min && option <= question.max
+  // Estimates show no range while guessing, so any whole number is a fair guess.
+  const valid = question.type === 'estimate' ? Number.isSafeInteger(option) && option >= Math.min(0, question.min) && option <= ESTIMATE_LIMIT
     : question.type === 'order' ? Array.isArray(option) && option.length === question.options.length
       && new Set(option).size === option.length && option.every(item => Number.isInteger(item) && item >= 0 && item < question.options.length)
     : Number.isInteger(option) && option >= 0 && option < question.options.length;

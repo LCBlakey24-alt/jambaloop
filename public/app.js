@@ -23,7 +23,7 @@ import {teamPlayModes, defaultPlayStyle} from './team-play.js';
 import { avatarView, partyView } from './party-views.js';
 import {connectSketchPainter,paintSketchBoard,clearSketch} from './sketch-canvas.js';
 import { openLibrary, savedQuizzes } from './quiz-editor.js';
-import { answerGuide, helpTypes, closestStep, createDraft, formatNumber, orderedItems, specialAnswer } from './answer-controls.js';
+import { answerGuide, helpTypes, closestStep, createDraft, formatNumber, orderedItems, setEstimatePrecision, specialAnswer } from './answer-controls.js';
 import { demoView, explainer, hasDemo, practiceView, samples } from './learning.js';
 import { categories, categoryGroups, categoryName, modes, themes, formats, difficulties, defaultTheme, partyModes, fixedQuestionModes, minimumPlayers, questionCounts, scoreIntervals, defaultScoreInterval, supportsScoreCheckpoints } from './game-config.js';
 import { boardView, diceView, lobbyView, reviewView, rollRecap, teamList, teamScoreboard, wheelView } from './game-views.js';
@@ -1359,7 +1359,6 @@ function editorContext(editor) {
 
 function setEditorNumber(editor, value) {
   editor.querySelector('[data-number]').value = value;
-  editor.querySelector('[data-range]').value = value;
   const context=editorContext(editor);
   context?.save(value);
   const rows=editor.querySelector('[data-so-close-rows]');
@@ -1377,14 +1376,13 @@ document.addEventListener('input', event => {
   const context = editorContext(editor);
   if (!context) return;
   const value = event.target.valueAsNumber;
-  if (event.target.matches('[data-range]')) setEditorNumber(editor, value);
-  else if (event.target.validity.valid && Number.isSafeInteger(value)) {
+  if (event.target.validity.valid && Number.isSafeInteger(value)) {
     setEditorNumber(editor,value);
   }
 });
 
 document.addEventListener('wheel', event => {
-  const target = event.target.closest('[data-range], [data-so-close-rows]');
+  const target = event.target.closest('[data-so-close-rows], .number-scroller');
   if (!target || !event.deltaY) return;
   const editor = target.closest('[data-editor]');
   const context = editorContext(editor);
@@ -1501,6 +1499,17 @@ async function sendParty(data, button) {
 }
 
 document.addEventListener('click', async event => {
+  // Estimate step size: every arrow, drag and scroll then moves by this much.
+  const chip = event.target.closest('[data-precision]');
+  if (chip) {
+    const editor = chip.closest('[data-editor]');
+    const step = setEstimatePrecision(Number(chip.dataset.precision));
+    for (const button of editor.querySelectorAll('[data-precision]')) button.setAttribute('aria-pressed', String(Number(button.dataset.precision) === step));
+    const context = editorContext(editor);
+    const rows = editor.querySelector('[data-so-close-rows]');
+    if (rows && context) rows.innerHTML = numberWheelRows(context.question, context.value);
+    return;
+  }
   const edit = event.target.closest('[data-step], [data-move]');
   if (edit) {
     const editor = edit.closest('[data-editor]');

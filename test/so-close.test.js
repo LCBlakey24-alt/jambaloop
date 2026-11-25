@@ -15,15 +15,20 @@ test('So Close picker handles bounds and hides actual number while guessing',()=
   assert.equal(minimumPlayers('soclose'),2);
   assert.equal(queuedSettings('soclose','club').format,'estimate');
   assert.equal(queuedSettings('soclose','club').difficulty,'standard');
-  assert.deepEqual(guessRows(0,0,10),[2,1,0,null,null]);
-  assert.deepEqual(guessRows(10,0,10),[null,null,10,9,8]);
+  // No range while guessing: rows step by the chosen precision and stop at zero.
+  assert.deepEqual(guessRows(0),[2,1,0,null,null]);
+  assert.deepEqual(guessRows(10,10),[30,20,10,0,null]);
+  assert.deepEqual(guessRows(1500,1000),[3500,2500,1500,500,null]);
   const question={min:0,max:1000,unit:'metres',correct:917};
   const phone=soCloseView(question,{draft:500},String);
   assert.match(phone,/data-so-close-rows/);
-  assert.match(phone,/data-range/);
   assert.match(phone,/data-number/);
+  assert.match(phone,/data-precision="1000"/,'step-size chips');
+  assert.doesNotMatch(phone,/data-range/);
   assert.doesNotMatch(phone,/917/);
-  assert.doesNotMatch(soCloseView(question,{host:true},String),/917/);
+  const tv=soCloseView({unit:'metres',correct:917},{host:true},String);
+  assert.doesNotMatch(tv,/917|1,000|RANGE</);
+  assert.match(tv,/NO RANGE · NO CLUES/);
   const locked=soCloseView(question,{selection:500},String);
   assert.match(locked,/GUESS LOCKED/);
   assert.doesNotMatch(locked,/submit-special/);
@@ -60,9 +65,14 @@ test('So Close server keeps guesses private and awards exact and tied closest po
     assert.equal(question.correct,undefined);
     const correct=answerBank.get(question.prompt);
     assert.ok(Number.isSafeInteger(correct));
-    const nearby=correct<question.max?correct+1:correct-1;
+    // The range stays on the server until the reveal; any whole number >= 0 is a fair guess.
+    assert.equal(question.min,undefined);
+    assert.equal(question.max,undefined);
+    const nearby=correct+1;
     const optionA=round===0?correct:nearby;
-    await request(path+'/answer',a.key,{game,index,option:question.max+1},400);
+    await request(path+'/answer',a.key,{game,index,option:-1},400);
+    await request(path+'/answer',a.key,{game,index,option:1e13},400);
+    await request(path+'/answer',a.key,{game,index,option:1.5},400);
     await request(path+'/answer',a.key,{game,index,option:optionA},204);
     await request(path+'/answer',a.key,{game,index,option:nearby},204);
     assert.equal((await state()).estimateGuesses,undefined);
@@ -126,7 +136,7 @@ test('So Close server releases the actual answer and results on schedule',{timeo
   const next=async()=>{const {game,index,phase}=await call('/'+code,host);await call('/'+code+'/advance',host,{game,index,phase});};
   await next();
   const {game,index,question}=await call('/'+code,host);
-  await call('/'+code+'/answer',a.key,{game,index,option:question.min});
+  await call('/'+code+'/answer',a.key,{game,index,option:0});
   await next();
   const {estimateReveal}=await call('/'+code,host);
   const plan=revealPlan(estimateReveal.count);
@@ -204,4 +214,17 @@ test('So Close measurement bank is structurally sound, sourced and preferred',()
   assert.equal(art.length,5);
   assert.equal(new Set(art.map(q=>q.prompt)).size,5);
   assert.ok(art.some(q=>prompts.has(q.prompt)));
+});
+
+test('estimate steps use the chosen precision and never go below zero', async () => {
+  const {closestStep,setEstimatePrecision,precisionSteps,createDraft}=await import('../public/answer-controls.js');
+  const question={type:'estimate'};
+  assert.equal(createDraft(question),0,'no midpoint hint');
+  assert.deepEqual(precisionSteps,[1,10,100,1000,10000,100000,1000000]);
+  setEstimatePrecision(100);
+  assert.equal(closestStep(question,50,2),250);
+  assert.equal(closestStep(question,50,-1),0);
+  assert.equal(setEstimatePrecision(7),100,'only listed step sizes');
+  setEstimatePrecision(1);
+  assert.equal(closestStep(question,41,1),42);
 });

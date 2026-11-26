@@ -38,13 +38,13 @@ test('groups are balanced by signup order, with no duplicates or lost players',(
   }
 });
 
-test('Board Race solo uses one pawn per person and enforces four-piece limit',()=>{
-  for(const n of [1,2,3,4]){
+test('Board Race solo uses one pawn per person and enforces eight-piece limit',()=>{
+  for(const n of [1,2,3,4,5,6,7,8]){
     const {groups}=teamAssignments(people(n),'board','individual',4);
     assert.equal(groups.length,n);
     assert.ok(groups.every(team=>team.size===1 && team.members[0].name===team.name));
   }
-  assert.throws(()=>teamAssignments(people(5),'board','individual',4));
+  assert.throws(()=>teamAssignments(people(9),'board','individual',4));
   const {groups}=teamAssignments(people(2),'board','teams',4,{allowUnfilled:true});
   assert.equal(groups.length,4);
   assert.equal(groups[2].size,0);

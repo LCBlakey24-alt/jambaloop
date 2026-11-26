@@ -21,7 +21,7 @@ export function wheelView(state) {
 }
 
 const safeName = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
-const pawnMarks = ['◆', '▲', '●', '■'];
+const pawnMarks = ['◆', '▲', '●', '■', '▬', '◯', '⬟', '▼'];
 const pipCells = [[], [5], [1, 9], [1, 5, 9], [1, 3, 7, 9], [1, 3, 5, 7, 9], [1, 3, 4, 6, 7, 9]];
 
 function dieBadge(value) {
@@ -54,12 +54,13 @@ function powersInPlay(state) {
   return chips.length ? `<div class="powers-in-play" role="status"><span>IN PLAY</span>${chips.join('')}</div>` : '';
 }
 /** Small chips for the power-ups a team is holding, has in play, or has had played on it. */
-function powerChips(team) {
+const tinyPower = { fifty: '50/50', skip: 'NEW Q', points: '×2', half: '½' };
+function powerChips(team, tight = false) {
   if (!team.powers) return '';
   const chips = [
-    ...(team.armed?.points ? ['<i class="power-chip is-armed" title="Double Points: in play">×2 POINTS ▶</i>'] : []),
-    ...(team.halved ? ['<i class="power-chip is-hit" title="Half Points: played on this team">½ POINTS ▼</i>'] : []),
-    ...boardPowers.filter(power => team.powers[power.id]).map(power => `<i class="power-chip" title="${power.name}">${power.short}${team.powers[power.id] > 1 ? ' ×' + team.powers[power.id] : ''}</i>`),
+    ...(team.armed?.points ? [`<i class="power-chip is-armed" title="Double Points: in play">${tight ? '×2' : '×2 POINTS'} ▶</i>`] : []),
+    ...(team.halved ? [`<i class="power-chip is-hit" title="Half Points: played on this team">${tight ? '½' : '½ POINTS'} ▼</i>`] : []),
+    ...boardPowers.filter(power => team.powers[power.id]).map(power => `<i class="power-chip" title="${power.name}">${tight ? tinyPower[power.id] : power.short}${team.powers[power.id] > 1 ? ' ×' + team.powers[power.id] : ''}</i>`),
   ];
   return chips.length ? `<span class="team-powers">${chips.join('')}</span>` : '';
 }
@@ -90,10 +91,10 @@ export function powerBar(state, team) {
 
 export function teamList(state, personalTeam, compact = false) {
   const showScores = state.phase === 'finished' || (state.scoreInterval ?? 1) === 1;
-  return `<div class="board-teams ${compact ? 'compact-teams' : ''}">${state.teams.map(team => `<div class="board-team ${team.id === state.activeTeam ? 'active-team' : ''}" style="--team:${team.color}">
+  return `<div class="board-teams ${compact ? 'compact-teams' : ''} ${state.teams.length > 3 ? 'many-teams' : ''}">${state.teams.map(team => `<div class="board-team ${team.id === state.activeTeam ? 'active-team' : ''}" style="--team:${team.color}">
     <span class="team-mark" aria-hidden="true">${pawnMarks[team.id]}</span><span><strong>${safeName(team.name)}${team.id === personalTeam ? (state.playStyle === 'individual' ? ' · you' : ' · your team') : ''}</strong>
-    <small>${team.position >= boardFinish(state.boardLength,team.pathChoice) ? 'Finished' : Math.round(boardMappedPosition(state.boardLength,team.position,team.pathChoice)*10)/10 + ' / ' + state.boardLength + ' towards finish'}${team.pathChoice ? ' · ' + (team.pathChoice === 'power' ? 'Power Lane' : 'Question Trail') : ''}${showScores ? ' · ' + team.score.toLocaleString() + ' pts' : ''}</small></span>
-    ${showScores && state.phase === 'reveal' && team.roundPoints ? `<span class="team-bonus">+${team.roundPoints} pts</span>` : ''}${powerChips(team)}</div>`).join('')}</div>`;
+    <small>${team.position >= boardFinish(state.boardLength,team.pathChoice) ? 'Finished' : Math.round(boardMappedPosition(state.boardLength,team.position,team.pathChoice)*10)/10 + ' / ' + state.boardLength + (state.teams.length > 3 ? '' : ' towards finish')}${team.pathChoice ? ' · ' + (team.pathChoice === 'power' ? 'Power Lane' : 'Question Trail') : ''}${showScores ? ' · ' + team.score.toLocaleString() + ' pts' : ''}</small></span>
+    ${showScores && state.phase === 'reveal' && team.roundPoints ? `<span class="team-bonus">+${team.roundPoints} pts</span>` : ''}${powerChips(team, state.teams.length > 3)}</div>`).join('')}</div>`;
 }
 
 export function boardView(state) {

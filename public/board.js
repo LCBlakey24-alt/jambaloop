@@ -1,4 +1,4 @@
-import { boardPath, boardFork, boardIsCorner, boardCornerPower, boardPowers } from './board-route.js';
+import { boardPath, boardFork, boardIsCorner, boardCornerPower, boardPowers, pieceOffset } from './board-route.js';
 import { curvedLayout, TILE_TOP } from './board-layout.js';
 import * as THREE from '/vendor/three.module.js';
 import { boardRollDuration, categories } from './game-config.js';
@@ -142,8 +142,11 @@ function makePawn(color, teamId) {
   const crowns = [
     () => new THREE.OctahedronGeometry(.151), () => new THREE.ConeGeometry(.132, .228, 3),
     () => new THREE.SphereGeometry(.124, 24, 16), () => new THREE.BoxGeometry(.174, .174, .174),
+    // Pieces five to eight: drum, ring, gem and pyramid.
+    () => new THREE.CylinderGeometry(.118, .118, .19, 24), () => new THREE.TorusGeometry(.1, .045, 12, 28),
+    () => new THREE.DodecahedronGeometry(.14), () => new THREE.ConeGeometry(.15, .21, 4),
   ];
-  const head = new THREE.Mesh(crowns[teamId](), material);
+  const head = new THREE.Mesh(crowns[teamId % crowns.length](), material);
   head.position.y = .416;
   head.rotation.y = Math.PI / 5;
   const collar = new THREE.Mesh(new THREE.CylinderGeometry(.102, .085, .035, 22), gold);
@@ -364,7 +367,7 @@ function buildBoard(scene, state, shadowMap) {
     return step;
   });
 
-  const pawnSize = Math.min(1.07, scale / .96);
+  const pawnSize = Math.min(1.07, scale / .96) * (state.teams.length > 4 ? .72 : 1);
   const pawns = state.teams.map(team => {
     const pawn = makePawn(team.color, team.id);
     pawn.scale.setScalar(pawnSize);
@@ -385,8 +388,10 @@ function buildBoard(scene, state, shadowMap) {
     const route = paths[team.pathChoice || 'power'];
     const position = tilePosition(lower,team.pathChoice).lerp(
       tilePosition(Math.min(route.length-1,lower+1),team.pathChoice),step-lower);
-    position.x += (team.id % 2 ? .19 : -.19) * scale;
-    position.z += (team.id >= 2 ? .19 : -.19) * scale;
+    // Up to four pieces take a corner each; five to eight stand in a ring round the space.
+    const [dx, dz] = pieceOffset(team.id, state.teams.length);
+    position.x += dx * scale;
+    position.z += dz * scale;
     const ground = position.y + .016;
     const hop = Math.sin((step - lower) * Math.PI);
     position.y += hop * .27 * scale;
@@ -762,7 +767,7 @@ function dressTable(scene, state, rally, accent) {
     items.add(trophy);
     // Spare player tokens scattered by the board.
     const tokenGeometry = new THREE.CylinderGeometry(.2, .2, .07, 24);
-    for (const [i, team] of (state.teams ?? []).slice(0, 4).entries()) {
+    for (const [i, team] of (state.teams ?? []).slice(0, 8).entries()) {
       const token = new THREE.Mesh(tokenGeometry, coated(team.color, .25, .2));
       token.position.set(-3.6 + i * .5, -.385, 3.7 - (i % 2) * .35);
       items.add(token);

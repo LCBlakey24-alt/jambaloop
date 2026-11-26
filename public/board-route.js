@@ -77,6 +77,13 @@ export function boardMappedPosition(spaces, position, choice) {
 
 // Each corner of the lap hands out a different power-up. A team keeps it and
 // any teammate can play it from their phone whenever they like.
+/** Where piece `id` of `count` stands on a shared space, as a fraction of the space's size. */
+export function pieceOffset(id, count) {
+  if (count <= 4) return [id % 2 ? .19 : -.19, id >= 2 ? .19 : -.19];
+  const angle = (id / count) * Math.PI * 2 - Math.PI / 2;
+  return [Math.cos(angle) * .27, Math.sin(angle) * .27];
+}
+
 export const boardPowers = Object.freeze([
   { id: 'fifty', name: '50/50', short: '50/50', when: 'question', detail: 'Removes two wrong answers from the live question on your side’s phones.' },
   { id: 'skip', name: 'New Question', short: 'NEW QUESTION', when: 'question', detail: 'Throws out the live question and asks a fresh one.' },

@@ -36,7 +36,7 @@ import {connectSketchPainter,paintSketchBoard,clearSketch} from './sketch-canvas
 import { openLibrary, savedQuizzes } from './quiz-editor.js';
 import { answerGuide, helpTypes, closestStep, RULER_PITCH, createDraft, formatNumber, orderedItems, setEstimatePrecision, specialAnswer } from './answer-controls.js';
 import { demoView, explainer, hasDemo, practiceView, samples } from './learning.js';
-import { isEstimateShow, categories, categoryGroups, categoryName, modes, themes, questionTypes, formatTypes, formatId, difficulties, defaultTheme, partyModes, fixedQuestionModes, minimumPlayers, questionCounts, scoreIntervals, defaultScoreInterval, supportsScoreCheckpoints } from './game-config.js';
+import { isEstimateShow, maximumTeams, BOARD_PIECES, categories, categoryGroups, categoryName, modes, themes, questionTypes, formatTypes, formatId, difficulties, defaultTheme, partyModes, fixedQuestionModes, minimumPlayers, questionCounts, scoreIntervals, defaultScoreInterval, supportsScoreCheckpoints } from './game-config.js';
 import { boardView, diceView, lobbyView, powerBar, reviewView, rollRecap, teamList, teamScoreboard, wheelView } from './game-views.js';
 
 const icons = (name, css = '') => `<img class="${css}" src="/icons/${name}.svg" alt="">`;
@@ -382,7 +382,7 @@ function openDialog(mode, value, gameMode, quizId) {
     </fieldset>
     <label class="switch-row" id="private-field"><input type="checkbox" name="privateQuestions" ${!configured || state.privateQuestions || state.mode !== 'showdown' ? 'checked' : ''}>
       <span><strong>Private questions</strong><small>Deal a different question to each phone. The TV shows team scores.</small></span></label>
-    <label id="team-count-field"><span id="team-count-label">Number of teams</span><select name="teamCount" aria-labelledby="team-count-label">${selected([[2, '2 teams'], [3, '3 teams'], [4, '4 teams']], configured ? state.teamCount : 2)}</select></label>
+    <label id="team-count-field"><span id="team-count-label">Number of teams</span><select name="teamCount" aria-labelledby="team-count-label">${selected([2, 3, 4, 5, 6, 7, 8].map(n => [n, n + ' teams']), configured ? state.teamCount : 2)}</select></label>
     <fieldset class="board-planner" id="board-planner" hidden><legend>Board &amp; timing</legend>
       <div class="form-row"><label>Board spaces<select name="boardLength">${selected(boardLengths.map(length => [length, length + ' spaces']), configured ? state.boardLength : 24)}</select></label>
       <label>Expected players<input name="plannedPlayers" type="number" min="1" max="300" value="${configured ? state.playerCount || state.teamCount : 4}"></label></div>
@@ -471,8 +471,10 @@ function openDialog(mode, value, gameMode, quizId) {
         form.elements.teamCount.value = '2';
       }
       for (const option of form.elements.teamCount.options) {
-        option.disabled = trolley && option.value !== '2';
+        option.disabled = (trolley && option.value !== '2') || Number(option.value) > maximumTeams(game);
+        option.hidden = Number(option.value) > maximumTeams(game);
       }
+      if (Number(form.elements.teamCount.value) > maximumTeams(game)) form.elements.teamCount.value = String(maximumTeams(game));
       if (!allowsTeams && teamOption.checked) {
         form.querySelector('input[name="playStyle"][value="individual"]').checked = true;
       }
@@ -484,8 +486,8 @@ function openDialog(mode, value, gameMode, quizId) {
         : matching ? 'Everyone writes a secret answer individually. Matching answers score points; there are no teams or predetermined correct answers.'
         : game === 'sketch' ? 'Players rotate as the artist, sketch on their phones, and guess from everyone’s live drawings. This mode scores individually.'
         : !allowsTeams ? 'This game has a shared vote or one-holder outcome, so it currently plays individually.'
-        : style === 'teams' ? 'Choose 2–4 teams. Everyone who joins is assigned evenly when play starts; team scores use the average member score so a larger team has no advantage.'
-        : board ? 'Every person races their own board piece, up to four racers.'
+        : style === 'teams' ? 'Choose 2–' + maximumTeams(game) + ' teams. Everyone who joins is assigned evenly when play starts; team scores use the average member score so a larger team has no advantage.'
+        : board ? 'Every person races their own board piece, up to eight racers.'
         : race ? 'Each person races independently for first place.' : 'Every player competes individually.';
       for (const option of form.elements.teamCount.options) option.textContent = option.value + ' teams';
       form.querySelector('#board-planner').hidden = !board;
@@ -515,7 +517,7 @@ function openDialog(mode, value, gameMode, quizId) {
       const counts = questionCounts(game, privateQuiz || curated ? 'choice' : form.elements.format.value, privateQuiz || curated ? 'mixed' : form.elements.category.value);
       const previous = Number(form.elements.count.value) || (configured ? state.total : 0);
       const spaces = Number(form.elements.boardLength.value);
-      const pieces = style === 'individual' ? Math.min(4,Math.max(1,Number(form.elements.plannedPlayers.value)||1)) : Number(form.elements.teamCount.value);
+      const pieces = style === 'individual' ? Math.min(BOARD_PIECES,Math.max(1,Number(form.elements.plannedPlayers.value)||1)) : Number(form.elements.teamCount.value);
       const players = Math.min(300, Math.max(1, Number(form.elements.plannedPlayers.value) || pieces));
       const preferred = board && !boardCapEdited ? suggestedTurnCap(spaces, Math.min(pieces, players)) : previous;
       form.elements.count.innerHTML = selected(counts.map(count => [count, brain ? count + ' levels' : spotlight ? count + ' ' + (count === 1 ? 'turn' : 'turns') + ' each' : count]), counts.includes(preferred) ? preferred : spotlight ? counts[0] : counts[1] ?? counts[0]);
@@ -988,13 +990,13 @@ function render(s) {
     const action = board || rally ? 'Roll the dice' : 'Spin the wheel';
     const title = board ? `${escape(team.name)}’s turn` : rally ? (rolling ? 'Dice in motion' : 'Roll for points') : rolling ? 'Spinning the wheel' : 'Spin for a category';
     const status = rolling ? (board ? 'Watch the die drop through the tower.' : rally ? 'Rolling the dice…' : 'Choosing a category…')
-      : board ? needsPath ? 'Your team is on the junction. Choose a lane, then roll.' : 'The die sets the move, base points, and question level. Every team answers the landing square’s genre.' : rally ? 'The dice set the multiplier for everyone’s correct answers.' : 'The wheel picks the next topic.';
+      : board ? needsPath ? (s.playStyle === 'individual' ? 'This piece is on the junction. Choose a lane, then roll.' : 'Your team is on the junction. Choose a lane, then roll.') : 'The die sets the move, base points, and question level. ' + (s.playStyle === 'individual' ? 'Everyone answers' : 'Every team answers') + ' the landing square’s genre.' : rally ? 'The dice set the multiplier for everyone’s correct answers.' : 'The wheel picks the next topic.';
     body = `<div class="game-panel turn-panel ${board || rally ? 'board-turn' : 'wheel-turn'}">
       ${host ? board ? boardView(s) : rally ? diceView(s) : wheelView(s) : ''}
       <div class="turn-copy"><div class="eyebrow">${board ? 'TURN' : 'QUESTION'} ${s.index + 1} OF ${s.total}</div>
         <h1>${title}</h1>
-        ${ownTeam ? `<p class="your-team" style="--team:${ownTeam.color}">You’re on Team ${ownTeam.name}</p>` : ''}
-        <p role="status">${status}</p>
+        ${ownTeam && s.playStyle !== 'individual' ? `<p class="your-team" style="--team:${ownTeam.color}">You’re on Team ${ownTeam.name}</p>` : ''}
+        <p role="status" class="turn-status">${status}</p>
         ${board ? teamList(rolling ? { ...s, teams: s.teams.map(entry => entry.id === s.activeTeam ? { ...entry, position: s.motion.from } : entry) } : s, ownTeam?.id) : ''}
         ${rally ? '<div class="dice-rules"><span>2–6 <b>×1</b></span><span>7–10 <b>×2</b></span><span>11–12 <b>×3</b></span></div>' : ''}
         ${needsPath ? `<div class="board-path-picker"><h2>Choose your route</h2><p>Both lanes rejoin before the finish. Which will you take?</p>

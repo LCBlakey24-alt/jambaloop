@@ -52,13 +52,13 @@ test('one shared rule describes every game limit', () => {
   assert.equal(maximumPlayers('quizrace'), 12);
   assert.equal(maximumPlayers('spotlight'), 20);
   for (const mode of ['brain', 'topanswers', 'rare']) assert.equal(maximumPlayers(mode), 30);
-  assert.equal(maximumPlayers('board', 'individual'), 4);
+  assert.equal(maximumPlayers('board', 'individual'), 8);
   assert.equal(maximumPlayers('board', 'teams'), roomCapacity);
   assert.equal(maximumPlayers('board'), roomCapacity, 'A Board Race room can hold a group that switches to Teams');
   for (const [mode] of modes) assert.ok(maximumPlayers(mode) >= 4 && maximumPlayers(mode) <= roomCapacity);
   assert.equal(capacityError('quizrace', 'individual', 12), undefined);
   assert.match(capacityError('quizrace', 'individual', 13), /Quiz Race supports up to 12 players; this room has 13/);
-  assert.match(capacityError('board', 'individual', 5), /four racers/);
+  assert.match(capacityError('board', 'individual', 9), /eight racers/);
 });
 
 test('reconfiguring to a smaller game is refused with a clear limit', async () => {

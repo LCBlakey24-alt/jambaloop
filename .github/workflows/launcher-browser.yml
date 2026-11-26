@@ -70,6 +70,8 @@ on:
       - 'scripts/so-close-browser.mjs'
       - 'scripts/question-types-browser.mjs'
       - 'scripts/show-moments-browser.mjs'
+      - 'scripts/knockout-browser.mjs'
+      - 'public/knockout-ladder.js'
       - 'public/show-moments.*'
       - 'public/show-scenes.js'
       - 'public/scenes/**'
@@ -128,6 +130,7 @@ jobs:
           node scripts/so-close-browser.mjs
           node scripts/question-types-browser.mjs
           node scripts/show-moments-browser.mjs
+          node scripts/knockout-browser.mjs
           node scripts/tv-immersive-browser.mjs
           node scripts/tv-all-modes.mjs
       - name: Upload screen captures on success or failure

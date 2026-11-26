@@ -124,6 +124,12 @@ Closest-number and put-in-order sessions offer five questions when you choose on
 
 - **So Close** *(19th game — integrated on a review branch, not yet on main or the live site)*: two or more players estimate real-world measurements on a phone number wheel (swipe, ▲/▼ or typed entry) and lock in. No range is shown on any screen while guessing — the server withholds it until the reveal — so guesses start at zero and each player picks a step size (1, 10, 100, 1K, 10K, 100K or 1M) for the wheel. Any whole number from zero upwards is accepted. Closest-number questions in the other quiz modes use the same rule. The closest guess scores 100, an exact guess 200, tied closest players share equal points, and there is no speed bonus. The TV reveals every guess on a measuring scale, builds suspense, then shows the actual value and winner; the server releases each stage, so no phone or TV can see the answer early. Questions come from a 72-prompt sourced measurement bank.
 
+- **Knockout survivor ladder:** a ladder beside each question on the TV shows every player's three pixel hearts.
+  - **Losing a heart:** when someone gets one wrong, their heart shatters into pixels with an 8-bit "hit" sound.
+  - **Knocked out:** on their last heart, a big ✕ stamps across their photo with a KO jingle, and they drop into the knocked-out row as everyone below moves up a rung.
+  - **Phones:** each player's phone breaks their own heart with a short buzz.
+  - **Sounds:** synthesised in the browser, TV-only and opt-in.
+
 - **Team Showdown** lets the host or captain choose two, three, or four balanced teams. Everyone answers on their own phone. Each round, a team earns the average of its players’ points, including misses. Highest team score wins, and players retain their individual scores.
 
 **Show artwork:** every game has its own original illustrated scene (`public/scenes/`, generated from `public/show-scenes.js` in that game's palette by `node scripts/build-show-scenes.mjs`). The scene is the game's home tile, with its own logo treatment and emblem crest and no tagline. The same scene sits behind that game's TV and phone panels, its lobby card, its title sting and its thumbnail in the setup picker, so each game looks like the tile that launched it.

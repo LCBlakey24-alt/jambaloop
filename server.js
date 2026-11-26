@@ -218,7 +218,7 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
   const question = room.privateQuestions ? room.privateRound?.get(key) : questions[index];
   const visible = !waiting && (phase === 'question' || phase === 'reveal');
   const hiddenScores = room.scoreInterval !== 1 && !['lobby', 'finished'].includes(phase);
-  const publicPlayer = ({ rounds, fastest, slowest, misses, comebacks, ...entry }) => phase === 'lobby' && isHost
+  const publicPlayer = ({ rounds, fastest, slowest, misses, comebacks, lifeLostAt, outAt, ...entry }) => phase === 'lobby' && isHost
     ? { ...entry, connected: counts.ids.has(entry.id) } : entry;
   const revealed = phase === 'reveal';
   const answer = answers.get(key);
@@ -282,6 +282,10 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
       result: player?.rounds[i],
     })) : undefined,
     remaining: room.mode === 'knockout' && phase !== 'lobby' ? room.remaining : undefined,
+    knockout: room.mode === 'knockout' && isHost && visible ? knockoutLadder(room, revealed) : undefined,
+    // Your own phone only: whether you lost a heart this round (and went out).
+    lostLife: room.mode === 'knockout' && revealed && player?.lifeLostAt === index ? true : undefined,
+    knockedOut: room.mode === 'knockout' && revealed && player?.outAt === index ? true : undefined,
     rank: player ? finalRanks?.get(player.id) : undefined, selection: answers.get(key)?.option, now: Date.now(),
     answerCorrect: revealed && answer && !holdOutcome ? Boolean(answer.won) : undefined,
     earned: revealed && !hiddenScores && !holdOutcome && answer?.won ? answer.points : undefined,
@@ -297,6 +301,19 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
     question: visible && question ? { ...publicQuestion, ...(question.type === 'estimate' && !revealed ? { min: undefined, max: undefined } : {}), historyId:questionHistoryId(question.prompt), basePoints: room.motion?.points ?? (question.type === 'estimate' && room.legacyScoring ? 1000 : room.scoring?.base), prompt: isHost || room.phoneView === 'full' ? publicQuestion.prompt : undefined, correct: revealed && !holdAnswer ? correct : undefined, source: revealed && !holdAnswer ? answerSourceFor(room.mode, question.prompt) : undefined } : undefined,
     qr: isHost ? qr : undefined, joinUrl: isHost ? joinUrl : undefined,
     joinOptions: isHost ? room.joinOptions : undefined };
+}
+
+// Knockout's survivor ladder for the TV: lives, never answers. Who lost a heart
+// (and who went out) this round is shown only once the round is revealed.
+function knockoutLadder(room, revealed) {
+  const rows = [...room.players.values()].map(player => ({
+    id: player.id, name: player.name, avatar: player.avatar, lives: player.lives ?? 0, score: player.score,
+    lost: revealed && player.lifeLostAt === room.index, out: !player.lives,
+    outNow: revealed && player.outAt === room.index, outAt: player.outAt,
+  }));
+  const survivors = rows.filter(row => !row.out).sort((a, b) => b.lives - a.lives || b.score - a.score);
+  const out = rows.filter(row => row.out).sort((a, b) => b.outAt - a.outAt || b.score - a.score);
+  return { survivors: survivors.map(({ score, outAt, ...row }) => row), out: out.map(({ score, outAt, ...row }) => row) };
 }
 
 const comparePlayers = (a, b) => (b.lives ?? 0) - (a.lives ?? 0) || b.score - a.score;
@@ -645,7 +662,8 @@ function reveal(room) {
     for (const [key, player] of room.players) {
       if (!player.lives || room.answers.get(key)?.won) continue;
       player.lives--;
-      if (!player.lives) room.remaining--;
+      player.lifeLostAt = room.index;
+      if (!player.lives) { room.remaining--; player.outAt = room.index; }
     }
   }
   if (room.mode === 'soclose') {
@@ -755,7 +773,7 @@ function startGame(room) {
   if (room.privateQuestions) for (const key of room.players.keys()) room.privateReview.set(key, []);
   if (room.mode === 'knockout') {
     room.remaining = room.players.size;
-    for (const player of room.players.values()) player.lives = 3;
+    for (const player of room.players.values()) { player.lives = 3; delete player.lifeLostAt; delete player.outAt; }
   }
   if (fixedQuestionModes.includes(room.mode) && room.mode !== 'dice') return openQuestion(room);
   readyTurn(room);

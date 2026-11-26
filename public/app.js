@@ -20,7 +20,8 @@ import { launcherTile, launcherPreview, launcherModes, launcherSetupArtwork, LAU
 import { carouselView, moveCarousel, themeHome, wrapIndex } from './game-carousel.js';
 import { playSting, stingFor } from './show-sting.js';
 import { stopNarration, toggleNarration } from './narrator.js';
-import { playCue, playTick, playTowerImpact } from './sound-cues.js';
+import { playChiptune, playCue, playTick, playTowerImpact } from './sound-cues.js';
+import { knockoutLadder, phoneHearts, playKnockout, rememberLadder, shatterPhoneHeart } from './knockout-ladder.js';
 import { boardLengths, boardRoute, boardDuration, durationLabel, suggestedTurnCap, boardRequiresChoice, boardPathChoices } from './board-route.js';
 import {teamPlayModes, defaultPlayStyle} from './team-play.js';
 import { avatarView, partyView } from './party-views.js';
@@ -1008,7 +1009,7 @@ function render(s) {
       ? host ? '<div class="tv-clock"><span class="timer" id="timer"></span><small>TIME LEFT</small></div>'
         : '<span class="player-timer" aria-label="Time remaining"><span class="player-timer-label">TIME LEFT</span><span class="timer" id="timer"></span></span>'
       : '';
-    const lifeInfo = knockout ? `<p class="life-info">${host ? s.remaining + ' still in' : eliminated ? 'Out of lives · Spectating' : '♥ ' + lifeLabel(s.player.lives) + ' left'}</p>` : '';
+    const lifeInfo = knockout ? `<p class="life-info">${host ? s.remaining + ' still in' : phoneHearts(s) + (s.knockedOut ? 'Knocked out!' : eliminated ? 'Out of lives · Spectating' : lifeLabel(s.player.lives) + ' left')}</p>` : '';
     const answerStatus = eliminated ? 'Watch the rest of the game, then join the rematch.' : locked ? 'Answer locked in. Waiting for the reveal…' : sending ? 'Sending your answer…' : s.ends ? 'Tap your answer before time runs out.' : 'Choose an answer to lock it in.';
     const revealStatus = won ? (question.type === 'estimate' ? 'Closest guess!' : 'Correct!')
         + (showLiveScores && s.earned ? ` +${s.earned.toLocaleString()} ${s.earned === 1 ? 'point' : 'points'}.` : '')
@@ -1041,7 +1042,7 @@ function render(s) {
        ${checkpointNote(s)}<div class="round-footer">${host ? '' : `<div class="round-status"><p class="status" ${playerFeedback ? '' : 'role="status"'}>${revealed ? revealStatus + (showLiveScores ? ' Total: ' + s.player.score.toLocaleString() + ' pts.' : '') : answerStatus}</p>${revealed && s.player.streak >= 2 ? `<span class="streak-tag">${s.player.streak} in a row</span>` : ''}</div>`}
       ${pauseButton}
       ${canControl ? `<button class="button primary captain-next" data-action="advance">${nextQuestionLabel(s)} ${icons('arrow-right')}</button>` : ''}</div>
-      </div>${tvRoundHud(s, timer, response, host)}${host ? '</div>' : ''}${revealed && board && showLiveScores ? `<div class="game-panel round-leaders"><h2>Race standings</h2>${teamList(s, ownTeam?.id, true)}</div>` : ''}
+      </div>${host && knockout ? knockoutLadder(s, escape) : ''}${tvRoundHud(s, timer, response, host)}${host ? '</div>' : ''}${revealed && board && showLiveScores ? `<div class="game-panel round-leaders"><h2>Race standings</h2>${teamList(s, ownTeam?.id, true)}</div>` : ''}
 `;
   }
   if (s.phase === 'finished') {
@@ -1121,7 +1122,15 @@ function render(s) {
   const held = stageReveal(app, s, { host, enter, onFlare: verdict => {
     if (host) { if (soundEnabled) playCue(sound, s.mode, 'reveal'); }
     else if (verdict === 'win') celebrate(`${s.code}/${s.game}/${s.index}/round`, { source: app.querySelector('.game'), intensity: .22 });
+    else shatterPhoneHeart(app, s);
   } });
+  // Knockout: hearts shatter and KOs land just after the answer.
+  if (host && s.mode === 'knockout') {
+    playKnockout(app, s, { enter, delay: held + 350,
+      onHit: () => { if (soundEnabled) playChiptune(sound, 'hit'); },
+      onKo: () => { if (soundEnabled) playChiptune(sound, 'ko'); } });
+    rememberLadder(s);
+  } else if (!host && enter && !held && s.phase === 'reveal') shatterPhoneHeart(app, s);
   celebrateMoment(s, host, enter, result, held);
   // Sofa distance: no in-game TV text below the height-relative floor.
   if (immersive && innerWidth > 760) enforceTvLegibility(app.querySelector('section.game'));

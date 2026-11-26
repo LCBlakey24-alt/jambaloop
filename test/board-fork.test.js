@@ -58,3 +58,22 @@ test('two supported routes are separately named for the UI',()=>{
   assert.match(boardPathChoices[0].detail,/×2/);
   assert.match(boardPathChoices[1].detail,/Four extra/);
 });
+
+test('Board Race turn limits let the race reach the centre, and the final order never ties', async () => {
+  const { suggestedTurnCap, boardTurnCaps, compareBoardTeams } = await import('../public/board-route.js');
+  // Every board and piece count gets at least two spare rolls a side over the average.
+  for (const spaces of [16, 24, 32, 40]) for (let pieces = 2; pieces <= 8; pieces++) {
+    const cap = suggestedTurnCap(spaces, pieces);
+    assert.ok(boardTurnCaps.includes(cap));
+    assert.ok(cap >= (Math.ceil(spaces / 3.5) + 2) * pieces, `${spaces} spaces, ${pieces} pieces: ${cap} turns is too few`);
+  }
+  const order = compareBoardTeams(24);
+  const side = (id, extra) => ({ id, position: 12, pathChoice: 'power', score: 30, correct: 4, pace: 2000, ...extra });
+  const first = teams => [...teams].sort(order)[0].id;
+  assert.equal(first([side(0), side(1, { position: 13 })]), 1, 'furthest wins');
+  assert.equal(first([side(0), side(1, { score: 30.5 })]), 1, 'then points');
+  assert.equal(first([side(0), side(1, { correct: 4.5 })]), 1, 'then right answers per player');
+  assert.equal(first([side(0), side(1, { pace: 1999 })]), 1, 'then the faster side');
+  assert.notEqual(order(side(0), side(1)), 0, 'never level');
+  assert.notEqual(order(side(0, { pace: null }), side(1, { pace: null })), 0);
+});

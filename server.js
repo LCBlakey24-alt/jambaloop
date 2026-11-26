@@ -6,7 +6,7 @@ import { deskAwards } from './awards.js';
 import { answerValue, boardSpeedValues, bonusValues, canSetScore, defaultScoring, doubleSchedules, pointValues, roundMultiplier } from './public/scoring.js';
 import { playlistLimit, queuedSettings } from './public/game-night.js';
 import { isConnected, liveConnection, responseTarget, touchPlayer, trackConnection } from './room-presence.js';
-import { boardLengths, boardRoute, boardPath, boardPathChoices, boardFork, boardFinish, boardMappedPosition, boardRequiresChoice, boardStopsAtFork, boardCornerPower, boardPowers } from './public/board-route.js';
+import { boardLengths, boardRoute, boardPath, boardPathChoices, boardFork, boardFinish, boardMappedPosition, boardRequiresChoice, boardStopsAtFork, boardCornerPower, boardPowers, compareBoardTeams } from './public/board-route.js';
 import { teamPlayModes, defaultPlayStyle, validPlayStyle, requiredPlayers, teamAssignments } from './public/team-play.js';
 import { partyModes, startParty, advanceParty, advancePartyWhenReady, expireParty, rescuePotato, submitParty, publicParty } from './party-games.js';
 import express from 'express';
@@ -346,8 +346,7 @@ function knockoutLadder(room, revealed) {
 }
 
 const comparePlayers = (a, b) => (b.lives ?? 0) - (a.lives ?? 0) || b.score - a.score;
-const compareTeams = (mode, spaces) => (a, b) => (mode === 'board'
-  ? boardMappedPosition(spaces, b.position, b.pathChoice) - boardMappedPosition(spaces, a.position, a.pathChoice) : 0) || b.score - a.score;
+const compareTeams = (mode, spaces) => mode === 'board' ? compareBoardTeams(spaces) : (a, b) => b.score - a.score;
 
 // Hot Potato awards no points: whoever is caught holding it finishes last and
 // everyone else shares first. Ranking by score would tie the whole room, so the
@@ -708,6 +707,7 @@ function reveal(room) {
     player.score += answer.points;
     if (room.mode === 'board') player.score = Math.round(player.score * 100) / 100;
     if (room.teams.length) tallies[player.team] += answer.points;
+    if (room.mode === 'board' && room.teams[player.team]) { const side = room.teams[player.team]; side.rights = (side.rights ?? 0) + 1; side.time = (side.time ?? 0) + answer.elapsed; }
   }
   if (room.mode === 'board') {
     // Whatever was played on this question is now spent.
@@ -724,6 +724,7 @@ function reveal(room) {
     for (const team of room.teams) {
       team.roundPoints = Math.round(precision * tallies[team.id] / team.size) / precision;
       team.score = Math.round(precision * (team.score + team.roundPoints)) / precision;
+      if (room.mode === 'board') { team.correct = (team.rights ?? 0) / team.size; team.pace = team.rights ? team.time / team.rights : Infinity; }
     }
   }
   const correct = question.type === 'estimate' ? question.correct

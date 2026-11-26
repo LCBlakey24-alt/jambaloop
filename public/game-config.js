@@ -133,7 +133,7 @@ export function questionCounts(mode, format, category) {
   if (['punchline','cards','bluff'].includes(mode)) return [3, 5, 7];
   if (mode === 'spotlight') return [1, 2, 3];
   if (['tracks','samepage'].includes(mode)) return [3, 5, 7];
-  if (mode === 'board') return [12, 18, 24, 36, 48, 60];
+  if (mode === 'board') return [12, 18, 24, 36, 48, 60, 72, 96, 120];
   // Single topics hold at least 15 multiple-choice and 15 true/false questions
   // (enforced by test/question-supply.test.js) but only five or six estimates
   // and orders, so those formats stay at one five-question round.

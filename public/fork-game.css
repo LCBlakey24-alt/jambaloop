@@ -106,3 +106,74 @@ body.playing .fork-game { display:grid; grid-template-rows:auto auto minmax(0,1f
  .fork-judge-choice {padding:6px 9px;}
 }
 @media(prefers-reduced-motion:reduce) { .fork-track,.fork-card-pick {transition:none!important;animation:none!important;} }
+
+/* ---- The junction: a trolley on one rail that forks to two tracks of three slots ---- */
+.fork-junction { display:grid; grid-template-columns:minmax(0,1fr); min-height:0; }
+.fork-lead { display:none; }
+.fork-junction .fork-tracks { grid-template-columns:minmax(0,1fr); grid-auto-rows:minmax(0,1fr); }
+.fork-track { grid-template-rows:auto minmax(0,1fr); position:relative; }
+.fork-track header { flex-wrap:wrap; }
+.fork-track header .fork-hit, .fork-track header .fork-saved { margin-left:auto; font:900 clamp(11px,1.7dvh,17px)/1 'House Sans',sans-serif; letter-spacing:.06em; padding:.35em .7em; border-radius:99px; }
+.fork-track header .fork-hit { background:#5b1a12; color:#ffd2c4; }
+.fork-track header .fork-saved { background:#12492f; color:#c4f7d8; }
+.fork-track header span:last-of-type { margin-left:0; }
+.fork-slots { list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:clamp(8px,1.4vw,22px); min-height:0; position:relative; align-items:stretch; }
+/* Rails and sleepers run under the slots. */
+.fork-slots::before { content:""; position:absolute; inset:38% -6px; z-index:0; border-block:4px solid #8ea3c2; opacity:.55;
+  background:repeating-linear-gradient(90deg,#5d4a3a 0 8px,transparent 8px 30px); }
+.fork-slot.fork-tile { position:relative; z-index:1; display:grid; grid-template-rows:auto minmax(0,1fr); gap:4px; align-content:center; text-align:center; min-width:0; min-height:clamp(64px,13dvh,170px);
+  padding:clamp(6px,1.2dvh,14px); border-radius:14px; border:3px solid #56c7a8; background:#103b36; color:#effff9; box-shadow:0 6px 0 #0006; }
+.fork-slot.fork-tile small { display:block; font:900 clamp(9px,1.5dvh,15px)/1 'House Sans',sans-serif; letter-spacing:.12em; color:#8fe6d0; }
+.fork-slot.fork-tile strong { align-self:center; font:800 clamp(12px,2.5dvh,27px)/1.18 'House Sans',sans-serif; color:#fff; overflow-wrap:anywhere; text-wrap:balance; font-style:normal; }
+.fork-slot.fork-tile.sabotage { border-color:#f08a5d; background:#4a2219; }
+.fork-slot.fork-tile.sabotage small { color:#ffb999; }
+.fork-slot.fork-tile.empty { border-style:dashed; background:#0d1a2ccc; box-shadow:none; }
+.fork-slot.fork-tile.empty strong { color:#7f90ad; font-size:clamp(20px,5dvh,54px); }
+.fork-track-sentence { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+.fork-track[data-hit] { border-color:#f0563a; background:linear-gradient(152deg,#4a1710,#1f1320 80%); }
+.fork-track[data-saved] { border-color:#46d98c; box-shadow:0 0 0 3px #46d98c55, 0 0 30px #46d98c44; }
+
+/* TV: the trolley and the fork sit to the left of the two tracks. */
+@media (min-width:900px) {
+  .fork-host .fork-junction { grid-template-columns:clamp(110px,15vw,230px) minmax(0,1fr); container-type:size; }
+  .fork-host .fork-lead { display:block; position:relative; min-height:0; }
+  .fork-host .fork-switch { position:absolute; inset:0; width:100%; height:100%; }
+  .fork-host .fork-switch path { fill:none; stroke:#8ea3c2; stroke-width:5; stroke-dasharray:1 0; vector-effect:non-scaling-stroke; opacity:.75; }
+  .fork-host .fork-tram { position:absolute; left:0; top:50%; width:min(72%,150px); translate:0 -62%; z-index:2; filter:drop-shadow(0 6px 0 #0007); }
+  .fork-host .fork-intro h1 { font-size:clamp(26px,5.2dvh,56px); }
+  .fork-host .fork-intro p { font-size:clamp(15px,2.4dvh,26px); }
+  .fork-host .fork-track header strong { font-size:clamp(20px,3.6dvh,40px); }
+  .fork-host .fork-track header span { font-size:clamp(14px,2.1dvh,22px); }
+}
+/* Phones: one track above the other, slots stacked so the words stay readable. */
+.fork-phone .fork-junction .fork-tracks { grid-template-columns:repeat(2,minmax(0,1fr)); grid-auto-rows:auto; }
+.fork-phone .fork-slots { grid-template-columns:1fr; gap:5px; }
+.fork-phone .fork-slots::before { inset:-4px 44%; border-block:0; border-inline:3px solid #8ea3c2; background:repeating-linear-gradient(0deg,#5d4a3a 0 6px,transparent 6px 20px); }
+.fork-phone .fork-slot.fork-tile { min-height:52px; padding:6px; border-width:2px; border-radius:10px; box-shadow:none; }
+.fork-phone .fork-slot.fork-tile strong { font-size:clamp(11px,3.3vw,14px); }
+.fork-phone .fork-slot.fork-tile.empty strong { font-size:18px; }
+.fork-phone .fork-track header .fork-hit, .fork-phone .fork-track header .fork-saved { margin-left:0; font-size:9px; }
+
+@media (prefers-reduced-motion:no-preference) {
+  /* A new card flips down onto its slot; Track B lands a beat after Track A. */
+  .fork-slot.is-new { animation:fork-card-land .7s cubic-bezier(.2,1.3,.4,1) calc(.35s + var(--order,0) * .9s) backwards; }
+  .fork-slot.is-new strong { animation:fork-card-words .4s ease-out calc(.8s + var(--order,0) * .9s) backwards; }
+  .fork-host .fork-tram { animation:fork-tram-idle 2.4s ease-in-out infinite alternate; }
+  /* The lever is pulled: the trolley runs down the chosen track. */
+  .fork-host .fork-junction[data-hit="0"] .fork-tram { animation:fork-tram-a 2.6s cubic-bezier(.5,0,.3,1) .4s forwards; }
+  .fork-host .fork-junction[data-hit="1"] .fork-tram { animation:fork-tram-b 2.6s cubic-bezier(.5,0,.3,1) .4s forwards; }
+  .fork-track[data-hit] .fork-slot { animation:fork-slot-hit .5s ease-in-out calc(1.5s + var(--hit-order,0s)) 2; }
+  .fork-track[data-hit] .fork-slot:nth-child(2) { --hit-order:.25s; }
+  .fork-track[data-hit] .fork-slot:nth-child(3) { --hit-order:.5s; }
+}
+@keyframes fork-card-land { from { transform:translateY(-70%) rotateX(80deg) scale(1.2); opacity:0; } }
+@keyframes fork-card-words { from { opacity:0; transform:scale(.8); } }
+@keyframes fork-tram-idle { to { transform:translateX(6px); } }
+@keyframes fork-tram-a { 35% { transform:translate(22cqw,-25cqh) rotate(-8deg); } 100% { transform:translate(108cqw,-25cqh); } }
+@keyframes fork-tram-b { 35% { transform:translate(22cqw,25cqh) rotate(8deg); } 100% { transform:translate(108cqw,25cqh); } }
+@keyframes fork-slot-hit { 25% { transform:translate(6px,-4px) rotate(2deg); } 75% { transform:translate(-6px,3px) rotate(-2deg); } }
+/* Phones scroll the whole trolley screen rather than squeezing rows on top of each other. */
+.fork-phone { grid-template-rows:none !important; grid-auto-rows:max-content; align-content:start; }
+.fork-phone .fork-hand { overflow:visible; grid-template-rows:none; }
+.fork-phone .fork-hand-options { overflow:visible; }
+@media (min-width:900px) { .fork-host .fork-slot.fork-tile strong { font-size:clamp(15px,3.2dvh,34px); } }

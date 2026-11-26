@@ -248,6 +248,17 @@ export const knockoutReactions = {
   final: [
     [['baz', '[dramatic] This is it. The final round!'], ['clive', '[gruff] Leave nothing in the corner.']],
   ],
+  decider: [
+    [['baz', '[serious] This is it. Sixty questions, and they are still standing.'], ['clive', '[gruff, quiet] One final question. Closest guess wins. Last one counts.']],
+  ],
+  levelup: [
+    [['baz', '[excited] Ding ding! New level, and the questions just got harder!'], ['clive', '[gruff] Now we find out who has been coasting.']],
+    [['baz', '[shouting] Next level! The gloves are coming off!'], ['clive', '[chuckles] About time. That last lot was a warm-up.']],
+  ],
+  firstround: [
+    [['baz', '[shocked] I do not believe it! Three questions, and it is all over!'], ['clive', '[laughs] I had not even sat down.']],
+    [['baz', '[laughs] Well, that happened quickly! The fastest knockout there can be!'], ['clive', '[gruff] Shortest fight I have ever seen. Somebody put the kettle back on.']],
+  ],
   halfway: [
     [['baz', '[excited] We\'re halfway through this bout!'], ['clive', '[gruff] And some of \'em are hanging on by a thread.']],
   ],

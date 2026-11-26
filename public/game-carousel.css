@@ -272,3 +272,19 @@
 .picker-room .players-more { font-weight:800; opacity:.85; }
 .picker-room-actions { grid-template-columns:repeat(2,minmax(0,1fr)); }
 .picker-room-actions .button { min-width:0; padding-inline:8px; font-size:clamp(12px,1.05vw,15px); white-space:normal; }
+
+/* Hosting from a phone or a narrow window: the lobby stacks instead of
+   squeezing three panels and the toolbar into one row. */
+@media (max-width: 760px) {
+  .host-screen .game-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .host-screen .game-top .screen-identity { flex: 1 1 100%; min-width: 0; }
+  .host-screen .game-top .game-controls { flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 6px; }
+  .host-screen .game-top .game-controls .button { flex: 1 1 auto; min-height: 44px; }
+  .host-screen .picker-footer { grid-template-columns: minmax(0, 1fr); }
+  .host-screen .picker-join { grid-template-columns: 1fr auto; }
+  .host-screen .picker-join .room-code { font-size: clamp(30px, 11vw, 46px); }
+  .host-screen .picker-join .qr { width: clamp(84px, 26vw, 120px); }
+  .host-screen .picker-centre { order: -1; }
+  .host-screen .picker-room .players { max-height: none; }
+  .host-screen .picker-room-actions .button { font-size: 14px; min-height: 44px; }
+}

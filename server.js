@@ -20,6 +20,7 @@ import { inviteOriginOptions, qrJoinUrl } from './room-invite.js';
 import { isRoomMember, positiveSetting, readAvatar, requestBudget } from './room-http.js';
 import { fileURLToPath } from 'node:url';
 import { validateQuiz, prepareCustomQuiz } from './public/custom-quiz.js';
+import { boardQuestionOrder } from './board-questions.js';
 import { boardQuestion, makeQuestions, makeSoCloseQuestions, questionCategories, verifiedSourceFor } from './questions.js';
 import { soCloseSourceFor } from './so-close-bank.js';
 import {questionHistoryId, questionHistoryLimit, validQuestionHistoryId} from './public/question-history.js';
@@ -64,14 +65,14 @@ function readSettings(body = {}) {
   const allowedCounts = questionCounts(mode, privateTeam ? 'choice' : format, privateTeam ? 'mixed' : category);
   if (!modes.some(([id]) => id === mode) || !themes.some(([id]) => id === theme)
     || !isQuestionFormat(format) || !categories.includes(category)
-    || typeof autoReveal !== 'boolean' || typeof includeChristmas !== 'boolean' || (!quiz && !allowedCounts.includes(count)) || ![0, 15, 20, 30, 45].includes(seconds)) return;
+    || typeof autoReveal !== 'boolean' || typeof includeChristmas !== 'boolean' || (!quiz && mode !== 'knockout' && !allowedCounts.includes(count)) || ![0, 15, 20, 30, 45].includes(seconds)) return;
   if (scoring !== undefined && (!scoring || !pointValues.includes(scoring.base) || !bonusValues.includes(scoring.bonus)
     || !doubleSchedules.some(([id]) => id === scoring.doubles))) return;
   if (!boardSpeedValues.includes(boardSpeed) || !scoreIntervals.includes(scoreInterval)) return;
   const scores = mode === 'soclose' ? {base:100,bonus:0,doubles:'off'} : canSetScore(mode) ? (scoring
     ? { base: scoring.base, bonus: seconds ? scoring.bonus : 0, doubles: scoring.doubles }
     : defaultScoring(seconds)) : undefined;
-  return { mode, theme, difficulty, raceLength, raceTrack, raceDifficulty, scoring: scores, boardSpeed: seconds ? boardSpeed : 0, legacyScoring: mode !== 'soclose' && scoring === undefined, format: privateTeam ? 'choice' : format, category: fixedQuestionModes.includes(mode) && !privateTeam ? category : 'mixed', count: ['tracks', 'samepage', 'spotlight', 'brain', 'topanswers', 'rare', 'sketch', 'punchline', 'cards', 'bluff'].includes(mode) ? count : socialModes.includes(mode) ? 3 : partyModes.includes(mode) ? 1 : quiz?.questions.length ?? count,
+  return { mode, theme, difficulty, raceLength, raceTrack, raceDifficulty, scoring: scores, boardSpeed: seconds ? boardSpeed : 0, legacyScoring: mode !== 'soclose' && scoring === undefined, format: privateTeam ? 'choice' : format, category: fixedQuestionModes.includes(mode) && !privateTeam ? category : 'mixed', count: mode === 'knockout' ? KNOCKOUT_QUESTIONS : ['tracks', 'samepage', 'spotlight', 'brain', 'topanswers', 'rare', 'sketch', 'punchline', 'cards', 'bluff'].includes(mode) ? count : socialModes.includes(mode) ? 3 : partyModes.includes(mode) ? 1 : quiz?.questions.length ?? count,
     seconds, autoReveal, includeChristmas, phoneView: privateTeam ? 'full' : phoneView, privateQuestions: privateTeam,
     teamCount, boardLength, playStyle, scoreInterval: supportsScoreCheckpoints(mode) ? scoreInterval : 1, customQuiz: quiz };
 }
@@ -293,6 +294,12 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
       result: player?.rounds[i],
     })) : undefined,
     remaining: room.mode === 'knockout' && phase !== 'lobby' ? room.remaining : undefined,
+    level: room.mode === 'knockout' && phase !== 'lobby' ? knockoutLevel(index) : undefined,
+    levelUp: room.mode === 'knockout' && phase === 'question' && index > 0 && index < KNOCKOUT_QUESTIONS && index % KNOCKOUT_PER_LEVEL === 0 ? true : undefined,
+    quickWin: room.mode === 'knockout' && revealed && room.players.size > 2 && index === 2 && room.remaining === 1 ? true : undefined,
+    decider: room.mode === 'knockout' && phase !== 'lobby' && room.decider ? true : undefined,
+    deciderBoard: room.mode === 'knockout' && revealed && isHost ? room.deciderBoard : undefined,
+    knockoutNote: room.mode === 'knockout' && revealed ? room.knockoutNote : undefined,
     knockout: room.mode === 'knockout' && isHost && visible ? knockoutLadder(room, revealed) : undefined,
     // Your own phone only: whether you lost a heart this round (and went out).
     lostLife: room.mode === 'knockout' && revealed && player?.lifeLostAt === index ? true : undefined,
@@ -574,7 +581,47 @@ function winningTeams(room) {
   return ordered.filter(team => compare(team, ordered[0]) === 0).map(team => team.id);
 }
 
+// Knockout: six levels of ten questions, each level harder than the last, and
+// play continues until one player (or one team) is left standing. If more
+// than one survives all sixty, a closest-number decider settles it.
+// Ten per level in play; tests shorten it.
+const KNOCKOUT_PER_LEVEL = Math.max(1, Number(process.env.KNOCKOUT_PER_LEVEL) || 10);
+const KNOCKOUT_LEVELS = 6;
+const KNOCKOUT_QUESTIONS = KNOCKOUT_PER_LEVEL * KNOCKOUT_LEVELS;
+const KNOCKOUT_DECIDER_LIMIT = 10;
+function knockoutUndecided(room) {
+  if (room.mode !== 'knockout' || room.players.size < 2) return false;
+  const living = [...room.players.values()].filter(player => player.lives > 0);
+  return room.teams.length ? new Set(living.map(player => player.team)).size > 1 : living.length > 1;
+}
+const knockoutLevel = index => Math.min(KNOCKOUT_LEVELS, Math.floor(index / KNOCKOUT_PER_LEVEL) + 1);
+
+// Draw the next Knockout question just before it is asked.
+function knockoutQuestion(room) {
+  const recent = new Set(room.questions.map(question => question.prompt));
+  const fresh = list => list.find(question => question && !recent.has(question.prompt)) ?? list.find(Boolean);
+  if (room.index >= KNOCKOUT_QUESTIONS) return fresh(makeQuestions('mixed', 20, room.seen, 'estimate', room.includeChristmas));
+  const level = knockoutLevel(room.index);
+  const types = formatTypes(room.format).filter(type => ['choice', 'boolean'].includes(type));
+  const format = types.length ? types[room.index % types.length] : 'choice';
+  const levelled = Object.keys(boardQuestionOrder).filter(id => id !== 'christmas' || room.includeChristmas);
+  const topics = room.category !== 'mixed' && levelled.includes(room.category) ? [room.category]
+    : room.category === 'mixed' ? levelled : [];
+  const drawn = [];
+  for (let attempt = 0; attempt < 8 && topics.length; attempt++) {
+    try {
+      const question = boardQuestion(topics[randomInt(topics.length)], format, level, room.seen);
+      if (question?.prompt && !recent.has(question.prompt)) return question;
+      if (question?.prompt) drawn.push(question);
+    } catch { /* a small topic may have nothing at this level */ }
+  }
+  // Specialist topics have no levels: fall back to the topic's own bank, then Mixed Bag.
+  return fresh([...drawn, ...makeQuestions(room.category, 30, room.seen, format, room.includeChristmas), ...makeQuestions('mixed', 30, room.seen, 'choice', room.includeChristmas)]);
+}
+
 function finalTurn(room) {
+  if (room.mode === 'knockout' && room.players.size > 1)
+    return !knockoutUndecided(room) || room.index + 1 >= KNOCKOUT_QUESTIONS + KNOCKOUT_DECIDER_LIMIT;
   return room.index + 1 >= room.count
     || (room.mode === 'knockout' && (room.teams.length
       ? new Set([...room.players.values()].filter(player=>player.lives>0).map(player=>player.team)).size <= 1
@@ -676,8 +723,28 @@ function reveal(room) {
     player.bestStreak = Math.max(player.bestStreak, player.streak);
   }
   if (room.mode === 'knockout') {
-    for (const [key, player] of room.players) {
-      if (!player.lives || room.answers.get(key)?.won) continue;
+    const living = [...room.players].filter(([, player]) => player.lives > 0);
+    let losers = living.filter(([key]) => !room.answers.get(key)?.won);
+    room.knockoutNote = undefined;
+    if (room.decider) {
+      // The decider: closest guess wins outright; the faster guess breaks a tie.
+      const gap = key => Math.abs(room.answers.get(key).option - question.correct);
+      const guesses = living.filter(([key]) => room.answers.has(key))
+        .sort((a, b) => gap(a[0]) - gap(b[0]) || room.answers.get(a[0]).elapsed - room.answers.get(b[0]).elapsed);
+      const champion = guesses[0];
+      losers = champion ? living.filter(([key, player]) => room.teams.length ? player.team !== champion[1].team : key !== champion[0]) : [];
+      for (const [, player] of losers) player.lives = 1;
+      room.deciderBoard = guesses.map(([key, player], place) => ({ id: player.id, name: player.name, avatar: player.avatar,
+        guess: room.answers.get(key).option, gap: gap(key), winner: place === 0 })).reverse();
+      if (!champion) room.knockoutNote = 'noguess';
+    }
+    // Nobody is knocked out on a question that would leave no one standing.
+    const fatal = losers.filter(([, player]) => player.lives === 1);
+    if (room.players.size > 1 && fatal.length === living.length) {
+      losers = losers.filter(([, player]) => player.lives > 1);
+      room.knockoutNote = 'spared';
+    }
+    for (const [, player] of losers) {
       player.lives--;
       player.lifeLostAt = room.index;
       if (!player.lives) { room.remaining--; player.outAt = room.index; }
@@ -700,6 +767,12 @@ function reveal(room) {
 }
 
 function openQuestion(room) {
+  if (room.mode === 'knockout') {
+    room.decider = room.players.size > 1 && room.index >= KNOCKOUT_QUESTIONS;
+    room.deciderBoard = undefined;
+    room.count = Math.max(KNOCKOUT_QUESTIONS, room.index + 1);
+    if (!room.questions[room.index]) room.questions[room.index] = knockoutQuestion(room);
+  }
   clearEstimateTimers(room);
   room.estimateReveal = undefined;
   room.estimateGuesses = undefined;
@@ -790,6 +863,9 @@ function startGame(room) {
   if (room.privateQuestions) for (const key of room.players.keys()) room.privateReview.set(key, []);
   if (room.mode === 'knockout') {
     room.remaining = room.players.size;
+    room.decider = false; room.deciderBoard = undefined; room.knockoutNote = undefined;
+    room.count = KNOCKOUT_QUESTIONS;
+    if (!room.customQuiz) room.questions = [];
     for (const player of room.players.values()) { player.lives = 3; delete player.lifeLostAt; delete player.outAt; }
   }
   if (fixedQuestionModes.includes(room.mode) && room.mode !== 'dice') return openQuestion(room);

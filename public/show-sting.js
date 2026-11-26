@@ -14,7 +14,7 @@ export function stingFor(previousKey, s, host) {
   const [code, game, index, phase] = previousKey.split('/');
   if (code !== s.code || Number(game) !== s.game) return null;
   if (['lobby', 'waiting'].includes(phase) && !['lobby', 'waiting', 'finished'].includes(s.phase)) return 'title';
-  if (s.total > 1 && s.index === s.total - 1 && Number(index) !== s.index && roundPhases.includes(s.phase)) return 'final';
+  if (s.mode !== 'knockout' && s.total > 1 && s.index === s.total - 1 && Number(index) !== s.index && roundPhases.includes(s.phase)) return 'final';
   return null;
 }
 

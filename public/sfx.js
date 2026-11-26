@@ -32,7 +32,7 @@ export async function playSfx(context, name, { volume = 0.55, at = 0 } = {}) {
 
 let music;
 let musicName;
-const musicLevel = { lobby: 0.22, finale: 0.5 };
+const musicLevel = { lobby: 0.22, finale: 0.5, decider: 0.4 };
 
 /** Start (or keep) a music bed; looping tracks repeat until stopped. */
 export function playMusic(name, { loop = true } = {}) {

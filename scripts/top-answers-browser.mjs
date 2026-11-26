@@ -33,11 +33,12 @@ try{
   assert.deepEqual(await launcher.locator('.game-tile').evaluateAll(tiles=>tiles.map(tile=>tile.dataset.mode)),[...releasedGameIds],'All released games should appear on desktop');
   await launcher.locator('.game-tile[data-mode="topanswers"]').click();
   assert.match(await launcher.locator('#game-preview').innerText(),/Top Answers/);
-  await launcher.locator('#game-preview [data-action="host"]').click();
-  assert.equal(await launcher.locator('#host-form input[name="mode"]:checked').inputValue(),'topanswers');
-  assert.deepEqual(await launcher.locator('#host-form select[name="count"] option')
+  await launcher.locator('#game-preview [data-action="party"]').click();
+  await launcher.locator('[data-picker-tv] [data-action="picker-settings"]').click();
+  assert.equal(await launcher.locator('#configure-form input[name="mode"]:checked').inputValue(),'topanswers');
+  assert.deepEqual(await launcher.locator('#configure-form select[name="count"] option')
     .evaluateAll(options=>options.map(option=>option.value)),['3','5','7']);
-  assert.equal(await launcher.locator('#host-form input[name="playStyle"][value="teams"]').isDisabled(),true);
+  assert.equal(await launcher.locator('#configure-form input[name="playStyle"][value="teams"]').isDisabled(),true);
   await menu.close();
   console.log('PASS: Top Answers can be hosted from the game menu in 3, 5 or 7 rounds');
 

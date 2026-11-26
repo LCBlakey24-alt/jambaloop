@@ -15,7 +15,7 @@ test('every game mode offers an original spoken introduction and a preview Liste
     assert.match(html,/data-narrator-label>Listen to intro</);
     assert.match(html,/Read spoken introduction/);
     assert.ok(html.includes(narration[id]),name+' transcript missing');
-    assert.match(html,/data-action="host"/,'Setup must remain accessible');
+    assert.match(html,new RegExp('data-action="party" data-mode="'+id+'"'),'Hosting a party on this game must remain one tap away');
   }
 });
 

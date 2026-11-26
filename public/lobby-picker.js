@@ -20,18 +20,23 @@ function centreInfo(id, escape) {
     <h2 class="picker-name">${escape(name)}</h2><p class="picker-description">${escape(description)}</p></div>`;
 }
 
+/** The 3D shelf of game tiles, centred on `mode` (the TV and phones share it). */
+function shelf(mode) {
+  const centre = indexOf(mode);
+  const offsets = carouselOffsets(ids.length, centre);
+  return `<div class="carousel-track" aria-hidden="true">${ids.map((id, i) => {
+    const distance = Math.abs(offsets[i]);
+    return `<div class="carousel-card" data-mode="${id}" style="${identityVariables(id)};--offset:${offsets[i]};--distance:${distance}"${i === centre ? ' aria-current="true"' : ''}${distance > CAROUSEL_REACH ? ' aria-hidden="true"' : ''}>${tileArt(id)}</div>`;
+  }).join('')}</div>`;
+}
+
 /** The TV: a 3D shelf of tiles, the centred game's details, and how to join. */
 export function pickerTv(state, { escape, canDrive }) {
-  const centre = indexOf(state.picker.mode);
-  const offsets = carouselOffsets(ids.length, centre);
   const captain = state.captainName ? escape(state.captainName) : 'The captain';
   return `<section class="lobby-picker" data-picker-tv>
     <div class="game-carousel picker-carousel"><div class="carousel-stage">
       ${canDrive ? '<button type="button" class="carousel-arrow" data-action="picker-step" data-direction="-1" aria-label="Previous game">‹</button>' : '<span></span>'}
-      <div class="carousel-track" aria-hidden="true">${ids.map((id, i) => {
-        const distance = Math.abs(offsets[i]);
-        return `<div class="carousel-card" data-mode="${id}" style="${identityVariables(id)};--offset:${offsets[i]};--distance:${distance}"${i === centre ? ' aria-current="true"' : ''}${distance > CAROUSEL_REACH ? ' aria-hidden="true"' : ''}>${tileArt(id)}</div>`;
-      }).join('')}</div>
+      ${shelf(state.picker.mode)}
       ${canDrive ? '<button type="button" class="carousel-arrow" data-action="picker-step" data-direction="1" aria-label="Next game">›</button>' : '<span></span>'}
     </div></div>
     <div class="picker-footer">
@@ -42,26 +47,29 @@ export function pickerTv(state, { escape, canDrive }) {
         <ul class="players">${(state.players ?? []).map(player => `<li>${avatarView(player, escape)}${escape(player.name)}</li>`).join('')}</ul>
         <p class="picker-hint">${state.playerCount ? `${captain} is choosing on their phone` : 'Waiting for players to join'}</p>
         ${canDrive ? `<button type="button" class="button primary" data-action="picker-play">Play this game</button>
-        <button type="button" class="button outline" data-action="welcome-play">▶ Play the welcome</button>` : ''}</div>
+        <span class="picker-room-actions"><button type="button" class="button outline" data-action="picker-settings">Game settings</button>
+        <button type="button" class="button outline" data-action="welcome-play">▶ Play the welcome</button></span>` : ''}</div>
     </div></section>`;
 }
 
-/** Glide the TV shelf to the captain's game and re-theme the screen around it. */
-export function movePickerTv(root, state, escape) {
-  const stage = root.querySelector('[data-picker-tv]');
-  if (!stage) return false;
-  const centre = indexOf(state.picker.mode);
+/** Glide the shelf (TV or phone) to a game and re-theme the screen around it. */
+export function movePicker(root, mode, escape) {
+  const track = root.querySelector('.picker-carousel .carousel-track');
+  if (!track) return false;
+  const centre = indexOf(mode);
   const offsets = carouselOffsets(ids.length, centre);
-  stage.querySelectorAll('.carousel-card').forEach((card, i) => {
+  track.querySelectorAll('.carousel-card').forEach((card, i) => {
     const distance = Math.abs(offsets[i]);
     card.style.setProperty('--offset', offsets[i]);
     card.style.setProperty('--distance', distance);
     card.toggleAttribute('aria-current', i === centre);
     if (distance > CAROUSEL_REACH) card.setAttribute('aria-hidden', 'true'); else card.removeAttribute('aria-hidden');
   });
-  const centreInfoSlot = stage.querySelector('.picker-centre');
-  if (centreInfoSlot) centreInfoSlot.innerHTML = centreInfo(state.picker.mode, escape);
-  themeTo(root, state.picker.mode);
+  const slot = root.querySelector('.picker-centre');
+  if (slot) slot.innerHTML = centreInfo(mode, escape);
+  const name = root.querySelector('[data-picker-name]');
+  if (name) name.textContent = info(mode)?.[1] ?? '';
+  themeTo(root, mode);
   return true;
 }
 
@@ -73,55 +81,39 @@ export function themeTo(root, mode) {
   view.setAttribute('style', modeVariables(mode));
 }
 
-/** A phone: a swipeable strip of tiles. The captain drives; others watch. */
+/** A phone: the same 3D shelf as the TV. The captain swipes; others watch. */
 export function pickerPhone(state, { escape, canDrive }) {
   const [, name] = info(state.picker.mode);
   const captain = state.captainName ? escape(state.captainName) : 'The captain';
   return `<section class="game-panel picker-phone" data-picker-phone ${canDrive ? 'data-driver' : ''}>
     <div class="eyebrow">${canDrive ? 'CHOOSE THE NEXT GAME' : 'GAME CAROUSEL'}</div>
-    <p class="picker-hint">${canDrive ? 'Swipe to browse. The TV follows you.' : `${captain} is choosing. Watch the TV.`}</p>
+    <p class="picker-hint">${canDrive ? 'Swipe left or right. The TV follows you.' : `${captain} is choosing. Watch the TV.`}</p>
     ${welcomePanel(state, canDrive)}
-    <div class="picker-strip" ${canDrive ? '' : 'inert'}>${ids.map(id => `<div class="picker-tile" data-mode="${id}" style="${modeVariables(id)}">${tileArt(id)}</div>`).join('')}</div>
-    <div class="picker-controls">${canDrive ? `<button type="button" class="button outline" data-action="picker-step" data-direction="-1" aria-label="Previous game">‹</button>
-      <button type="button" class="button primary" data-action="picker-play">Play <span data-picker-name>${escape(name)}</span></button>
-      <button type="button" class="button outline" data-action="picker-step" data-direction="1" aria-label="Next game">›</button>` : `<p class="picker-now">Now showing: <strong data-picker-name>${escape(name)}</strong></p>`}</div>
+    <div class="game-carousel picker-carousel is-phone">${shelf(state.picker.mode)}</div>
+    <p class="picker-phone-info"><strong class="picker-name" data-picker-name>${escape(name)}</strong></p>
+    ${canDrive ? `<div class="picker-controls"><button type="button" class="button outline" data-action="picker-step" data-direction="-1" aria-label="Previous game">‹</button>
+      <button type="button" class="button primary" data-action="picker-play">Play this game</button>
+      <button type="button" class="button outline" data-action="picker-step" data-direction="1" aria-label="Next game">›</button>
+      <button type="button" class="button outline picker-settings" data-action="picker-settings">Game settings</button></div>` : ''}
   </section>`;
 }
 
-/**
- * Scroll a phone's strip to a game (smoothly unless it is the first paint).
- * Following the room is quiet; the captain's own steps report the move.
- */
-export function syncPhonePicker(root, mode, smooth = true, { report = false } = {}) {
-  const strip = root.querySelector('.picker-strip');
-  const tile = strip?.querySelector(`.picker-tile[data-mode="${mode}"]`);
-  if (!tile) return;
-  if (report) delete strip.dataset.syncing; else strip.dataset.syncing = mode;
-  strip.scrollTo({ left: tile.offsetLeft - (strip.clientWidth - tile.clientWidth) / 2, behavior: smooth ? 'smooth' : 'instant' });
-  const label = root.querySelector('[data-picker-name]');
-  if (label) label.textContent = info(mode)?.[1] ?? '';
-}
-
-/** The captain's swipes: report the centred game once the strip settles. */
-export function bindPhonePicker(root, onBrowse) {
-  const strip = root.querySelector('[data-picker-phone][data-driver] .picker-strip');
-  if (!strip || strip.dataset.bound) return;
-  strip.dataset.bound = 'true';
-  let timer;
-  let last;
-  strip.addEventListener('scroll', () => {
-    clearTimeout(timer);
-    timer = setTimeout(() => {
-      const middle = strip.scrollLeft + strip.clientWidth / 2;
-      const tiles = [...strip.children];
-      const nearest = tiles.reduce((best, tile) => Math.abs(tile.offsetLeft + tile.clientWidth / 2 - middle) < Math.abs(best.offsetLeft + best.clientWidth / 2 - middle) ? tile : best, tiles[0]);
-      const mode = nearest?.dataset.mode;
-      const label = root.querySelector('[data-picker-name]');
-      if (label && mode) label.textContent = info(mode)[1];
-      if (strip.dataset.syncing === mode) { delete strip.dataset.syncing; last = mode; return; }
-      if (mode && mode !== last) { last = mode; strip.dataset.reported = mode; onBrowse(mode); }
-    }, 140);
-  }, { passive: true });
+/** Thumb swipes on the shelf: one game per flick. */
+export function bindPickerSwipe(root, onStep) {
+  const track = root.querySelector('[data-picker-phone][data-driver] .carousel-track, [data-picker-tv] .carousel-track');
+  if (!track || track.dataset.swipe) return;
+  track.dataset.swipe = 'on';
+  let startX;
+  let startY;
+  track.addEventListener('pointerdown', event => { startX = event.clientX; startY = event.clientY; }, { passive: true });
+  track.addEventListener('pointerup', event => {
+    if (startX === undefined) return;
+    const dx = event.clientX - startX;
+    const dy = event.clientY - startY;
+    startX = undefined;
+    if (Math.abs(dx) > 34 && Math.abs(dx) > Math.abs(dy)) onStep(dx < 0 ? 1 : -1);
+  });
+  track.addEventListener('pointercancel', () => { startX = undefined; });
 }
 
 /** On phones while Max and Poppy are on: the captain can skip or choose. */

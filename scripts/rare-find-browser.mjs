@@ -31,11 +31,12 @@ try{
   assert.deepEqual(await page.locator('.game-tile').evaluateAll(tiles=>tiles.map(tile=>tile.dataset.mode)),[...releasedGameIds],'All released games should appear on desktop');
   await page.locator('.game-tile[data-mode="rare"]').click();
   assert.match(await page.locator('#game-preview').innerText(),/Rare Find/);
-  await page.locator('#game-preview [data-action="host"]').click();
-  assert.equal(await page.locator('#host-form input[name="mode"]:checked').inputValue(),'rare');
-  assert.deepEqual(await page.locator('#host-form select[name="count"] option')
+  await page.locator('#game-preview [data-action="party"]').click();
+  await page.locator('[data-picker-tv] [data-action="picker-settings"]').click();
+  assert.equal(await page.locator('#configure-form input[name="mode"]:checked').inputValue(),'rare');
+  assert.deepEqual(await page.locator('#configure-form select[name="count"] option')
     .evaluateAll(options=>options.map(option=>option.value)),['3','5','7']);
-  assert.equal(await page.locator('#host-form input[name="playStyle"][value="teams"]').isDisabled(),true);
+  assert.equal(await page.locator('#configure-form input[name="playStyle"][value="teams"]').isDisabled(),true);
   await menuContext.close();
   console.log('PASS: Rare Find discoverable, original preview and 3/5/7 rounds');
 

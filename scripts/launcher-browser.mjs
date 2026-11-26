@@ -60,12 +60,14 @@ async function checkCarousel(page,width,height){
     assert.equal(await page.locator('[data-action="carousel-voice"]').getAttribute('aria-pressed'),'true');
     await page.locator('[data-action="carousel-voice"]').click();
     await page.screenshot({path:'browser-screenshots/carousel-quizrace-1920x1080.png'});
-    // Choosing the centred card opens setup for that game.
+    // The landing page is a showcase: the centre card opens that game's details,
+    // and the only way to play is to host a party (which starts on that game).
     await page.locator('.carousel-card[aria-current="true"]').click();
-    assert.equal(await page.locator('#dialog').evaluate(el=>el.open),true,'Setup opens from the shelf');
-    assert.equal(await page.locator('input[name="mode"]:checked').inputValue(),'quizrace');
-    await page.locator('#dialog [data-action="close"]').click();
-    console.log('PASS: shelf swipe, remote arrows, paper theme, opt-in voice and setup from the centre card');
+    await page.locator('#game-preview').waitFor();
+    assert.match(await page.locator('#game-preview').innerText(),/Quiz Race/);
+    assert.equal(await page.locator('#game-preview [data-action="party"]').getAttribute('data-mode'),'quizrace');
+    await page.locator('#game-preview [data-action="close-preview"]').click();
+    console.log('PASS: shelf swipe, remote arrows, paper theme, opt-in voice and details from the centre card');
   }
   await page.screenshot({path:`browser-screenshots/carousel-${width}x${height}.png`,fullPage:false});
   await page.locator('[data-action="carousel-view"]').click();
@@ -137,10 +139,10 @@ try {
       await page.locator('[data-action="close-preview"]').click();
       assert.equal(await page.locator('.game-tile[data-mode="quizrace"]').isVisible(),true);
       await page.locator('.game-tile[data-mode="quizrace"]').click();
-      await page.locator('#game-preview [data-action="host"]').click();
-      assert.equal(await page.locator('#dialog').evaluate(el=>el.open),true,'Setup dialogue missing');
-      assert.equal(await page.locator('input[name="mode"]:checked').inputValue(),'quizrace','Selected game did not reach setup');
-      await page.locator('#dialog [data-action="close"]').click();
+      // The landing page only starts parties; this one would open on Quiz Race.
+      assert.equal(await page.locator('#game-preview [data-action="party"]').getAttribute('data-mode'),'quizrace','Host a party starts on the chosen game');
+      assert.equal(await page.locator('#game-preview [data-action="host"]').count(),0,'No direct game setup from the landing page');
+      await page.locator('[data-action="close-preview"]').click();
       await page.locator('[data-action="home-tab"][data-tab="topics"]').first().click();
       assert.equal(await page.locator('[data-home-panel="topics"]').isVisible(),true,'Topic browser did not open');
       assert.equal(await page.locator('[data-home-panel="games"]').isVisible(),false,'Game panel not hidden');

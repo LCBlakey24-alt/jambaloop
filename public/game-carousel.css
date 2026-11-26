@@ -234,3 +234,11 @@
 .picker-welcome p { margin:0; font-weight:700; }
 .picker-welcome .actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:0; }
 .picker-welcome .button { min-height:52px; }
+/* Phones: the same 3D shelf as the TV, sized for a thumb. */
+.picker-carousel.is-phone { --card:min(60vw,270px); padding:10px 0 6px; overflow:visible; }
+.picker-phone { overflow:hidden; }
+.picker-phone .carousel-track { touch-action:pan-y; cursor:grab; }
+.picker-phone-info { margin:0; text-align:center; }
+.picker-phone .picker-name { display:block; font:var(--id-weight) clamp(26px,8vw,40px)/1.05 var(--id-display),var(--head),sans-serif; text-transform:var(--id-case); color:var(--id-ink); }
+.picker-controls .picker-settings { grid-column:1 / -1; }
+.picker-room-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; }

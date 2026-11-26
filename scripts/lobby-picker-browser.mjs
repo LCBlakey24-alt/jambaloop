@@ -34,11 +34,15 @@ try{
   // 2. Captain taps next twice and swipes once: everyone follows.
   const settle=async mode=>{for(let t=0;t<40&&(await snap(host)).picker.mode!==mode;t++)await captain.waitForTimeout(150);assert.equal((await snap(host)).picker.mode,mode);};
   for(const mode of ['wheel','board']){await captain.locator('[data-action="picker-step"][data-direction="1"]').click();await settle(mode);await captain.waitForTimeout(400);}
-  await captain.locator('.picker-strip').evaluate(s=>s.scrollBy({left:s.querySelector('.picker-tile').offsetWidth+14,behavior:'instant'}));
+  // A thumb flick to the left on the captain's 3D shelf.
+  const shelf=await captain.locator('.picker-carousel .carousel-track').boundingBox();
+  await captain.mouse.move(shelf.x+shelf.width*.8,shelf.y+shelf.height/2);await captain.mouse.down();
+  await captain.mouse.move(shelf.x+shelf.width*.2,shelf.y+shelf.height/2,{steps:6});await captain.mouse.up();
+  assert.equal(await captain.locator('.game').getAttribute('data-mode'),'dice','the phone wears the browsed game too');
   await tv.waitForFunction(()=>document.querySelector('.carousel-card[aria-current]')?.dataset.mode==='dice',null,{timeout:5000});
   assert.equal((await snap(host)).picker.mode,'dice');
   assert.equal(await tv.locator('.game').getAttribute('data-mode'),'dice','the TV wears the browsed game');
-  await guest.waitForFunction(()=>document.querySelector('[data-picker-name]')?.textContent==='Dice Rally',null,{timeout:5000});
+  await guest.waitForFunction(()=>document.querySelector('[data-picker-name]')?.textContent==='Dice Rally'&&document.querySelector('.carousel-card[aria-current]')?.dataset.mode==='dice',null,{timeout:5000});
   await tv.screenshot({path:'browser-screenshots/picker-tv.png'});
   await captain.screenshot({path:'browser-screenshots/picker-captain.png'});
   console.log('PASS: the TV and other phones follow the captain');

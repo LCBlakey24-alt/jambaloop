@@ -23,7 +23,7 @@ import { isWelcomeNarration, playScript, playWelcome, stopNarration, toggleNarra
 import { skipQuips, welcomeBack } from './duo-scripts.js';
 import { openWelcome } from './welcome-show.js';
 import { playChiptune, playCue, playTick, playTowerImpact } from './sound-cues.js';
-import { bindPhonePicker, movePickerTv, pickerPhone, pickerTv, stepMode, syncPhonePicker } from './lobby-picker.js';
+import { bindPickerSwipe, movePicker, pickerPhone, pickerTv, stepMode } from './lobby-picker.js';
 import { knockoutLadder, phoneHearts, playKnockout, rememberLadder, shatterPhoneHeart } from './knockout-ladder.js';
 import { boardLengths, boardRoute, boardDuration, durationLabel, suggestedTurnCap, boardRequiresChoice, boardPathChoices } from './board-route.js';
 import {teamPlayModes, defaultPlayStyle} from './team-play.js';
@@ -266,7 +266,7 @@ function renderModeCards(group = homeFilter) {
     shell.dataset.homeView = 'carousel';
     themeHome(shell, matches[carouselIndex][0]);
     const count = app.querySelector('#mode-count');
-    if (count) count.textContent = 'Use ← → or swipe to browse';
+    if (count) count.textContent = 'Every game, one party · ← → to browse';
     return;
   }
   if (carousel) { carousel.hidden = true; carousel.innerHTML = ''; }
@@ -294,7 +294,7 @@ function renderModeCards(group = homeFilter) {
   next.disabled = homePage >= pages - 1;
   pager.querySelector('#mode-page-output').textContent = `Page ${homePage + 1} of ${pages} · ${matches.length} games`;
   const count = app.querySelector('#mode-count');
-  if (count) count.textContent = homeSelected ? 'How to play and game setup' : 'Select a tile to see how it works';
+  if (count) count.textContent = homeSelected ? 'How to play' : 'Tap a game to see how it works';
 }
 
 function setupPreview(mode, play = false) {
@@ -310,7 +310,7 @@ function renderCategories() {
     (!group.length || group.includes(id)) && (name + ' ' + description).toLocaleLowerCase().includes(query));
   document.querySelector('#category-empty').hidden = Boolean(visible.length);
   document.querySelector('#category-list').innerHTML = visible.map(([id, name, description, icon, color]) => `
-    <button class="card" data-action="host" data-category="${id}" style="--accent:${color}">
+    <button class="card" data-action="party" data-mode="classic" data-category="${id}" style="--accent:${color}">
       <span class="category-icon" style="--icon:url('/icons/${icon}.svg')"><i></i></span>
       ${icons('arrow-up-right', 'arrow')}<h3>${name}</h3><p>${description}</p>
     </button>`).join('');
@@ -323,7 +323,8 @@ function openDialog(mode, value, gameMode, quizId) {
   if (['host', 'configure', 'rematch'].includes(mode)) {
     const configured = mode !== 'host';
     const rematch = mode === 'rematch';
-    const selectedMode = quizId ? 'classic' : configured ? state.mode : gameMode ?? 'classic';
+    // From the lobby carousel, settings open on the game being browsed.
+    const selectedMode = quizId ? 'classic' : configured ? gameMode ?? state.mode : gameMode ?? 'classic';
     const raceSetup = configured && state.mode === 'quizrace' ? state : {}; 
     const seconds = configured ? state.seconds : 20;
     const scoring = configured && state.scoring ? state.scoring : defaultScoring(seconds);
@@ -1180,10 +1181,7 @@ function render(s) {
   // The welcome plays once the room has players and a captain to hand over to.
   if (host && s.phase === 'lobby' && s.picker && s.playerCount > 0 && s.captainName && !s.welcome && !welcomedRooms().includes(s.code)) requestWelcome();
   if (welcome && s.phase !== 'lobby') closeWelcome();
-  if (s.phase === 'lobby' && s.picker && !host) {
-    syncPhonePicker(app, s.picker.mode, false);
-    bindPhonePicker(app, mode => browseTo(mode));
-  }
+  if (s.phase === 'lobby' && s.picker) bindPickerSwipe(app, direction => stepPicker(direction));
   // Hot Potato: the potato arcs from the old holder's seat to the new one.
   animatePotato(host?app:null, s.code+'/'+s.game, matchMedia('(prefers-reduced-motion: reduce)').matches);
   if(s.mode!=='quizrace'&&race3d) disposeRace3d();
@@ -1401,8 +1399,8 @@ function receive(next, current) {
   if (picker) {
     // The captain has started browsing: the welcome steps aside.
     if (welcome && picker.version !== welcome.version) { welcome.version = picker.version; welcomeAction('end'); }
-    if (current.host) movePickerTv(app, next, escape);
-    else if (app.querySelector('.picker-strip')?.dataset.reported !== picker.mode) syncPhonePicker(app, picker.mode);
+    // Follow the room, except just after this screen moved it itself.
+    if (Date.now() - lastLocalPick > 700) movePicker(app, picker.mode, escape);
   }
   const responseProgress = document.querySelector('#response-progress');
   if (responseProgress) {
@@ -1465,6 +1463,19 @@ function closeWelcome() {
   if (isWelcomeNarration()) stopNarration();
   welcome?.close();
   welcome = undefined;
+}
+
+// The game in front of the shelf on this screen (it can be a step ahead of the room).
+const centredPick = () => app.querySelector('.picker-carousel .carousel-card[aria-current]')?.dataset.mode ?? state?.picker?.mode;
+let lastLocalPick = 0;
+
+/** One step along the shelf: move here at once, then tell the room. */
+function stepPicker(direction) {
+  if (!state?.picker) return;
+  const next = stepMode(centredPick(), direction);
+  lastLocalPick = Date.now();
+  movePicker(app, next, escape);
+  browseTo(next);
 }
 
 /** Move the lobby carousel for every screen in the room. */
@@ -1815,7 +1826,8 @@ document.addEventListener('click', async event => {
     const list = launcherModes(homeFilter);
     if (action === 'carousel-go') {
       const target = list.findIndex(([id]) => id === button.dataset.mode);
-      if (target === wrapIndex(carouselIndex, list.length)) return button.closest('#game-carousel')?.querySelector('.carousel-info [data-action="host"]')?.click();
+      // On the landing showcase the centre card opens its details; hosting is a separate tap.
+      if (target === wrapIndex(carouselIndex, list.length)) return button.closest('#game-carousel')?.querySelector('.carousel-info [data-action="preview-mode"]')?.click();
       stepCarousel(target - wrapIndex(carouselIndex, list.length));
     } else stepCarousel(Number(button.dataset.direction));
     return;
@@ -1956,15 +1968,11 @@ document.addEventListener('click', async event => {
   if (action === 'picker-open' && session && state?.phase === 'lobby') {
     return api('/' + session.code + '/browse', { open: true, game: state.game }).catch(error => showGameError(error));
   }
-  if (action === 'picker-step' && session && state?.picker) {
-    const next = stepMode(state.picker.mode, Number(button.dataset.direction));
-    // The captain's phone scrolls its strip (which reports the move); the TV moves directly.
-    if (!session.host && app.querySelector('[data-driver] .picker-strip')) return syncPhonePicker(app, next, true, { report: true });
-    return browseTo(next);
-  }
+  if (action === 'picker-step' && session && state?.picker) return stepPicker(Number(button.dataset.direction));
+  if (action === 'picker-settings' && session && state?.picker) return openDialog('configure', state.category, centredPick());
   if (action === 'picker-play' && session && state?.picker) {
     button.disabled = true;
-    const mode = state.picker.mode;
+    const mode = centredPick();
     try {
       await api('/' + session.code + '/configure', { ...queuedSettings(mode, state.theme), game: state.game, lobbyVersion: state.lobbyVersion });
     } catch (error) { button.disabled = false; showGameError(error); }
@@ -1989,8 +1997,13 @@ document.addEventListener('click', async event => {
     button.disabled = true;
     const message = document.querySelector('#home-error');
     try {
-      // Lobby first: everyone joins, then the captain picks the game on the carousel.
-      const room = await api('', { mode: 'classic', category: 'mixed', count: 10, seconds: 20, format: 'mixed', theme: previewTheme, scoreInterval: defaultScoreInterval, picker: true });
+      // Lobby first: everyone joins, then the captain picks the game on the
+      // carousel. Hosting from a game's tile starts the carousel on that game.
+      const chosen = modes.some(([id]) => id === button.dataset.mode) ? button.dataset.mode : undefined;
+      const settings = chosen ? queuedSettings(chosen, previewTheme) : { mode: 'classic', category: 'mixed', count: 10, seconds: 20, format: 'mixed', theme: previewTheme, scoreInterval: defaultScoreInterval };
+      // A topic card starts a Classic Quiz party on that topic.
+      if (chosen === 'classic' && categories.some(([id]) => id === button.dataset.category)) settings.category = button.dataset.category;
+      const room = await api('', { ...settings, picker: true });
       startSession({ code: room.code, key: room.host, host: true });
     } catch (error) {
       if (message) message.textContent = error.message;
@@ -2135,10 +2148,19 @@ matchMedia('(max-width: 760px)').addEventListener('change', () => {
   renderModeCards(homeFilter);
 });
 
+// The landing shelf turns by itself while nobody is browsing it.
+let carouselTouchedAt = performance.now();
+setInterval(() => {
+  if (session || document.hidden || prefersReducedMotion() || performance.now() - carouselTouchedAt < 15000) return;
+  if (dialog.open || carouselVoice || homeSelected) return;
+  stepCarousel(1, { auto: true });
+}, 6500);
+
 /** Turn the shelf by `delta` games; the page and voice guide follow. */
-function stepCarousel(delta) {
+function stepCarousel(delta, { auto = false } = {}) {
   const carousel = app.querySelector('#game-carousel');
   if (!carousel || carousel.hidden || !delta) return;
+  if (!auto) carouselTouchedAt = performance.now();
   const list = launcherModes(homeFilter);
   carouselIndex = wrapIndex(carouselIndex + delta, list.length);
   if (!moveCarousel(carousel, list, carouselIndex, carouselVoice)) carousel.innerHTML = carouselView(list, carouselIndex, carouselVoice);

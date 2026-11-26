@@ -209,3 +209,7 @@ body .game.player-only .question-panel .answers > .answer > span { font-family:v
 .potato-panel:not([data-holding]) .party-holder { display:grid; justify-items:center; gap:8px; }
 .potato-panel:not([data-holding]) .party-holder .player-avatar { width:min(34vw,140px); height:min(34vw,140px); font-size:clamp(40px,12vw,60px); box-shadow:0 0 0 4px var(--id-accent), 0 14px 30px #0007; }
 .potato-panel:not([data-holding]) h1 { font-size:clamp(28px,8vw,40px); }
+/* The lobby carousel is part of the show too: no site header, shelf centred. */
+html.mobile-deck body:has(#app > .game.player-only [data-picker-phone]) > .header { display:none; }
+.mobile-deck .game.player-only:has([data-picker-phone]) { height:100%; margin:0 auto; padding:max(8px,env(safe-area-inset-top)) 10px 10px; display:flex; flex-direction:column; gap:8px; }
+.mobile-deck .game.player-only:has([data-picker-phone]) > .picker-phone { flex:1 1 auto; min-height:0; display:flex; flex-direction:column; justify-content:center; gap:10px; margin:0; }

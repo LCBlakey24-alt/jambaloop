@@ -21,8 +21,9 @@ try {
     if(await host.locator('[data-action="carousel-view"]').isVisible())await host.locator('[data-action="carousel-view"]').click();
     await host.locator('[data-action="preview-mode"][data-mode="tracks"]').click();
     assert.match(await host.locator('#game-preview').innerText(),/three|sabotage|driver/i);
-    await host.locator('#game-preview [data-action="host"]').click();
-    const form=host.locator('#host-form');
+    await host.locator('#game-preview [data-action="party"]').click();
+  await host.locator('[data-picker-tv] [data-action="picker-settings"]').click();
+    const form=host.locator('#configure-form');
     assert.equal(await form.locator('input[name="playStyle"][value="individual"]').isDisabled(),true);
     assert.equal(await form.locator('input[name="playStyle"][value="teams"]').isChecked(),true);
     assert.equal(await form.locator('select[name="teamCount"]').inputValue(),'2');

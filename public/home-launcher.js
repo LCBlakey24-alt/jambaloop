@@ -86,7 +86,7 @@ export function launcherPreview(id) {
       <h3>How to play</h3>
       <ol class="preview-steps">${steps.map((step,i)=>`<li><b>${String(i+1).padStart(2,'0')}</b><span>${step}</span></li>`).join('')}</ol>
       <div class="preview-actions">
-        <button type="button" class="button primary" data-action="host" data-mode="${key}">Set up this game <span aria-hidden="true">→</span></button>
+        <button type="button" class="button primary" data-action="party" data-mode="${key}">Host a party <span aria-hidden="true">→</span></button>
         <button type="button" class="button outline" data-action="close-preview">Back to games</button>
       </div>
     </div>

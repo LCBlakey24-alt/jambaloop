@@ -40,7 +40,7 @@ export function carouselInfo([id, name, description], voiceOn) {
     <p class="carousel-description">${escapeHtml(description)}</p>
     <ol class="carousel-steps">${steps.slice(0, 3).map(step => `<li>${escapeHtml(step)}</li>`).join('')}</ol>
     <div class="carousel-actions">
-      <button type="button" class="button primary" data-action="host" data-mode="${id}">Play ${escapeHtml(name)} <span aria-hidden="true">→</span></button>
+      <button type="button" class="button primary" data-action="party" data-mode="${id}">Host a party <span aria-hidden="true">→</span></button>
       <button type="button" class="button outline" data-action="preview-mode" data-mode="${id}">Full details</button>
       <button type="button" class="button outline carousel-voice" data-action="carousel-voice" aria-pressed="${voiceOn}">
         <span aria-hidden="true">${voiceOn ? '🔊' : '🔈'}</span> Voice guide ${voiceOn ? 'on' : 'off'}</button>

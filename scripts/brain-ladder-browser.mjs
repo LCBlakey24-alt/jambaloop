@@ -38,8 +38,9 @@ try {
   assert.deepEqual(await setup.locator('.game-tile').evaluateAll(tiles=>tiles.map(tile=>tile.dataset.mode)),[...releasedGameIds],'All released games should appear on desktop');
   await setup.locator('.game-tile[data-mode="brain"]').click();
   assert.match(await setup.locator('#game-preview').innerText(),/Brain Ladder/i);
-  await setup.locator('#game-preview [data-action="host"]').click();
-  const form=setup.locator('#host-form');
+  await setup.locator('#game-preview [data-action="party"]').click();
+  await setup.locator('[data-picker-tv] [data-action="picker-settings"]').click();
+  const form=setup.locator('#configure-form');
   assert.equal(await form.locator('input[name="mode"]:checked').inputValue(),'brain');
   assert.equal(await form.locator('select[name="count"]').isVisible(),true);
   assert.deepEqual(await form.locator('select[name="count"] option').evaluateAll(options=>options.map(o=>o.value)),['5','7','10']);

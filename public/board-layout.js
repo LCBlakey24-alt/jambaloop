@@ -18,20 +18,20 @@ function wave(from, to, amplitude, waves, samples = 22) {
     return [x0 + dx * t + nx * bump, z0 + dz * t + nz * bump];
   });
 }
-// Section lengths are balanced to the space counts (before the fork : fork :
-// after the fork ≈ 1 : 1 : 2) so tiles are evenly spaced on every board size.
-// Before the fork: up the lower left side, round the corner and along the front.
+// A classic race-round-the-board track: start at the near-left, along the
+// front edge, up the right side (where the lanes fork), along the back, down
+// the left side and then in to a finish in the middle of the board.
+// Before the fork: the near-left corner and the front edge.
 const front = [
-  [-2.45, .75], [-2.4, 1.45], [-2.05, 2.05],
-  ...wave([-1.5, 2.28], [.7, 2.28], .18, 1.2, 16), [1.2, 2.2], [1.55, 1.88],
+  [-2.38, 1.05], [-2.38, 1.75], [-2.02, 2.3], [-1.3, 2.38], [-.4, 2.38], [.5, 2.38], [1.15, 2.3], [1.6, 1.95],
 ];
-// The fork: Power Lane swings into the board in a wide S while Question
-// Trail arcs out to the right edge, so the two lanes split clearly.
-const right = [[1.55, 1.35], [1.12, .85], [.8, .3], [.86, -.3], [1.28, -.76], [1.6, -1.28], [1.5, -1.86], [1.1, -2.24]];
-// After the fork: along the back, down the upper left, then a loop into the finish.
+// The fork: Power Lane runs straight up the right side while Question Trail
+// swings out to the board edge, so the two lanes split clearly.
+const right = [[1.68, 1.4], [1.68, .7], [1.68, 0], [1.68, -.7], [1.68, -1.4], [1.5, -1.98]];
+// After the fork: along the back edge, down the left side, then in to the middle.
 const rest = [
-  ...wave([.62, -2.32], [-1.75, -2.32], .16, 1, 14), [-2.2, -2.2], [-2.42, -1.75], [-2.34, -1.12], [-1.98, -.7],
-  [-1.35, -.78], [-.6, -1.12], [.08, -.72], [.25, .05], [-.12, .7], [-.82, .95], [-1.35, .72], [-1.5, .22],
+  [1.0, -2.36], [.2, -2.38], [-.7, -2.38], [-1.5, -2.36], [-2.1, -2.2], [-2.38, -1.65], [-2.38, -.95], [-2.3, -.25],
+  [-1.85, .22], [-1.1, .3], [-.35, .12],
 ];
 export const routeSketch = [...front, ...right, ...rest];
 // Sketch points where Power Lane leaves and rejoins (the right-hand side).
@@ -111,7 +111,7 @@ export function curvedLayout(spaces, fork) {
   const total = main.getLength();
   const spacing = Math.min(uStart * total / fork.start, (uRejoin - uStart) * total / (fork.rejoin - fork.start), (1 - uRejoin) * total / (spaces - fork.rejoin));
   // Chords across wave peaks are shorter than path spacing: size tiles conservatively.
-  const radius = Math.min(.32, spacing * .36);
+  const radius = Math.min(0.36, spacing * 0.38);
   // Question Trail: its own smooth arc from the fork out towards the right
   // edge and back to the rejoin point, clear of Power Lane's wiggles.
   const from = main.getPointAt(uStart), to = main.getPointAt(uRejoin);

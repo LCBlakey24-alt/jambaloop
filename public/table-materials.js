@@ -134,3 +134,58 @@ export function tileDisc(number, background, category, marker) {
     context.fillText(String(category).toUpperCase(), 128, 181, 150);
   });
 }
+
+// Square board-space face, like a printed space on a classic board: a colour
+// band across the top carrying the topic, the number large underneath.
+export function tileCard(number, background, category, marker) {
+  return canvasTexture(256, 256, context => {
+    context.fillStyle = '#fbf3df';
+    context.beginPath(); context.roundRect(2, 2, 252, 252, 26); context.fill();
+    context.fillStyle = background;
+    context.beginPath(); context.roundRect(2, 2, 252, 84, [26, 26, 0, 0]); context.fill();
+    context.fillStyle = '#1f1a1ccc'; context.fillRect(2, 84, 252, 5);
+    context.strokeStyle = '#1f1a1c'; context.lineWidth = 7;
+    context.beginPath(); context.roundRect(4, 4, 248, 248, 24); context.stroke();
+    context.textAlign = 'center'; context.textBaseline = 'middle';
+    context.fillStyle = '#1f1a1c'; context.font = '900 30px system-ui';
+    context.fillText(String(category).toUpperCase(), 128, 46, 226);
+    context.font = '900 124px system-ui';
+    context.fillText(marker || number, 128, 172, 220);
+  });
+}
+
+// The printed board itself: a deep felt field inside a patterned border, the
+// way a boxed board game looks when it is unfolded on the table.
+export function boardPrint(field, accent) {
+  return canvasTexture(1024, 1024, context => {
+    context.fillStyle = '#f3e6c4'; context.fillRect(0, 0, 1024, 1024);
+    // Chequered border band.
+    const cell = 32;
+    for (let i = 0; i < 1024 / cell; i++) for (const edge of [0, 1]) {
+      context.fillStyle = (i + edge) % 2 ? accent : '#1f1a1c';
+      context.fillRect(i * cell, edge ? 1024 - cell : 0, cell, cell);
+      context.fillRect(edge ? 1024 - cell : 0, i * cell, cell, cell);
+    }
+    context.fillStyle = field;
+    context.beginPath(); context.roundRect(58, 58, 908, 908, 30); context.fill();
+    context.strokeStyle = accent; context.lineWidth = 6;
+    context.beginPath(); context.roundRect(76, 76, 872, 872, 22); context.stroke();
+    context.strokeStyle = '#ffffff30'; context.lineWidth = 2;
+    context.beginPath(); context.roundRect(90, 90, 844, 844, 16); context.stroke();
+    // A faint sunburst from the middle, where the finish stands.
+    context.save(); context.translate(512, 512);
+    for (let ray = 0; ray < 24; ray++) {
+      context.rotate(Math.PI / 12);
+      context.fillStyle = ray % 2 ? '#ffffff0d' : '#00000012';
+      context.beginPath(); context.moveTo(0, 0); context.lineTo(-58, -640); context.lineTo(58, -640); context.closePath(); context.fill();
+    }
+    context.restore();
+    // Corner stars.
+    context.fillStyle = accent;
+    for (const [x, y] of [[132, 132], [892, 132], [132, 892], [892, 892]]) {
+      context.beginPath();
+      for (let p = 0; p < 10; p++) { const r = p % 2 ? 9 : 22, a = -Math.PI / 2 + p * Math.PI / 5; context.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); }
+      context.closePath(); context.fill();
+    }
+  });
+}

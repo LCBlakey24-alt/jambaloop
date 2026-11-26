@@ -15,24 +15,56 @@ export const coated = (color, roughness = .32, metalness = 0) => new THREE.MeshP
   color, roughness, metalness, clearcoat: .55, clearcoatRoughness: .24,
 });
 
+// Wood with visible grain: long wavering lines, darker growth rings and a few
+// knots, used as colour and as a bump so it catches the light like real timber.
 export function woodMaterial(color) {
-  const texture = canvasTexture(256, 128, (context, width, height) => {
-    context.fillStyle = '#e9d6bd';
+  const texture = canvasTexture(512, 256, (context, width, height) => {
+    context.fillStyle = '#d9c2a3';
     context.fillRect(0, 0, width, height);
-    for (let i = 0; i < 160; i++) {
+    for (let i = 0; i < 420; i++) {
       const y = (i * 37.19) % height;
       context.beginPath();
       context.moveTo(-10, y);
-      context.bezierCurveTo(63, y + Math.sin(i) * 7, 142, y - Math.cos(i) * 8, width + 10, y + Math.sin(i * .31) * 4);
-      context.lineWidth = i % 13 ? .48 : 1.2;
-      context.strokeStyle = i % 4 ? '#81655029' : '#fff5dc74';
+      context.bezierCurveTo(width * .25, y + Math.sin(i) * 9, width * .6, y - Math.cos(i * 1.7) * 10, width + 10, y + Math.sin(i * .31) * 6);
+      context.lineWidth = i % 11 ? .7 : 2.2;
+      context.strokeStyle = i % 5 === 0 ? '#3d251888' : i % 3 ? '#6b4a3340' : '#fff0d255';
       context.stroke();
     }
+    for (const [x, y, r] of [[96, 70, 13], [330, 180, 10], [440, 60, 8]]) {
+      for (let ring = r; ring > 1; ring -= 2.4) {
+        context.beginPath();
+        context.ellipse(x, y, ring * 1.9, ring, 0, 0, Math.PI * 2);
+        context.strokeStyle = '#3a221577';
+        context.lineWidth = 1.1;
+        context.stroke();
+      }
+    }
   });
-  const material = coated(color, .47);
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  const material = new THREE.MeshPhysicalMaterial({ color, roughness: .62, metalness: 0, clearcoat: .18, clearcoatRoughness: .5 });
   material.map = texture;
   material.bumpMap = texture;
-  material.bumpScale = .018;
+  material.bumpScale = .06;
+  return material;
+}
+
+// Brushed metal: fine horizontal strokes as colour and bump, so brass reads as
+// metal rather than smooth plastic.
+export function brushedMetal(color, roughness = .36) {
+  const texture = canvasTexture(256, 256, (context, width, height) => {
+    context.fillStyle = '#d8d8d8';
+    context.fillRect(0, 0, width, height);
+    for (let i = 0; i < 900; i++) {
+      const y = (i * 7.31) % height, x = (i * 53.7) % width, length = 30 + (i * 13) % 120;
+      context.fillStyle = i % 2 ? '#ffffff30' : '#00000026';
+      context.fillRect(x, y, length, 1);
+    }
+  });
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  const material = new THREE.MeshPhysicalMaterial({ color, roughness, metalness: .72, clearcoat: .12, clearcoatRoughness: .4 });
+  material.map = texture;
+  material.bumpMap = texture;
+  material.bumpScale = .012;
   return material;
 }
 

@@ -50,9 +50,10 @@ test('the curved layout keeps the route data meaning of every index', () => {
   }
 });
 
-test('the fork sits on the right-hand side and the route loops inward to finish', () => {
+test('the fork runs up the right-hand side and round the far corner; the route laps inward to finish', () => {
   const main = smoothCurve(routeSketch);
-  for (const knot of forkKnots) assert.ok(routeSketch[knot][0] > 1, 'fork knots are on the right');
+  assert.ok(routeSketch[forkKnots[0]][0] > 1, 'the lanes split on the right-hand side');
+  assert.ok(routeSketch[forkKnots[1]][1] < -1, 'and rejoin past the far corner, along the back');
   const end = main.getPointAt(1);
   assert.ok(Math.hypot(end.x, end.z) < 1.7, 'finish is inside the board, away from the edges');
   // Every bend is wider than the painted path, so it cannot fold over itself.

@@ -1,4 +1,4 @@
-import { boardPath, boardFork } from './board-route.js';
+import { boardPath, boardFork, boardIsCorner } from './board-route.js';
 import { curvedLayout, TILE_TOP } from './board-layout.js';
 import * as THREE from '/vendor/three.module.js';
 import { boardRollDuration, categories } from './game-config.js';
@@ -287,27 +287,19 @@ function buildBoard(scene, state, shadowMap) {
     return new THREE.Vector3(x, y, z);
   }
 
-  // Printed path: a parchment strip with gold edging under the main route,
-  // and a teal strip for the Question Trail where it leaves and rejoins.
-  const parchment = new THREE.MeshStandardMaterial({ color: '#efe0bd', roughness: .75 });
   const goldLine = coated('#d6a450', .3, .45);
-  const stripHalf = Math.min(layout.radius * 1.25, .33);
-  board.add(pathStrip(layout.main, stripHalf, .19, parchment));
-  board.add(pathStrip(layout.main, stripHalf + .035, .188, goldLine));
-  const trailStrip = new THREE.MeshStandardMaterial({ color: '#7fe3d6', roughness: .7 });
-  board.add(pathStrip(layout.trail, layout.trailRadius * 1.3, .192, trailStrip));
-  board.add(pathStrip(layout.trail, layout.trailRadius * 1.4, .189, coated('#2b9c92', .35, .3)));
-
+  // The lap ends back on the start corner, so that space is drawn once, as the start.
   const allTiles = [
-    ...paths.power.filter(tile => !tile.lane),
+    ...paths.power.filter(tile => !tile.lane && tile.index !== layout.lap),
     ...paths.power.filter(tile => tile.lane === 'power'),
     ...paths.questions.filter(tile => tile.lane === 'questions'),
   ];
   for (const tileInfo of allTiles) {
     const {index:i,category:id,finish,lane} = tileInfo;
     const original = id ? categoryById.get(id)?.[4] : '#fff0d4';
-    const color = lane === 'power' ? '#f9c45d' : lane === 'questions' ? '#54dccc' : original;
-    const r = finish ? layout.radius * 1.18 : lane === 'questions' ? layout.trailRadius : layout.radius * (lane ? .86 : 1);
+    const corner = !finish && (i === 0 || boardIsCorner(state.boardLength, i, lane === 'questions' ? 'questions' : 'power'));
+    const color = corner ? '#ffd23f' : lane === 'power' ? '#f9c45d' : lane === 'questions' ? '#54dccc' : original;
+    const r = (lane === 'questions' ? layout.trailRadius : layout.radius) * layout.scaleOf(i, lane === 'questions' ? 'questions' : 'power');
     // Square spaces, like a printed board. Every block sits square-on to the
     // board, exactly under its printed face, and is sized so that even two
     // diagonal neighbours on a bend cannot touch.
@@ -319,12 +311,12 @@ function buildBoard(scene, state, shadowMap) {
     tile.position.copy(here);
     const top = tile.position.y;
     tile.position.y = top - thickness / 2;
-    const labelText = lane === 'power' ? '×2 POWER' : lane === 'questions' ? 'QUIZ TRAIL' :
+    const labelText = corner ? (i ? 'ROLL AGAIN' : 'START') : lane === 'power' ? '×2 POWER' : lane === 'questions' ? 'QUIZ TRAIL' :
       id ? categoryById.get(id)?.[5] : 'Start';
     const displayNumber = lane === 'power' ? 'P'+(i-fork.start) :
       lane === 'questions' ? 'Q'+(i-fork.start) : i;
     const printed = new THREE.Mesh(new THREE.PlaneGeometry(width,width),new THREE.MeshBasicMaterial({
-      map:tileCard(displayNumber,color,finish ? 'Finish' : labelText,finish ? '⚑' : !i ? '✦' : undefined),
+      map:tileCard(displayNumber,color,finish ? 'Finish' : labelText,finish ? '⚑' : corner ? '★' : undefined),
       transparent:true,
     }));
     printed.position.set(tile.position.x,top+.003,tile.position.z);

@@ -1,143 +1,60 @@
 // Visual layout for the 3D Board Race table. Pure maths (no three.js) so it
-// can be tested in Node. The game's route data in board-route.js is not
-// changed: index n on either lane still means the same space; this module only
-// decides where the 3D board draws it, along a smooth winding path.
+// can be tested in Node. The game's route data in board-route.js decides what
+// each index means; this module only decides where the board draws it.
+//
+// The board is a classic square lap: touching square spaces all the way round
+// the edge, a bonus space on each corner, and a short finishing straight from
+// the start corner in to the middle. Question Trail is a slimmer lane just
+// inside the right-hand side, between the first and second corners.
 
-// Board units: the felt spans about ±3. The path meanders round the edge,
-// leaves room on the right for Question Trail to swing outwards, then spirals
-// into a finish in the middle of the board.
-// Gentle sine meanders (long wavelengths keep every bend wider than the
-// painted path, so it never folds over itself), then a spiral to the finish.
-function wave(from, to, amplitude, waves, samples = 22) {
-  const [x0, z0] = from, [x1, z1] = to;
-  const dx = x1 - x0, dz = z1 - z0, length = Math.hypot(dx, dz);
-  const nx = -dz / length, nz = dx / length;
-  return Array.from({ length: samples + 1 }, (_, k) => {
-    const t = k / samples;
-    const bump = Math.sin(t * Math.PI * 2 * waves) * amplitude * Math.sin(Math.PI * t);
-    return [x0 + dx * t + nx * bump, z0 + dz * t + nz * bump];
-  });
-}
-// A classic race-round-the-board track, long enough for plenty of spaces:
-// start at the near-left, along the front edge, up the right side and round
-// the far corner (where the lanes fork), along the back, down the left side,
-// then one lap inside the board to a finish in the middle.
-// Before the fork: the near-left corner and the front edge.
-const front = [
-  [-2.38, .62], [-2.38, 1.3], [-2.3, 1.95], [-1.85, 2.36], [-1.0, 2.4], [0, 2.4], [.9, 2.4], [1.35, 2.3], [1.62, 1.95],
-];
-// The fork: Power Lane runs up the right side a little in from the edge and
-// round the far corner; Question Trail runs outside it, along the board edge.
-const right = [[1.66, 1.3], [1.66, .5], [1.66, -.3], [1.66, -1.1], [1.5, -1.62], [1.05, -1.82], [.45, -1.84], [-.3, -1.84], [-.95, -1.84]];
-// After the fork: out to the back edge, down the left side, then the inner lap.
-const rest = [
-  [-1.5, -2.02], [-1.98, -2.0], [-2.32, -1.66], [-2.4, -1.3], [-2.3, -.9], [-2.0, -.65],
-  [-1.55, -.62], [-1.0, -.8], [-.4, -.98], [.1, -1.0], [.55, -.9], [.9, -.4], [.9, .3], [.78, 1.0], [.3, 1.5], [-.5, 1.62], [-1.25, 1.5], [-1.62, 1.0], [-1.58, .4], [-1.05, .08], [-.35, .2],
-];
-export const routeSketch = [...front, ...right, ...rest];
-// Sketch points where Power Lane leaves and rejoins (the right-hand side).
-export const forkKnots = [front.length - 1, front.length + right.length - 1];
-// Inside the dice tower's exit chute (which reaches x = 2.63), so no tile sits under it.
-const TRAIL_OFFSET = .7;
-// Top of the inlaid tiles: just proud of the painted path at y = .19.
+// Top of the inlaid tiles: just proud of the printed board.
 export const TILE_TOP = .215;
+// The ring fills this much of the board (board units; the print spans about ±2.96).
+export const LAP_SPAN = 5.2;
+const HOME_STRAIGHT = 4;
 
-const sub = (a, b) => [a[0] - b[0], a[1] - b[1]];
-const len = v => Math.hypot(v[0], v[1]);
-
-/** Centripetal Catmull-Rom polyline with an arc-length table. */
-export function smoothCurve(points, samplesPerSegment = 48) {
-  const pts = [
-    [2 * points[0][0] - points[1][0], 2 * points[0][1] - points[1][1]],
-    ...points,
-    [2 * points.at(-1)[0] - points.at(-2)[0], 2 * points.at(-1)[1] - points.at(-2)[1]],
-  ];
-  const samples = [];
-  for (let i = 0; i < pts.length - 3; i++) {
-    const [p0, p1, p2, p3] = pts.slice(i, i + 4);
-    const t0 = 0;
-    const t1 = t0 + Math.sqrt(len(sub(p1, p0))) || 1e-4;
-    const t2 = t1 + Math.sqrt(len(sub(p2, p1))) || t1 + 1e-4;
-    const t3 = t2 + Math.sqrt(len(sub(p3, p2))) || t2 + 1e-4;
-    for (let s = 0; s < samplesPerSegment; s++) {
-      const t = t1 + (t2 - t1) * s / samplesPerSegment;
-      const lerp = (a, b, ta, tb) => [
-        ((tb - t) * a[0] + (t - ta) * b[0]) / (tb - ta),
-        ((tb - t) * a[1] + (t - ta) * b[1]) / (tb - ta),
-      ];
-      const a1 = lerp(p0, p1, t0, t1), a2 = lerp(p1, p2, t1, t2), a3 = lerp(p2, p3, t2, t3);
-      const b1 = lerp(a1, a2, t0, t2), b2 = lerp(a2, a3, t1, t3);
-      samples.push(lerp(b1, b2, t1, t2));
-    }
-  }
-  samples.push(points.at(-1));
-  const knotSample = index => Math.min(samples.length - 1, index * samplesPerSegment);
-  const lengths = [0];
-  for (let i = 1; i < samples.length; i++) lengths.push(lengths[i - 1] + len(sub(samples[i], samples[i - 1])));
-  const total = lengths.at(-1);
-  function locate(u) {
-    const target = Math.min(1, Math.max(0, u)) * total;
-    let lo = 0, hi = lengths.length - 1;
-    while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (lengths[mid] < target) lo = mid; else hi = mid; }
-    const span = lengths[hi] - lengths[lo] || 1;
-    return [lo, hi, (target - lengths[lo]) / span];
-  }
-  return {
-    getLength: () => total,
-    knotU: index => lengths[knotSample(index)] / total,
-    getPointAt(u) {
-      const [lo, hi, f] = locate(u);
-      return { x: samples[lo][0] + (samples[hi][0] - samples[lo][0]) * f, y: 0, z: samples[lo][1] + (samples[hi][1] - samples[lo][1]) * f };
-    },
-    getTangentAt(u) {
-      const [lo, hi] = locate(u);
-      const d = sub(samples[hi], samples[lo]);
-      const l = len(d) || 1;
-      return { x: d[0] / l, y: 0, z: d[1] / l };
-    },
-  };
-}
-
-/**
- * Positions for every board index on both lanes. Question Trail swings out
- * towards the board edge on the right and rejoins Power Lane.
- */
-export function curvedLayout(spaces, fork) {
-  const main = smoothCurve(routeSketch);
-  const uStart = main.knotU(forkKnots[0]), uRejoin = main.knotU(forkKnots[1]);
-  // Anchor the fork to the right-hand side: piecewise spacing per section.
-  const mainU = index => index <= fork.start ? uStart * index / fork.start
-    : index <= fork.rejoin ? uStart + (uRejoin - uStart) * (index - fork.start) / (fork.rejoin - fork.start)
-    : uRejoin + (1 - uRejoin) * (index - fork.rejoin) / (spaces - fork.rejoin);
-  const total = main.getLength();
-  const spacing = Math.min(uStart * total / fork.start, (uRejoin - uStart) * total / (fork.rejoin - fork.start), (1 - uRejoin) * total / (spaces - fork.rejoin));
-  // Chords across wave peaks are shorter than path spacing: size tiles conservatively.
-  const radius = Math.min(0.36, spacing * 0.38);
-  // Question Trail: its own smooth arc from the fork out towards the right
-  // edge and back to the rejoin point, clear of Power Lane's wiggles.
-  // Question Trail follows the main lane on its outer side, towards the board edge.
-  const bulge = [];
-  for (let k = 0; k <= 28; k++) {
-    const t = k / 28;
-    const u = uStart + (uRejoin - uStart) * t;
-    const point = main.getPointAt(u), tangent = main.getTangentAt(u);
-    let nx = tangent.z, nz = -tangent.x;
-    if (nx * point.x + nz * point.z < 0) { nx = -nx; nz = -nz; }
-    const out = TRAIL_OFFSET * Math.pow(Math.sin(Math.PI * t), .3);
-    bulge.push([point.x + nx * out, point.z + nz * out]);
-  }
-  const trail = smoothCurve(bulge);
+export function lapLayout(spaces, fork) {
+  const side = (spaces - HOME_STRAIGHT) / 4;
+  const cell = LAP_SPAN / (side + 1);
+  const half = LAP_SPAN / 2 - cell / 2;
+  const lap = side * 4;
   const edges = fork.rejoin - fork.start + fork.extra;
-  // Trail tiles fit their own (shorter) arc, so they can be a little smaller.
-  const trailRadius = Math.min(radius * .7, trail.getLength() * .84 / edges * .44);
+  // Start at the near-left corner, along the front, up the right side, along the back, down the left.
+  function ring(k) {
+    const leg = Math.floor(k / side) % 4, step = k % side;
+    if (leg === 0) return [-half + step * cell, half];
+    if (leg === 1) return [half, half - step * cell];
+    if (leg === 2) return [half - step * cell, -half];
+    return [-half, -half + step * cell];
+  }
+  const trailStep = side * cell / edges;
+  function kind(index, choice = 'power') {
+    if (choice === 'questions' && index > fork.start && index < fork.start + edges) return 'trail';
+    const base = choice === 'questions' && index >= fork.start + edges ? index - fork.extra : index;
+    return base > lap ? 'home' : 'ring';
+  }
   function position(index, choice = 'power') {
     const finishIndex = choice === 'questions' ? spaces + fork.extra : spaces;
-    let point;
-    // Trail tiles sit slightly in from each junction so they clear the shared tiles.
-    if (choice === 'questions' && index > fork.start && index < fork.start + edges) point = trail.getPointAt(.5 + ((index - fork.start) / edges - .5) * .84);
-    else point = main.getPointAt(mainU(choice === 'questions' && index >= fork.start + edges ? index - fork.extra : index));
-    // Tiles are inlaid in the board: pawns stand on their tops (y), level with the path.
-    return { x: point.x, y: index === finishIndex ? TILE_TOP + .02 : TILE_TOP, z: point.z };
+    const y = index === finishIndex ? TILE_TOP + .02 : TILE_TOP;
+    if (kind(index, choice) === 'trail') return { x: half - cell * .98, y, z: half - (index - fork.start) * trailStep };
+    const base = choice === 'questions' && index >= fork.start + edges ? index - fork.extra : index;
+    if (base <= lap) { const [x, z] = ring(base % lap); return { x, y, z }; }
+    // The finishing straight: from the start corner diagonally in to the middle.
+    const t = (base - lap) / HOME_STRAIGHT;
+    return { x: -half * (1 - t), y, z: half * (1 - t) };
   }
-  return { main, trail, radius, trailRadius, scale: radius * 2 / .93, position, edges };
+  // board.js draws a square of width radius × 1.4.
+  const radius = cell * .96 / 1.4;
+  const trailRadius = Math.min(cell * .8, trailStep * .9) / 1.4;
+  const homeStep = half * Math.SQRT2 / HOME_STRAIGHT;
+  const homeScale = Math.min(1, homeStep * .68 / (cell * .96));
+  /** How big a space is drawn, as a fraction of a ring space. */
+  const scaleOf = (index, choice = 'power') => {
+    const finishIndex = choice === 'questions' ? spaces + fork.extra : spaces;
+    return index === finishIndex ? 1 : kind(index, choice) === 'home' ? homeScale : 1;
+  };
+  return { side, cell, half, lap, radius, trailRadius, scale: radius * 2 / .93, position, edges, kind, scaleOf };
 }
+
+// Kept under the old name for callers written against the winding layout.
+export const curvedLayout = lapLayout;

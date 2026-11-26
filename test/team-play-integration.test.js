@@ -82,7 +82,7 @@ test('Solo Classic Quiz preserves ungrouped play and rejects team-only modes',as
   });
 });
 
-test('Board Race individual gives each player a separate piece; fork choice is required',async()=>{
+test('Board Race individual gives each player a separate piece; the lane is chosen at the junction',async()=>{
   await withServer(async({req,room})=>{
     const r=await room('board','individual',3,4,{boardLength:16});
     assert.equal((await r.state()).teamPreview.length,3);
@@ -90,22 +90,20 @@ test('Board Race individual gives each player a separate piece; fork choice is r
     const game=await r.state();
     assert.equal(game.teams.length,3);
     assert.deepEqual(game.teams.map(t=>t.name),['Family 0','Family 1','Family 2']);
-    const bad=await req(r.path+'/roll',{game:game.game,index:game.index},r.host,409);
-    assert.match(bad.error,/Choose.*Lane|Question Trail/);
-    await req(r.path+'/board-path',{game:game.game,index:game.index,path:'questions'},r.host,204);
-    const selected=await r.state();
-    assert.equal(selected.teams[0].pathChoice,'questions');
+    // Nobody chooses a lane at the start: the choice comes at the junction (square 4).
+    const early=await req(r.path+'/board-path',{game:game.game,index:game.index,path:'questions'},r.host,409);
+    assert.match(early.error,/reaches the junction/);
     await req(r.path+'/roll',{game:game.game,index:game.index},r.host,204);
     const moved=await r.state();
     assert.equal(moved.phase,'rolling');
-    assert.equal(moved.motion.pathChoice,'questions');
-    assert.ok(moved.motion.to>=1&&moved.motion.to<=6);
-    assert.equal(moved.motion.pathMultiplier,1);
+    assert.ok(moved.motion.to>=1&&moved.motion.to<=4,'an undecided piece never passes the junction');
+    assert.equal(moved.motion.junction,moved.motion.die>4?true:undefined,'a long roll stops on the junction');
+    assert.ok(!moved.teams[0].pathChoice,'no lane chosen yet');
     assert.equal(moved.boardFork.extra,4);
   });
 });
 
-test('Board Race team grouping supports 2 teams, including host route choice',async()=>{
+test('Board Race team grouping supports 2 teams; no lane choice before the junction',async()=>{
   await withServer(async({req,room})=>{
     const r=await room('board','teams',4,2,{boardLength:16});
     assert.deepEqual((await r.state()).teamPreview.map(x=>x.size),[2,2]);
@@ -113,12 +111,10 @@ test('Board Race team grouping supports 2 teams, including host route choice',as
     const game=await r.state();
     assert.equal(game.teams.length,2);
     assert.deepEqual(game.teams.map(x=>x.size),[2,2]);
-    await req(r.path+'/board-path',{game:game.game,index:game.index,path:'power'},r.host,204);
-    const selected=await r.state();
-    assert.equal(selected.teams[0].pathChoice,'power');
+    await req(r.path+'/board-path',{game:game.game,index:game.index,path:'power'},r.host,409);
     await req(r.path+'/roll',{game:game.game,index:game.index},r.host,204);
     const moving=await r.state();
-    assert.equal(moving.motion.pathChoice,'power');
+    assert.ok(moving.motion.to<=4,'the team stops at the junction until it has chosen');
   });
 });
 

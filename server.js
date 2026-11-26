@@ -6,7 +6,7 @@ import { deskAwards } from './awards.js';
 import { answerValue, boardSpeedValues, bonusValues, canSetScore, defaultScoring, doubleSchedules, pointValues, roundMultiplier } from './public/scoring.js';
 import { playlistLimit, queuedSettings } from './public/game-night.js';
 import { isConnected, liveConnection, responseTarget, touchPlayer, trackConnection } from './room-presence.js';
-import { boardLengths, boardRoute, boardPath, boardPathChoices, boardFork, boardFinish, boardMappedPosition, boardRequiresChoice } from './public/board-route.js';
+import { boardLengths, boardRoute, boardPath, boardPathChoices, boardFork, boardFinish, boardMappedPosition, boardRequiresChoice, boardStopsAtFork } from './public/board-route.js';
 import { teamPlayModes, defaultPlayStyle, validPlayStyle, requiredPlayers, teamAssignments } from './public/team-play.js';
 import { partyModes, startParty, advanceParty, advancePartyWhenReady, expireParty, rescuePotato, submitParty, publicParty } from './party-games.js';
 import express from 'express';
@@ -926,8 +926,8 @@ app.post('/api/rooms/:code/board-path', (req, res) => {
   if (!boardPathChoices.some(option => option.id === req.body?.path)) {
     return res.status(400).json({error:'Choose Power Lane or Question Trail.'});
   }
-  if (team.position > boardFork(room.boardLength).start) {
-    return res.status(409).json({error:'Your team has already passed the fork.'});
+  if (team.position !== boardFork(room.boardLength).start) {
+    return res.status(409).json({error: team.position > boardFork(room.boardLength).start ? 'Your team has already passed the fork.' : 'Choose a lane when your piece reaches the junction.'});
   }
   team.pathChoice = req.body.path;
   publish(room);
@@ -955,10 +955,12 @@ app.post('/api/rooms/:code/roll', (req, res) => {
     const die = randomInt(1, 7);
     const from = activeTeam.position;
     const path = boardPath(room.boardLength, room.includeChristmas, activeTeam.pathChoice || 'power');
-    const to = Math.min(path.length - 1, from + die);
+    // No lane yet: the piece stops on the junction and the team chooses next turn.
+    const junction = boardStopsAtFork(room.boardLength, from, die, activeTeam.pathChoice);
+    const to = junction ? boardFork(room.boardLength).start : Math.min(path.length - 1, from + die);
     activeTeam.position = to;
     const landed = path[to];
-    room.motion = { die, from, to, points: die, difficulty: die,
+    room.motion = { die, from, to, junction: junction || undefined, points: die, difficulty: die,
       category: landed.category, pathChoice: activeTeam.pathChoice || 'power',
       pathMultiplier: landed.lane === 'power' ? 2 : 1,
       pathName: boardPathChoices.find(option => option.id === activeTeam.pathChoice)?.name ?? 'Board Race' };

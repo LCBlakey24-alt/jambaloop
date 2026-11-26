@@ -2,8 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   boardRoute, boardFork, boardPath, boardFinish,
-  boardMappedPosition, boardRequiresChoice, boardPathChoices,
-} from '../public/board-route.js';
+  boardMappedPosition, boardRequiresChoice, boardPathChoices, boardStopsAtFork } from '../public/board-route.js';
 
 test('fork paths share a start, junction, rejoin and finish at all board sizes', () => {
   for (const spaces of [16,24,32,40]) {
@@ -29,12 +28,19 @@ test('fork paths share a start, junction, rejoin and finish at all board sizes',
   }
 });
 
-test('route choice is needed before a die can cross the fork', () => {
-  assert.equal(boardRequiresChoice(16,0,undefined),true);
-  assert.equal(boardRequiresChoice(24,0,undefined),false);
-  assert.equal(boardRequiresChoice(24,1,undefined),true);
+test('a team chooses its lane only when it is standing on the junction', () => {
+  // 16 spaces: the junction is square 4. 24 spaces: square 6.
+  assert.equal(boardRequiresChoice(16,0,undefined),false,'not at the start of the game');
+  assert.equal(boardRequiresChoice(16,3,undefined),false,'not one square short');
+  assert.equal(boardRequiresChoice(16,4,undefined),true,'on the junction');
+  assert.equal(boardRequiresChoice(16,4,'power'),false,'already chosen');
   assert.equal(boardRequiresChoice(24,6,undefined),true);
-  assert.equal(boardRequiresChoice(24,2,'power'),false);
+  // A roll that would pass the junction stops on it; landing on it or short of it is a normal move.
+  assert.equal(boardStopsAtFork(16,0,6,undefined),true);
+  assert.equal(boardStopsAtFork(16,0,4,undefined),false);
+  assert.equal(boardStopsAtFork(16,2,1,undefined),false);
+  assert.equal(boardStopsAtFork(16,3,2,undefined),true);
+  assert.equal(boardStopsAtFork(16,4,3,'questions'),false,'a team that has chosen moves freely');
 });
 
 test('progress follows geographic position after long-route rejoin', () => {

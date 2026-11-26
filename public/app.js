@@ -1052,7 +1052,8 @@ function render(s) {
       ? host ? '<div class="tv-clock"><span class="timer" id="timer"></span><small>TIME LEFT</small></div>'
         : '<span class="player-timer" aria-label="Time remaining"><span class="player-timer-label">TIME LEFT</span><span class="timer" id="timer"></span></span>'
       : '';
-    const lifeInfo = knockout ? `<p class="life-info">${host ? s.remaining + ' still in' : phoneHearts(s) + (s.knockedOut ? 'Knocked out!' : eliminated ? 'Out of lives · Spectating' : lifeLabel(s.player.lives) + ' left')}</p>` : '';
+    const deathNote = s.knockoutNote === 'spared' ? ' · Nobody left standing, so nobody is out' : s.knockoutNote === 'slowest' ? ' · All correct: the slowest answer loses a heart' : '';
+    const lifeInfo = knockout ? `${s.suddenDeath !== undefined ? `<p class="sudden-death" role="status"><strong>SUDDEN DEATH</strong> Wrong, or slowest when everyone is right, loses a heart${deathNote}</p>` : deathNote ? `<p class="sudden-death" role="status">${deathNote.slice(3)}</p>` : ''}<p class="life-info">${host ? s.remaining + ' still in' : phoneHearts(s) + (s.knockedOut ? 'Knocked out!' : eliminated ? 'Out of lives · Spectating' : lifeLabel(s.player.lives) + ' left')}</p>` : '';
     const answerStatus = eliminated ? 'Watch the rest of the game, then join the rematch.' : locked ? 'Answer locked in. Waiting for the reveal…' : sending ? 'Sending your answer…' : s.ends ? 'Tap your answer before time runs out.' : 'Choose an answer to lock it in.';
     const revealStatus = won ? (question.type === 'estimate' ? 'Closest guess!' : 'Correct!')
         + (showLiveScores && s.earned ? ` +${s.earned.toLocaleString()} ${s.earned === 1 ? 'point' : 'points'}.` : '')

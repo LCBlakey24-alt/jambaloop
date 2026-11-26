@@ -598,5 +598,10 @@
   "tempo": 1,
   "loudness": -17.5,
   "seconds": 0.52
+ },
+ "duo/react-ko-sudden-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 8.18
  }
 }

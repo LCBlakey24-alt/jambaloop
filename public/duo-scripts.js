@@ -248,6 +248,9 @@ export const knockoutReactions = {
   final: [
     [['baz', '[dramatic] This is it. The final round!'], ['clive', '[gruff] Leave nothing in the corner.']],
   ],
+  sudden: [
+    [['baz', '[shouting] We go to sudden death! Last one standing takes it!'], ['clive', '[gruff] Get it wrong, or be the slowest, and you lose a heart.']],
+  ],
   halfway: [
     [['baz', '[excited] We\'re halfway through this bout!'], ['clive', '[gruff] And some of \'em are hanging on by a thread.']],
   ],

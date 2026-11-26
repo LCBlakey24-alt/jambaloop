@@ -143,7 +143,9 @@ export function clockTension(view, { fraction, remaining, paused, live }) {
  */
 export function reactionFor(s) {
   if (s.phase === 'question') {
-    if (s.total >= 3 && s.index === s.total - 1) return 'final';
+    if (s.suddenDeath !== undefined) return s.index === s.suddenDeath ? 'sudden' : undefined;
+    // Knockout has no fixed last question: it runs until one player is left.
+    if (s.mode !== 'knockout' && s.total >= 3 && s.index === s.total - 1) return 'final';
     if (s.total >= 6 && s.index === Math.ceil(s.total / 2)) return 'halfway';
     return undefined;
   }

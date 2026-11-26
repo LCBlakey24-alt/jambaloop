@@ -293,6 +293,8 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
       result: player?.rounds[i],
     })) : undefined,
     remaining: room.mode === 'knockout' && phase !== 'lobby' ? room.remaining : undefined,
+    suddenDeath: room.mode === 'knockout' && phase !== 'lobby' ? room.suddenDeath : undefined,
+    knockoutNote: room.mode === 'knockout' && revealed ? room.knockoutNote : undefined,
     knockout: room.mode === 'knockout' && isHost && visible ? knockoutLadder(room, revealed) : undefined,
     // Your own phone only: whether you lost a heart this round (and went out).
     lostLife: room.mode === 'knockout' && revealed && player?.lifeLostAt === index ? true : undefined,
@@ -574,7 +576,30 @@ function winningTeams(room) {
   return ordered.filter(team => compare(team, ordered[0]) === 0).map(team => team.id);
 }
 
+// Knockout plays on until one player (or one team) is left standing.
+const SUDDEN_DEATH_LIMIT = 40;
+function knockoutUndecided(room) {
+  if (room.mode !== 'knockout' || room.players.size < 2) return false;
+  const living = [...room.players.values()].filter(player => player.lives > 0);
+  return room.teams.length ? new Set(living.map(player => player.team)).size > 1 : living.length > 1;
+}
+
+// Out of planned questions with more than one survivor: sudden death. Each
+// extra question is drawn fresh; from here the slowest right answer also
+// costs a heart, so every question brings the end closer.
+function extendKnockout(room) {
+  room.suddenDeath ??= room.index;
+  room.count = room.index + 1;
+  if (room.index < room.questions.length) return;
+  const recent = new Set(room.questions.map(question => question.prompt));
+  const types = formatTypes(room.format).filter(type => ['choice', 'boolean'].includes(type));
+  const format = types.length ? types[room.index % types.length] : 'choice';
+  const pool = [...makeQuestions(room.category, 30, room.seen, format, room.includeChristmas), ...makeQuestions('mixed', 30, room.seen, 'choice', room.includeChristmas)];
+  room.questions.push(pool.find(question => !recent.has(question.prompt)) ?? pool[0]);
+}
+
 function finalTurn(room) {
+  if (knockoutUndecided(room) && room.index + 1 - (room.suddenDeath ?? room.count) < SUDDEN_DEATH_LIMIT) return false;
   return room.index + 1 >= room.count
     || (room.mode === 'knockout' && (room.teams.length
       ? new Set([...room.players.values()].filter(player=>player.lives>0).map(player=>player.team)).size <= 1
@@ -613,6 +638,7 @@ function openScoreBreak(room) {
 
 function nextTurn(room) {
   room.index++;
+  if (room.mode === 'knockout' && room.index >= room.count) extendKnockout(room);
   room.scoreBreak = undefined;
   if (fixedQuestionModes.includes(room.mode) && room.mode !== 'dice') openQuestion(room);
   else readyTurn(room);
@@ -676,8 +702,21 @@ function reveal(room) {
     player.bestStreak = Math.max(player.bestStreak, player.streak);
   }
   if (room.mode === 'knockout') {
-    for (const [key, player] of room.players) {
-      if (!player.lives || room.answers.get(key)?.won) continue;
+    const living = [...room.players].filter(([, player]) => player.lives > 0);
+    let losers = living.filter(([key]) => !room.answers.get(key)?.won);
+    room.knockoutNote = undefined;
+    // Sudden death: when everyone is right, the slowest answer loses a heart.
+    if (room.suddenDeath !== undefined && !losers.length && living.length > 1) {
+      losers = [living.reduce((slow, entry) => room.answers.get(entry[0]).elapsed > room.answers.get(slow[0]).elapsed ? entry : slow)];
+      room.knockoutNote = 'slowest';
+    }
+    // Nobody is knocked out on a question that would leave no one standing.
+    const fatal = losers.filter(([, player]) => player.lives === 1);
+    if (room.players.size > 1 && fatal.length === living.length) {
+      losers = losers.filter(([, player]) => player.lives > 1);
+      room.knockoutNote = 'spared';
+    }
+    for (const [, player] of losers) {
       player.lives--;
       player.lifeLostAt = room.index;
       if (!player.lives) { room.remaining--; player.outAt = room.index; }
@@ -790,6 +829,7 @@ function startGame(room) {
   if (room.privateQuestions) for (const key of room.players.keys()) room.privateReview.set(key, []);
   if (room.mode === 'knockout') {
     room.remaining = room.players.size;
+    room.suddenDeath = undefined; room.knockoutNote = undefined;
     for (const player of room.players.values()) { player.lives = 3; delete player.lifeLostAt; delete player.outAt; }
   }
   if (fixedQuestionModes.includes(room.mode) && room.mode !== 'dice') return openQuestion(room);

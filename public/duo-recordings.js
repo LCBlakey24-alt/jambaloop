@@ -48,6 +48,7 @@ export const duoRecordings = {
   "react-ko-nobody-2": [[0,2.07],[2.07,4.02]],
   "react-ko-onlyone-1": [[0,2.3],[2.3,5.63]],
   "react-ko-streak-1": [[0,3.41],[3.41,6.09]],
+  "react-ko-sudden-1": [[0,3.93],[3.93,8.18]],
   "react-noanswers-1": [[0,4.52]],
   "react-noanswers-2": [[0,3.48]],
   "react-nobody-1": [[0,2.89]],

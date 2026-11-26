@@ -229,3 +229,9 @@ body.playing .immersive[data-mode="knockout"] .tv-round { grid-template-columns:
 @keyframes ko-pop { from { opacity:0; transform:scale(0); } to { opacity:1; transform:none; } }
 /* Knockout: the status bar sits under the question, clear of the ladder. */
 @media (min-width: 761px) { body.playing .immersive[data-mode="knockout"] .tv-round-hud { left:36%; max-width:52%; } }
+
+/* Knockout sudden death banner. */
+.game[data-mode="knockout"] .sudden-death { margin: .3rem 0; padding: .45rem .8rem; border: 2px solid #ff3b30; border-radius: 6px; background: #2a0606; color: #ffe1de; font-weight: 700; font-size: clamp(.95rem, 2.2vh, 1.4rem); }
+.game[data-mode="knockout"] .sudden-death strong { color: #ff5a4f; letter-spacing: .08em; margin-right: .5em; }
+@media (prefers-reduced-motion: no-preference) { .game[data-mode="knockout"] .sudden-death strong { animation: sudden-pulse 1s ease-in-out infinite alternate; display: inline-block; } }
+@keyframes sudden-pulse { to { transform: scale(1.08); text-shadow: 0 0 14px #ff3b30; } }

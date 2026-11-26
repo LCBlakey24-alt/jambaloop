@@ -39,7 +39,7 @@ export const modes = [
   ['wheel', 'Spin the Wheel', 'Spin for a new category before each question.', 'disc-3', '#c6b1f4'],
   ['board', 'Board Race', 'Roll 3D dice and race around the trivia board.', 'dice-5', '#a7dfc5'],
   ['dice', 'Dice Rally', 'Roll two 3D dice to set the points multiplier.', 'dices', '#f6cc8b'],
-  ['knockout', 'Knockout', 'Start with three lives and try to stay in.', 'heart', '#f0a8a9'],
+  ['knockout', 'Knockout', 'Three lives each. It runs until one player is left standing.', 'heart', '#f0a8a9'],
   ['punchline', 'Punchline Party', 'Write a funny reply, then vote for your favourite.', 'message-circle', '#f6c9ac'],
   ['cards', 'Fill the Blank', 'Play a silly phrase from your private hand.', 'layers', '#c9dcf5'],
   ['tracks', 'Fork in the Tracks', 'Two teams build ridiculous tracks; every player gets a turn driving the trolley.', 'git-fork', '#c4e7ce'],

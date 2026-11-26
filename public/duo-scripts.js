@@ -136,6 +136,12 @@ export const duoIntros = {
     ['poppy', '[playfully] When the answer lands, whoever is furthest away is out.'],
     ['max', '[laughs] So you do not have to be right. You just cannot be the most wrong.'],
   ],
+  catchup: [
+    ['max', '[excited] Welcome to Catch Up!'],
+    ['poppy', '[cheerfully] The room splits in two. One side has sixty seconds to answer as many questions as it can.'],
+    ['max', '[playfully] Then the other side gets sixty seconds to beat that number.'],
+    ['poppy', '[laughs] And a wrong answer freezes your whole side. So no wild guessing, Max.'],
+  ],
   sketch: [
     ['poppy', '[excited] Welcome to Sketch Sprint!'],
     ['max', '[cheerfully] One player gets a secret prompt, and draws it on their phone.'],

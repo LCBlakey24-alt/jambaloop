@@ -35,6 +35,7 @@ export const effects = {
   'sting-rare': ['Treasure discovery sting, mysterious harp shimmer into a triumphant chime, instrumental', 4],
   'sting-bloodmoon': ['Gothic mystery sting, a tolling church bell, a dramatic low string swell and a harpsichord flourish, instrumental', 4],
   'sting-wayoff': ['Cheeky game show sting, a rising slide whistle that overshoots, a comedy boing and a bright brass hit, instrumental', 3.5],
+  'sting-catchup': ['Fast chase game show sting, galloping drums, urgent brass riff and a whip-crack ending, instrumental', 3.5],
   'sting-sketch': ['Playful doodle sting, pencil scribble sound then bouncy pizzicato and a pop, instrumental', 3.5],
   'sting-soclose': ['Precise measuring sting, ticking tape measure, plucked notes stepping up to a ding, instrumental', 3.5],
 };

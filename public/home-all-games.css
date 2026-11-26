@@ -71,3 +71,11 @@
     grid-template-columns:repeat(7,minmax(0,var(--tile-edge))) !important;
   }
 }
+
+/* Twenty-two shows and up: eight columns keep three rows on one screen (room for 24). */
+@media (min-width:1100px) and (min-height:700px) {
+  html body .home-shell .mode-list:has(.game-tile:nth-child(22)) {
+    --tile-edge:min(calc((100dvh - 270px)/3),calc((100vw - 240px)/8),192px) !important;
+    grid-template-columns:repeat(8,minmax(0,var(--tile-edge))) !important;
+  }
+}

@@ -220,7 +220,7 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
   const question = room.privateQuestions ? room.privateRound?.get(key) : questions[index];
   const visible = !waiting && (phase === 'question' || phase === 'reveal');
   const hiddenScores = room.scoreInterval !== 1 && !['lobby', 'finished'].includes(phase);
-  const publicPlayer = ({ rounds, fastest, slowest, misses, comebacks, lifeLostAt, outAt, ...entry }) => phase === 'lobby' && isHost
+  const publicPlayer = ({ rounds, fastest, slowest, misses, comebacks, lifeLostAt, outAt, returning, ...entry }) => phase === 'lobby' && isHost
     ? { ...entry, connected: counts.ids.has(entry.id) } : entry;
   const revealed = phase === 'reveal';
   const answer = answers.get(key);
@@ -249,6 +249,9 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
   return { revision: room.revision, code, category, phase: waiting ? 'waiting' : phase, index, total: room.count, seconds, game, opened, ends, answered: answers.size,
     lockIns,
     picker: phase === 'lobby' && !waiting && room.picker ? { ...room.picker } : undefined,
+    welcome: phase === 'lobby' && !waiting ? room.welcome : undefined,
+    // TV only: everyone here has played or seen the welcome before.
+    everyoneReturning: isHost && players.size > 0 && [...players.values()].every(entry => entry.returning) || undefined,
     connected: counts.connected, waitingCount: room.waiting.size, responseTarget: counts.target,
     readyCount: phase === 'lobby' ? counts.ready : undefined, lobbyVersion: room.lobbyVersion,
     pausedAt: !waiting && room.pausedAt ? room.pausedAt : undefined, clockVersion: room.clockVersion,
@@ -482,7 +485,9 @@ app.post('/api/rooms/:code/join', (req, res) => {
   if (!Array.isArray(seenQuestions) || seenQuestions.length > questionHistoryLimit ||
       seenQuestions.some(id => !validQuestionHistoryId(id)))
     return res.status(400).json({ error: 'Your question history could not be loaded. Clear local game history and retry.' });
-  const player = { id, name, ready: false, avatar: avatar ? '/api/rooms/' + room.code + '/avatar/' + id : undefined };
+  const player = { id, name, ready: false, avatar: avatar ? '/api/rooms/' + room.code + '/avatar/' + id : undefined,
+    // This phone has already seen the welcome or played before.
+    returning: req.body?.returning === true };
   // Each player's optional device history influences the next question selection.
   for (const id of seenQuestions) room.seen.add(id);
   if (avatar) {
@@ -906,6 +911,7 @@ app.post('/api/rooms/:code/advance', (req, res) => {
   if (room.pausedAt) return res.status(409).json({ error: 'Resume the timer before advancing.' });
   if (room.phase === 'lobby') {
     if (room.picker) return res.status(409).json({ error: 'Choose a game from the carousel first.' });
+    room.welcome = undefined;
     const minimum = requiredPlayers(room.mode,room.playStyle,room.teamCount,minimumPlayers(room.mode));
     if (liveCounts(room).connected < minimum) return res.status(409).json({ error: `You need at least ${minimum} connected ${minimum === 1 ? 'player' : 'players'} to start.` });
     const tooMany = capacityError(room.mode, room.playStyle, room.players.size);
@@ -1063,6 +1069,27 @@ app.post('/api/rooms/:code/configure', (req, res) => {
   resetGame(room, settings);
   // Choosing a game closes the lobby's game carousel.
   room.picker = undefined;
+  publish(room);
+  res.sendStatus(204);
+});
+
+// Max and Poppy's welcome, in step on every screen. The TV starts it ('start',
+// or 'ask' when everyone has played before); the captain or TV can 'skip', or
+// answer 'ask' with 'tour'; the TV ends it.
+const welcomeMoves = { start: [undefined, 'playing'], ask: [undefined, 'asking'], tour: ['asking', 'playing'], skip: [['playing', 'asking'], 'skipping'], end: [null, undefined] };
+app.post('/api/rooms/:code/welcome', (req, res) => {
+  const { room, key } = res.locals;
+  const action = req.body?.action;
+  const move = Object.hasOwn(welcomeMoves, action) ? welcomeMoves[action] : undefined;
+  if (!move) return res.status(400).json({ error: 'Unknown welcome action.' });
+  const hostOnly = ['start', 'ask', 'end'].includes(action);
+  if (hostOnly ? key !== room.host : !controlsRoom(room, key)) return res.status(403).json({ error: 'Only the captain or TV host can do that.' });
+  if (room.phase !== 'lobby' || req.body?.game !== room.game) return res.status(409).json({ error: 'The lobby has closed.' });
+  const [from, to] = move;
+  const current = room.welcome;
+  const allowed = from === null || (Array.isArray(from) ? from.includes(current) : from === current);
+  if (!allowed) return res.status(409).json({ error: 'The welcome has moved on.' });
+  room.welcome = to;
   publish(room);
   res.sendStatus(204);
 });

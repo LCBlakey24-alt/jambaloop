@@ -24,17 +24,29 @@ const scenes = {
     ${phone(`<span class="welcome-pads is-live">${pads}</span>`)}</div>`,
   shows: () => `<div class="welcome-parade">${modes.map(([id]) => tile(id)).join('')}</div>`,
   ready: () => `<div class="welcome-ready"><span>Let's play!</span></div><div class="welcome-burst is-confetti" aria-hidden="true">${pieces(24)}</div>`,
+  back: () => `<div class="welcome-back"><span class="welcome-back-title">Welcome back!</span>
+    <small>Everyone here has played before</small>
+    <span class="welcome-choice"><button type="button" class="button outline" data-welcome="tour">▶ Play the intro</button>
+      <button type="button" class="button primary" data-welcome="skip">Skip, let's play</button></span>
+    <small class="welcome-choice-hint">The captain can choose on their phone</small></div>`,
+  skip: () => `<div class="welcome-ready is-skip"><span>Good luck!</span></div><div class="welcome-burst is-confetti" aria-hidden="true">${pieces(24)}</div>`,
 };
 
 /** Open the overlay on the TV. Returns { scene(name), close() }. */
-export function openWelcome(root, room, { onSkip }) {
+export function openWelcome(root, room, { onSkip, onTour }) {
   root.querySelector('.welcome-show')?.remove();
   const overlay = document.createElement('section');
   overlay.className = 'welcome-show';
   overlay.setAttribute('aria-label', 'Welcome to Jambaloop');
-  overlay.innerHTML = `<div class="welcome-stage" aria-hidden="true"></div>
+  overlay.innerHTML = `<div class="welcome-stage"></div>
     <button type="button" class="button outline welcome-skip">Skip intro</button>`;
   overlay.querySelector('.welcome-skip').addEventListener('click', () => onSkip?.());
+  // The welcome-back choice can also be made on the TV.
+  overlay.addEventListener('click', event => {
+    const choice = event.target.closest('[data-welcome]')?.dataset.welcome;
+    if (choice === 'skip') onSkip?.();
+    if (choice === 'tour') onTour?.();
+  });
   root.append(overlay);
   const stage = overlay.querySelector('.welcome-stage');
   let current;
@@ -43,7 +55,7 @@ export function openWelcome(root, room, { onSkip }) {
       if (name === current || !scenes[name]) return;
       current = name;
       stage.dataset.scene = name;
-      stage.innerHTML = `<div class="welcome-scene" data-scene="${name}">${scenes[name](room)}</div>`;
+      stage.innerHTML = `<div class="welcome-scene" data-scene="${name}"${name === 'back' ? '' : ' aria-hidden="true"'}>${scenes[name](room)}</div>`;
     },
     close() {
       overlay.classList.add('is-closing');

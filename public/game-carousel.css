@@ -223,3 +223,14 @@
 @keyframes welcome-bob { 0%,100% { translate:0 0; rotate:-6deg; } 50% { translate:0 -10px; rotate:6deg; } }
 @keyframes welcome-tap { 0%,60%,100% { filter:none; scale:1; } 70% { filter:brightness(1.5); scale:.94; } 80% { box-shadow:0 0 0 4px #fff; } }
 @keyframes welcome-parade { to { translate:-50% 0; } }
+.welcome-back { display:grid; justify-items:center; gap:14px; text-align:center; }
+.welcome-back-title { font:900 clamp(56px,9vw,130px)/1 var(--head); color:#ffd166; text-shadow:0 .06em 0 #0006; }
+.welcome-back small { font:700 clamp(16px,2.2vw,26px)/1.2 var(--head); color:#c9d3ff; }
+.welcome-choice { display:flex; gap:16px; margin-top:10px; }
+.welcome-choice .button { min-height:64px; padding-inline:28px; font-size:clamp(18px,2vw,24px); }
+.welcome-ready.is-skip span { color:#7cf0a8; }
+@media (prefers-reduced-motion:no-preference) { .welcome-back-title { animation:welcome-pop .7s cubic-bezier(.2,1.5,.4,1); } }
+.picker-welcome { display:grid; gap:8px; padding:12px; border-radius:14px; background:color-mix(in srgb,var(--id-surface) 85%,transparent); border:1px solid color-mix(in srgb,var(--id-accent) 50%,transparent); }
+.picker-welcome p { margin:0; font-weight:700; }
+.picker-welcome .actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:0; }
+.picker-welcome .button { min-height:52px; }

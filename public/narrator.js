@@ -145,13 +145,19 @@ const recordedWelcome = false;
  * (not when it is stopped early).
  */
 export function playWelcome({ onLine, onDone } = {}) {
+  playScript('welcome', welcomeScript, { onLine, onDone });
+}
+
+/** Any short Max and Poppy exchange (skip quips, welcome back). */
+export function playScript(key, lines, { onLine, onDone } = {}) {
   stopNarration();
   const token = generation;
-  currentMode = 'welcome';
-  playDuo('welcome', token, { lines: welcomeScript, onLine, onDone });
+  currentMode = key;
+  playDuo(key, token, { lines, onLine, onDone });
 }
 
 export const narrationPlaying = () => currentMode;
+export const isWelcomeNarration = () => ['welcome', 'welcome-back'].includes(currentMode) || /^skip-/.test(currentMode ?? '');
 
 export function toggleNarration(mode) {
   if (!narration[mode] && !duoIntros[mode]) return;

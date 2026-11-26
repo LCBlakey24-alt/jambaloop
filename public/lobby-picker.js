@@ -80,6 +80,7 @@ export function pickerPhone(state, { escape, canDrive }) {
   return `<section class="game-panel picker-phone" data-picker-phone ${canDrive ? 'data-driver' : ''}>
     <div class="eyebrow">${canDrive ? 'CHOOSE THE NEXT GAME' : 'GAME CAROUSEL'}</div>
     <p class="picker-hint">${canDrive ? 'Swipe to browse. The TV follows you.' : `${captain} is choosing. Watch the TV.`}</p>
+    ${welcomePanel(state, canDrive)}
     <div class="picker-strip" ${canDrive ? '' : 'inert'}>${ids.map(id => `<div class="picker-tile" data-mode="${id}" style="${modeVariables(id)}">${tileArt(id)}</div>`).join('')}</div>
     <div class="picker-controls">${canDrive ? `<button type="button" class="button outline" data-action="picker-step" data-direction="-1" aria-label="Previous game">‹</button>
       <button type="button" class="button primary" data-action="picker-play">Play <span data-picker-name>${escape(name)}</span></button>
@@ -121,6 +122,22 @@ export function bindPhonePicker(root, onBrowse) {
       if (mode && mode !== last) { last = mode; strip.dataset.reported = mode; onBrowse(mode); }
     }, 140);
   }, { passive: true });
+}
+
+/** On phones while Max and Poppy are on: the captain can skip or choose. */
+function welcomePanel(state, canDrive) {
+  if (!state.welcome) return '';
+  const body = state.welcome === 'asking'
+    ? canDrive ? `<p>Everyone here has played before. Watch the intro again?</p>
+      <div class="actions"><button type="button" class="button outline" data-action="welcome-tour">▶ Play the intro</button>
+      <button type="button" class="button primary" data-action="welcome-skip">Skip, let's play</button></div>`
+      : '<p>The captain is deciding whether to replay the intro.</p>'
+    : state.welcome === 'playing'
+      ? canDrive ? `<p>Max and Poppy are saying hello on the TV.</p>
+        <div class="actions"><button type="button" class="button primary" data-action="welcome-skip" style="grid-column:1 / -1">Skip intro</button></div>`
+        : '<p>Watch the TV: Max and Poppy are saying hello.</p>'
+      : '<p>Off we go!</p>';
+  return `<div class="picker-welcome" role="status">${body}</div>`;
 }
 
 export const stepMode = (mode, direction) => ids[wrapIndex(indexOf(mode) + direction, ids.length)];

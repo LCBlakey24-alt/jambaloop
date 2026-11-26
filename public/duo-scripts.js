@@ -153,3 +153,16 @@ export const welcomeScript = [
   ['max', 'Right, that\'s quite enough from us. Captain, over to you!', 'ready'],
   ['poppy', 'Let\'s play!', 'ready'],
 ];
+
+/** When the captain skips the welcome: one of these, picked at random. */
+export const skipQuips = [
+  [['max', 'Oh! Looks like this lot already know what they\'re doing.'], ['poppy', 'Fair enough. Good luck, everyone. Give it a go!']],
+  [['poppy', 'Skipping us? We had a whole dance routine!'], ['max', 'We\'ll save it for next time. Have fun, everyone!']],
+  [['max', 'Straight to the action. I like it.'], ['poppy', 'Off you go then, captain. Good luck!']],
+];
+
+/** When everyone connected has played before: the hosts offer a choice. */
+export const welcomeBack = [
+  ['poppy', 'Well, well! Look who it is. Everyone here has played before!', 'back'],
+  ['max', 'So, do you want the full tour again, or shall we just crack on?', 'back'],
+];

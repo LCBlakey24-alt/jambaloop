@@ -19,7 +19,8 @@ import { modeVariables, sceneBackdrop } from './mode-style.js';
 import { launcherTile, launcherPreview, launcherModes, launcherSetupArtwork, LAUNCHER_PAGE_SIZE } from './home-launcher.js';
 import { carouselView, moveCarousel, themeHome, wrapIndex } from './game-carousel.js';
 import { playSting, stingFor } from './show-sting.js';
-import { narrationPlaying, playWelcome, stopNarration, toggleNarration } from './narrator.js';
+import { isWelcomeNarration, playScript, playWelcome, stopNarration, toggleNarration } from './narrator.js';
+import { skipQuips, welcomeBack } from './duo-scripts.js';
 import { openWelcome } from './welcome-show.js';
 import { playChiptune, playCue, playTick, playTowerImpact } from './sound-cues.js';
 import { bindPhonePicker, movePickerTv, pickerPhone, pickerTv, stepMode, syncPhonePicker } from './lobby-picker.js';
@@ -695,7 +696,7 @@ function startSession(next) {
 }
 
 function leave() {
-  endWelcome();
+  closeWelcome();
   stream?.abort();
   stream = undefined;
   session = undefined;
@@ -793,7 +794,7 @@ document.addEventListener('submit', async event => {
         startSession(known);
         return;
       }
-      const player = await api('/' + code + '/join', { name, avatar: joinAvatar, seenQuestions: readQuestionHistory() });
+      const player = await api('/' + code + '/join', { name, avatar: joinAvatar, seenQuestions: readQuestionHistory(), returning: isReturning() });
       pendingJoin = { name, avatar: joinAvatar };
       startSession({ code, key: player.key, host: false });
     }
@@ -1177,8 +1178,8 @@ function render(s) {
   lastLobbyMode = s.phase === 'lobby' ? s.mode : undefined;
   if(s.mode==='sketch')paintSketchBoard(s.party);
   // The welcome plays once the room has players and a captain to hand over to.
-  if (host && s.phase === 'lobby' && s.picker && s.playerCount > 0 && s.captainName && !welcomedRooms().includes(s.code)) startWelcome();
-  if (welcome && !(s.phase === 'lobby' && s.picker)) endWelcome();
+  if (host && s.phase === 'lobby' && s.picker && s.playerCount > 0 && s.captainName && !s.welcome && !welcomedRooms().includes(s.code)) requestWelcome();
+  if (welcome && s.phase !== 'lobby') closeWelcome();
   if (s.phase === 'lobby' && s.picker && !host) {
     syncPhonePicker(app, s.picker.mode, false);
     bindPhonePicker(app, mode => browseTo(mode));
@@ -1357,6 +1358,8 @@ function receive(next, current) {
   if (state?.game !== next.game || state?.index !== next.index || next.phase === 'lobby') partyReply = '';
   // A game chosen from the lobby carousel: the TV introduces it out loud.
   const introduce = current.host && state?.phase === 'lobby' && state.picker && !next.picker && next.phase === 'lobby';
+  const welcomeMoved = current.host && (state?.welcome ?? null) !== (next.welcome ?? null);
+  if (!current.host && (['playing', 'skipping'].includes(next.welcome) || next.phase === 'finished')) markReturning();
   state = next;
   // Store only opaque question IDs, never answer keys or other players' data.
   if (!current.host) {
@@ -1394,9 +1397,10 @@ function receive(next, current) {
   if (counter && counter.textContent !== countText) { counter.textContent = countText; bumpCount(counter); }
   if (current.host) updateLockRail(app, next, escape, avatarView);
   if (introduce) toggleNarration(next.mode);
+  if (welcomeMoved) showWelcome(next.welcome);
   if (picker) {
     // The captain has started browsing: the welcome steps aside.
-    if (welcome && picker.version !== welcome.version) endWelcome();
+    if (welcome && picker.version !== welcome.version) { welcome.version = picker.version; welcomeAction('end'); }
     if (current.host) movePickerTv(app, next, escape);
     else if (app.querySelector('.picker-strip')?.dataset.reported !== picker.mode) syncPhonePicker(app, picker.mode);
   }
@@ -1415,23 +1419,51 @@ function showGameError(error) {
   if (notice) notice.textContent = error.message;
 }
 
-// Max and Poppy's welcome to Jambaloop: once per room on the TV, replayable.
+// Max and Poppy's welcome to Jambaloop. The room holds its state (playing,
+// asking or skipping) so the TV, the captain's phone and everyone else agree.
 let welcome;
 const welcomedKey = 'jambaloop-welcomed';
 const welcomedRooms = () => { try { return JSON.parse(sessionStorage.getItem(welcomedKey) ?? '[]'); } catch { return []; } };
+// A phone that has seen the welcome or played a game is a returning player.
+const returningKey = 'jambaloop-returning';
+const isReturning = () => { try { return localStorage.getItem(returningKey) === '1'; } catch { return false; } };
+const markReturning = () => { try { localStorage.setItem(returningKey, '1'); } catch {} };
 
-function startWelcome() {
-  if (!session?.host || !state || welcome) return;
-  try { sessionStorage.setItem(welcomedKey, JSON.stringify([...welcomedRooms(), state.code].slice(-20))); } catch {}
-  welcome = openWelcome(document.body, { code: state.code, qr: state.qr }, { onSkip: endWelcome });
-  welcome.version = state.picker?.version;
-  playWelcome({ onLine: (index, [, , scene]) => welcome?.scene(scene), onDone: endWelcome });
+function welcomeAction(action) {
+  if (!session || !state) return Promise.resolve();
+  return api('/' + session.code + '/welcome', { action, game: state.game }).catch(() => {});
 }
 
-function endWelcome() {
-  if (!welcome) return;
-  if (narrationPlaying() === 'welcome') stopNarration();
-  welcome.close();
+/** TV: start the welcome once per room (or offer a skip if everyone's been before). */
+function requestWelcome() {
+  if (!session?.host || !state) return;
+  try { sessionStorage.setItem(welcomedKey, JSON.stringify([...welcomedRooms(), state.code].slice(-20))); } catch {}
+  welcomeAction(state.everyoneReturning ? 'ask' : 'start');
+}
+
+function welcomeOverlay() {
+  welcome ??= openWelcome(document.body, { code: state.code, qr: state.qr },
+    { onSkip: () => welcomeAction('skip'), onTour: () => welcomeAction('tour') });
+  welcome.version = state.picker?.version;
+  return welcome;
+}
+
+/** TV: follow the room's welcome state with the matching scene and lines. */
+function showWelcome(to) {
+  if (!to) { closeWelcome(); return; }
+  const show = welcomeOverlay();
+  if (to === 'playing') playWelcome({ onLine: (index, [, , scene]) => show.scene(scene), onDone: () => welcomeAction('end') });
+  else if (to === 'asking') { show.scene('back'); playScript('welcome-back', welcomeBack); }
+  else if (to === 'skipping') {
+    show.scene('skip');
+    const pick = Math.floor(Math.random() * skipQuips.length);
+    playScript(`skip-${pick + 1}`, skipQuips[pick], { onDone: () => welcomeAction('end') });
+  }
+}
+
+function closeWelcome() {
+  if (isWelcomeNarration()) stopNarration();
+  welcome?.close();
   welcome = undefined;
 }
 
@@ -1918,7 +1950,9 @@ document.addEventListener('click', async event => {
   if (action === 'close') return dialog.close();
   if (action === 'night' && session && state) return openDialog('night');
   if (action === 'leave') return leave();
-  if (action === 'welcome-play' && session?.host) { endWelcome(); return startWelcome(); }
+  if (action === 'welcome-play' && session?.host && !state?.welcome) return welcomeAction('start');
+  if (action === 'welcome-skip' && session) return welcomeAction('skip');
+  if (action === 'welcome-tour' && session) return welcomeAction('tour');
   if (action === 'picker-open' && session && state?.phase === 'lobby') {
     return api('/' + session.code + '/browse', { open: true, game: state.game }).catch(error => showGameError(error));
   }

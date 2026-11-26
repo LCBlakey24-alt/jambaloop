@@ -6,14 +6,15 @@
 // Needs a paid ElevenLabs plan when run from a cloud machine: the free plan
 // refuses requests from data-centre and proxy addresses.
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { duoIntros, duoClip, duoVoice, hosts, welcomeScript } from '../public/duo-scripts.js';
+import { duoIntros, duoClip, duoVoice, hosts, skipQuips, welcomeBack, welcomeScript } from '../public/duo-scripts.js';
 
 const api = 'https://api.elevenlabs.io/v1';
 const headers = { 'xi-api-key': process.env.XI_API_KEY || 'proxy-injected', 'content-type': 'application/json' };
 const args = process.argv.slice(2);
 const dry = args.includes('--dry-run');
 const wanted = args.filter(arg => !arg.startsWith('--'));
-const scripts = { ...duoIntros, welcome: welcomeScript };
+const scripts = { ...duoIntros, welcome: welcomeScript, 'welcome-back': welcomeBack,
+  ...Object.fromEntries(skipQuips.map((lines, index) => [`skip-${index + 1}`, lines])) };
 const modes = wanted.length ? wanted : Object.keys(scripts);
 const root = new URL('../public', import.meta.url);
 mkdirSync(new URL('../public/audio/duo/', import.meta.url), { recursive: true });

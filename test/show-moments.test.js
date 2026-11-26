@@ -105,3 +105,26 @@ test('host reactions fit the moment, use only what the TV shows, and are all rec
   for (const takes of Object.values(knockoutReactions)) for (const lines of takes) assert.deepEqual(lines.map(([host]) => host), ['baz', 'clive']);
   for (const lines of Object.values(raceCalls)) for (const [host] of lines) assert.equal(host, 'vince');
 });
+
+test('a big room: the TV gets recent faces and totals, not one entry per player', async () => {
+  const quiz = { title: 'Big room', questions: Array.from({ length: 3 }, (_, i) => ({ type: 'boolean', prompt: 'Big ' + i, correct: 0 })) };
+  const { code, host } = await call('', undefined, { mode: 'knockout', category: 'mixed', count: 3, seconds: 0, customQuiz: quiz }, 201);
+  const path = '/' + code;
+  const players = [];
+  for (let i = 0; i < 40; i++) players.push(await call(path + '/join', undefined, { name: 'P' + i }, 201));
+  const state = key => call(path, key);
+  const advance = async () => { const s = await state(host); await call(path + '/advance', host, { game: s.game, phase: s.phase, index: s.index, lobbyVersion: s.lobbyVersion }); };
+  await advance();
+  const { game, index } = await state(host);
+  await Promise.all(players.map((player, i) => call(path + '/answer', player.key, { game, index, option: i % 4 === 0 ? 0 : 1 }, 204)));
+  const question = await state(host);
+  assert.equal(question.lockIns.length, 12, 'only the 12 most recent faces');
+  assert.equal(question.lockCount, 40);
+  assert.equal(question.knockout.survivors.length, 8, 'the top of the ladder');
+  assert.equal(question.knockout.survivorCount, 40);
+  await advance();
+  const reveal = await state(host);
+  assert.equal(reveal.lockRight, 10, 'the true number who were right');
+  assert.equal(reactionFor(reveal), undefined, 'a quarter right is not a headline');
+  assert.ok(JSON.stringify(reveal.lockIns).length < 3000 && JSON.stringify(reveal.knockout).length < 4000, 'small payloads');
+});

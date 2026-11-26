@@ -91,3 +91,6 @@
 @keyframes clock-heartbeat { 0%, 50%, 100% { transform:scale(1); } 12% { transform:scale(1.1); } 24% { transform:scale(1); } 36% { transform:scale(1.06); } }
 @keyframes vignette-pulse { 0%, 100% { opacity:.45; } 15% { opacity:1; } }
 @keyframes track-throb { from { transform:scaleY(1); } to { transform:scaleY(1.8); } }
+/* Big rooms: the rail shows recent faces and a count of the rest. */
+.lock-more { align-self:center; padding:.25em .7em; border-radius:999px; font:800 clamp(12px,1.1vw,18px)/1.2 var(--head,sans-serif);
+  background:color-mix(in srgb,var(--game-accent,#ffcf74) 25%,transparent); border:1px solid var(--game-accent,#ffcf74); }

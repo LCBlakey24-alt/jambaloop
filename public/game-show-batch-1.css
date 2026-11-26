@@ -227,3 +227,5 @@ body.playing .immersive[data-mode="knockout"] .tv-round { grid-template-columns:
 @keyframes ko-stamp { 0% { opacity:0; transform:scale(3) rotate(-20deg); } 100% { opacity:1; transform:none; } }
 @keyframes ko-fall { to { transform:translateY(70px) rotate(4deg); opacity:0; } }
 @keyframes ko-pop { from { opacity:0; transform:scale(0); } to { opacity:1; transform:none; } }
+/* Knockout: the status bar sits under the question, clear of the ladder. */
+@media (min-width: 761px) { body.playing .immersive[data-mode="knockout"] .tv-round-hud { left:36%; max-width:52%; } }

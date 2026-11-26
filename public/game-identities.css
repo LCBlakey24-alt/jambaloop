@@ -30,7 +30,7 @@ body.playing:has(.game[data-mode="soclose"]) { background:#052a2d; }
 body .game[data-mode] {
   --pink:var(--id-accent); --ink:var(--id-ink); --muted:var(--id-muted); --panel:var(--id-surface); --edge:color-mix(in srgb,var(--id-accent) 40%,transparent);
   color:var(--id-ink);
-  background:linear-gradient(color-mix(in srgb,var(--id-bg2) 84%,transparent),color-mix(in srgb,var(--id-bg2) 84%,transparent)) fixed,
+  background:linear-gradient(color-mix(in srgb,var(--id-bg2) 88%,transparent),color-mix(in srgb,var(--id-bg2) 88%,transparent)) fixed,
     var(--id-scene) center / cover no-repeat fixed,
     radial-gradient(ellipse at 50% -10%, var(--id-bg1), var(--id-bg2) 72%) fixed;
 }
@@ -220,11 +220,13 @@ html body .tile-art[data-show="soclose"] .tile-wordmark { --wm:13; color:var(--i
 html body .tile-art[data-show="soclose"] .tile-wordmark > span:last-child { color:var(--id-bg2); }
 
 /* ---------------------------------------------- games wear their tile -- */
-/* The tile's scene, softened, behind each game's main panels (not nested
+/* Readability first: the scene is only a faint texture under text (93-96%
+   solid surface on top); the full artwork lives on the tile and lobby card.
+   The tile's scene, softened, behind each game's main panels (not nested
    ones), on the lobby card and in the title sting, so a game opens looking
    exactly like the tile that launched it. */
 body .game[data-mode] .game-panel:not(.game-panel .game-panel) {
-  background:linear-gradient(160deg,color-mix(in srgb,var(--id-surface2) 74%,transparent),color-mix(in srgb,var(--id-surface) 86%,transparent)),
+  background:linear-gradient(160deg,color-mix(in srgb,var(--id-surface2) 93%,transparent),color-mix(in srgb,var(--id-surface) 96%,transparent)),
     var(--id-scene) center / cover no-repeat, var(--id-surface) !important;
 }
 .lobby-tile { display:grid; place-items:center; flex:none; width:clamp(56px,9vw,92px); aspect-ratio:1; overflow:hidden;

@@ -241,13 +241,18 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
   const finalRanks = phase === 'finished' ? finishRanks(room, ranked, comparePlayers) : undefined;
   // TV only: who has locked in, in lock order, never what they chose. After the
   // reveal each stamp says right or wrong; So Close stages its own reveal.
-  const lockIns = isHost && visible && !(revealed && room.mode === 'soclose')
-    ? [...answers].flatMap(([playerKey, entry]) => {
-      const participant = players.get(playerKey);
-      return participant ? [{ id: participant.id, name: participant.name, avatar: participant.avatar, ...(revealed ? { won: Boolean(entry.won) } : {}) }] : [];
-    }) : undefined;
+  // Sized for a full room of 300: the TV gets the 12 most recent faces plus
+  // the totals, not one entry per player on every update.
+  const showLocks = isHost && visible && !(revealed && room.mode === 'soclose');
+  const lockList = showLocks ? [...answers] : [];
+  const lockIns = showLocks ? lockList.slice(-12).flatMap(([playerKey, entry]) => {
+    const participant = players.get(playerKey);
+    return participant ? [{ id: participant.id, name: participant.name, avatar: participant.avatar, ...(revealed ? { won: Boolean(entry.won) } : {}) }] : [];
+  }) : undefined;
+  const lockCount = showLocks ? lockList.length : undefined;
+  const lockRight = showLocks && revealed ? lockList.filter(([, entry]) => entry.won).length : undefined;
   return { revision: room.revision, code, category, phase: waiting ? 'waiting' : phase, index, total: room.count, seconds, game, opened, ends, answered: answers.size,
-    lockIns,
+    lockIns, lockCount, lockRight,
     picker: phase === 'lobby' && !waiting && room.picker ? { ...room.picker } : undefined,
     welcome: phase === 'lobby' && !waiting ? room.welcome : undefined,
     // TV only: everyone here has played or seen the welcome before.
@@ -319,7 +324,11 @@ function knockoutLadder(room, revealed) {
   }));
   const survivors = rows.filter(row => !row.out).sort((a, b) => b.lives - a.lives || b.score - a.score);
   const out = rows.filter(row => row.out).sort((a, b) => b.outAt - a.outAt || b.score - a.score);
-  return { survivors: survivors.map(({ score, outAt, ...row }) => row), out: out.map(({ score, outAt, ...row }) => row) };
+  // Sized for 300 players: the top of the ladder, everyone who fell this
+  // round (capped) and the most recent knockouts, with the true count.
+  const strip = ({ score, outAt, ...row }) => row;
+  return { survivorCount: survivors.length, survivors: survivors.slice(0, 8).map(strip), out: out.slice(0, 12).map(strip),
+    outNowCount: out.filter(row => row.outNow).length };
 }
 
 const comparePlayers = (a, b) => (b.lives ?? 0) - (a.lives ?? 0) || b.score - a.score;

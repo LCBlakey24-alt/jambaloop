@@ -35,7 +35,7 @@ function build(THREE) {
   canvas.className = 'stage-3d';
   canvas.setAttribute('aria-hidden', 'true');
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'low-power' });
-  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5));
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.25));
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(42, 2, 0.1, 80);
@@ -62,13 +62,14 @@ function build(THREE) {
   ];
   const paints = [0, 1, 2].map(() => new THREE.MeshStandardMaterial({ roughness: 0.28, metalness: 0.35 }));
   const pieces = [];
-  const count = 30;
+  // A few pieces around the edges only: decoration, never behind the text.
+  const count = 14;
   for (let i = 0; i < count; i++) {
     // A deterministic scatter: wide, deep, and kept clear of the centre.
     const a = i * 2.399963;
-    const radius = 9 + (i * 37 % 100) / 100 * 8;
+    const radius = 12.5 + (i * 37 % 100) / 100 * 5;
     const mesh = new THREE.Mesh(shapes[i % shapes.length], paints[i % paints.length]);
-    mesh.position.set(Math.cos(a) * radius * 1.55, Math.sin(a) * radius * 0.72, -2 - (i * 53 % 100) / 100 * 16);
+    mesh.position.set(Math.cos(a) * radius * 1.6, Math.sin(a) * radius * 0.78, -3 - (i * 53 % 100) / 100 * 9);
     mesh.scale.setScalar(0.6 + (i * 29 % 100) / 100 * 0.9);
     mesh.rotation.set(i, i * 1.7, i * 0.4);
     mesh.userData = { home: mesh.position.clone(), spin: 0.12 + (i * 17 % 100) / 100 * 0.3, phase: i * 1.3, bob: 0.25 + (i * 11 % 100) / 100 * 0.5 };

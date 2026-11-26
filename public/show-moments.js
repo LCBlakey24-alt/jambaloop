@@ -35,22 +35,30 @@ function stamp(entry, order, revealed, escape, avatarView, fresh) {
     + `${avatarView(entry, escape)}<i class="lock-verdict">${verdict === 'won' ? '✓' : verdict === 'miss' ? '✕' : ''}</i></span>`;
 }
 
-/** The TV's row of locked-in faces. The count beside it is announced; this is visual. */
+const more = s => (s.lockCount ?? s.lockIns.length) > s.lockIns.length
+  ? `<span class="lock-more">+${(s.lockCount - s.lockIns.length).toLocaleString()}</span>` : '';
+
+/** The TV's row of the most recent locked-in faces. The count beside it is announced; this is visual. */
 export function lockRail(s, escape, avatarView) {
   if (!Array.isArray(s.lockIns)) return '';
   const revealed = s.phase === 'reveal';
   return `<div class="lock-rail" data-lock-rail aria-hidden="true"${revealed ? ' data-verdicts="hold"' : ''}>${s.lockIns
-    .map((entry, order) => stamp(entry, order, revealed, escape, avatarView, false)).join('')}</div>`;
+    .map((entry, order) => stamp(entry, order, revealed, escape, avatarView, false)).join('')}${more(s)}</div>`;
 }
 
-/** Add only the new faces, so each one lands with its own bounce. */
+/** Show the newest faces; only the ones that just arrived land with a bounce. */
 export function updateLockRail(root, s, escape, avatarView) {
   const rail = root.querySelector('[data-lock-rail]');
   if (!rail || s.phase !== 'question' || !Array.isArray(s.lockIns)) return;
-  const shown = new Set([...rail.children].map(child => child.dataset.player));
-  s.lockIns.forEach((entry, order) => {
-    if (!shown.has(entry.id)) rail.insertAdjacentHTML('beforeend', stamp(entry, order, false, escape, avatarView, !prefersReducedMotion()));
-  });
+  const shown = new Set([...rail.querySelectorAll('.lock-stamp')].map(child => child.dataset.player));
+  if (s.lockIns.length === shown.size && s.lockIns.every(entry => shown.has(entry.id))) {
+    const chip = rail.querySelector('.lock-more');
+    const next = more(s);
+    if ((chip?.outerHTML ?? '') !== next) { chip?.remove(); rail.insertAdjacentHTML('beforeend', next); }
+    return;
+  }
+  const fresh = !prefersReducedMotion();
+  rail.innerHTML = s.lockIns.map((entry, order) => stamp(entry, order, false, escape, avatarView, fresh && !shown.has(entry.id))).join('') + more(s);
 }
 
 /** A small kick on the "3 of 6 answered" line whenever it changes. */
@@ -140,9 +148,10 @@ export function reactionFor(s) {
     return undefined;
   }
   if (s.phase !== 'reveal' || !Array.isArray(s.lockIns)) return undefined;
-  if (s.knockout?.out?.some(row => row.outNow)) return 'knockedout';
-  const answered = s.lockIns.length;
-  const right = s.lockIns.filter(entry => entry.won).length;
+  if (s.knockout?.outNowCount ?? s.knockout?.out?.some(row => row.outNow)) return 'knockedout';
+  // Totals come from the server; the list itself only holds recent faces.
+  const answered = s.lockCount ?? s.lockIns.length;
+  const right = s.lockRight ?? s.lockIns.filter(entry => entry.won).length;
   if (!answered) return 'noanswers';
   if (!right) return 'nobody';
   if (answered >= 2 && right === answered) return 'everybody';

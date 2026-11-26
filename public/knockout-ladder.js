@@ -41,13 +41,14 @@ export function knockoutLadder(state, escape) {
   const ladder = state.knockout;
   if (!ladder) return '';
   const shown = ladder.survivors.slice(0, 8);
+  const total = ladder.survivorCount ?? ladder.survivors.length;
   // Players knocked out this round start on the ladder, then drop off it.
-  const falling = ladder.out.filter(row => row.outNow);
+  const falling = ladder.out.filter(row => row.outNow).slice(0, 4);
   const knocked = ladder.out.filter(row => !row.outNow).slice(0, Math.max(0, 10 - falling.length));
   return `<aside class="game-panel ko-ladder" aria-label="Survivors">
-    <div class="eyebrow">SURVIVORS · <span data-ko-count>${ladder.survivors.length}</span> STILL IN</div>
+    <div class="eyebrow">SURVIVORS · <span data-ko-count>${total}</span> STILL IN</div>
     <ol class="ko-rungs">${[...shown, ...falling].map((row, i) => rung(row, i, escape)).join('')}</ol>
-    ${ladder.survivors.length > shown.length ? `<p class="ko-more">+${ladder.survivors.length - shown.length} more still in</p>` : ''}
+    ${total > shown.length ? `<p class="ko-more">+${total - shown.length} more still in</p>` : ''}
     ${ladder.out.length ? `<div class="ko-out"><div class="eyebrow">KNOCKED OUT</div><ul>${[...falling, ...knocked].map(row =>
       `<li title="${escape(row.name)}"${row.outNow ? ' data-now' : ''}><span class="ko-face is-out">${avatarView(row, escape)}<i class="ko-x" aria-hidden="true"></i></span></li>`).join('')}</ul></div>` : ''}
   </aside>`;

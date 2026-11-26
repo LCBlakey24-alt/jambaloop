@@ -44,7 +44,7 @@ export function pickerTv(state, { escape, canDrive }) {
         ${state.qr ? `<img class="qr" src="${state.qr}" alt="QR code to join room ${escape(state.code)}">` : ''}</div>
       <div class="picker-centre" aria-live="polite">${centreInfo(state.picker.mode, escape)}</div>
       <div class="game-panel picker-room"><div class="eyebrow">IN THE ROOM · ${state.players.length || state.playerCount || 0}</div>
-        <ul class="players">${(state.players ?? []).map(player => `<li>${avatarView(player, escape)}${escape(player.name)}</li>`).join('')}</ul>
+        <ul class="players">${(state.players ?? []).slice(0, 18).map(player => `<li>${avatarView(player, escape)}${escape(player.name)}</li>`).join('')}${(state.players?.length ?? 0) > 18 ? `<li class="players-more">+${state.players.length - 18} more</li>` : ''}</ul>
         <p class="picker-hint">${state.playerCount ? `${captain} is choosing on their phone` : 'Waiting for players to join'}</p>
         ${canDrive ? `<button type="button" class="button primary" data-action="picker-play">Play this game</button>
         <span class="picker-room-actions"><button type="button" class="button outline" data-action="picker-settings">Game settings</button>

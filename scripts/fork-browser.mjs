@@ -81,6 +81,14 @@ try {
         });
         assert.equal(res.status(),204,await res.text());
       }
+      const placed=await snap(hostKey);
+      assert.equal(placed.phase,'party-placed','each placement gets its own reveal');
+      await host.locator('.fork-game[data-fork-phase="party-placed"] .fork-slot.is-new').first().waitFor({timeout:15000});
+      assert.equal(await host.locator('.fork-slot.is-new').count(),2,'both new cards are revealed');
+      await pickerPhone.page.locator('.fork-game[data-fork-phase="party-placed"]').waitFor({timeout:15000});
+      assert.equal(await pickerPhone.page.locator('.fork-card-pick').count(),0,'no picking during the reveal');
+      const moved=await ctx.request.post(site+'/api/rooms/'+code+'/advance',{headers:{'x-game-key':hostKey},data:{game,index:0,phase:'party-placed'}});
+      assert.equal(moved.status(),204,await moved.text());
       const stage=await snap(hostKey);
       assert.equal(stage.phase,step===2?'party-judge':'party-build');
       if(step<2){

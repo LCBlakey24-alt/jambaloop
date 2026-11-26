@@ -72,6 +72,11 @@ test('four players rotate the driver, choose one of three cards, and place coher
     for(let i=0;i<room.keys.length;i++) if(i!==driverIndex)
       await room.party(room.keys[i],'card',{step:0,option:0});
     host=await room.state();
+    assert.equal(host.phase,'party-placed','each placement is revealed before play moves on');
+    assert.equal(host.party.placed,0);
+    assert.equal((await room.state(room.keys[(driverIndex+1)%room.keys.length])).party.hand,undefined,'no new hand during the reveal');
+    await room.advance();
+    host=await room.state();
     assert.equal(host.party.step,1);
     assert.equal(host.party.placements[0][0],firstCards.get(0));
     assert.equal(host.party.placements[1][0],firstCards.get(1));
@@ -80,6 +85,11 @@ test('four players rotate the driver, choose one of three cards, and place coher
     for(let i=0;i<room.keys.length;i++) if(i!==driverIndex)
       await room.party(room.keys[i],'card',{step:1,option:0});
     host=await room.state();
+    assert.equal(host.phase,'party-placed','each placement is revealed before play moves on');
+    assert.equal(host.party.placed,1);
+    assert.equal((await room.state(room.keys[(driverIndex+1)%room.keys.length])).party.hand,undefined,'no new hand during the reveal');
+    await room.advance();
+    host=await room.state();
     assert.equal(host.party.step,2);
     assert.equal(host.party.placements[0][1],badCards.get(1));
     assert.equal(host.party.placements[1][1],badCards.get(0));
@@ -87,6 +97,11 @@ test('four players rotate the driver, choose one of three cards, and place coher
     const finalCards=byTeam(third);
     for(let i=0;i<room.keys.length;i++) if(i!==driverIndex)
       await room.party(room.keys[i],'card',{step:2,option:0});
+    host=await room.state();
+    assert.equal(host.phase,'party-placed','each placement is revealed before play moves on');
+    assert.equal(host.party.placed,2);
+    assert.equal((await room.state(room.keys[(driverIndex+1)%room.keys.length])).party.hand,undefined,'no new hand during the reveal');
+    await room.advance();
     host=await room.state();
     assert.equal(host.phase,'party-judge');
     assert.equal(host.party.placements[0][2],finalCards.get(0));
@@ -125,6 +140,8 @@ test('every joined player drives once before the game ends',async()=>{
         states=await Promise.all(room.keys.map(key=>room.state(key)));
         for(let i=0;i<room.keys.length;i++) if(i!==driver)
           await room.party(room.keys[i],'card',{step:stage,option:0});
+        assert.equal((await room.state()).phase,'party-placed');
+        await room.advance();
       }
       assert.equal((await room.state()).phase,'party-judge');
       await room.party(room.keys[driver],'judge',{track:round%2});
@@ -160,6 +177,8 @@ test('invalid configuration, too few players, duplicate choices and premature ju
       phase:now.phase,game:now.game,index:now.index},403);
     assert.match(denied.error,/TV host/);
     await room.party(voters[1],'card',{step:0,option:0});
+    assert.equal((await room.state()).phase,'party-placed');
+    await room.advance();
     assert.equal((await room.state()).party.step,1);
   });
 });

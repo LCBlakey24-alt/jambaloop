@@ -1,5 +1,9 @@
 import {randomInt} from 'node:crypto';
 import {isConnected} from './room-presence.js';
+import {roomTask} from './room-clock.js';
+
+// After each placement the TV shows the two new cards before play moves on.
+export const FORK_REVEAL_MS = 9000;
 import {forkGoodCards, forkBadCards, forkScenes, forkStages} from './public/fork-cards.js';
 import {v2ForkGood,v2ForkBad} from './creative-expansion-v2.js';
 import {forkGoodV4,forkBadV4} from './creative-expansion-v4.js';
@@ -99,11 +103,30 @@ function lockPlacement(room, publish) {
     party.placements[destination][slot]=chosen;
   }
   party.votes=new Map();
-  if(slot===2) {
+  // Reveal beat: both new cards land on the tracks; nobody picks again until
+  // the host moves on or the beat times out.
+  party.placedSlot=slot;
+  room.phase='party-placed';
+  clearTimeout(room.forkTimer);
+  const game=room.game,index=room.index;
+  room.forkTimer=setTimeout(()=>roomTask(room,'fork reveal',()=>{
+    if(room.game===game&&room.index===index&&room.party===party&&party.placedSlot===slot)continuePlacement(room,publish);
+  }),FORK_REVEAL_MS);
+  room.forkTimer.unref?.();
+  publish(room);
+  return true;
+}
+
+function continuePlacement(room, publish) {
+  const party=room.party;
+  if(!party || room.phase!=='party-placed') return false;
+  clearTimeout(room.forkTimer);
+  if(party.placedSlot===2) {
     room.phase='party-judge';
   }else {
     party.step++;
     party.hands=deal(room,forkStages[party.step].kind);
+    room.phase='party-build';
   }
   publish(room);
   return true;
@@ -127,6 +150,7 @@ export function advanceFork(room,publish) {
     // The host may close a placement even when a phone disconnects.
     if(lockPlacement(room,publish))return true;
   }
+  if(room.phase==='party-placed') return continuePlacement(room,publish);
   if(room.phase==='party-reveal') {
     if(room.index+1<room.count) {
       room.index++;
@@ -187,6 +211,7 @@ export function publicFork(room,key) {
     type:'fork',
     scene:party.scene,
     step:party.step,
+    placed:room.phase==='party-placed' ? party.placedSlot : undefined,
     stage:room.phase==='party-build' ? forkStages[party.step] : null,
     placements:party.placements.map(arr=>[...arr]),
     hand:room.phase==='party-build' && [0,1].includes(team) ? [...party.hands[team]] : undefined,
@@ -201,6 +226,7 @@ export function publicFork(room,key) {
     team,
     hit:party.judgeChoice,
     saved:party.winner,
+    revealMs:FORK_REVEAL_MS,
     allPlaced:room.phase==='party-judge'||room.phase==='party-reveal'||room.phase==='finished',
   };
 }

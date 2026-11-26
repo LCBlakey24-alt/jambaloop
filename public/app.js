@@ -885,6 +885,7 @@ function phaseCaption(s) {
     reveal: 'Answer revealed',
     'score-break': 'Leaderboard checkpoint',
     'party-build': 'Build your track',
+    'party-placed': 'Cards revealed on the tracks',
     'party-judge': 'Judge chooses track',
     'party-write': s.mode === 'cards' ? 'Choose a card' : s.mode === 'samepage' ? 'Write your matching answer' : 'Write a reply',
     'party-vote': 'Voting open',
@@ -1123,7 +1124,7 @@ function render(s) {
   const captainSelect = !enter && focused?.matches('#captain-form select') ? focused.value : undefined;
   const writing = !enter && focused?.matches('#bluff-form textarea')
     ? [focused.selectionStart, focused.selectionEnd] : undefined;
-  const showProgress = ['sketch-draw','sketch-reveal','ready', 'rolling', 'question', 'reveal', 'score-break', 'party-build', 'party-judge', 'party-write', 'party-vote', 'party-reveal', 'spotlight-ready', 'spotlight-expert', 'spotlight-answer', 'spotlight-reveal', 'brain-question', 'brain-reveal', 'top-poll', 'top-guess', 'top-reveal', 'rare-write', 'rare-review', 'rare-reveal'].includes(s.phase) && s.total > 1;
+  const showProgress = ['sketch-draw','sketch-reveal','ready', 'rolling', 'question', 'reveal', 'score-break', 'party-build', 'party-placed', 'party-judge', 'party-write', 'party-vote', 'party-reveal', 'spotlight-ready', 'spotlight-expert', 'spotlight-answer', 'spotlight-reveal', 'brain-question', 'brain-reveal', 'top-poll', 'top-guess', 'top-reveal', 'rare-write', 'rare-review', 'rare-reveal'].includes(s.phase) && s.total > 1;
   const caption = phaseCaption(s);
   const boost = s.boost > 1 && ['ready', 'rolling', 'question', 'reveal'].includes(s.phase)
     ? `<span class="score-boost">${icons('zap')} Double points</span>` : '';

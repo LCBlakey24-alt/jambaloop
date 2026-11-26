@@ -20,7 +20,7 @@ import { launcherTile, launcherPreview, launcherModes, launcherSetupArtwork, LAU
 import { carouselView, moveCarousel, themeHome, wrapIndex } from './game-carousel.js';
 import { playSting, stingFor } from './show-sting.js';
 import { isWelcomeNarration, narrationPlaying, playScript, playWelcome, stopNarration, toggleNarration } from './narrator.js';
-import { knockoutReactions, raceCalls, reactions, skipQuips, welcomeBack } from './duo-scripts.js';
+import { bloodmoonCalls, knockoutReactions, raceCalls, reactions, skipQuips, welcomeBack } from './duo-scripts.js';
 import { openWelcome } from './welcome-show.js';
 import { playChiptune, playCue, playTick, playTowerImpact } from './sound-cues.js';
 import { duckMusic, playMusic, playSfx, preloadSfx, stopMusic } from './sfx.js';
@@ -902,6 +902,12 @@ function phaseCaption(s) {
     'rare-review': 'Host reviewing unusual Rare Find answers',
     'rare-reveal': 'Real Rare Find answer reveal',
     'party-potato': 'Potato in play',
+    'blood-roles': 'Secret roles dealt',
+    'blood-night': 'Night: choose on your phone',
+    'blood-dawn': 'Dawn',
+    'blood-day': 'The village debates',
+    'blood-vote': 'The village votes',
+    'blood-verdict': 'The verdict',
     'sketch-draw': 'Artist drawing',
     'sketch-reveal': 'Drawing revealed',
     'race-countdown': 'Race about to start',
@@ -1362,6 +1368,7 @@ function receive(next, current) {
     else if (next.mode === 'potato' && next.party?.passes > state.party?.passes) playCue(sound, next.mode, 'pass');
     soundMoments(state, next);
     raceCommentary(state, next);
+    bloodmoonCommentary(state, next);
   }
   if (dialog.open && state && (state.game !== next.game || state.phase === 'lobby' && next.phase !== 'lobby')) dialog.close();
   if (state?.game !== next.game || state?.index !== next.index || next.phase === 'lobby') partyReply = '';
@@ -1456,6 +1463,17 @@ function hostReaction(s, delay) {
 
 // Vince calls Quiz Race: the start, lead changes, close battles and the flag.
 let raceCalledAt = 0;
+/** Bloodmoon: the hosts call each public beat on the TV. */
+function bloodmoonCommentary(before, next) {
+  if (next.mode !== 'bloodmoon' || !next.party || before.phase === next.phase) return;
+  const party = next.party;
+  const kind = { 'blood-night': 'night', 'blood-day': 'day', 'blood-vote': 'vote',
+    'blood-dawn': party.dawn?.victim ? 'bitten' : 'safe',
+    'blood-verdict': party.verdict?.banished ? (party.verdict.banished.role === 'vampire' ? 'caught' : 'wrong') : 'nobody',
+    finished: party.winner }[next.phase];
+  if (kind && bloodmoonCalls[kind]) setTimeout(() => sayReaction(`react-blood-${kind}`, bloodmoonCalls[kind]), 700);
+}
+
 function raceCommentary(before, next) {
   if (next.mode !== 'quizrace' || !next.race) return;
   const call = (kind, gap = 0) => {
@@ -2011,6 +2029,9 @@ document.addEventListener('click', async event => {
   if (action === 'social-card') return sendParty({ action: 'card', option: Number(button.dataset.option), handVersion: Number(button.dataset.handVersion) }, button);
   if (action === 'social-redraw') return sendParty({ action: 'redraw' }, button);
   if (action === 'bluff-vote') return sendParty({ action: 'vote', id: button.dataset.id }, button);
+  if (action === 'blood-ready') return sendParty({ action: 'ready' }, button);
+  if (action === 'blood-pick') return sendParty({ action: 'night', night: state.party?.night, id: button.dataset.id }, button);
+  if (action === 'blood-vote') return sendParty({ action: 'vote', night: state.party?.night, id: button.dataset.id }, button);
   if (action === 'potato-skip' || action === 'potato-answer') {
     return sendParty({ action: action === 'potato-skip' ? 'skip' : 'answer', option: Number(button.dataset.option), step: state.party.step }, button);
   }

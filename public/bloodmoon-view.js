@@ -98,7 +98,8 @@ export function bloodmoonView(state, { host, canControl, escape, icons }) {
         warden: ['Who will you guard?', 'The vampires cannot bite the player you guard tonight.'],
         villager: ['Who do you suspect most?', 'A private note to yourself. Everyone taps at night, so nobody stands out.'] }[you.role];
       const done = you.pick && you.role !== 'vampire';
-      body = `${head(ask[0], ask[1])}${roleCard(you, escape)}
+      // One heading for every role, so a glance at a neighbour's phone gives nothing away.
+      body = `${head('Make your night choice', `${ask[0]} ${ask[1]}`)}${roleCard(you, escape)}
         ${seats(party, escape, { action: done ? undefined : 'blood-pick', chosen: you.pick, barred: you.barred, mates: you.mates, selfId: state.player?.id,
           pickable: seat => (you.role === 'warden' || seat.id !== state.player?.id) && !(you.role === 'vampire' && you.mates.some(mate => mate.id === seat.id)) })}
         ${you.pick ? `<p class="blood-locked" role="status">${you.role === 'vampire' ? 'Chosen. You can change your mind until the night ends.' : 'Locked in. Eyes down until dawn.'}</p>` : ''}${next('End the night')}`;

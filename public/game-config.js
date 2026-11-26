@@ -44,6 +44,7 @@ export const modes = [
   ['cards', 'Fill the Blank', 'Play a silly phrase from your private hand.', 'layers', '#c9dcf5'],
   ['tracks', 'Fork in the Tracks', 'Two teams build ridiculous tracks; every player gets a turn driving the trolley.', 'git-fork', '#c4e7ce'],
   ['bluff', 'Spot the Bluff', 'One player never sees the prompt. Vote for the bluff.', 'venetian-mask', '#f2d4ae'],
+  ['bloodmoon', 'Bloodmoon', 'Secret vampires hide in the village. They bite by night; everyone debates and banishes by day.', 'moon', '#ff8a8f'],
   ['potato', 'Hot Potato', 'Answer correctly to pass it before two minutes run out.', 'timer', '#f5c1af'],
   ['quizrace', 'Quiz Race', 'Answer fast to accelerate along a winding track.', 'flag-triangle-right', '#1dd9be'],
   ['showdown', 'Team Showdown', 'Play together in two to four teams.', 'users-round', '#c1e3ec'],
@@ -114,6 +115,7 @@ export const wheelCategories = includeChristmas => categories.filter(([id]) =>
 export const categoryName = id => categories.find(category => category[0] === id)?.[1] ?? '';
 
 export function questionCounts(mode, format, category) {
+  if (mode === 'bloodmoon') return [1];
   if (mode === 'brain') return [5, 7, 10];
   if (mode === 'topanswers') return [3, 5, 7];
   if (mode === 'rare' || mode === 'sketch') return [3, 5, 7];
@@ -144,12 +146,13 @@ export const categoryGroups = [
 export const fixedQuestionModes = ['classic', 'dice', 'knockout', 'showdown', 'soclose'];
 
 export const socialModes = ['punchline', 'cards', 'tracks'];
-export const partyModes = ['bluff', 'potato', 'samepage', 'spotlight', 'brain', 'topanswers', 'rare', 'sketch', ...socialModes];
+export const partyModes = ['bluff', 'bloodmoon', 'potato', 'samepage', 'spotlight', 'brain', 'topanswers', 'rare', 'sketch', ...socialModes];
 export const scoreIntervals = [0, 1, 3, 5];
 export const defaultScoreInterval = 3;
 export const supportsScoreCheckpoints = mode => mode !== 'quizrace' && mode !== 'soclose' && modes.some(([id]) => id === mode) && !partyModes.includes(mode);
 export const minimumPlayers = mode => ['quizrace','soclose'].includes(mode) ? 2 : ['bluff', 'punchline', 'cards', 'samepage', 'spotlight', 'topanswers', 'rare', 'sketch'].includes(mode) ? 3
   : mode === 'brain' ? 2
+  : mode === 'bloodmoon' ? 5
   : mode === 'tracks' ? 3 : ['potato', 'showdown'].includes(mode) ? 2 : 1;
 // One shared rule for how many players a game supports. `playStyle` matters
 // only for Board Race, where individual racing uses at most four pieces; the
@@ -158,6 +161,7 @@ export const roomCapacity = 300;
 export const maximumPlayers = (mode, playStyle) =>
   mode === 'quizrace' ? 12
   : mode === 'spotlight' ? 20
+  : mode === 'bloodmoon' ? 16
   : ['brain', 'topanswers', 'rare'].includes(mode) ? 30
   : mode === 'board' && playStyle === 'individual' ? 4
   : roomCapacity;

@@ -1,6 +1,6 @@
 # Bloodmoon Council — original vampire social deduction game
 
-**Status:** concept/design, NOT implemented, NOT a live Jambaloop mode.  
+**Status (26 November 2026):** implemented as `bloodmoon` on the draft branch `feature/bloodmoon` at the owner's request. NOT merged, NOT deployed, NOT playtested with a real group. See "What was built" at the end; where it differs from the proposal below, the code is the record.  
 **Working title:** Bloodmoon Council (commercial name clearance not yet completed).  
 **Tracking:** [GitHub #43](https://github.com/LCBlakey24-alt/jambaloop/issues/43).
 
@@ -77,3 +77,17 @@ Private information never appears in untrusted HTML, room host state, spectator 
 4. **Verification:** all existing Node/content/browser CI, private-state adversarial tests and real mixed-device playtest; then a reviewed merge to `main` if safe to publish.
 
 **Do not put this planned game in `public/game-config.js` until it is functional, tested, and deliberately selected for implementation.** No third-party game title, scripts, deck, branded art or show identity should be copied.
+
+## What was built (26 November 2026)
+
+- **Name and ID:** "Bloodmoon", mode ID `bloodmoon`. 5 to 16 players; later joiners watch.
+- **Roles:** 1 vampire for 5 to 7 players, 2 for 8 to 12, 3 for 13 to 16; one Oracle, one Warden, the rest Villagers. Provisional balance.
+- **Phases:** role deal (45s or everyone ready) → night (45s or everyone has chosen) → dawn → day discussion (150s, host or captain can open the vote early) → vote (45s or all in) → verdict → next night or the end.
+- **Night:** every living player taps a choice so no phone stands out. Villagers record a private hunch that has no effect. Vampires must agree on one target (they see each other's pick and may change it); a split bites nobody. The Warden cannot guard the same player two nights running and may guard themselves.
+- **Reveals:** a player's role is public once they are bitten or banished, and all roles at the end. The dawn message does not say whether the Warden blocked a bite.
+- **Vote:** counts only, no voter names. A tie or no votes banishes nobody.
+- **Scoring:** 300 points to each member of the winning side, plus 100 if still in at the end.
+- **Privacy:** roles, night picks, Oracle findings and ballots are sent only to their owner (`publicBloodmoon`). The TV host state has no role data until a role is public. Night screens share one heading and a closed, neutral role card so a glance at a neighbour's phone gives nothing away.
+- **Narration:** fixed pre-recorded Max and Poppy lines for public beats only; no player names, roles or runtime generation.
+- **Tests:** `test/bloodmoon.test.js` (rules, privacy, HTTP) and `scripts/bloodmoon-browser.mjs` (six players, TV and two phones).
+- **Not done:** real-group playtest, 320px and landscape phone review, a spectator activity for players who are out, public-role-reveal setting, quick mode.

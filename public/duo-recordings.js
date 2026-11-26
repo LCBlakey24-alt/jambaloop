@@ -2,6 +2,7 @@
 // ElevenLabs dialogue take (public/audio/duo/<key>.mp3); the numbers are each
 // line's [start, end] in seconds, so captions follow the recording.
 export const duoRecordings = {
+  "bloodmoon": [[0,2.48],[2.48,8.64],[8.64,16.8],[16.8,21.76],[21.76,24.48],[24.48,29.44]],
   "bluff": [[0,1.92],[1.92,8.64],[8.64,14.24],[14.24,18.56]],
   "board": [[0,2],[2,6.24],[6.24,10.4],[10.4,15.04]],
   "brain": [[0,1.76],[1.76,6.38],[6.38,12.56],[12.56,16.72]],
@@ -13,6 +14,19 @@ export const duoRecordings = {
   "punchline": [[0,2.08],[2.08,7.44],[7.44,11.68],[11.68,16.64]],
   "quizrace": [[0,2.8],[2.8,6.4],[6.4,12.48],[12.48,15.52],[15.52,18.4]],
   "rare": [[0,1.76],[1.76,5.28],[5.28,10.48],[10.48,12.96]],
+  "react-blood-bitten-1": [[0,4],[4,6.48]],
+  "react-blood-bitten-2": [[0,4.72],[4.72,8.08]],
+  "react-blood-caught-1": [[0,3.28],[3.28,5.44]],
+  "react-blood-day-1": [[0,4.16],[4.16,8.24]],
+  "react-blood-day-2": [[0,3.68],[3.68,6.08]],
+  "react-blood-night-1": [[0,1.84],[1.84,5.44]],
+  "react-blood-night-2": [[0,4],[4,6.56]],
+  "react-blood-nobody-1": [[0,2.08],[2.08,5.44]],
+  "react-blood-safe-1": [[0,3.2],[3.2,5.84]],
+  "react-blood-vampires-1": [[0,3.28],[3.28,6.96]],
+  "react-blood-village-1": [[0,4.16],[4.16,8.56]],
+  "react-blood-vote-1": [[0,4.72],[4.72,8.72]],
+  "react-blood-wrong-1": [[0,4.64],[4.64,8]],
   "react-everybody-1": [[0,2.56]],
   "react-everybody-2": [[0,3.36]],
   "react-everybody-3": [[0,3.44]],

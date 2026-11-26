@@ -207,6 +207,18 @@ const scenes = {
     `<g transform="translate(300 300)">${poly([[-34, -18], [34, -18], [50, 4], [0, 52], [-50, 4]], 'url(#gem)', { stroke: c.ink, 'stroke-width': 2.5, 'stroke-linejoin': 'round' })}${path('M-50 4H50M-18-18L-26 4 0 52 26 4 18-18', { fill: 'none', stroke: c.ink, 'stroke-width': 2, opacity: .7 })}</g>`,
     ...[[60, 70, 10], [340, 70, 8], [70, 330, 7], [352, 230, 6]].map(([x, y, s]) => sparkle(x, y, s, c.accent2, .9)),
   ],
+  bloodmoon: c => [
+    `<defs>${linear('sky', [[0, c.bg[0]], [1, c.bg[1]]])}${radial('moon', [[0, '#ffb3a0'], [.6, '#d5413f'], [1, '#7a1626']], [.4, .38, .7])}</defs>`,
+    rect(0, 0, 400, 400, 'url(#sky)'),
+    circle(288, 104, 92, c.accent, { opacity: .12 }),
+    circle(288, 104, 64, 'url(#moon)'),
+    circle(268, 92, 11, '#7a1626', { opacity: .35 }), circle(306, 122, 7, '#7a1626', { opacity: .35 }), circle(292, 76, 5, '#7a1626', { opacity: .3 }),
+    ...[[60, 60, 5], [130, 36, 4], [176, 112, 3], [44, 150, 4], [364, 210, 4], [110, 190, 3]].map(([x, y, s]) => sparkle(x, y, s, c.accent2, .7)),
+    ...[[96, 96, 1], [196, 62, .7], [150, 150, .55]].map(([x, y, s]) => `<g transform="translate(${x} ${y}) scale(${s})">${path('M0 0c-8-12-22-12-30-2 6-2 10 0 12 6 4-4 8-4 12 0 2-4 4-6 6-6s4 2 6 6c4-4 8-4 12 0 2-6 6-8 12-6-8-10-22-10-30 2z', { fill: c.bg[1] })}</g>`),
+    path('M0 318l34-30 34 30v-26l20-34 20 34v26l30-28 30 28v-44l14-40 14 40v44l34-30 34 30v-22l24-30 24 30v22l22-18 26 22v98H0z', { fill: c.bg[1] }),
+    ...[[30, 330], [98, 300], [136, 332], [208, 300], [262, 334], [322, 316], [372, 344]].map(([x, y], i) => rect(x, y, 9, 13, c.accent2, { opacity: i % 2 ? .75 : .45, rx: 1.5 })),
+    path('M0 372c60-14 120-14 200 0s140 14 200 0v28H0z', { fill: c.muted, opacity: .1 }),
+  ],
   sketch: c => [
     rect(0, 0, 400, 400, c.bg[0]),
     ...range(14).map(i => line(0, 40 + i * 28, 400, 40 + i * 28, c.accent2, 1.5, { opacity: .2 })),

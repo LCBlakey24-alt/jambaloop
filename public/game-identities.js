@@ -40,6 +40,8 @@ export const identities = {
     bg: ['#de5a20', '#74270d'], surface: '#561d0a', surface2: '#70270f', ink: '#fff4e0', muted: '#ffdcbf', accent: '#ffc145', accent2: '#4fd8d1', radius: '20px' },
   rare:       { title: 'Treasure Vault', display: 'Show Rare', weight: 400, question: 'display', upper: false, scheme: 'dark',
     bg: ['#0b6249', '#022419'], surface: '#04342a', surface2: '#08483a', ink: '#f6f0dc', muted: '#c6e4d4', accent: '#e8c35a', accent2: '#7ee8ff', radius: '6px' },
+  bloodmoon:  { title: 'Moonlit Village', display: 'Show Bloodmoon', weight: 700, question: 'display', upper: false, scheme: 'dark',
+    bg: ['#2a1846', '#0d0718'], surface: '#1a1030', surface2: '#2a1846', ink: '#ffffff', muted: '#cdbfe6', accent: '#ff8a8f', accent2: '#ffe9c2', radius: '18px' },
   sketch:     { title: 'Sketch Pad', display: 'Show Sketch', weight: 700, question: 'display', upper: false, scheme: 'light',
     bg: ['#fdfcf7', '#ebe6d8'], surface: '#ffffff', surface2: '#f4f0e6', ink: '#1d2433', muted: '#545c6e', accent: '#e0294c', accent2: '#2a6fdb', radius: '16px' },
   quizrace:   { title: 'Neon Grand Prix', display: 'Show Race', weight: 700, question: 'body', upper: true, scheme: 'dark',

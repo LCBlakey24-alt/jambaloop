@@ -29,6 +29,7 @@
 @font-face { font-family: 'Show Brain'; font-weight: 800; font-display: swap; src: url('/fonts/orbitron.woff2') format('woff2'); }
 @font-face { font-family: 'Show Top'; font-weight: 400; font-display: swap; src: url('/fonts/righteous.woff2') format('woff2'); }
 @font-face { font-family: 'Show Rare'; font-weight: 400; font-display: swap; src: url('/fonts/marcellussc.woff2') format('woff2'); }
+@font-face { font-family: 'Show Bloodmoon'; font-weight: 700; font-display: swap; src: url('/fonts/cormorantgaramond.woff2') format('woff2'); }
 @font-face { font-family: 'Show Sketch'; font-weight: 700; font-display: swap; src: url('/fonts/caveat.woff2') format('woff2'); }
 @font-face { font-family: 'Show Race'; font-weight: 700; font-display: swap; src: url('/fonts/barlowcondensed.woff2') format('woff2'); }
 @font-face { font-family: 'Show SoClose'; font-weight: 600; font-display: swap; src: url('/fonts/ibmplexmono.woff2') format('woff2'); }

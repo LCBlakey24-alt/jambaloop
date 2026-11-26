@@ -177,3 +177,39 @@ test('late joiners watch without a role and cannot act', () => {
   assert.equal(view.watching, true);
   stop();
 });
+
+test('over HTTP: the TV host state and a rival phone never carry a living role', async () => {
+  const { spawn } = await import('node:child_process');
+  const { once } = await import('node:events');
+  const server = spawn(process.execPath, ['server.js'], { env: { ...process.env, PORT: '0', PUBLIC_URL: '' }, stdio: ['ignore', 'pipe', 'inherit'] });
+  try {
+    const [output] = await once(server.stdout, 'data');
+    const origin = String(output).match(/http:\/\/localhost:\d+/)[0];
+    const call = async (path, key, body) => {
+      const response = await fetch(origin + '/api/rooms' + path, { method: body === undefined ? 'GET' : 'POST',
+        headers: { ...(key && { 'x-game-key': key }), 'content-type': 'application/json' }, body: body === undefined ? undefined : JSON.stringify(body) });
+      return { status: response.status, body: response.status === 204 ? undefined : await response.json() };
+    };
+    const { body: { code, host } } = await call('', undefined, { mode: 'bloodmoon', category: 'mixed', count: 1, seconds: 0 });
+    const keys = [];
+    for (const name of ['Ada', 'Bo', 'Cy', 'Di']) keys.push((await call(`/${code}/join`, undefined, { name })).body.key);
+    const lobby = (await call('/' + code, host)).body;
+    const start = () => call(`/${code}/advance`, host, { game: lobby.game, phase: 'lobby', index: 0, lobbyVersion: lobby.lobbyVersion });
+    assert.equal((await start()).status, 409, 'four players are not enough');
+    keys.push((await call(`/${code}/join`, undefined, { name: 'Ed' })).body.key);
+    const ready = (await call('/' + code, host)).body;
+    assert.equal((await call(`/${code}/advance`, host, { game: ready.game, phase: 'lobby', index: 0, lobbyVersion: ready.lobbyVersion })).status, 204);
+    const tv = (await call('/' + code, host)).body;
+    assert.equal(tv.phase, 'blood-roles');
+    assert.equal(tv.party.you, undefined);
+    assert.ok(!/"role"|vampire"|oracle"|warden"|villager"/.test(JSON.stringify({ ...tv.party, counts: undefined })), 'no role in the TV state');
+    const roles = [];
+    for (const key of keys) {
+      const own = (await call('/' + code, key)).body;
+      roles.push(own.party.you.role);
+      assert.ok(own.party.seats.every(seat => seat.role === undefined), 'a phone sees no one else\'s role');
+    }
+    assert.deepEqual(roles.sort(), ['oracle', 'vampire', 'villager', 'villager', 'warden']);
+    assert.equal((await call(`/${code}/party`, host, { game: tv.game, index: 0, action: 'ready' })).status, 403, 'the TV cannot act as a player');
+  } finally { server.kill(); }
+});

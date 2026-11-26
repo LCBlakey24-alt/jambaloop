@@ -122,6 +122,14 @@ export const duoIntros = {
     ['max', '[playfully] A unique answer scores the most. The more people match you, the less you score.'],
     ['poppy', '[warmly] So dig deep, and find a gem.'],
   ],
+  bloodmoon: [
+    ['max', '[mysterious] Welcome to Bloodmoon.'],
+    ['poppy', '[whispers] Every phone gets a secret role. A few of you are vampires.'],
+    ['max', '[cheerfully] Each night, everyone chooses in secret on their own phone. The vampires pick someone to bite.'],
+    ['poppy', '[playfully] Each day, you all talk it over, and vote to banish a suspect.'],
+    ['max', '[nervous] Poppy, why are you looking at my neck?'],
+    ['poppy', '[laughs] No reason. Trust nobody.'],
+  ],
   sketch: [
     ['poppy', '[excited] Welcome to Sketch Sprint!'],
     ['max', '[cheerfully] One player gets a secret prompt, and draws it on their phone.'],
@@ -282,8 +290,47 @@ export const raceCalls = {
 };
 
 /** Every reaction take by recording key, as a list of lines. */
+// Bloodmoon: Max and Poppy narrate the public beats only. Nothing here names
+// a player or a role; every line is fixed text recorded in advance.
+export const bloodmoonCalls = {
+  night: [
+    [['max', '[whispers] Night falls on the village.'], ['poppy', '[mysterious] Eyes on your own phone, everyone. Make your choice.']],
+    [['poppy', '[whispers] The moon is up. Phones close to your chest.'], ['max', '[nervous] And no peeking at your neighbour.']],
+  ],
+  bitten: [
+    [['poppy', '[gasps] Oh no. Somebody did not make it through the night.'], ['max', '[serious] The vampires have struck.']],
+    [['max', '[sighs] Dawn breaks, and the village is one short.'], ['poppy', '[sad] They will be missed. Probably.']],
+  ],
+  safe: [
+    [['max', '[relieved] Dawn breaks, and everyone is still here!'], ['poppy', '[playfully] Somebody had a very lucky night.']],
+  ],
+  day: [
+    [['poppy', '[excited] Right, village. Who is a vampire? Talk it over!'], ['max', '[playfully] Accuse, defend, and bluff your socks off.']],
+    [['max', '[cheerfully] Time to talk. Who has been acting strangely?'], ['poppy', '[laughs] Apart from Max.']],
+  ],
+  vote: [
+    [['max', '[serious] Time to vote. Who will the village banish?'], ['poppy', '[whispers] Choose on your phone. A tie, and nobody goes.']],
+  ],
+  caught: [
+    [['poppy', '[shouting, excited] They got one! A vampire is out!'], ['max', '[cheerfully] Well played, village.']],
+  ],
+  wrong: [
+    [['max', '[groans] Oh dear. That was not a vampire.'], ['poppy', '[playfully] Somewhere, a vampire is smiling.']],
+  ],
+  nobody: [
+    [['poppy', '[surprised] Nobody is banished!'], ['max', '[nervous] Which means the vampires get another night.']],
+  ],
+  village: [
+    [['max', '[shouting, excited] The village wins! Every vampire is gone!'], ['poppy', '[cheerfully] The sun is up, and you can all sleep soundly.']],
+  ],
+  vampires: [
+    [['poppy', '[dramatic] The vampires win! The night belongs to them.'], ['max', '[laughs] I knew it. I absolutely knew it.']],
+  ],
+};
+
 export const reactionTakes = Object.fromEntries([
   ...Object.entries(reactions).flatMap(([kind, lines]) => lines.map((line, index) => [`react-${kind}-${index + 1}`, [line]])),
   ...Object.entries(knockoutReactions).flatMap(([kind, takes]) => takes.map((lines, index) => [`react-ko-${kind}-${index + 1}`, lines])),
   ...Object.entries(raceCalls).flatMap(([kind, lines]) => lines.map((line, index) => [`react-race-${kind}-${index + 1}`, [line]])),
+  ...Object.entries(bloodmoonCalls).flatMap(([kind, takes]) => takes.map((lines, index) => [`react-blood-${kind}-${index + 1}`, lines])),
 ]);

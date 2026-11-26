@@ -137,7 +137,13 @@ Closest-number and put-in-order sessions offer five questions when you choose on
 - **Welcome back:** a phone that has seen the welcome or played a game remembers it. If everyone connected has been before, the hosts say "Welcome back!" and the captain chooses **Play the intro** or **Skip, let's play**.
 - **Browsing:** the welcome steps aside as soon as the captain starts browsing.
 
-**Double Act intros (Max & Poppy):** every game has a short, original two-host intro in `public/duo-scripts.js`. Max (voiced by ElevenLabs' "Mark Munroe", the voice of the existing announcer clips) and Poppy (Vicky Cowan) take turns, with each line captioned word for word. Until the clips are recorded, the device's British voices read the lines (one deeper, one brighter), and Classic, Board Race and Quiz Race keep their recorded announcer. Recording: `NODE_USE_ENV_PROXY=1 node scripts/generate-duo-voices.mjs`. It skips clips that already exist and won't start if the month's characters can't cover it. It needs a paid ElevenLabs plan, because the free plan refuses cloud machines, and the paid plan also gives the commercial licence.
+**Double Act intros (Max & Poppy):** every game has a short, original two-host intro in `public/duo-scripts.js`, and all of them are **recorded**, along with the welcome, the welcome-back exchange and the skip quips (24 takes in `public/audio/duo/`).
+- **Voices:** ElevenLabs Dialogue (`eleven_v3`) with mood tags such as `[excited]`, `[whispers]` and `[laughs]`, so each exchange is one natural take. Max is "Mark Munroe" and Poppy is "Vicky Cowan"; both are original characters, not impersonations.
+- **Captions:** they follow each line's recorded timing (`public/duo-recordings.js`) and never show the mood tags.
+- **Fallback:** if audio can't play, the device's British voices or timed captions take over.
+- **Tools:** `scripts/generate-duo-voices.mjs` records (it skips existing takes and checks the month's characters first), and `scripts/check-duo-voices.mjs` transcribes every take and compares it with the script.
+
+**TV sound (opt-in, phones silent):** original ElevenLabs sound effects (`public/audio/sfx/`: drum-roll, reveal sting, correct chime, lock-in pop, whoosh, wheel, boxing bell, sizzle, fanfare, cheer) and two original instrumental themes (`public/audio/music/`: a looping lobby theme that dips under the hosts, and a winners' theme). They only play when the TV host turns Sound on. Generated with `scripts/generate-sfx.mjs`; made on a paid ElevenLabs plan.
 
 **Lobby first:** **Host game night** puts a lobby on the TV before any game is chosen. Everyone joins, then the captain swipes a carousel of game tiles on their phone. The TV's 3D shelf glides in step and takes on each game's look, and other phones show what's being browsed. **Play** chooses the game, and the TV introduces it out loud. **Browse all games** reopens the carousel from any lobby.
 

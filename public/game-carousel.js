@@ -6,6 +6,7 @@ import { identityOf, identityVariables } from './game-identities.js';
 import { launcherCopy, tileArt } from './home-launcher.js';
 import { minimumPlayers } from './game-config.js';
 import { narratorAsset } from './narration-scripts.js';
+import { duoRecordings } from './duo-recordings.js';
 
 export const CAROUSEL_REACH = 3;
 
@@ -45,7 +46,7 @@ export function carouselInfo([id, name, description], voiceOn) {
       <button type="button" class="button outline carousel-voice" data-action="carousel-voice" aria-pressed="${voiceOn}">
         <span aria-hidden="true">${voiceOn ? '🔊' : '🔈'}</span> Voice guide ${voiceOn ? 'on' : 'off'}</button>
     </div>
-    <small class="carousel-voice-note">${narratorAsset(id) ? 'Recorded announcer' : 'Read aloud by this device'} · ← → or swipe to browse · Enter to play</small>
+    <small class="carousel-voice-note">${duoRecordings[id] ? 'Hosted by Max and Poppy' : narratorAsset(id) ? 'Recorded announcer' : 'Read aloud by this device'} · ← → or swipe to browse · Enter to play</small>
   </div>`;
 }
 

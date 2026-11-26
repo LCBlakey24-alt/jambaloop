@@ -2,6 +2,8 @@
 import { modes, minimumPlayers, partyModes } from './game-config.js';
 import { modeStyle, modeVariables } from './mode-style.js';
 import { narration, narratorAsset } from './narration-scripts.js';
+import { duoIntros, hosts, spoken } from './duo-scripts.js';
+import { duoRecordings } from './duo-recordings.js';
 
 export const LAUNCHER_PAGE_SIZE = 8;
 
@@ -76,13 +78,13 @@ export function launcherPreview(id) {
             aria-pressed="false" aria-label="Listen to ${name} introduction">
           <span data-narrator-symbol aria-hidden="true">▶</span><span data-narrator-label>Listen to intro</span>
         </button>
-        <span class="narrator-mode" data-narrator-status role="status">${narratorAsset(key)?'Recorded announcer':'Device read-aloud'}</span>
+        <span class="narrator-mode" data-narrator-status role="status">${duoRecordings[key]?'Recorded: Max and Poppy':narratorAsset(key)?'Recorded announcer':'Device read-aloud'}</span>
       </div>
       <details class="narrator-script">
         <summary>Read spoken introduction</summary>
-        <p>${narration[key]}</p>
+        ${duoRecordings[key] ? duoIntros[key].map(([host,text])=>`<p><b>${hosts[host].name}:</b> ${spoken(text)}</p>`).join('') : `<p>${narration[key]}</p>`}
       </details>
-      ${narratorAsset(key) ? '<a class="narrator-credit" href="https://elevenlabs.io" target="_blank" rel="noopener noreferrer">Voice generated with ElevenLabs</a>' : ''}
+      ${narratorAsset(key) || duoRecordings[key] ? '<a class="narrator-credit" href="https://elevenlabs.io" target="_blank" rel="noopener noreferrer">Voice generated with ElevenLabs</a>' : ''}
       <h3>How to play</h3>
       <ol class="preview-steps">${steps.map((step,i)=>`<li><b>${String(i+1).padStart(2,'0')}</b><span>${step}</span></li>`).join('')}</ol>
       <div class="preview-actions">

@@ -52,9 +52,9 @@ async function checkCarousel(page,width,height){
     const raceAt=modes.findIndex(([id])=>id==='quizrace');
     for(let i=cardsAt;i<raceAt;i++) await page.keyboard.press('ArrowRight');
     assert.equal(await centre(),'quizrace');
-    const early=await page.evaluate(()=>performance.getEntriesByType('resource').filter(e=>e.name.includes('/audio/narrator/')).length);
+    const early=await page.evaluate(()=>performance.getEntriesByType('resource').filter(e=>e.name.includes('/audio/duo/')).length);
     assert.equal(early,0,'The voice guide is opt-in');
-    const audio=page.waitForRequest(request=>request.url().endsWith('/audio/narrator/quizrace.mp3'),{timeout:8000});
+    const audio=page.waitForRequest(request=>request.url().endsWith('/audio/duo/quizrace.mp3'),{timeout:8000});
     await page.locator('[data-action="carousel-voice"]').click();
     await audio;
     assert.equal(await page.locator('[data-action="carousel-voice"]').getAttribute('aria-pressed'),'true');
@@ -127,11 +127,11 @@ try {
       assert.match(await page.locator('#game-preview').innerText(),/How to play/i);
       assert.match(await page.locator('#game-preview').innerText(),/Cross|line first|finish/i);
       assert.equal(await page.locator('#game-preview [data-action="narrator-toggle"]').count(),1);
-      assert.match(await page.locator('.narrator-script p').textContent(),/Welcome to Quiz Race!/);
+      assert.match(await page.locator('.narrator-script').textContent(),/Max:.*Start your engines.*Poppy:/s,'Transcript shows the two-host exchange');
       const beforeAudio=await page.evaluate(() =>
-        performance.getEntriesByType('resource').filter(entry=>entry.name.endsWith('/audio/narrator/quizrace.mp3')).length);
+        performance.getEntriesByType('resource').filter(entry=>entry.name.endsWith('/audio/duo/quizrace.mp3')).length);
       assert.equal(beforeAudio,0,'Audio should never download before the user taps Listen');
-      const audioRequest=page.waitForRequest(request=>request.url().endsWith('/audio/narrator/quizrace.mp3'),{timeout:8000});
+      const audioRequest=page.waitForRequest(request=>request.url().endsWith('/audio/duo/quizrace.mp3'),{timeout:8000});
       await page.locator('#game-preview [data-action="narrator-toggle"]').click();
       await audioRequest;
       console.log('PASS: narrator is opt-in and static Quiz Race recording starts downloading on Listen');

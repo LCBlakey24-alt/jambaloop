@@ -23,6 +23,7 @@ import { isWelcomeNarration, playScript, playWelcome, stopNarration, toggleNarra
 import { skipQuips, welcomeBack } from './duo-scripts.js';
 import { openWelcome } from './welcome-show.js';
 import { playChiptune, playCue, playTick, playTowerImpact } from './sound-cues.js';
+import { duckMusic, playMusic, playSfx, preloadSfx, stopMusic } from './sfx.js';
 import { bindPickerSwipe, movePicker, pickerPhone, pickerTv, stepMode } from './lobby-picker.js';
 import { knockoutLadder, phoneHearts, playKnockout, rememberLadder, shatterPhoneHeart } from './knockout-ladder.js';
 import { boardLengths, boardRoute, boardDuration, durationLabel, suggestedTurnCap, boardRequiresChoice, boardPathChoices } from './board-route.js';
@@ -698,6 +699,7 @@ function startSession(next) {
 
 function leave() {
   closeWelcome();
+  stopMusic();
   stream?.abort();
   stream = undefined;
   session = undefined;
@@ -1155,7 +1157,7 @@ function render(s) {
   renderGraphics(s, stage, animateRoll);
   // Reveal beat: TV drum-roll and flare; phones hold their verdict to match.
   const held = stageReveal(app, s, { host, enter, onFlare: verdict => {
-    if (host) { if (soundEnabled) playCue(sound, s.mode, 'reveal'); }
+    if (host) { if (soundEnabled) { playSfx(sound, 'reveal', { volume: 0.5 }); playSfx(sound, 'correct', { volume: 0.35, at: 0.15 }); } }
     else if (verdict === 'win') celebrate(`${s.code}/${s.game}/${s.index}/round`, { source: app.querySelector('.game'), intensity: .22 });
     else shatterPhoneHeart(app, s);
   } });
@@ -1163,9 +1165,10 @@ function render(s) {
   if (host && s.mode === 'knockout') {
     playKnockout(app, s, { enter, delay: held + 350,
       onHit: () => { if (soundEnabled) playChiptune(sound, 'hit'); },
-      onKo: () => { if (soundEnabled) playChiptune(sound, 'ko'); } });
+      onKo: () => { if (soundEnabled) { playChiptune(sound, 'ko'); playSfx(sound, 'bell', { volume: 0.5, at: 0.9 }); } } });
     rememberLadder(s);
   } else if (!host && enter && !held && s.phase === 'reveal') shatterPhoneHeart(app, s);
+  if (host && held && soundEnabled) playSfx(sound, 'drumroll', { volume: 0.45 });
   celebrateMoment(s, host, enter, result, held);
   // Sofa distance: no in-game TV text below the height-relative floor.
   if (immersive && innerWidth > 760) enforceTvLegibility(app.querySelector('section.game'));
@@ -1351,6 +1354,7 @@ function receive(next, current) {
       if (!(next.mode==='soclose' && next.phase==='reveal') && !staged && (!next.ceremony || matchMedia('(prefers-reduced-motion: reduce)').matches)) playCue(sound, next.mode, next.phase);
     }
     else if (next.mode === 'potato' && next.party?.passes > state.party?.passes) playCue(sound, next.mode, 'pass');
+    soundMoments(state, next);
   }
   if (dialog.open && state && (state.game !== next.game || state.phase === 'lobby' && next.phase !== 'lobby')) dialog.close();
   if (state?.game !== next.game || state?.index !== next.index || next.phase === 'lobby') partyReply = '';
@@ -1393,7 +1397,11 @@ function receive(next, current) {
   const counter = current.host && document.querySelector('#host-answer-count');
   const countText = answerCount(next);
   if (counter && counter.textContent !== countText) { counter.textContent = countText; bumpCount(counter); }
-  if (current.host) updateLockRail(app, next, escape, avatarView);
+  if (current.host) {
+    const before = app.querySelectorAll('.lock-stamp').length;
+    updateLockRail(app, next, escape, avatarView);
+    if (soundEnabled && app.querySelectorAll('.lock-stamp').length > before) playSfx(sound, 'lockin', { volume: 0.5 });
+  }
   if (introduce) toggleNarration(next.mode);
   if (welcomeMoved) showWelcome(next.welcome);
   if (picker) {
@@ -1410,6 +1418,22 @@ function receive(next, current) {
   updatePresence(next);
   if(next.mode==='sketch')paintSketchBoard(next.party);
   updateTimer();
+}
+
+/** The TV's recorded effects and music for each moment of the show. */
+function soundMoments(before, next) {
+  const moved = before.phase !== next.phase || before.index !== next.index;
+  // Music: the lobby theme under the lobby and carousel, the winners' theme at the end.
+  if (next.phase === 'lobby') playMusic('lobby');
+  else if (next.phase === 'finished' && before.phase !== 'finished') {
+    playMusic('finale', { loop: false });
+    playSfx(sound, 'fanfare', { volume: 0.5 });
+    playSfx(sound, 'cheer', { volume: 0.45, at: 0.6 });
+  } else if (next.phase !== 'finished') stopMusic();
+  if (!moved) return;
+  if (next.phase === 'question') playSfx(sound, 'whoosh', { volume: 0.4 });
+  if (next.phase === 'rolling' && next.mode === 'wheel') playSfx(sound, 'wheel', { volume: 0.5 });
+  if (next.mode === 'potato' && before.phase === 'party-potato' && next.phase !== 'party-potato') playSfx(sound, 'sizzle', { volume: 0.6 });
 }
 
 function showGameError(error) {
@@ -2030,7 +2054,9 @@ document.addEventListener('click', async event => {
         sound ??= new AudioContext();
         await sound.resume();
         playCue(sound, state.mode, 'preview');
-      }
+        preloadSfx(sound, ['whoosh', 'lockin', 'drumroll', 'reveal', 'correct', 'fanfare', 'cheer', 'bell', 'wheel', 'sizzle']);
+        if (state.phase === 'lobby') playMusic('lobby');
+      } else stopMusic();
       render(state);
       updateTimer();
     } else if (action === 'fullscreen') {

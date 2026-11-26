@@ -240,3 +240,17 @@
   .game[data-mode="quizrace"] .race-track-wrap[data-track="neon"]::before,
   .game[data-mode="quizrace"] :is(.race-countdown,.race-rank-row,.race-finish-panel h1) {animation:none!important}
 }
+
+/* Board Race power-ups: chips on the TV, a remote on each phone. */
+.team-powers { display: inline-flex; flex-wrap: wrap; gap: .3rem; margin-left: .4rem; vertical-align: middle; }
+.power-chip { font-style: normal; font: 800 clamp(.68rem, 1.5vh, .95rem)/1 'House Sans', sans-serif; letter-spacing: .04em; padding: .28em .55em; border-radius: 99px; background: #ffd23f; color: #1f1a1c; white-space: nowrap; }
+.power-chip.is-armed { background: #1f1a1c; color: #ffd23f; outline: 2px solid #ffd23f; }
+.power-bar { display: grid; gap: .6rem; margin-top: .8rem; }
+.power-bar.is-empty p { margin: 0; opacity: .8; }
+.power-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: .7rem; padding: .6rem .7rem; border-radius: 12px; background: #00000030; border: 2px solid #ffd23f66; }
+.power-row strong { display: block; font-size: 1.05rem; }
+.power-row small { display: block; opacity: .85; line-height: 1.3; }
+.power-row .button { min-height: 48px; min-width: 6.2rem; }
+.power-armed { font-weight: 800; color: #ffd23f; letter-spacing: .06em; }
+@media (prefers-reduced-motion: no-preference) { .power-chip.is-armed { animation: power-pulse 1s ease-in-out infinite alternate; } }
+@keyframes power-pulse { to { outline-offset: 3px; } }

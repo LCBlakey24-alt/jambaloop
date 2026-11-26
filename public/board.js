@@ -1,4 +1,4 @@
-import { boardPath, boardFork, boardIsCorner } from './board-route.js';
+import { boardPath, boardFork, boardIsCorner, boardCornerPower, boardPowers } from './board-route.js';
 import { curvedLayout, TILE_TOP } from './board-layout.js';
 import * as THREE from '/vendor/three.module.js';
 import { boardRollDuration, categories } from './game-config.js';
@@ -311,7 +311,9 @@ function buildBoard(scene, state, shadowMap) {
     tile.position.copy(here);
     const top = tile.position.y;
     tile.position.y = top - thickness / 2;
-    const labelText = corner ? (i ? 'ROLL AGAIN' : 'START') : lane === 'power' ? '×2 POWER' : lane === 'questions' ? 'QUIZ TRAIL' :
+    // Each corner names the power-up it gives; the start corner is also the fourth (the end of the lap).
+    const cornerPower = corner ? boardPowers.find(power => power.id === (i ? boardCornerPower(state.boardLength, i, lane === 'questions' ? 'questions' : 'power') : 'leap')) : undefined;
+    const labelText = corner ? (i ? cornerPower.short : 'START · ' + cornerPower.short) : lane === 'power' ? '×2 POWER' : lane === 'questions' ? 'QUIZ TRAIL' :
       id ? categoryById.get(id)?.[5] : 'Start';
     const displayNumber = lane === 'power' ? 'P'+(i-fork.start) :
       lane === 'questions' ? 'Q'+(i-fork.start) : i;

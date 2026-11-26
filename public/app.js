@@ -541,7 +541,7 @@ function openDialog(mode, value, gameMode, quizId) {
         ? 'Choose Power Lane for double points on its special tiles, or Question Trail for four extra question spaces. The dice set movement and question level.'
         : game === 'wheel' ? 'The wheel picks a different category until it has used them all. ' + scoringNote
         : game === 'dice' ? 'Two dice set the points multiplier for each question. ' + scoringNote
-        : game === 'knockout' ? 'Wrong or missed answers cost a life. The last player standing wins.'
+        : game === 'knockout' ? 'Wrong or missed answers cost a life. Six levels of ten questions that get harder; it runs until one player is left, with a closest-number decider after question 60.'
         : game === 'showdown' ? 'Balanced teams score the average of their players’ points each round.' : scoringNote;
     };
     form.addEventListener('click', event => {
@@ -1053,8 +1053,8 @@ function render(s) {
       ? host ? '<div class="tv-clock"><span class="timer" id="timer"></span><small>TIME LEFT</small></div>'
         : '<span class="player-timer" aria-label="Time remaining"><span class="player-timer-label">TIME LEFT</span><span class="timer" id="timer"></span></span>'
       : '';
-    const deathNote = s.knockoutNote === 'spared' ? ' · Nobody left standing, so nobody is out' : s.knockoutNote === 'slowest' ? ' · All correct: the slowest answer loses a heart' : '';
-    const lifeInfo = knockout ? `${s.suddenDeath !== undefined ? `<p class="sudden-death" role="status"><strong>SUDDEN DEATH</strong> Wrong, or slowest when everyone is right, loses a heart${deathNote}</p>` : deathNote ? `<p class="sudden-death" role="status">${deathNote.slice(3)}</p>` : ''}<p class="life-info">${host ? s.remaining + ' still in' : phoneHearts(s) + (s.knockedOut ? 'Knocked out!' : eliminated ? 'Out of lives · Spectating' : lifeLabel(s.player.lives) + ' left')}</p>` : '';
+    const knockoutNote = s.knockoutNote === 'spared' ? 'That would have knocked everyone out, so nobody is out.' : s.knockoutNote === 'noguess' ? 'Nobody guessed. The decider is played again.' : '';
+    const lifeInfo = knockout ? `${s.decider ? '<p class="knockout-decider" role="status"><strong>THE DECIDER</strong> Closest guess wins the game</p>' : ''}${knockoutNote ? `<p class="knockout-decider is-note" role="status">${knockoutNote}</p>` : ''}${host && s.deciderBoard?.length ? `<ol class="decider-board" aria-label="The finalists' guesses, furthest first">${s.deciderBoard.map((row, place) => `<li style="--place:${place}"${row.winner ? ' data-winner' : ''}>${avatarView(row, escape)}<span>${escape(row.name)}</span><b>${formatNumber(row.guess)}</b><small>${row.gap === 0 ? 'exactly right' : 'off by ' + formatNumber(row.gap)}${row.winner ? ' · WINNER' : ''}</small></li>`).join('')}</ol>` : ''}<p class="life-info">${host ? s.remaining + ' still in' : phoneHearts(s) + (s.knockedOut ? 'Knocked out!' : eliminated ? 'Out of lives · Spectating' : lifeLabel(s.player.lives) + ' left')}</p>` : '';
     const answerStatus = eliminated ? 'Watch the rest of the game, then join the rematch.' : locked ? 'Answer locked in. Waiting for the reveal…' : sending ? 'Sending your answer…' : s.ends ? 'Tap your answer before time runs out.' : 'Choose an answer to lock it in.';
     const revealStatus = won ? (question.type === 'estimate' ? 'Closest guess!' : 'Correct!')
         + (showLiveScores && s.earned ? ` +${s.earned.toLocaleString()} ${s.earned === 1 ? 'point' : 'points'}.` : '')
@@ -1071,7 +1071,7 @@ function render(s) {
         ${revealed && won && showLiveScores && s.earned ? `<b class="points-pop" aria-hidden="true">+${s.earned.toLocaleString()}</b>` : ''}
       </div>` : '';
     body = `${host ? '<div class="tv-round">' : ''}<div class="game-panel question-panel ${revealed ? 'is-reveal' : ''}">
-      <div class="eyebrow round-kicker"><span>${board ? 'TURN' : 'QUESTION'} ${s.index + 1} OF ${s.total}</span>
+      <div class="eyebrow round-kicker"><span>${knockout && s.playerCount > 1 ? (s.decider ? 'THE DECIDER' : `LEVEL ${s.level} OF 6 · QUESTION ${s.index + 1}`) : `${board ? 'TURN' : 'QUESTION'} ${s.index + 1} OF ${s.total}`}</span>
         <span>${escape(s.quizTitle || categoryName(question.category))}</span><span>${answerGuide(question.type)[0]}</span></div>
       ${board || rally ? rollRecap(s) : ''}${board ? boardPrediction(s, host) : ''}${scoringLine}${lifeInfo}
       ${ownTeam && s.playStyle === 'teams' ? `<p class="your-team" style="--team:${ownTeam.color}">Team ${escape(ownTeam.name)}${showLiveScores ? ' · ' + ownTeam.score.toLocaleString() + ' pts' : ''}</p>` : ''}
@@ -1132,7 +1132,11 @@ function render(s) {
   const result = !host && s.phase === 'reveal' && s.mode!=='soclose' ? won ? 'win' : s.selection !== undefined ? 'miss' : 'skip'
     : !host && s.phase === 'question' && s.selection !== undefined ? 'locked' : '';
   const completed = ['reveal', 'score-break', 'party-reveal','sketch-reveal'].includes(s.phase) ? s.index + 1 : s.index;
-  const track = showProgress ? `<div class="round-track" role="img" aria-label="${completed} of ${s.total} rounds completed">
+  // Knockout shows its six levels rather than sixty dots.
+  const levels = s.mode === 'knockout' && s.level;
+  const track = showProgress ? levels ? `<div class="round-track" role="img" aria-label="Level ${s.level} of 6">
+    ${Array.from({ length: 6 }, (_, index) => `<i class="${index < s.level - 1 ? 'done' : index === s.level - 1 ? 'current' : ''}"></i>`).join('')}</div>`
+    : `<div class="round-track" role="img" aria-label="${completed} of ${s.total} rounds completed">
     ${Array.from({ length: s.total }, (_, index) => `<i class="${index < completed ? 'done' : index === s.index ? 'current' : ''}"></i>`).join('')}</div>` : '';
   // Once play starts, the TV is locked to the game: chrome hides until summoned.
   const immersive = host && !['lobby', 'waiting'].includes(s.phase);
@@ -1506,7 +1510,8 @@ function soundMoments(before, next) {
     playMusic('finale', { loop: false });
     playSfx(sound, 'fanfare', { volume: 0.5 });
     playSfx(sound, 'cheer', { volume: 0.45, at: 0.6 });
-  } else if (next.phase !== 'finished') stopMusic();
+  } else if (next.decider && next.phase === 'question') playMusic('decider');
+  else if (next.phase !== 'finished') stopMusic();
   if (!moved) return;
   // The first question arrives under the title sting, so no whoosh there.
   if (next.phase === 'question' && next.index > 0) playSfx(sound, 'whoosh', { volume: 0.4 });

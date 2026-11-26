@@ -599,9 +599,34 @@
   "loudness": -17.5,
   "seconds": 0.52
  },
- "duo/react-ko-sudden-1.mp3": {
+ "duo/react-ko-decider-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -16.4,
+  "seconds": 10.66
+ },
+ "duo/react-ko-levelup-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.7,
+  "seconds": 5.9
+ },
+ "music/decider.mp3": {
+  "tempo": 1,
+  "loudness": -20.4,
+  "seconds": 29.88
+ },
+ "duo/react-ko-firstround-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.3,
+  "seconds": 7.16
+ },
+ "duo/react-ko-firstround-2.mp3": {
   "tempo": 1.08,
   "loudness": -15.5,
-  "seconds": 8.18
+  "seconds": 9.38
+ },
+ "duo/react-ko-levelup-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 6.16
  }
 }

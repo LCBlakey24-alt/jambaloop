@@ -143,13 +143,15 @@ export function clockTension(view, { fraction, remaining, paused, live }) {
  */
 export function reactionFor(s) {
   if (s.phase === 'question') {
-    if (s.suddenDeath !== undefined) return s.index === s.suddenDeath ? 'sudden' : undefined;
+    if (s.mode === 'knockout') return s.decider ? 'decider' : s.levelUp ? 'levelup' : undefined;
     // Knockout has no fixed last question: it runs until one player is left.
     if (s.mode !== 'knockout' && s.total >= 3 && s.index === s.total - 1) return 'final';
     if (s.total >= 6 && s.index === Math.ceil(s.total / 2)) return 'halfway';
     return undefined;
   }
   if (s.phase !== 'reveal' || !Array.isArray(s.lockIns)) return undefined;
+  // Over in three questions: the fastest a Knockout can possibly end.
+  if (s.quickWin) return 'firstround';
   if (s.knockout?.outNowCount ?? s.knockout?.out?.some(row => row.outNow)) return 'knockedout';
   // Totals come from the server; the list itself only holds recent faces.
   const answered = s.lockCount ?? s.lockIns.length;

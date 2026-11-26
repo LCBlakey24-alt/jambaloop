@@ -230,8 +230,29 @@ body.playing .immersive[data-mode="knockout"] .tv-round { grid-template-columns:
 /* Knockout: the status bar sits under the question, clear of the ladder. */
 @media (min-width: 761px) { body.playing .immersive[data-mode="knockout"] .tv-round-hud { left:36%; max-width:52%; } }
 
-/* Knockout sudden death banner. */
-.game[data-mode="knockout"] .sudden-death { margin: .3rem 0; padding: .45rem .8rem; border: 2px solid #ff3b30; border-radius: 6px; background: #2a0606; color: #ffe1de; font-weight: 700; font-size: clamp(.95rem, 2.2vh, 1.4rem); }
-.game[data-mode="knockout"] .sudden-death strong { color: #ff5a4f; letter-spacing: .08em; margin-right: .5em; }
-@media (prefers-reduced-motion: no-preference) { .game[data-mode="knockout"] .sudden-death strong { animation: sudden-pulse 1s ease-in-out infinite alternate; display: inline-block; } }
+/* Knockout: the decider banner and the finalists' guesses. */
+.game[data-mode="knockout"] .knockout-decider { margin: .3rem 0; padding: .45rem .8rem; border: 2px solid #ff3b30; border-radius: 6px; background: #2a0606; color: #ffe1de; font-weight: 700; font-size: clamp(.95rem, 2.4vh, 1.5rem); }
+.game[data-mode="knockout"] .knockout-decider strong { color: #ff5a4f; letter-spacing: .08em; margin-right: .5em; display: inline-block; }
+.game[data-mode="knockout"] .knockout-decider.is-note { border-color: #ffb648; background: #2a1c06; color: #ffe9c4; }
+.decider-board { list-style: none; margin: .6rem 0; padding: 0; display: grid; gap: .45rem; }
+.decider-board li { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: .8rem; padding: .5rem .9rem; border-radius: 8px; background: #17171c; border: 2px solid #3a3a44; font-size: clamp(1.1rem, 3vh, 2rem); color: #fff; }
+.decider-board li[data-winner] { border-color: #ffd23f; background: #33290a; box-shadow: 0 0 24px #ffd23f55; }
+.decider-board li b { font-variant-numeric: tabular-nums; }
+.decider-board li small { color: #c9c9d6; font-size: .7em; }
+@media (prefers-reduced-motion: no-preference) {
+  .game[data-mode="knockout"] .knockout-decider strong { animation: sudden-pulse 1s ease-in-out infinite alternate; }
+  /* Guesses arrive one at a time, furthest first, the winner last. */
+  .decider-board li { animation: decider-in .6s cubic-bezier(.2,1.2,.3,1) calc(1.2s + var(--place) * 1.3s) backwards; }
+}
 @keyframes sudden-pulse { to { transform: scale(1.08); text-shadow: 0 0 14px #ff3b30; } }
+@keyframes decider-in { from { transform: translateX(40%); opacity: 0; } }
+/* Knockout TV: the survivor ladder already shows who is in, so the status bar
+   drops the lock-in faces and sits between the pause and reveal buttons. */
+@media (min-width: 761px) {
+  body.playing .immersive[data-mode="knockout"] .tv-round-hud { left: 19%; max-width: 24%; }
+  body.playing .immersive[data-mode="knockout"] .tv-round-hud .lock-rail { display: none; }
+  body.playing .immersive[data-mode="knockout"] .tv-round-hud .response-progress { display: none; }
+  /* Decider reveal: the guesses are the show; the question shrinks to a caption. */
+  body.playing .immersive[data-mode="knockout"] .question-panel:has(.decider-board) h2 { font-size: clamp(18px, 3.2dvh, 34px); margin: .2rem 0; }
+  body.playing .immersive[data-mode="knockout"] .question-panel:has(.decider-board) :is(.life-info, .answer-guide, .hint) { display: none; }
+}

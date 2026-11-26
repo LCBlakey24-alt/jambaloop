@@ -2,14 +2,15 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { modes } from '../public/game-config.js';
-import { duoIntros, hosts, reactions, skipQuips, spoken, welcomeBack, welcomeScript } from '../public/duo-scripts.js';
+import { duoIntros, hosts, presenters, reactionTakes, skipQuips, spoken, welcomeBack, welcomeScript } from '../public/duo-scripts.js';
 import { duoRecordings, duoTake } from '../public/duo-recordings.js';
 
 test('every game has a short Double Act intro where both hosts take turns', () => {
   assert.deepEqual(Object.keys(duoIntros).sort(), modes.map(([id]) => id).sort());
   for (const [mode, lines] of Object.entries(duoIntros)) {
     assert.ok(lines.length >= 3 && lines.length <= 6, mode);
-    assert.deepEqual([...new Set(lines.map(([host]) => host))].sort(), Object.keys(hosts).sort(), `${mode}: both hosts speak`);
+    for (const presenter of presenters) assert.ok(lines.some(([host]) => host === presenter), `${mode}: ${presenter} speaks`);
+    for (const [host] of lines) assert.ok(hosts[host], `${mode}: ${host} is a known voice`);
     for (let i = 1; i < lines.length; i++) assert.notEqual(lines[i][0], lines[i - 1][0], `${mode}: hosts alternate`);
     for (const [, text] of lines) assert.ok(spoken(text).length > 0 && spoken(text).length <= 140, `${mode}: short, captionable lines`);
   }
@@ -18,7 +19,7 @@ test('every game has a short Double Act intro where both hosts take turns', () =
 test('every recording is committed and has one timing per scripted line', () => {
   const scripts = { ...duoIntros, welcome: welcomeScript, 'welcome-back': welcomeBack,
     ...Object.fromEntries(skipQuips.map((lines, index) => [`skip-${index + 1}`, lines])),
-  ...Object.fromEntries(Object.entries(reactions).flatMap(([kind, lines]) => lines.map((line, index) => [`react-${kind}-${index + 1}`, [line]]))) };
+  ...reactionTakes };
   for (const [key, timings] of Object.entries(duoRecordings)) {
     assert.ok(scripts[key], `${key} is a known script`);
     assert.ok(existsSync(new URL('../public' + duoTake(key), import.meta.url)), `${key}.mp3 is committed`);

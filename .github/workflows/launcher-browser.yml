@@ -141,6 +141,7 @@ jobs:
           node scripts/lobby-picker-browser.mjs
           node scripts/welcome-show-browser.mjs
           node scripts/host-reactions-browser.mjs
+          node scripts/commentators-browser.mjs
           node scripts/tv-immersive-browser.mjs
           node scripts/tv-all-modes.mjs
       - name: Upload screen captures on success or failure

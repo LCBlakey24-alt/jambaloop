@@ -4,7 +4,7 @@ import { once } from 'node:events';
 import { readFileSync } from 'node:fs';
 import { after, before, test } from 'node:test';
 import { reactionFor } from '../public/show-moments.js';
-import { reactions } from '../public/duo-scripts.js';
+import { hosts, knockoutReactions, raceCalls, reactionTakes } from '../public/duo-scripts.js';
 import { duoRecordings } from '../public/duo-recordings.js';
 
 let server;
@@ -97,6 +97,11 @@ test('host reactions fit the moment, use only what the TV shows, and are all rec
   assert.equal(reactionFor({ phase: 'question', index: 9, total: 10 }), 'final');
   assert.equal(reactionFor({ phase: 'question', index: 5, total: 10 }), 'halfway');
   assert.equal(reactionFor({ phase: 'question', index: 2, total: 10 }), undefined);
-  for (const [kind, lines] of Object.entries(reactions)) lines.forEach((_, index) =>
-    assert.ok(duoRecordings[`react-${kind}-${index + 1}`], `${kind} ${index + 1} is recorded`));
+  for (const [key, lines] of Object.entries(reactionTakes)) {
+    assert.equal(duoRecordings[key]?.length, lines.length, `${key} is recorded, one timing per line`);
+    for (const [host, text] of lines) assert.ok(hosts[host] && !/\b(ada|bo|cy)\b/i.test(text), `${key}: known voice, no player names`);
+  }
+  // Knockout and Quiz Race have their own commentary teams.
+  for (const takes of Object.values(knockoutReactions)) for (const lines of takes) assert.deepEqual(lines.map(([host]) => host), ['baz', 'clive']);
+  for (const lines of Object.values(raceCalls)) for (const [host] of lines) assert.equal(host, 'vince');
 });

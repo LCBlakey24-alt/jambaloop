@@ -145,6 +145,11 @@ Closest-number and put-in-order sessions offer five questions when you choose on
 
 **Host reactions (Sound on):** during quiz rounds Max or Poppy drops in one short recorded line on the TV: nobody right, everybody right, only one right, a three-in-a-row streak, no answers, a knockout, the halfway point and the final question. The rules live in `reactionFor()` (`public/show-moments.js`). Lines never name players, never overlap another line, and rotate through variants.
 
+**Guest commentators:** Max and Poppy hand two games over to original guest characters (not impressions of real commentators).
+- **Knockout:** Baz and Clive call it from ringside as two-man exchanges ("And they're DOWN! That is a knockout!" / "Stay down, son. It's over.").
+- **Quiz Race:** Vince calls it from the commentary box: the start, lead changes, close battles and the chequered flag.
+- Scripts are `knockoutReactions` and `raceCalls` in `public/duo-scripts.js`.
+
 **Game stings:** each game has its own short musical sting on its title card (`public/audio/sfx/sting-<game>.mp3`), written in that game's style.
 
 **TV sound (opt-in, phones silent):** original ElevenLabs sound effects (`public/audio/sfx/`: drum-roll, reveal sting, correct chime, lock-in pop, whoosh, wheel, boxing bell, sizzle, fanfare, cheer) and two original instrumental themes (`public/audio/music/`: a looping lobby theme that dips under the hosts, and a winners' theme). They only play when the TV host turns Sound on. Generated with `scripts/generate-sfx.mjs`; made on a paid ElevenLabs plan.

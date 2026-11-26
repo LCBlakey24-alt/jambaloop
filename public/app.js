@@ -20,7 +20,7 @@ import { launcherTile, launcherPreview, launcherModes, launcherSetupArtwork, LAU
 import { carouselView, moveCarousel, themeHome, wrapIndex } from './game-carousel.js';
 import { playSting, stingFor } from './show-sting.js';
 import { isWelcomeNarration, narrationPlaying, playScript, playWelcome, stopNarration, toggleNarration } from './narrator.js';
-import { reactions, skipQuips, welcomeBack } from './duo-scripts.js';
+import { knockoutReactions, raceCalls, reactions, skipQuips, welcomeBack } from './duo-scripts.js';
 import { openWelcome } from './welcome-show.js';
 import { playChiptune, playCue, playTick, playTowerImpact } from './sound-cues.js';
 import { duckMusic, playMusic, playSfx, preloadSfx, stopMusic } from './sfx.js';
@@ -1358,6 +1358,7 @@ function receive(next, current) {
     }
     else if (next.mode === 'potato' && next.party?.passes > state.party?.passes) playCue(sound, next.mode, 'pass');
     soundMoments(state, next);
+    raceCommentary(state, next);
   }
   if (dialog.open && state && (state.game !== next.game || state.phase === 'lobby' && next.phase !== 'lobby')) dialog.close();
   if (state?.game !== next.game || state?.index !== next.index || next.phase === 'lobby') partyReply = '';
@@ -1427,16 +1428,44 @@ function receive(next, current) {
 // once per moment, never over another line, rotating through the variants.
 const reactionTurn = {};
 let reactedAt;
+/** Say the next variant of a reaction, unless someone is already talking. */
+function sayReaction(prefix, variants) {
+  if (!soundEnabled || narrationPlaying() || !variants?.length) return;
+  const turn = reactionTurn[prefix] = ((reactionTurn[prefix] ?? -1) + 1) % variants.length;
+  const take = variants[turn];
+  playScript(`${prefix}-${turn + 1}`, Array.isArray(take[0]) ? take : [take]);
+}
+
 function hostReaction(s, delay) {
   const kind = reactionFor(s);
   const moment = `${s.code}/${s.game}/${s.index}/${s.phase}`;
   if (!kind || reactedAt === moment) return;
   reactedAt = moment;
+  // Knockout is called by Baz and Clive at ringside.
+  const ringside = s.mode === 'knockout' && knockoutReactions[kind];
   setTimeout(() => {
-    if (!soundEnabled || narrationPlaying() || state?.game !== s.game || state?.index !== s.index || state?.phase !== s.phase) return;
-    const turn = reactionTurn[kind] = ((reactionTurn[kind] ?? -1) + 1) % reactions[kind].length;
-    playScript(`react-${kind}-${turn + 1}`, [reactions[kind][turn]]);
+    if (state?.game !== s.game || state?.index !== s.index || state?.phase !== s.phase) return;
+    if (ringside) sayReaction(`react-ko-${kind}`, ringside); else sayReaction(`react-${kind}`, reactions[kind]);
   }, delay);
+}
+
+// Vince calls Quiz Race: the start, lead changes, close battles and the flag.
+let raceCalledAt = 0;
+function raceCommentary(before, next) {
+  if (next.mode !== 'quizrace' || !next.race) return;
+  const call = (kind, gap = 0) => {
+    if (Date.now() - raceCalledAt < gap) return;
+    raceCalledAt = Date.now();
+    sayReaction(`react-race-${kind}`, raceCalls[kind]);
+  };
+  if (before.phase === 'race-countdown' && next.phase === 'race') return call('start');
+  if (next.phase === 'finished' && before.phase !== 'finished') return setTimeout(() => call('finish'), 900);
+  if (next.phase !== 'race' || before.phase !== 'race') return;
+  const [first, second] = next.race.racers;
+  const leaderBefore = before.race?.racers?.[0]?.id;
+  const length = next.race.length || 1;
+  if (first && leaderBefore && first.id !== leaderBefore && first.distance > length * 0.08) return call('lead', 9000);
+  if (first && second && first.distance > length * 0.4 && first.distance - second.distance < length * 0.015) call('close', 20000);
 }
 
 /** The TV's recorded effects and music for each moment of the show. */

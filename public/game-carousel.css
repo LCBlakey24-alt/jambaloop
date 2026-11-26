@@ -242,3 +242,6 @@
 .picker-phone .picker-name { display:block; font:var(--id-weight) clamp(26px,8vw,40px)/1.05 var(--id-display),var(--head),sans-serif; text-transform:var(--id-case); color:var(--id-ink); }
 .picker-controls .picker-settings { grid-column:1 / -1; }
 .picker-room-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.duo-caption[data-host="baz"] b { background:#ff5a4d; color:#fff; }
+.duo-caption[data-host="clive"] b { background:#ffe14d; }
+.duo-caption[data-host="vince"] b { background:#1df2e0; }

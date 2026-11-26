@@ -7,7 +7,13 @@
 export const hosts = {
   max: { name: 'Max', voice: 'nrD2uNU2IUYtedZegcGx' },   // "Mark Munroe – British Radio Presenter" (upbeat)
   poppy: { name: 'Poppy', voice: 'V0cljQmo7wpx8LTdbqfJ' }, // "Vicky Cowan – Pro British Radio Presenter" (upbeat)
+  // Guest commentators (original characters, not impressions of real ones).
+  baz: { name: 'Baz', voice: '9rR45HW0vcBmpCbkc4m9' },     // Knockout ringside lead: "Nathaniel – Live Football Commentator"
+  clive: { name: 'Clive', voice: '1TE7ou3jyxHsyRehUuMB' }, // Knockout ex-fighter pundit: "Eastend Steve"
+  vince: { name: 'Vince', voice: '8oLiG8m8nM6NUEzIvzhz' }, // Quiz Race commentary box: "DJ Wibbly"
 };
+/** The regular presenters; guests take over for particular games. */
+export const presenters = ['max', 'poppy'];
 /** Model and settings for an upbeat, matching double act. */
 export const duoVoice = { model: 'eleven_v4', settings: { stability: .35, similarity_boost: .8, style: .45, use_speaker_boost: true } };
 
@@ -38,9 +44,10 @@ export const duoIntros = {
   ],
   knockout: [
     ['max', '[excited] Ladies and gentlemen, it\'s Knockout!'],
-    ['poppy', '[playfully] Everyone starts with three hearts. A wrong or missed answer costs you one.'],
-    ['max', '[dramatic] Lose all three, and you are out of the ring.'],
-    ['poppy', '[laughs] Last player standing takes the title. Gloves on!'],
+    ['poppy', '[cheerfully] And for this one, we\'re handing you over to our ringside commentary team.'],
+    ['baz', '[shouting] Thank you, Poppy! What a night we have in store. Three hearts each, and every wrong answer costs one!'],
+    ['clive', '[gruff] Lose all three and you\'re out, simple as that. I\'ve seen tougher crowds, mind.'],
+    ['baz', '[excited] Last one standing takes the belt. Seconds out!'],
   ],
   punchline: [
     ['poppy', '[excited] Welcome to Punchline Party!'],
@@ -74,9 +81,10 @@ export const duoIntros = {
   ],
   quizrace: [
     ['max', '[excited] Start your engines! It\'s Quiz Race!'],
-    ['poppy', '[cheerfully] Right answers speed you up. Wrong answers and passes slow you down.'],
+    ['poppy', '[cheerfully] Let\'s go up to the commentary box. Vince, over to you!'],
+    ['vince', '[fast, excited] Thanks, Poppy! Right answers put your foot down. Wrong answers and passes hit the brakes!'],
     ['max', '[dramatic] Up to twelve drivers. One finish line.'],
-    ['poppy', '[excited] Put your foot down!'],
+    ['vince', '[shouting] It\'s lights out... and away we go!'],
   ],
   showdown: [
     ['poppy', '[excited] Welcome to Team Showdown!'],
@@ -207,3 +215,66 @@ export const reactions = {
     ['max', '[warmly] Halfway there. Plenty of time to catch up.'],
   ],
 };
+
+/**
+ * Knockout belongs to Baz and Clive: their versions of the round reactions,
+ * as short two-man exchanges. Recorded as react-ko-<kind>-<n>.
+ */
+export const knockoutReactions = {
+  nobody: [
+    [['baz', '[shouting] Oh! Nobody saw that one coming!'], ['clive', '[chuckles] They\'ve all walked straight into it.']],
+    [['baz', '[excited] A hit on every single player!'], ['clive', '[gruff] That\'ll sting in the morning.']],
+  ],
+  everybody: [
+    [['baz', '[impressed] Everybody ducks it! Not a scratch on anyone.'], ['clive', '[gruff] Too easy, that. Make \'em sweat.']],
+    [['baz', '[excited] Clean round! Every heart still beating.'], ['clive', '[chuckles] Won\'t last.']],
+  ],
+  onlyone: [
+    [['baz', '[shouting] Only one of them stays on their feet!'], ['clive', '[impressed] Now that is a proper champion\'s answer.']],
+  ],
+  knockedout: [
+    [['baz', '[shouting] And they\'re DOWN! That is a knockout!'], ['clive', '[gruff] Stay down, son. It\'s over.']],
+    [['baz', '[excited] Three hearts gone! We\'ve lost one!'], ['clive', '[sighs] Good effort. Shame about the answers.']],
+    [['baz', '[shouting] Out for the count! Ring the bell!'], ['clive', '[chuckles] I felt that one from here.']],
+  ],
+  final: [
+    [['baz', '[dramatic] This is it. The final round!'], ['clive', '[gruff] Leave nothing in the corner.']],
+  ],
+  halfway: [
+    [['baz', '[excited] We\'re halfway through this bout!'], ['clive', '[gruff] And some of \'em are hanging on by a thread.']],
+  ],
+  noanswers: [
+    [['baz', '[surprised] Nobody threw a punch! Not one answer.'], ['clive', '[gruff] You can\'t win it from your stool.']],
+  ],
+  streak: [
+    [['baz', '[excited] Three in a row for somebody. They are on fire!'], ['clive', '[impressed] Float like a butterfly, that one.']],
+  ],
+};
+
+/** Vince calls Quiz Race from the commentary box. Recorded as react-race-<kind>-<n>. */
+export const raceCalls = {
+  start: [
+    ['vince', '[shouting] Lights out and away we go!'],
+    ['vince', '[fast, excited] And they\'re off! What a start!'],
+  ],
+  lead: [
+    ['vince', '[shouting] We have a new leader!'],
+    ['vince', '[fast, excited] Oh, what a move! That is the lead changing hands!'],
+    ['vince', '[excited] Up the inside, and into first place!'],
+  ],
+  close: [
+    ['vince', '[fast, excited] There is nothing in it at the front. Nothing!'],
+    ['vince', '[excited] Wheel to wheel! This is brilliant!'],
+  ],
+  finish: [
+    ['vince', '[shouting] The chequered flag! What a race!'],
+    ['vince', '[shouting] They take the win! Absolutely sensational!'],
+  ],
+};
+
+/** Every reaction take by recording key, as a list of lines. */
+export const reactionTakes = Object.fromEntries([
+  ...Object.entries(reactions).flatMap(([kind, lines]) => lines.map((line, index) => [`react-${kind}-${index + 1}`, [line]])),
+  ...Object.entries(knockoutReactions).flatMap(([kind, takes]) => takes.map((lines, index) => [`react-ko-${kind}-${index + 1}`, lines])),
+  ...Object.entries(raceCalls).flatMap(([kind, lines]) => lines.map((line, index) => [`react-race-${kind}-${index + 1}`, [line]])),
+]);

@@ -2,12 +2,12 @@
 // the transcript must match the script's words (mood tags are never spoken).
 //   NODE_USE_ENV_PROXY=1 node scripts/check-duo-voices.mjs [key ...]
 import { readFileSync } from 'node:fs';
-import { duoIntros, reactions, skipQuips, spoken, welcomeBack, welcomeScript } from '../public/duo-scripts.js';
+import { duoIntros, reactionTakes, skipQuips, spoken, welcomeBack, welcomeScript } from '../public/duo-scripts.js';
 import { duoRecordings, duoTake } from '../public/duo-recordings.js';
 
 const scripts = { ...duoIntros, welcome: welcomeScript, 'welcome-back': welcomeBack,
   ...Object.fromEntries(skipQuips.map((lines, index) => [`skip-${index + 1}`, lines])),
-  ...Object.fromEntries(Object.entries(reactions).flatMap(([kind, lines]) => lines.map((line, index) => [`react-${kind}-${index + 1}`, [line]]))) };
+  ...reactionTakes };
 const words = text => text.toLowerCase().replace(/[^a-z0-9' ]+/g, ' ').split(/\s+/).filter(Boolean);
 // Share of the script's words found, in order, in the transcript.
 function match(expected, heard) {

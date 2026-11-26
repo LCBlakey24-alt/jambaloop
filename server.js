@@ -6,7 +6,7 @@ import { deskAwards } from './awards.js';
 import { answerValue, boardSpeedValues, bonusValues, canSetScore, defaultScoring, doubleSchedules, pointValues, roundMultiplier } from './public/scoring.js';
 import { playlistLimit, queuedSettings } from './public/game-night.js';
 import { isConnected, liveConnection, responseTarget, touchPlayer, trackConnection } from './room-presence.js';
-import { boardLengths, boardRoute, boardPath, boardPathChoices, boardFork, boardFinish, boardMappedPosition, boardRequiresChoice, boardStopsAtFork, boardCornerPower, boardPowers, BOARD_LEAP } from './public/board-route.js';
+import { boardLengths, boardRoute, boardPath, boardPathChoices, boardFork, boardFinish, boardMappedPosition, boardRequiresChoice, boardStopsAtFork, boardCornerPower, boardPowers } from './public/board-route.js';
 import { teamPlayModes, defaultPlayStyle, validPlayStyle, requiredPlayers, teamAssignments } from './public/team-play.js';
 import { partyModes, startParty, advanceParty, advancePartyWhenReady, expireParty, rescuePotato, submitParty, publicParty } from './party-games.js';
 import express from 'express';
@@ -291,6 +291,9 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
           finishedAt:Math.min(Infinity,...racers.map(racer => racer.finishedAt ?? Infinity))};
       }).sort((a,b)=>a.finishedAt-b.finishedAt || b.distance-a.distance) : undefined,
     boardFork: room.mode === 'board' ? boardFork(room.boardLength) : undefined,
+    // 50/50 goes to the team that played it and to nobody else, the TV included.
+    removedOptions: room.mode === 'board' && phase === 'question' && player && room.fifty?.get(player.team)?.index === index ? room.fifty.get(player.team).removed : undefined,
+    questionRefreshed: room.mode === 'board' && phase === 'question' && room.skipped?.index === index ? room.teams[room.skipped.by]?.name : undefined,
     players: leaderboard, playerCount: players.size, player: player ? { ...publicPlayer(held(player)), score: scoresPublished ? held(player).score : playerScore } : undefined,
     review: !waiting && phase === 'finished' ? (room.privateQuestions ? room.privateReview.get(key) ?? [] : room.roundReview).map((review, i) => ({
       ...review,
@@ -698,24 +701,23 @@ function reveal(room) {
         player.team === room.index % room.teams.length) {
       answer.points = Math.round(answer.points * 2 * 100) / 100;
     }
-    // Double Points, played by this player's team, doubles what they earn here.
+    // Double Points, played by this player's team, doubles what they earn here;
+    // Half Points, played on them by a rival, halves it.
     if (room.mode === 'board' && room.teams[player.team]?.armed?.points) answer.points = Math.round(answer.points * 2 * 100) / 100;
+    if (room.mode === 'board' && room.teams[player.team]?.halved) answer.points = Math.round(answer.points * .5 * 100) / 100;
     player.score += answer.points;
     if (room.mode === 'board') player.score = Math.round(player.score * 100) / 100;
     if (room.teams.length) tallies[player.team] += answer.points;
   }
   if (room.mode === 'board') {
-    // Free Pass: teammates who missed still score the question's base points.
+    // Whatever was played on this question is now spent.
     for (const team of room.teams) {
-      if (team.armed?.pass) for (const [key, player] of room.players) {
-        if (player.team !== team.id || room.answers.get(key)?.won) continue;
-        const base = room.motion?.points ?? 1;
-        player.score = Math.round((player.score + base) * 100) / 100;
-        tallies[team.id] += base;
-      }
-      // Whatever was played is spent on this question.
-      if (team.armed) { team.used = { pass: team.armed.pass || undefined, points: team.armed.points || undefined }; team.armed.pass = false; team.armed.points = false; }
+      team.used = { points: team.armed?.points || undefined, halved: team.halved ? true : undefined };
+      if (team.armed) team.armed.points = false;
+      team.halved = undefined;
     }
+    room.fifty = new Map();
+    room.skipped = undefined;
   }
   if (room.teams.length) {
     const precision = room.mode === 'board' ? 100 : 1;
@@ -910,7 +912,9 @@ function startGame(room) {
   if (room.mode === 'board') for (const team of room.teams) {
     // Teams start with none; tests can deal some out to exercise each one.
     team.powers = Object.fromEntries(boardPowers.map(power => [power.id, Math.max(0, Number(process.env.BOARD_START_POWERS) || 0)]));
-    team.armed = Object.fromEntries(boardPowers.map(power => [power.id, false]));
+    team.armed = { points: false };
+    team.halved = undefined;
+    team.used = undefined;
   }
   if (room.mode === 'quizrace') return startRace(room);
   if (partyModes.includes(room.mode)) return startParty(room, publish);
@@ -954,9 +958,9 @@ app.post('/api/rooms/:code/board-path', (req, res) => {
   res.sendStatus(204);
 });
 
-// Any player may play one of their team's power-ups at any time. Double Dice,
-// Free Pass and Double Points wait for the team's next roll or the next
-// question; Leap moves the piece at once.
+// Any player may play one of their team's power-ups. Double Points must come
+// before their team answers; 50/50 and New Question need a live question;
+// Half Points is played on a rival and lands on their next question.
 app.post('/api/rooms/:code/board-power', (req, res) => {
   const { room, key } = res.locals;
   if (room.mode !== 'board' || ['lobby', 'finished'].includes(room.phase) || req.body?.game !== room.game) return res.status(409).json({ error: 'Power-ups are for a Board Race in play.' });
@@ -965,16 +969,37 @@ app.post('/api/rooms/:code/board-power', (req, res) => {
   const power = req.body?.power;
   if (!boardPowers.some(entry => entry.id === power)) return res.status(400).json({ error: 'Choose one of your team’s power-ups.' });
   if (!team.powers[power]) return res.status(409).json({ error: 'Your team is not holding that power-up.' });
-  if (power === 'leap') {
-    if (room.phase === 'rolling') return res.status(409).json({ error: 'Wait for the dice to land, then leap.' });
-    const finish = boardFinish(room.boardLength, team.pathChoice);
-    const stop = boardStopsAtFork(room.boardLength, team.position, BOARD_LEAP, team.pathChoice);
-    team.position = stop ? boardFork(room.boardLength).start : Math.min(finish, team.position + BOARD_LEAP);
-    team.leapt = room.index;
+  const live = room.phase === 'question' && !clockExpired(room);
+  const question = room.questions[room.index];
+  const teamAnswered = [...room.answers.keys()].some(other => room.players.get(other)?.team === team.id);
+  if (power === 'points') {
+    if (team.armed.points) return res.status(409).json({ error: 'Double Points is already in play.' });
+    if (room.phase === 'question' && teamAnswered) return res.status(409).json({ error: 'Too late for this question: play Double Points before your team answers.' });
+    team.armed.points = true;
+  } else if (power === 'half') {
+    const target = room.teams[req.body?.target];
+    if (!target || !Number.isInteger(req.body?.target) || target.id === team.id) return res.status(400).json({ error: 'Choose a rival to halve.' });
+    if (target.halved) return res.status(409).json({ error: 'That rival is already on half points.' });
+    target.halved = { by: team.id };
+  } else if (power === 'fifty') {
+    if (!live) return res.status(409).json({ error: '50/50 needs a live question.' });
+    if (question.type !== 'choice' || question.options.length < 4) return res.status(409).json({ error: '50/50 only works on a question with four answers.' });
+    room.fifty ??= new Map();
+    if (room.fifty.get(team.id)?.index === room.index) return res.status(409).json({ error: 'Your team has already used 50/50 on this question.' });
+    const wrong = question.options.map((_, option) => option).filter(option => option !== question.correct);
+    while (wrong.length > 2) wrong.splice(randomInt(wrong.length), 1);
+    room.fifty.set(team.id, { index: room.index, removed: wrong });
   } else {
-    if (team.armed[power]) return res.status(409).json({ error: 'That power-up is already in play.' });
-    // Once the answer is showing it is too late for this question: it waits for the next one.
-    team.armed[power] = true;
+    if (!live) return res.status(409).json({ error: 'New Question needs a live question.' });
+    if (room.pausedAt) return res.status(409).json({ error: 'Resume the timer first.' });
+    // A fresh question on the same square for everyone; answers so far are cleared.
+    const types = formatTypes(room.format);
+    room.questions[room.index] = boardQuestion(room.motion.category, types[room.index % types.length], room.motion.difficulty, room.seen);
+    room.fifty = new Map();
+    room.skipped = { index: room.index, by: team.id };
+    team.powers[power]--;
+    openQuestion(room);
+    return res.sendStatus(204);
   }
   team.powers[power]--;
   publish(room);
@@ -1003,18 +1028,14 @@ app.post('/api/rooms/:code/roll', (req, res) => {
     const from = activeTeam.position;
     const path = boardPath(room.boardLength, room.includeChristmas, activeTeam.pathChoice || 'power');
     // No lane yet: the piece stops on the junction and the team chooses next turn.
-    // Double Dice, if the team has played it, doubles this move (not the question's value).
-    const doubled = Boolean(activeTeam.armed.double);
-    activeTeam.armed.double = false;
-    const move = doubled ? die * 2 : die;
-    const junction = boardStopsAtFork(room.boardLength, from, move, activeTeam.pathChoice);
-    const to = junction ? boardFork(room.boardLength).start : Math.min(path.length - 1, from + move);
+    const junction = boardStopsAtFork(room.boardLength, from, die, activeTeam.pathChoice);
+    const to = junction ? boardFork(room.boardLength).start : Math.min(path.length - 1, from + die);
     activeTeam.position = to;
     const landed = path[to];
     // Landing exactly on a corner (not a forced stop at the junction) collects its power-up.
     const reward = junction ? undefined : boardCornerPower(room.boardLength, to, activeTeam.pathChoice);
     if (reward) activeTeam.powers[reward]++;
-    room.motion = { die, from, to, junction: junction || undefined, doubled: doubled || undefined, reward, points: die, difficulty: die,
+    room.motion = { die, from, to, junction: junction || undefined, reward, points: die, difficulty: die,
       category: landed.category, pathChoice: activeTeam.pathChoice || 'power',
       pathMultiplier: landed.lane === 'power' ? 2 : 1,
       pathName: boardPathChoices.find(option => option.id === activeTeam.pathChoice)?.name ?? 'Board Race' };

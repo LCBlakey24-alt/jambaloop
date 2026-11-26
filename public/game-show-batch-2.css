@@ -254,3 +254,19 @@
 .power-armed { font-weight: 800; color: #ffd23f; letter-spacing: .06em; }
 @media (prefers-reduced-motion: no-preference) { .power-chip.is-armed { animation: power-pulse 1s ease-in-out infinite alternate; } }
 @keyframes power-pulse { to { outline-offset: 3px; } }
+
+.power-chip.is-hit { background: #7a1626; color: #ffe1e4; outline: 2px solid #ff8a8f; }
+.power-row.is-target { grid-template-columns: minmax(0, 1fr); }
+.power-targets { display: flex; flex-wrap: wrap; gap: .5rem; }
+.power-targets .button { flex: 1 1 8rem; }
+.power-note { margin: 0; padding: .5rem .7rem; border-radius: 10px; font-weight: 700; }
+.power-note.is-good { background: #14432c; color: #c9f5de; }
+.power-note.is-bad { background: #5b1a22; color: #ffd9db; }
+/* 50/50: the two removed answers fade out on that team's phones only. */
+.answer[data-removed="true"] { opacity: .22; filter: grayscale(1); text-decoration: line-through; }
+
+.powers-in-play { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: .5rem 0 0; }
+.powers-in-play > span { font-size: .8em; font-weight: 800; letter-spacing: .12em; opacity: .8; }
+.powers-in-play .power-chip { font-size: 1em; padding: .3em .7em; border-left: .45em solid var(--chip, currentColor); }
+.roll-recap .powers-in-play { margin: 0 0 0 .6rem; }
+@media (max-width: 700px) { .roll-recap .powers-in-play { display: none; } }

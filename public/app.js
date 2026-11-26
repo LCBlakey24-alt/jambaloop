@@ -1083,7 +1083,7 @@ function render(s) {
       ${timer && !host ? '<div class="time-track" aria-hidden="true"><div id="time-fill"></div></div>' : ''}
       ${promptHelp}
       ${isEstimateShow(s.mode) ? soCloseView(question,{draft,selection,revealed,host,disabled:eliminated || sending,closest:s.closest,guesses:s.estimateGuesses},escape) : special ? specialAnswer(question, { draft, selection, revealed, host, disabled: eliminated || sending, closest: s.closest }, escape) : `<div class="answers ${s.question.options.length === 2 ? 'binary-answers' : ''}">${s.question.options.map((option, index) => `<button style="--answer:${colors[index]};--share:${s.breakdown && s.answered ? s.breakdown[index] * 100 / s.answered : 0}%" class="answer ${selection === index ? 'selected' : ''} ${revealed && s.question.correct === index ? 'correct' : ''}"
-       data-dim="${revealed ? s.question.correct !== index : !host && selection !== undefined && selection !== index}" data-action="answer" data-option="${index}" ${host || revealed || locked || sending || eliminated ? 'disabled' : ''}>
+       data-dim="${revealed ? s.question.correct !== index : !host && selection !== undefined && selection !== index}" data-action="answer" data-option="${index}" ${!host && !revealed && s.removedOptions?.includes(index) ? 'data-removed="true" ' : ''}${host || revealed || locked || sending || eliminated || (!host && s.removedOptions?.includes(index)) ? 'disabled' : ''}>
       <strong>${'ABCD'[index]}</strong><span>${escape(option)}${revealed && s.question.correct === index ? '<b class="answer-tick" aria-hidden="true"> ✓</b>' : ''}</span>
       ${s.breakdown ? `<small class="answer-count"><b class="vote-share">${s.answered ? Math.round(100 * s.breakdown[index] / s.answered) : 0}%</b><span>${s.breakdown[index]} ${s.breakdown[index] === 1 ? 'vote' : 'votes'}</span></small>` : ''}</button>`).join('')}</div>`}
       ${revealed && s.question.source ? `<a class="question-source" href="${escape(s.question.source)}" target="_blank" rel="noopener noreferrer">Verified answer source</a>` : ''}
@@ -2142,7 +2142,7 @@ document.addEventListener('click', async event => {
   if (action === 'bluff-vote') return sendParty({ action: 'vote', id: button.dataset.id }, button);
   if (action === 'board-power') {
     button.disabled = true;
-    try { await api('/' + session.code + '/board-power', { game: state.game, power: button.dataset.power }); await refresh(); }
+    try { await api('/' + session.code + '/board-power', { game: state.game, power: button.dataset.power, ...(button.dataset.target !== undefined && { target: Number(button.dataset.target) }) }); await refresh(); }
     catch (error) { await refresh(); const note = document.querySelector('#game-error'); if (note) note.textContent = error.message; }
     return;
   }

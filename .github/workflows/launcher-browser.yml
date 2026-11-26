@@ -71,6 +71,9 @@ on:
       - 'scripts/question-types-browser.mjs'
       - 'scripts/show-moments-browser.mjs'
       - 'public/show-moments.*'
+      - 'public/show-scenes.js'
+      - 'public/scenes/**'
+      - 'public/game-identities.*'
       - 'public/score-break.js'
       - '.github/workflows/launcher-browser.yml'
   workflow_dispatch:

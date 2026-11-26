@@ -42,12 +42,11 @@ function identity(id) {
 
 export function tileArt(id, isPreview = false) {
   const style = modeStyle(id);
-  const {lines,strap} = identity(id);
+  const {lines} = identity(id);
   return `<span class="tile-art ${isPreview?'tile-art-preview':''}" data-motif="${style.motif}" data-show="${id}" aria-hidden="true">
     <span class="tile-motion"><i></i><i></i><i></i></span>
     ${showMark(id)}
     <span class="tile-wordmark">${lines.map(line=>`<span>${line}</span>`).join('')}</span>
-    <span class="tile-strap">${strap}</span>
   </span>`;
 }
 

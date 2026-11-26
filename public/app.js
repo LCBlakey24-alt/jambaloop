@@ -24,6 +24,7 @@ import { playCue, playTick, playTowerImpact } from './sound-cues.js';
 import { boardLengths, boardRoute, boardDuration, durationLabel, suggestedTurnCap, boardRequiresChoice, boardPathChoices } from './board-route.js';
 import {teamPlayModes, defaultPlayStyle} from './team-play.js';
 import { avatarView, partyView } from './party-views.js';
+import { identityVariables } from './game-identities.js';
 import { bumpCount, clockTension, lockRail, stageReveal, stageable, updateLockRail } from './show-moments.js';
 import {connectSketchPainter,paintSketchBoard,clearSketch} from './sketch-canvas.js';
 import { openLibrary, savedQuizzes } from './quiz-editor.js';
@@ -336,9 +337,9 @@ function openDialog(mode, value, gameMode, quizId) {
     content.innerHTML = `<div class="eyebrow">GAME SETUP</div><h2>${rematch ? 'Set up a rematch' : configured ? 'Choose a game' : 'Host a game'}</h2>
     <p>${rematch ? 'Everyone stays in the room and starts with a fresh score.' : configured ? 'Changes appear on every screen in this room.' : 'Choose a mode, then share the room code with your group.'}</p>
     <form id="${mode}-form">
-    <fieldset class="mode-options"><legend>Game mode</legend>${modes.map(([id, name, description, icon]) => `<label>
+    <fieldset class="mode-options"><legend>Game mode</legend>${modes.map(([id, name, description]) => `<label>
       <input name="mode" type="radio" value="${id}" ${id === selectedMode ? 'checked' : ''}>
-      <span>${icons(icon)}<strong>${name}</strong><small>${description}</small></span></label>`).join('')}</fieldset>
+      <span><i class="mode-thumb" style="${identityVariables(id)}" aria-hidden="true"></i><strong>${name}</strong><small>${description}</small></span></label>`).join('')}</fieldset>
     <div class="explainer-slot">${setupPreview(selectedMode, Boolean(gameMode))}</div>
     <div class="quiz-source" id="quiz-source"><label>Question source<select name="quiz">${selected(quizChoices, selectedQuiz)}</select></label>
       <button type="button" class="button outline small" data-action="library">My quizzes</button></div>

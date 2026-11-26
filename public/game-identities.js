@@ -48,7 +48,7 @@ export const identities = {
     bg: ['#0f5457', '#052a2d'], surface: '#073a3d', surface2: '#0d4b4f', ink: '#f6f4e6', muted: '#bfd8d5', accent: '#ffbf68', accent2: '#7fe3d6', radius: '6px' },
 };
 
-export const identityOf = mode => identities[mode] ?? identities.classic;
+export const identityOf = mode => Object.hasOwn(identities, mode) ? identities[mode] : identities.classic;
 
 /** CSS custom properties for a game's screens and launcher tile. */
 export function identityVariables(mode) {
@@ -59,5 +59,7 @@ export function identityVariables(mode) {
     `--id-case:${id.upper ? 'uppercase' : 'none'}`, `--id-bg1:${id.bg[0]}`, `--id-bg2:${id.bg[1]}`,
     `--id-surface:${id.surface}`, `--id-surface2:${id.surface2}`, `--id-ink:${id.ink}`, `--id-muted:${id.muted}`,
     `--id-accent:${id.accent}`, `--id-accent2:${id.accent2}`, `--id-radius:${id.radius}`,
+    // The show's illustrated scene: launcher tile artwork and game backdrop.
+    `--id-scene:url('/scenes/${Object.hasOwn(identities, mode) ? mode : 'classic'}.svg')`,
   ].join(';');
 }

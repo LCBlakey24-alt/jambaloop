@@ -30,7 +30,9 @@ body.playing:has(.game[data-mode="soclose"]) { background:#052a2d; }
 body .game[data-mode] {
   --pink:var(--id-accent); --ink:var(--id-ink); --muted:var(--id-muted); --panel:var(--id-surface); --edge:color-mix(in srgb,var(--id-accent) 40%,transparent);
   color:var(--id-ink);
-  background:radial-gradient(ellipse at 50% -10%, var(--id-bg1), var(--id-bg2) 72%) fixed;
+  background:linear-gradient(color-mix(in srgb,var(--id-bg2) 84%,transparent),color-mix(in srgb,var(--id-bg2) 84%,transparent)) fixed,
+    var(--id-scene) center / cover no-repeat fixed,
+    radial-gradient(ellipse at 50% -10%, var(--id-bg1), var(--id-bg2) 72%) fixed;
 }
 body .game[data-mode] > .scene-backdrop { opacity:.55; mix-blend-mode:soft-light; }
 
@@ -136,3 +138,121 @@ body .game[data-mode="dice"] { background:repeating-conic-gradient(from -90deg a
   body .game[data-mode="punchline"].phase-enter .game-panel { animation:id-comic-pop .42s cubic-bezier(.2,1.6,.4,1) both; }
 }
 @keyframes id-comic-pop { from { transform:scale(.92) rotate(-1.5deg); } }
+
+/* ------------------------------------------------------ launcher tiles -- */
+/* Every tile is its show's illustrated scene (public/scenes, drawn from the
+   same palette as the game) with its own wordmark treatment and the show's
+   emblem as a crest. The same scene sits behind that game's screens below. */
+html body .tile-art[data-show] {
+  container-type:inline-size;
+  background:var(--id-scene) center / cover no-repeat, var(--id-bg2);
+  box-shadow:none;
+}
+html body .tile-art[data-show] .tile-motion { display:none; }
+html body .tile-art[data-show] .show-mark {
+  position:absolute; inset:8% auto auto 8%; z-index:3; width:17%; height:auto; max-height:none; padding:2.4%;
+  color:var(--id-accent); opacity:1; transform:none; border-radius:50%;
+  background:color-mix(in srgb,var(--id-bg2) 86%,transparent); border:2px solid var(--id-accent);
+  box-shadow:0 3px 10px #0007;
+}
+html body .tile-art[data-show] .tile-wordmark {
+  font-family:var(--id-display),var(--head),sans-serif !important; font-weight:var(--id-weight) !important;
+  text-transform:var(--id-case) !important; font-style:normal !important; letter-spacing:0 !important;
+  font-size:clamp(14px,calc(var(--wm,14) * 1cqw),110px) !important; line-height:.95;
+  width:auto; max-width:84%; margin:0; padding:.28em .5em; z-index:2;
+  color:var(--id-ink); text-shadow:0 .05em .25em #000a; transform:none;
+}
+html body .tile-art[data-show] .tile-wordmark > span:last-child { color:var(--id-accent); filter:none; }
+.game-tile[data-mode] .tile-info { left:0; right:0; bottom:0; padding:18px 12px 9px;
+  background:linear-gradient(transparent,color-mix(in srgb,var(--id-bg2) 88%,transparent)); }
+
+/* Golden Hour: a gilt plaque centre stage. */
+html body .tile-art[data-show="classic"] .tile-wordmark { --wm:13; background:linear-gradient(var(--id-surface2),var(--id-bg2)); border:2px solid var(--id-accent);
+  outline:1px solid color-mix(in srgb,var(--id-accent) 60%,transparent); outline-offset:4px; border-radius:4px; }
+/* Carnival Midway: a ribbon banner above the wheel. */
+html body .tile-art[data-show="wheel"] { justify-content:flex-start; padding-top:22cqw; }
+html body .tile-art[data-show="wheel"] .tile-wordmark { --wm:12; background:var(--id-accent2); color:#fff; rotate:-4deg; border-radius:6px; box-shadow:0 .12em 0 var(--id-bg2); text-shadow:none; }
+html body .tile-art[data-show="wheel"] .show-mark { inset:auto 8% 9% auto; }
+/* Games Table: a painted wooden sign inside the board. */
+html body .tile-art[data-show="board"] .tile-wordmark { --wm:12; background:linear-gradient(#8a5a2e,#5a3a1c); border:3px solid var(--id-accent); border-radius:6px; rotate:-3deg; box-shadow:0 .1em .3em #0008; }
+html body .tile-art[data-show="board"] .show-mark { inset:auto auto 20% 43%; width:13%; }
+/* Deco Salon: gold lettering above the dice. */
+html body .tile-art[data-show="dice"] { justify-content:flex-start; padding-top:22cqw; }
+html body .tile-art[data-show="dice"] .tile-wordmark { --wm:14; padding:0; text-shadow:none; }
+html body .tile-art[data-show="dice"] .show-mark { inset:7% 7% auto auto; width:14%; }
+/* Fight Night: huge slanted poster type under the ring lights. */
+html body .tile-art[data-show="knockout"] .tile-wordmark { --wm:22; padding:0; line-height:.86; transform:skewX(-8deg) rotate(-4deg); text-shadow:.05em .05em 0 var(--id-accent2), 0 .1em .3em #000; }
+html body .tile-art[data-show="knockout"] .show-mark { inset:7% auto auto 7%; width:14%; }
+/* Case Files: a typed evidence label. */
+html body .tile-art[data-show="bluff"] .tile-wordmark { --wm:11.5; background:#f2eee3; color:#1d232b; rotate:-3deg; border-radius:2px; text-shadow:none; box-shadow:0 .12em .3em #0009; border-left:.35em solid var(--id-accent2); }
+html body .tile-art[data-show="bluff"] .tile-wordmark > span:last-child { color:var(--id-accent2); }
+/* Comic Strip: a speech bubble with a tail. */
+html body .tile-art[data-show="punchline"] .tile-wordmark { --wm:12.5; background:#fff; color:var(--id-ink); border:.09em solid var(--id-ink); border-radius:1.1em; rotate:-3deg; text-shadow:none; box-shadow:.12em .12em 0 var(--id-ink); }
+html body .tile-art[data-show="punchline"] .tile-wordmark::after { content:''; position:absolute; left:22%; bottom:-.42em; width:.6em; height:.6em; background:#fff; border:solid var(--id-ink); border-width:0 .09em .09em 0; rotate:45deg; }
+html body .tile-art[data-show="punchline"] .tile-wordmark > span:last-child { color:var(--id-accent); }
+/* Card Parlour: the title is the top card. */
+html body .tile-art[data-show="cards"] { justify-content:flex-start; padding-top:20cqw; }
+html body .tile-art[data-show="cards"] .show-mark { inset:auto auto 30% 5%; width:13%; }
+html body .tile-art[data-show="cards"] .tile-wordmark { --wm:12; background:var(--id-surface); color:var(--id-ink); border:2px solid var(--id-accent); border-radius:.35em; text-shadow:none; box-shadow:0 .1em .35em #3a1e0f44; rotate:2deg; }
+/* Junction Box: a hazard signal board. */
+html body .tile-art[data-show="tracks"] .tile-wordmark { --wm:11; background:var(--id-accent); color:#101113; border:.12em solid #101113; outline:.08em solid var(--id-accent); border-radius:3px; text-shadow:none; }
+html body .tile-art[data-show="tracks"] .tile-wordmark > span:last-child { color:#101113; }
+html body .tile-art[data-show="tracks"] .show-mark { inset:12% auto auto 8%; }
+/* Hot Seat: chunky type above the flames. */
+html body .tile-art[data-show="potato"] { justify-content:flex-start; padding-top:18cqw; }
+html body .tile-art[data-show="potato"] .tile-wordmark { --wm:17; padding:0; rotate:-4deg; text-shadow:0 .06em 0 var(--id-bg2), 0 0 .35em var(--id-accent); }
+/* Arena Lights: split-team title across the lightning. */
+html body .tile-art[data-show="showdown"] .tile-wordmark { --wm:11; padding:0; transform:skewX(-10deg); text-shadow:-.06em .04em 0 var(--id-bg2), .06em .04em 0 #a73a00; }
+html body .tile-art[data-show="showdown"] .show-mark { inset:auto 8% 22% auto; }
+/* Lagoon: the shared thought where the bubbles overlap. */
+html body .tile-art[data-show="samepage"] .tile-wordmark { --wm:13.5; background:color-mix(in srgb,var(--id-bg2) 80%,transparent); border-radius:1em; }
+/* Velvet Theatre: gold marquee under the valance. */
+html body .tile-art[data-show="spotlight"] { justify-content:flex-start; padding-top:20cqw; }
+html body .tile-art[data-show="spotlight"] .tile-wordmark { --wm:12; color:var(--id-accent); background:color-mix(in srgb,var(--id-bg2) 82%,transparent); border:1.5px solid var(--id-accent); border-radius:8px; }
+html body .tile-art[data-show="spotlight"] .tile-wordmark > span:last-child { color:#fff; }
+html body .tile-art[data-show="spotlight"] .show-mark { inset:auto auto 8% 8%; }
+/* Neon Lab: glowing tube lettering. */
+html body .tile-art[data-show="brain"] .tile-wordmark { --wm:13; padding:0; text-shadow:0 0 .12em var(--id-accent),0 0 .4em var(--id-accent); }
+html body .tile-art[data-show="brain"] .tile-wordmark > span:last-child { color:var(--id-accent2); text-shadow:0 0 .12em var(--id-accent2),0 0 .4em var(--id-accent2); }
+/* Seventies Survey: stacked retro shadow over the sunset bands. */
+html body .tile-art[data-show="topanswers"] { justify-content:flex-start; padding-top:26cqw; }
+html body .tile-art[data-show="topanswers"] .tile-wordmark { --wm:14; padding:0; text-shadow:.05em .05em 0 var(--id-accent2),.1em .1em 0 var(--id-bg2); }
+html body .tile-art[data-show="topanswers"] .show-mark { inset:auto 7% 8% auto; }
+/* Treasure Vault: engraved on the vault door's centre plate. */
+html body .tile-art[data-show="rare"] .tile-wordmark { --wm:12; aspect-ratio:1; display:grid; align-content:center; padding:.5em; border-radius:50%;
+  background:radial-gradient(var(--id-surface2),var(--id-bg2)); border:3px solid var(--id-accent); }
+/* Sketch Pad: handwriting with a scribbled underline. */
+html body .tile-art[data-show="sketch"] .tile-wordmark { --wm:16; padding:0; rotate:-5deg; text-shadow:none; }
+html body .tile-art[data-show="sketch"] .tile-wordmark > span:last-child { text-decoration:underline wavy var(--id-accent2) .06em; text-underline-offset:.14em; }
+html body .tile-art[data-show="sketch"] .show-mark { inset:5% 30% auto auto; width:14%; }
+/* Neon Grand Prix: italic neon above the sunset. */
+html body .tile-art[data-show="quizrace"] { justify-content:flex-start; padding-top:18cqw; }
+html body .tile-art[data-show="quizrace"] .tile-wordmark { --wm:16; padding:0; transform:skewX(-12deg); text-shadow:0 0 .1em #fff,0 0 .35em var(--id-accent2); }
+html body .tile-art[data-show="quizrace"] .tile-wordmark > span:last-child { text-shadow:0 0 .1em #fff,0 0 .35em var(--id-accent); }
+/* Measuring Studio: the title printed on a ruler. */
+html body .tile-art[data-show="soclose"] { justify-content:flex-start; padding-top:22cqw; }
+html body .tile-art[data-show="soclose"] .tile-wordmark { --wm:13; color:var(--id-bg2); text-shadow:none; border-radius:3px; padding-bottom:.55em;
+  background:repeating-linear-gradient(90deg,var(--id-bg2) 0 2px,transparent 2px .5em) bottom / 100% .32em no-repeat, var(--id-accent); }
+html body .tile-art[data-show="soclose"] .tile-wordmark > span:last-child { color:var(--id-bg2); }
+html body .tile-art[data-show="soclose"] .show-mark { inset:8% 8% auto auto; }
+
+/* ---------------------------------------------- games wear their tile -- */
+/* The tile's scene, softened, behind each game's main panels (not nested
+   ones), on the lobby card and in the title sting, so a game opens looking
+   exactly like the tile that launched it. */
+body .game[data-mode] .game-panel:not(.game-panel .game-panel) {
+  background:linear-gradient(160deg,color-mix(in srgb,var(--id-surface2) 74%,transparent),color-mix(in srgb,var(--id-surface) 86%,transparent)),
+    var(--id-scene) center / cover no-repeat, var(--id-surface) !important;
+}
+.lobby-tile { display:grid; place-items:center; flex:none; width:clamp(56px,9vw,92px); aspect-ratio:1; overflow:hidden;
+  border-radius:var(--id-radius,10px); border:2px solid var(--id-accent);
+  background:var(--id-scene) center / cover no-repeat, var(--id-bg2); box-shadow:0 4px 14px #0006; }
+.lobby-tile .show-mark { width:50%; height:auto; padding:9%; border-radius:50%; color:var(--id-accent);
+  background:color-mix(in srgb,var(--id-bg2) 86%,transparent); border:2px solid var(--id-accent); }
+html body .show-sting .sting-bar:nth-child(2) {
+  background:linear-gradient(color-mix(in srgb,var(--id-surface2) 55%,transparent),color-mix(in srgb,var(--id-surface2) 55%,transparent)),
+    var(--id-scene) center / cover no-repeat, var(--id-surface2);
+}
+/* Setup picker: each game shows a thumbnail of its own tile. */
+.mode-options .mode-thumb { display:block; width:38px; aspect-ratio:1; border-radius:8px; margin-bottom:4px;
+  background:var(--id-scene) center / cover no-repeat, var(--id-bg2); border:1.5px solid var(--id-accent); box-shadow:0 2px 6px #0005; }

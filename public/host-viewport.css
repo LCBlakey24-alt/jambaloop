@@ -97,7 +97,8 @@
   body.playing .host-screen[data-phase="lobby"] .roster-panel .players {
     flex: 1 1 auto;
     align-content: start;
-    min-height: 0;
+    /* Always keep one row of joined players visible; it scrolls beyond that. */
+    min-height: 40px;
     max-height: none;
     overflow: auto;
     margin: 0;

@@ -17,14 +17,14 @@
 }
 .game[data-mode="classic"] .scene-backdrop > i {display:none}
 .game[data-mode="classic"] .game-top {border-bottom:2px solid #dcb36b;background:linear-gradient(90deg,#101d38,#233b65,#101d38)}
-.game[data-mode="classic"] .screen-mode-title {font-family:'House Serif',Georgia,serif;letter-spacing:.03em}
+.game[data-mode="classic"] .screen-mode-title {font-family:var(--id-display),var(--head),sans-serif;letter-spacing:.01em}
 .game[data-mode="classic"] :is(.question-panel,.results,.join-panel,.roster-panel,.tv-status,.tv-leaders) {
   border:1px solid #9b7843;border-radius:8px;
   background:linear-gradient(150deg,#233e6d,#10203f 62%);
   box-shadow:inset 0 0 0 3px #0a132a,inset 0 0 0 4px #dcb36b45,0 12px 28px #0005;
 }
 .game[data-mode="classic"] .question-panel .round-kicker {color:#f5d58d;letter-spacing:.11em}
-.game.host-screen[data-mode="classic"] .question-panel > h2 {font-family:'House Serif',Georgia,serif;font-weight:400;text-align:center;margin-inline:auto;max-width:30ch}
+.game.host-screen[data-mode="classic"] .question-panel > h2 {font-family:var(--id-display),var(--head),sans-serif;font-weight:var(--id-weight);text-align:center;margin-inline:auto;max-width:30ch}
 .game[data-mode="classic"] .question-panel .answer {
   border-radius:4px;border:1px solid #b89759;
   background:linear-gradient(115deg,#213d70,#132744);color:#fff9e9;
@@ -32,7 +32,7 @@
 .game[data-mode="classic"] .question-panel .answer strong {border:1px solid #dcb36b;background:#f5d58d;color:#14213c;border-radius:3px}
 .game[data-mode="classic"] .tv-clock {border-radius:8px;background:#101d38;border:1px solid #dcb36b}
 .game[data-mode="classic"] .tv-clock .timer {color:#f5d58d;font-variant-numeric:tabular-nums}
-.game[data-mode="classic"] .results h1 {font-family:'House Serif',Georgia,serif;font-weight:400;color:#f5d58d}
+.game[data-mode="classic"] .results h1 {font-family:var(--id-display),var(--head),sans-serif;font-weight:var(--id-weight);color:#f5d58d}
 
 /* Spin the Wheel: carnival cabinet, circular controls, warm marquee lamps. */
 .game[data-mode="wheel"] {
@@ -151,7 +151,7 @@
 .show-finale-identity .show-mark {width:clamp(24px,4dvh,42px);height:auto;flex:none;}
 .game[data-mode="classic"] .score-ceremony {background:radial-gradient(ellipse at 50% 0,#345987,#0c1730 68%);border:2px solid #cda866;border-radius:8px;}
 .game[data-mode="classic"] .ceremony-rank {color:#f5d58d;}
-.game[data-mode="classic"] .ceremony-slide h1,.game[data-mode="classic"] .ceremony-slide h2 {font-family:'House Serif',Georgia,serif;font-weight:400;}
+.game[data-mode="classic"] .ceremony-slide h1,.game[data-mode="classic"] .ceremony-slide h2 {font-family:var(--id-display),var(--head),sans-serif;font-weight:var(--id-weight);}
 .game[data-mode="wheel"] .score-ceremony {background:radial-gradient(ellipse at 50% 40%,#682f85,#2a1048 72%);border:3px dotted #ffcf74;border-radius:26px;}
 .game[data-mode="wheel"] .ceremony-ranks li {border-radius:999px;}
 .game[data-mode="wheel"] .ceremony-rank {color:#ffcf74;}

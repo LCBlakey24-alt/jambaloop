@@ -126,6 +126,8 @@ Closest-number and put-in-order sessions offer five questions when you choose on
 
 - **Team Showdown** lets the host or captain choose two, three, or four balanced teams. Everyone answers on their own phone. Each round, a team earns the average of its players’ points, including misses. Highest team score wins, and players retain their individual scores.
 
+**Show artwork:** every game has its own original illustrated scene (`public/scenes/`, generated from `public/show-scenes.js` in that game's palette by `node scripts/build-show-scenes.mjs`). The scene is the game's home tile, with its own logo treatment and emblem crest and no tagline. The same scene sits behind that game's TV and phone panels, its lobby card, its title sting and its thumbnail in the setup picker, so each game looks like the tile that launched it.
+
 **Show moments (quiz rounds):**
 - **Lock-ins:** each player's face stamps onto the TV as they lock in; it never shows what they chose.
 - **Reveal:** a short drum-roll, then the wrong answers drop out one by one before the right answer flares. Phones hold their verdict for the same beat, and right/wrong badges then flip onto the stamps.

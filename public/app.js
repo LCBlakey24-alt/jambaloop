@@ -1084,7 +1084,7 @@ function render(s) {
       <strong>${'ABCD'[index]}</strong><span>${escape(option)}${revealed && s.question.correct === index ? '<b class="answer-tick" aria-hidden="true"> ✓</b>' : ''}</span>
       ${s.breakdown ? `<small class="answer-count"><b class="vote-share">${s.answered ? Math.round(100 * s.breakdown[index] / s.answered) : 0}%</b><span>${s.breakdown[index]} ${s.breakdown[index] === 1 ? 'vote' : 'votes'}</span></small>` : ''}</button>`).join('')}</div>`}
       ${revealed && s.question.source ? `<a class="question-source" href="${escape(s.question.source)}" target="_blank" rel="noopener noreferrer">Verified answer source</a>` : ''}
-       ${checkpointNote(s)}<div class="round-footer">${host ? '' : `<div class="round-status"><p class="status" ${playerFeedback ? '' : 'role="status"'}>${revealed ? revealStatus + (showLiveScores ? ' Total: ' + s.player.score.toLocaleString() + ' pts.' : '') : answerStatus}</p>${revealed && s.player.streak >= 2 ? `<span class="streak-tag">${s.player.streak} in a row</span>` : ''}</div>`}
+       ${host && s.liveGuesses ? '<div class="live-guesses" data-live-guesses aria-label="Guesses, live"></div>' : ''}${checkpointNote(s)}<div class="round-footer">${host ? '' : `<div class="round-status"><p class="status" ${playerFeedback ? '' : 'role="status"'}>${revealed ? revealStatus + (showLiveScores ? ' Total: ' + s.player.score.toLocaleString() + ' pts.' : '') : answerStatus}</p>${revealed && s.player.streak >= 2 ? `<span class="streak-tag">${s.player.streak} in a row</span>` : ''}</div>`}
       ${pauseButton}
       ${canControl ? `<button class="button primary captain-next" data-action="advance">${nextQuestionLabel(s)} ${icons('arrow-right')}</button>` : ''}</div>
       </div>${host && knockout ? knockoutLadder(s, escape) : ''}${tvRoundHud(s, timer, response, host)}${host ? '</div>' : ''}${revealed && board && showLiveScores ? `<div class="game-panel round-leaders"><h2>Race standings</h2>${teamList(s, ownTeam?.id, true)}</div>` : ''}
@@ -1197,6 +1197,7 @@ function render(s) {
     if (card) { card.style.setProperty('--swap-from', step <= order.length / 2 ? '1' : '-1'); card.classList.add('is-swapping'); }
   }
   lastLobbyMode = s.phase === 'lobby' ? s.mode : undefined;
+  if (host) { if (s.phase !== 'question') liveShown.clear(); updateLiveGuesses(app, s); }
   if(s.mode==='sketch')paintSketchBoard(s.party);
   // The welcome plays once the room has players and a captain to hand over to.
   if (host && s.phase === 'lobby' && s.picker && s.playerCount > 0 && s.captainName && !s.welcome && !welcomedRooms().includes(s.code)) requestWelcome();
@@ -1398,7 +1399,7 @@ function receive(next, current) {
     Object.assign(current, { name: next.player.name, mode: next.mode });
     rememberPlayer(current);
   }
-  const { now, revision, answered, connected, waitingCount, responseTarget, race, lockIns, lockCount, lockRight, picker, ...stable } = next;
+  const { now, revision, answered, connected, waitingCount, responseTarget, race, lockIns, lockCount, lockRight, liveGuesses, picker, ...stable } = next;
   // The lobby carousel glides in place; only opening or closing it re-renders.
   stable.pickerOpen = Boolean(picker);
   const raceSignature = race && { question:race.own?.question?.id, feedback:race.own?.feedback?.outcome, paused:race.paused, finished:race.finished };
@@ -1420,6 +1421,7 @@ function receive(next, current) {
   if (current.host) {
     const before = app.querySelectorAll('.lock-stamp').length;
     updateLockRail(app, next, escape, avatarView);
+    updateLiveGuesses(app, next);
     if (soundEnabled && app.querySelectorAll('.lock-stamp').length > before) playSfx(sound, 'lockin', { volume: 0.5 });
   }
   if (introduce) toggleNarration(next.mode);
@@ -1703,10 +1705,65 @@ function editorContext(editor) {
   if (state?.phase === 'question') return { question: state.question, value: draft, save: value => { draft = value; } };
 }
 
+// Share where the wheel is (a few times a second) so the TV can show it turning.
+let draftSentAt = 0;
+let draftTimer;
+function shareDraft(value) {
+  if (!session || session.host || state?.phase !== 'question' || state.question?.type !== 'estimate' || state.selection !== undefined) return;
+  clearTimeout(draftTimer);
+  const { code, key } = session;
+  const { game, index } = state;
+  const send = () => { draftSentAt = Date.now(); api('/' + code + '/draft', { game, index, value }, key).catch(() => {}); };
+  const wait = 220 - (Date.now() - draftSentAt);
+  if (wait <= 0) send(); else draftTimer = setTimeout(send, wait);
+}
+
+/** The TV's live board: one tile per player, each number counting through every value to where their wheel is. */
+const liveShown = new Map();
+let liveFrame;
+function updateLiveGuesses(root, s) {
+  const board = root.querySelector('[data-live-guesses]');
+  if (!board || !s.liveGuesses) return;
+  const { rows, count } = s.liveGuesses;
+  const ids = rows.map(row => row.id).join(',');
+  if (board.dataset.ids !== ids) {
+    board.dataset.ids = ids;
+    board.innerHTML = rows.map(row => `<div class="live-guess" data-live="${escape(row.id)}">${avatarView(row, escape)}<span>${escape(row.name)}</span><b></b></div>`).join('')
+      + (count > rows.length ? `<div class="live-guess live-more">+${count - rows.length} more</div>` : '');
+    switchAvatarSession.refresh();
+  }
+  const unit = s.question?.unit;
+  for (const row of rows) {
+    const tile = board.querySelector(`[data-live="${CSS.escape(row.id)}"]`);
+    if (!tile) continue;
+    tile.toggleAttribute('data-locked', row.locked);
+    tile.dataset.target = row.value;
+    if (!liveShown.has(row.id)) liveShown.set(row.id, row.value);
+  }
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const paint = () => {
+    let moving = false;
+    for (const tile of board.querySelectorAll('[data-live]')) {
+      const target = Number(tile.dataset.target);
+      let shown = liveShown.get(tile.dataset.live) ?? target;
+      const gap = target - shown;
+      // Count through every number when close; take bigger strides only to catch up.
+      if (gap) { shown = still ? target : shown + Math.sign(gap) * Math.max(1, Math.floor(Math.abs(gap) / 12)); moving ||= shown !== target; }
+      liveShown.set(tile.dataset.live, shown);
+      const text = formatNumber(shown, unit);
+      const label = tile.querySelector('b');
+      if (label.textContent !== text) label.textContent = text;
+    }
+    liveFrame = moving && board.isConnected ? requestAnimationFrame(paint) : undefined;
+  };
+  if (!liveFrame) paint();
+}
+
 function setEditorNumber(editor, value) {
   editor.querySelector('[data-number]').value = value;
   const context=editorContext(editor);
   context?.save(value);
+  if (app.contains(editor)) shareDraft(value);
   const rows=editor.querySelector('[data-so-close-rows]');
   if(rows && context) rows.innerHTML=numberWheelRows(context.question,value);
 }
@@ -1791,7 +1848,10 @@ for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) documen
     const dt = Math.min(32, now - last);
     last = now;
     drag.velocity *= Math.pow(0.94, dt / 16);
-    if (Math.abs(drag.velocity) < 0.04 || !rulerMove(drag, drag.velocity * dt)) return settle();
+    // A hard flick spins faster and faster through the numbers, so big answers are reachable one unit at a time.
+    const speed = Math.abs(drag.velocity);
+    const gain = speed > 0.9 ? Math.min(60, 1 + (speed - 0.9) * 45) : 1;
+    if (speed < 0.04 || !rulerMove(drag, drag.velocity * dt * gain)) return settle();
     rulerCoast = requestAnimationFrame(coast);
   };
   rulerCoast = requestAnimationFrame(coast);

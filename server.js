@@ -254,6 +254,7 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
   const lockRight = showLocks && revealed ? lockList.filter(([, entry]) => entry.won).length : undefined;
   return { revision: room.revision, code, category, phase: waiting ? 'waiting' : phase, index, total: room.count, seconds, game, opened, ends, answered: answers.size,
     lockIns, lockCount, lockRight,
+    liveGuesses: isHost && phase === 'question' && !room.privateQuestions && room.questions[index]?.type === 'estimate' ? liveGuesses(room) : undefined,
     picker: phase === 'lobby' && !waiting && room.picker ? { ...room.picker } : undefined,
     welcome: phase === 'lobby' && !waiting ? room.welcome : undefined,
     // TV only: everyone here has played or seen the welcome before.
@@ -777,6 +778,7 @@ function openQuestion(room) {
   room.estimateReveal = undefined;
   room.estimateGuesses = undefined;
   room.answers.clear();
+  room.drafts = new Map();
   room.opened = Date.now();
   room.ends = room.seconds ? room.opened + room.seconds * 1000 : 0;
   if (room.privateQuestions) {
@@ -1048,6 +1050,38 @@ app.post('/api/rooms/:code/race-power', (req, res) => {
   publish(room);
   res.sendStatus(204);
 });
+
+// Live guesses: while a closest-number question is open, each phone shares
+// where its wheel is so the TV can show the numbers turning. Owner-directed:
+// these guesses are public on the TV on purpose. Other phones never get them.
+app.post('/api/rooms/:code/draft', (req, res) => {
+  const { room, key } = res.locals;
+  const player = room.players.get(key);
+  const { value, index, game } = req.body ?? {};
+  if (!player) return res.status(403).json({ error: 'Join the room to answer.' });
+  const question = room.questions[index];
+  const open = room.phase === 'question' && game === room.game && index === room.index && !clockExpired(room) && !room.pausedAt;
+  if (!open || room.privateQuestions || question?.type !== 'estimate' || player.lives === 0 || room.answers.has(key)
+    || !Number.isSafeInteger(value) || value < Math.min(0, question.min) || value > ESTIMATE_LIMIT) return res.sendStatus(204);
+  room.drafts ??= new Map();
+  const now = Date.now();
+  // A phone may share at most a few positions a second.
+  if (now - (room.drafts.get(key)?.at ?? 0) >= 120) { room.drafts.set(key, { value, at: now }); publish(room, true); }
+  res.sendStatus(204);
+});
+
+function liveGuesses(room) {
+  const rows = [];
+  for (const [key, player] of room.players) {
+    const locked = room.answers.get(key);
+    const draft = room.drafts?.get(key);
+    if (!locked && !draft) continue;
+    rows.push({ id: player.id, name: player.name, avatar: player.avatar, value: locked ? locked.option : draft.value, locked: Boolean(locked), at: draft?.at ?? 0 });
+  }
+  // A big room shows the twelve wheels that moved most recently.
+  const shown = rows.sort((a, b) => b.at - a.at).slice(0, 12).map(({ at, ...row }) => row).sort((a, b) => a.name.localeCompare(b.name));
+  return { rows: shown, count: rows.length };
+}
 
 app.post('/api/rooms/:code/answer', (req, res) => {
   const { room, key } = res.locals;

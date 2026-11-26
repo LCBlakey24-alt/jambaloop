@@ -1385,7 +1385,7 @@ function receive(next, current) {
     Object.assign(current, { name: next.player.name, mode: next.mode });
     rememberPlayer(current);
   }
-  const { now, revision, answered, connected, waitingCount, responseTarget, race, lockIns, picker, ...stable } = next;
+  const { now, revision, answered, connected, waitingCount, responseTarget, race, lockIns, lockCount, lockRight, picker, ...stable } = next;
   // The lobby carousel glides in place; only opening or closing it re-renders.
   stable.pickerOpen = Boolean(picker);
   const raceSignature = race && { question:race.own?.question?.id, feedback:race.own?.feedback?.outcome, paused:race.paused, finished:race.finished };

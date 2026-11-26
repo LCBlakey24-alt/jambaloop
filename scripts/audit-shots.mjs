@@ -19,7 +19,7 @@ const api = await browser.newContext();
 for (const [mode] of modes) {
   if (only.length && !only.includes(mode)) continue;
   const setup = { mode, format: mode === 'soclose' ? 'estimate' : 'choice', category: 'mixed',
-    count: mode === 'board' ? 12 : mode === 'spotlight' ? 1 : ['tracks', 'samepage'].includes(mode) ? 3 : 5,
+    count: mode === 'board' ? 12 : ['spotlight', 'bloodmoon'].includes(mode) ? 1 : ['tracks', 'samepage'].includes(mode) ? 3 : 5,
     seconds: mode === 'quizrace' || ['tracks', 'samepage'].includes(mode) ? 0 : 20,
     ...(['board', 'tracks', 'showdown'].includes(mode) ? { playStyle: 'teams', teamCount: 2 } : { playStyle: 'individual' }) };
   const tv = await browser.newContext({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1, reducedMotion: 'reduce' });

@@ -183,3 +183,20 @@
   body.playing .immersive .spotlight-wheel-wrap { width:min(42vw,66dvh,720px); }
   body.playing .immersive .spotlight-wheel-label { font-size:clamp(12px,3.1cqw,28px); }
 }
+
+/* Library review: screens where the TV left the main thing small. */
+@media (min-width: 900px) {
+  /* Sketch Sprint: the drawing is the show, so it fills the stage. */
+  body.playing .immersive[data-mode="sketch"] .sketch-game { max-width: none; }
+  body.playing .immersive[data-mode="sketch"] .sketch-frame { max-height: 62dvh; width: auto; max-width: 100%; margin-inline: auto; }
+  body.playing .immersive[data-mode="sketch"] .sketch-game:has(.sketch-reveal) .sketch-frame { max-height: 46dvh; }
+  body.playing .immersive[data-mode="sketch"] .sketch-head h1 { font-size: clamp(30px, 5.6dvh, 60px); }
+  body.playing .immersive[data-mode="sketch"] .sketch-head p { font-size: clamp(16px, 2.6dvh, 28px); }
+  /* Rare Find and Top Answers: the prompt reads from the sofa. */
+  body.playing .immersive .rare-prompt h1, body.playing .immersive .top-question h1 { font-size: clamp(32px, 7dvh, 78px); }
+  body.playing .immersive .rare-prompt p, body.playing .immersive .top-question p { font-size: clamp(16px, 2.7dvh, 28px); }
+  body.playing .immersive .top-option { font-size: clamp(20px, 3.6dvh, 38px); min-height: clamp(64px, 11dvh, 120px); }
+  /* Spot the Bluff: the reply count is the only thing moving, so make it big. */
+  body.playing .immersive .bluff-show-progress strong { font-size: clamp(54px, 14dvh, 150px); line-height: 1; }
+  body.playing .immersive .bluff-show-progress span { font-size: clamp(18px, 3dvh, 32px); }
+}

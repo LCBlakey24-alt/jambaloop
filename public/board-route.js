@@ -66,8 +66,14 @@ export function boardMappedPosition(spaces, position, choice) {
   return start+(position-start)*(rejoin-start)/(branchEnd-start);
 }
 
+// A team picks its lane only once it is standing on the junction square.
 export function boardRequiresChoice(spaces, position, choice) {
-  return !choice && position + 6 > boardFork(spaces).start;
+  return !choice && position === boardFork(spaces).start;
+}
+/** A roll that would carry an undecided team past the junction stops on it. */
+export function boardStopsAtFork(spaces, from, die, choice) {
+  const { start } = boardFork(spaces);
+  return !choice && from < start && from + die > start;
 }
 
 export function suggestedTurnCap(spaces, pieces) {

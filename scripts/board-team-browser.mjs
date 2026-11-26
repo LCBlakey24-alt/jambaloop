@@ -43,11 +43,9 @@ try {
     assert.equal(await preview.isVisible(),true,'Balanced team preview missing');
     await page.screenshot({path:`browser-screenshots/board-${style}-lobby-${width}x${height}.png`});
     await page.locator('.roster-panel [data-action="advance"]').click();
-    await page.locator('.board-path-picker').waitFor({timeout:15000});
-    assert.equal(await page.locator('.board-path-option').count(),2);
-    await page.locator('.board-path-option.questions').click();
-    const selected=await page.locator('.board-route-selected').innerText();
-    assert.match(selected,/Question Trail/);
+    // The lane is chosen at the junction, not at the start: the first turn goes straight to the roll.
+    await page.locator('.turn-copy [data-action="roll"]').waitFor({timeout:15000});
+    assert.equal(await page.locator('.board-path-picker').count(),0,'no lane choice before the piece reaches the junction');
     await page.locator('.turn-copy [data-action="roll"]').click();
     await page.locator('#board-stage').waitFor({timeout:15000});
     const layout=await page.evaluate(()=>{

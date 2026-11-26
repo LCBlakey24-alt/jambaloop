@@ -3,7 +3,7 @@ import { curvedLayout, TILE_TOP } from './board-layout.js';
 import * as THREE from '/vendor/three.module.js';
 import { boardRollDuration, categories } from './game-config.js';
 import { tableSurface, towerDieScale, towerExit, towerImpacts, towerOrigin, towerPose, towerRamps, towerSettle } from './tower-motion.js';
-import { checkerFace, coated, dieFace, tileDisc, tileFace, woodMaterial } from './table-materials.js';
+import { boardPrint, checkerFace, coated, dieFace, tileCard, tileDisc, tileFace, woodMaterial } from './table-materials.js';
 
 const diceFaces = [
   [1, [0, 1, 0]], [6, [0, -1, 0]], [2, [0, 0, 1]],
@@ -92,7 +92,8 @@ function roundedBox(width, height, depth, radius, segments, material) {
 
 function makeDie(color, accent) {
   const cube = new THREE.Group();
-  cube.add(roundedBox(1.32, 1.32, 1.32, .15, 14, coated(color, .27, .08)));
+  const lacquer = new THREE.MeshPhysicalMaterial({ color, roughness: .18, metalness: 0, clearcoat: 1, clearcoatRoughness: .08, sheen: .4 });
+  cube.add(roundedBox(1.32, 1.32, 1.32, .24, 18, lacquer));
   const inset = new THREE.PlaneGeometry(1.04, 1.04);
   const outward = new THREE.Vector3(0, 0, 1);
   for (const [value, direction] of diceFaces) {
@@ -217,6 +218,11 @@ function buildBoard(scene, state, shadowMap) {
   const plinth = roundedBox(6.36, .38, 6.36, .13, 14, wood);
   const rim = roundedBox(6.16, .076, 6.16, .035, 10, coated('#d9b47c', .32, .45));
   const table = roundedBox(6.04, .14, 6.04, .055, 10, feltMaterial(tableColor));
+  const print = new THREE.Mesh(new THREE.PlaneGeometry(5.92, 5.92), new THREE.MeshStandardMaterial({ map: boardPrint(tableColor, accent), roughness: .82 }));
+  print.rotation.x = -Math.PI / 2;
+  print.position.y = .187;
+  print.receiveShadow = true;
+  board.add(print);
   const railMaterial = coated('#b8864e', .37, .42);
   for (const [x, z, width, depth] of [[0,-3.05,5.8,.04],[0,3.05,5.8,.04],[-3.05,0,.04,5.8],[3.05,0,.04,5.8]]) {
     const rail = roundedBox(width, .035, depth, .012, 3, railMaterial);
@@ -279,28 +285,32 @@ function buildBoard(scene, state, shadowMap) {
     const original = id ? categoryById.get(id)?.[4] : '#fff0d4';
     const color = lane === 'power' ? '#f9c45d' : lane === 'questions' ? '#54dccc' : original;
     const r = finish ? layout.radius * 1.18 : lane === 'questions' ? layout.trailRadius : layout.radius * (lane ? .86 : 1);
-    const width = r * 2;
-    // Inlaid discs: level with the printed path, like spaces on a real board.
+    // Square spaces, like a printed board: sized to sit inside the old disc
+    // so neighbours never touch, and turned to follow the track.
+    const width = r * 1.56;
     const thickness = TILE_TOP + (finish ? .02 : 0) - .19;
-    const tile = new THREE.Mesh(new THREE.CylinderGeometry(r, r, thickness, 40), coated(color,.35));
-    const rimRing = new THREE.Mesh(new THREE.TorusGeometry(r * .99, Math.max(.008, r * .03), 6, 40), goldLine);
-    rimRing.rotation.x = Math.PI / 2;
     const choice = lane === 'questions' ? 'questions' : 'power';
-    tile.position.copy(tilePosition(i,choice));
+    const here = tilePosition(i, choice);
+    const route = paths[choice];
+    const ahead = tilePosition(Math.min(route.length - 1, i + 1), choice), behind = tilePosition(Math.max(0, i - 1), choice);
+    const heading = Math.atan2(ahead.x - behind.x, ahead.z - behind.z);
+    const tile = roundedBox(width, thickness, width, Math.min(.04, width * .12), 4, coated('#f3e6c4', .5));
+    tile.position.copy(here);
     const top = tile.position.y;
     tile.position.y = top - thickness / 2;
-    rimRing.position.set(tile.position.x, top, tile.position.z);
-    board.add(rimRing);
+    tile.rotation.y = heading;
     const labelText = lane === 'power' ? '×2 POWER' : lane === 'questions' ? 'QUIZ TRAIL' :
       id ? categoryById.get(id)?.[5] : 'Start';
     const displayNumber = lane === 'power' ? 'P'+(i-fork.start) :
       lane === 'questions' ? 'Q'+(i-fork.start) : i;
-    const printed = new THREE.Mesh(new THREE.CircleGeometry(width*.47,40),new THREE.MeshBasicMaterial({
-      map:tileDisc(displayNumber,color,finish ? 'Finish' : labelText,finish ? '⚑' : !i ? '✦' : undefined),
+    const printed = new THREE.Mesh(new THREE.PlaneGeometry(width*.97,width*.97),new THREE.MeshBasicMaterial({
+      map:tileCard(displayNumber,color,finish ? 'Finish' : labelText,finish ? '⚑' : !i ? '✦' : undefined),
       transparent:true,
     }));
-    printed.position.set(tile.position.x,top+.002,tile.position.z);
+    printed.position.set(tile.position.x,top+.003,tile.position.z);
     printed.rotation.x=-Math.PI/2;
+    // Every space reads upright from the players' side of the table.
+    printed.rotation.z=0;
     board.add(tile,printed);
   }
   const finish = tilePosition(state.boardLength);
@@ -444,7 +454,7 @@ function buildTower(scene, baseColor, accent) {
   };
   for (const x of [-.62, .62]) {
     for (const z of [-.6, .6]) {
-      box(.13, 3.8, .13, frame, x, 2.02, z, .028);
+      box(.18, 3.8, .18, frame, x, 2.02, z, .04);
       box(.045, 3.54, .023, brass, x, 2.02, z + .073, .009);
       for (const y of [.36, 3.72]) box(.163, .14, .163, brass, x, y, z);
     }
@@ -472,6 +482,20 @@ function buildTower(scene, baseColor, accent) {
   badge.position.set(0, 3.56, .662);
   group.add(badge);
 
+  // A warm lamp inside, so the die is easy to follow as it tumbles.
+  const glow = new THREE.PointLight('#ffd9a0', 9, 5, 1.6);
+  glow.position.set(0, 2.4, .1);
+  group.add(glow);
+  // A stepped crown with a finial, like a turned wooden tower.
+  box(1.62, .09, 1.62, frame, 0, 4.12, 0, .04);
+  box(1.3, .12, 1.3, brass, 0, 4.22, 0, .05);
+  for (const [x, z] of [[-.7, -.7], [.7, -.7], [-.7, .7], [.7, .7]]) {
+    const knob = new THREE.Mesh(new THREE.SphereGeometry(.09, 14, 10), edge);
+    knob.position.set(x, 4.24, z);
+    group.add(knob);
+  }
+  // A felt-lined tray at the foot, where the die comes to rest.
+  box(1.7, .1, 1.7, frame, 0, .02, 0, .05);
   const bolt = new THREE.SphereGeometry(.034, 12, 8);
   for (const x of [-.60, .60]) for (const y of [.35, 1.61, 3.25, 3.78]) {
     const pin = new THREE.Mesh(bolt, edge);
@@ -784,7 +808,8 @@ export function mountTable(container, state, duration, onImpact) {
       camera.zoom = 1.10 + push;
     } else {
       const pan = rolling ? THREE.MathUtils.smoothstep(progress, 0, .24) * (1 - THREE.MathUtils.smoothstep(progress, .43, .69)) : 0;
-      const distance = Math.max(1, 1.39 / aspect);
+      // Closer than before: the board should fill the screen from the sofa.
+      const distance = Math.max(.84, 1.17 / aspect);
       camera.position.set((4.42 + pan * .82) * distance, (10.55 - pan * .8) * distance, (12.25 - pan * .8) * distance);
       lookTarget.set((aspect < 1.08 ? .76 : 1.08) + pan * Math.min(1.34, aspect), 1.48 + pan * .42, -.07);
       camera.zoom = 1.14 + pan * .18;

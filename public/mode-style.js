@@ -20,6 +20,7 @@ const styles = {
   topanswers: {font:'Club Classic',weight:850,accent:'#ffca83',backdrop:'#221932',panel:'#342a43',edge:'#785c7e',motif:'bubbles',notes:[330,494,659],wave:'triangle'},
   rare: {font:'Club Classic',weight:900,accent:'#a2f4cd',backdrop:'#0f2630',panel:'#1b3c47',edge:'#428078',motif:'glints',notes:[392,523,659],wave:'sine'},
   bloodmoon: {font:'Club Classic',weight:850,accent:'#ff8a8f',backdrop:'#150b26',panel:'#2a1846',edge:'#6e3a66',motif:'glints',notes:[294,349,440],wave:'triangle'},
+  wayoff: {font:'Club Classic',weight:850,accent:'#ffd23f',backdrop:'#2b0a1c',panel:'#501636',edge:'#a8436f',motif:'glints',notes:[392,494,587],wave:'square'},
   sketch: {font:'Club Classic',weight:850,accent:'#a4dcff',backdrop:'#101d34',panel:'#203857',edge:'#567b98',motif:'bubbles',notes:[523,659,784],wave:'sine'},
 };
 

@@ -130,6 +130,12 @@ export const duoIntros = {
     ['max', '[nervous] Poppy, why are you looking at my neck?'],
     ['poppy', '[laughs] No reason. Trust nobody.'],
   ],
+  wayoff: [
+    ['poppy', '[excited] Welcome to Way Off!'],
+    ['max', '[cheerfully] Everyone guesses the same number, and we can all watch your guesses turning on the big screen.'],
+    ['poppy', '[playfully] When the answer lands, whoever is furthest away is out.'],
+    ['max', '[laughs] So you do not have to be right. You just cannot be the most wrong.'],
+  ],
   sketch: [
     ['poppy', '[excited] Welcome to Sketch Sprint!'],
     ['max', '[cheerfully] One player gets a secret prompt, and draws it on their phone.'],

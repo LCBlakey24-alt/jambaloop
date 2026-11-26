@@ -86,3 +86,45 @@ test('late joiners watch, and one player is not enough', () => {
   const solo = table(1);
   assert.equal(solo.room.phase, 'finished');
 });
+
+test('a round each is settled on right answers, so Catch Up rarely ends level', () => {
+  const { room, party, answer, go, stop } = table(4);
+  const [a, b] = party.sides.map(side => side.keys[0]);
+  // Round 1: side 0 runs 2, side 1 chases 3 and catches. Round 2: side 1 runs 1, side 0 chases 1 and fails.
+  go(); answer(a); answer(a); go();
+  go(); for (let i = 0; i < 3; i++) answer(b); go();
+  go();
+  go(); answer(b); go();
+  go(); answer(a); go();
+  go();
+  assert.equal(room.phase, 'finished');
+  const view = publicCatchUp(room, 'host');
+  assert.deepEqual(room.party.wins, [0, 2]);
+  assert.equal(view.champion, 1);
+  assert.equal(view.decidedBy, 'rounds');
+  stop();
+
+  // One round each: 4 right answers beats 3.
+  const second = table(4);
+  const [c, d] = second.party.sides.map(side => side.keys[0]);
+  second.go(); second.answer(c); second.answer(c); second.go();
+  second.go(); second.answer(d); second.go();              // side 1 fails to catch: side 0 wins round 1
+  second.go();
+  second.go(); second.answer(d); second.go();              // side 1 runs 1
+  second.go(); second.answer(c); second.answer(c); second.go(); // side 0 chases 2 and catches: 2-0? no: side 0 wins again
+  second.go();
+  assert.equal(publicCatchUp(second.room, 'host').champion, 0);
+  second.stop();
+
+  // Forced level on rounds: answers decide, then mistakes, and only then is it shared.
+  const third = table(4);
+  third.party.wins = [1, 1];
+  third.room.phase = 'finished';
+  third.party.right = [5, 4];
+  assert.deepEqual([publicCatchUp(third.room, 'host').champion, publicCatchUp(third.room, 'host').decidedBy], [0, 'answers']);
+  third.party.right = [5, 5]; third.party.wrong = [3, 1];
+  assert.deepEqual([publicCatchUp(third.room, 'host').champion, publicCatchUp(third.room, 'host').decidedBy], [1, 'mistakes']);
+  third.party.wrong = [1, 1];
+  assert.equal(publicCatchUp(third.room, 'host').champion, null);
+  third.stop();
+});

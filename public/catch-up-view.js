@@ -38,7 +38,7 @@ export function catchUpView(state, { host, canControl, escape, icons }) {
   if (phase === 'finished') {
     const champion = party.champion === null || party.champion === undefined ? undefined : sides[party.champion];
     body = `<header class="catch-head"><span class="catch-kicker">CATCH UP · FULL TIME</span>
-        <h1>${champion ? `${escape(champion.name)} win!` : 'Honours even!'}</h1><p>${sides.map(side => `${escape(side.name)} ${side.wins}`).join(' · ')} rounds</p></header>
+        <h1>${champion ? `${escape(champion.name)} win!` : 'Honours even!'}</h1><p>${sides.map(side => `${escape(side.name)} ${side.wins}`).join(' · ')} rounds${party.decidedBy === 'answers' ? ` · level on rounds, won ${party.right[champion.id]}–${party.right[1 - champion.id]} on right answers` : party.decidedBy === 'mistakes' ? ' · level on rounds and right answers, won with fewer wrong answers' : ''}</p></header>
       ${!host && mine ? `<p class="catch-note" role="status">${champion ? (champion.id === mine.id ? 'Your side won.' : 'Your side lost this one.') : 'A draw.'}${party.earned ? ` You earned ${party.earned} points.` : ''}</p>` : ''}
       <div class="catch-sides">${sides.map(side => roster(side, escape)).join('')}</div>
       <div class="actions">${canControl ? replayButtons(state, icons) : '<p>Stay here if the captain starts another game.</p>'}</div>`;

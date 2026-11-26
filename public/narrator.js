@@ -1,6 +1,7 @@
 // Optional single-channel Jambaloop narrator. Pre-recorded MP3 where available;
 // otherwise speechSynthesis reads the exact transcript locally (no AI calls or charges).
 import { narration, narratorAsset } from './narration-scripts.js';
+import { duoClip, duoIntros, hasDuo, hosts } from './duo-scripts.js';
 
 let currentMode = null;
 let currentAudio = null;
@@ -36,6 +37,7 @@ export function stopNarration() {
     audio.load();
   }
   if (speech && 'speechSynthesis' in window) speechSynthesis.cancel();
+  hideCaption();
   presentation(previous, false);
 }
 
@@ -66,12 +68,82 @@ function browserSpeech(mode, token) {
   catch { finished(mode, token, 'Speech is not supported here. Read the introduction below.'); }
 }
 
+/* ------------------------------------------------------- double act -- */
+// Two hosts take turns, each line captioned on screen. Recorded clips play
+// where they exist; otherwise the device's British voices read the lines.
+let caption;
+
+function showCaption(host, text) {
+  if (typeof document === 'undefined') return;
+  caption ??= Object.assign(document.createElement('div'), { className: 'duo-caption' });
+  caption.setAttribute('role', 'status');
+  caption.dataset.host = host;
+  caption.innerHTML = '';
+  const name = document.createElement('b');
+  name.textContent = hosts[host].name;
+  const line = document.createElement('span');
+  line.textContent = text;
+  caption.append(name, line);
+  if (!caption.isConnected) document.body.append(caption);
+}
+
+function hideCaption() { caption?.remove(); }
+
+function hostVoice(host) {
+  const voices = 'speechSynthesis' in window ? speechSynthesis.getVoices().filter(voice => /^en-GB/i.test(voice.lang)) : [];
+  const male = /male|daniel|george|arthur|ryan|oliver|thomas|brian/i;
+  const female = /female|serena|kate|martha|libby|sonia|hazel|susan|amy|emma|lily/i;
+  const pick = host === 'max' ? voices.find(voice => male.test(voice.name) && !/female/i.test(voice.name)) : voices.find(voice => female.test(voice.name));
+  return pick ?? voices[host === 'max' ? 0 : Math.min(1, voices.length - 1)] ?? null;
+}
+
+function playDuo(mode, token) {
+  const lines = duoIntros[mode];
+  const recorded = hasDuo(mode);
+  let index = 0;
+  const next = () => {
+    if (token !== generation || currentMode !== mode) return;
+    if (index >= lines.length) { hideCaption(); finished(mode, token); return; }
+    const [host, text] = lines[index];
+    const clip = recorded ? duoClip(mode, index) : null;
+    index += 1;
+    showCaption(host, text);
+    if (clip) {
+      const audio = new Audio(clip);
+      currentAudio = audio;
+      audio.volume = 0.86;
+      audio.onended = () => setTimeout(next, 180);
+      audio.onerror = () => setTimeout(next, 700 + text.length * 50);
+      audio.play()?.catch(() => { hideCaption(); finished(mode, token, 'Browser blocked audio. Tap Listen to try again.'); });
+      return;
+    }
+    if (!('speechSynthesis' in window)) { setTimeout(next, 450 + text.length * 55); return; }
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'en-GB';
+    utterance.voice = hostVoice(host);
+    // Two hosts, two sounds, even when a device has only one British voice.
+    utterance.pitch = host === 'max' ? 0.88 : 1.18;
+    utterance.rate = 1.04;
+    utterance.volume = 0.86;
+    // No voice on this device: the caption still stays up for reading time.
+    const readingTime = 700 + text.length * 50;
+    utterance.onend = () => setTimeout(next, 160);
+    utterance.onerror = () => setTimeout(next, readingTime);
+    currentSpeech = utterance;
+    try { speechSynthesis.speak(utterance); } catch { setTimeout(next, readingTime); }
+  };
+  presentation(mode, true, recorded ? 'Playing Max and Poppy' : 'Max and Poppy, read aloud by this device');
+  next();
+}
+
 export function toggleNarration(mode) {
-  if (!narration[mode]) return;
+  if (!narration[mode] && !duoIntros[mode]) return;
   if (currentMode === mode) { stopNarration(); return; }
   stopNarration();
   const token = generation;
   currentMode = mode;
+  // The double act leads unless only the single announcer has been recorded.
+  if (duoIntros[mode] && (hasDuo(mode) || !narratorAsset(mode))) { playDuo(mode, token); return; }
   const asset = narratorAsset(mode);
   if (!asset) {
     browserSpeech(mode, token);

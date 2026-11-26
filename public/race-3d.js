@@ -77,35 +77,44 @@ function ribbon(curve, from, to, y, material, samples = 320, start = 0, end = 1)
   return new THREE.Mesh(geometry, material);
 }
 
-function carBody() {
+// A low, wide sports car: wedge nose, fastback glass cabin, big rimmed wheels,
+// front splitter, raised rear wing, full-width tail light and twin exhausts.
+function profile(points, depth, bevel = 0.03) {
   const shape = new THREE.Shape();
-  shape.moveTo(-0.56, 0.06);
-  shape.lineTo(0.5, 0.06);
-  shape.quadraticCurveTo(0.64, 0.08, 0.6, 0.16);
-  shape.lineTo(0.3, 0.21);
-  shape.lineTo(0.12, 0.33);
-  shape.lineTo(-0.2, 0.34);
-  shape.lineTo(-0.36, 0.22);
-  shape.lineTo(-0.56, 0.22);
-  shape.lineTo(-0.6, 0.12);
+  points.forEach(([x, y], index) => (index ? shape.lineTo(x, y) : shape.moveTo(x, y)));
   shape.closePath();
-  const geometry = new THREE.ExtrudeGeometry(shape, { depth: 0.46, bevelEnabled: true, bevelThickness: 0.035, bevelSize: 0.03, bevelSegments: 2, curveSegments: 6 });
-  geometry.translate(0, 0, -0.23);
+  const geometry = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: bevel > 0, bevelThickness: bevel, bevelSize: bevel * 0.85, bevelSegments: 2, curveSegments: 4 });
+  geometry.translate(0, 0, -depth / 2);
   return geometry;
+}
+
+function carBody() {
+  return profile([[-0.66, 0.07], [0.6, 0.07], [0.72, 0.1], [0.69, 0.15], [0.26, 0.215], [-0.28, 0.235], [-0.64, 0.27], [-0.7, 0.16]], 0.5);
 }
 
 const shared = {};
 function sharedParts() {
   if (shared.body) return shared;
   shared.body = carBody();
-  shared.glass = new THREE.BoxGeometry(0.3, 0.1, 0.44);
-  shared.wheel = new THREE.CylinderGeometry(0.12, 0.12, 0.09, 18).rotateX(Math.PI / 2);
-  shared.light = new THREE.BoxGeometry(0.04, 0.05, 0.1);
-  shared.spoiler = new THREE.BoxGeometry(0.16, 0.03, 0.56);
+  // Cabin: raked windscreen, low roof, long fastback.
+  shared.glass = profile([[0.24, 0.2], [0.02, 0.345], [-0.2, 0.35], [-0.54, 0.25], [-0.5, 0.2]], 0.38, 0.02);
+  shared.roof = new THREE.BoxGeometry(0.2, 0.015, 0.3);
+  shared.wheel = new THREE.CylinderGeometry(0.135, 0.135, 0.11, 22).rotateX(Math.PI / 2);
+  shared.rim = new THREE.CylinderGeometry(0.075, 0.075, 0.115, 10).rotateX(Math.PI / 2);
+  shared.light = new THREE.BoxGeometry(0.05, 0.03, 0.13);
+  shared.tailbar = new THREE.BoxGeometry(0.03, 0.035, 0.48);
+  shared.splitter = new THREE.BoxGeometry(0.16, 0.02, 0.6);
+  shared.skirt = new THREE.BoxGeometry(0.62, 0.035, 0.58);
+  shared.spoiler = new THREE.BoxGeometry(0.17, 0.025, 0.62);
+  shared.strut = new THREE.BoxGeometry(0.04, 0.13, 0.03);
+  shared.intake = new THREE.BoxGeometry(0.2, 0.07, 0.56);
+  shared.exhaust = new THREE.CylinderGeometry(0.03, 0.03, 0.08, 8).rotateZ(Math.PI / 2);
   shared.flame = new THREE.ConeGeometry(0.07, 0.42, 10).rotateZ(Math.PI / 2);
-  shared.glow = new THREE.PlaneGeometry(1.25, 0.6).rotateX(-Math.PI / 2);
-  shared.tyre = new THREE.MeshStandardMaterial({ color: '#111216', roughness: 0.6 });
-  shared.glassMaterial = new THREE.MeshStandardMaterial({ color: '#0b1222', roughness: 0.15, metalness: 0.6 });
+  shared.glow = new THREE.PlaneGeometry(1.45, 0.66).rotateX(-Math.PI / 2);
+  shared.tyre = new THREE.MeshStandardMaterial({ color: '#0d0e12', roughness: 0.7 });
+  shared.rimMaterial = new THREE.MeshStandardMaterial({ color: '#d7dbe3', roughness: 0.25, metalness: 0.9 });
+  shared.carbon = new THREE.MeshStandardMaterial({ color: '#15171d', roughness: 0.45, metalness: 0.3 });
+  shared.glassMaterial = new THREE.MeshStandardMaterial({ color: '#0a1020', roughness: 0.08, metalness: 0.75 });
   shared.head = new THREE.MeshBasicMaterial({ color: '#fff6d8' });
   shared.tail = new THREE.MeshBasicMaterial({ color: '#ff2d55' });
   return shared;
@@ -114,35 +123,35 @@ function sharedParts() {
 function makeCar(racer) {
   const parts = sharedParts();
   const car = new THREE.Group();
-  const paint = new THREE.MeshStandardMaterial({ color: racer.color, roughness: 0.32, metalness: 0.45 });
-  const body = new THREE.Mesh(parts.body, paint);
-  const glass = new THREE.Mesh(parts.glass, parts.glassMaterial);
-  glass.position.set(-0.04, 0.3, 0);
-  const spoiler = new THREE.Mesh(parts.spoiler, paint);
-  spoiler.position.set(-0.55, 0.33, 0);
-  car.add(body, glass, spoiler);
+  const paint = new THREE.MeshStandardMaterial({ color: racer.color, roughness: 0.22, metalness: 0.6 });
+  const at = (mesh, x, y, z = 0) => { mesh.position.set(x, y, z); car.add(mesh); return mesh; };
+  at(new THREE.Mesh(parts.body, paint), 0, 0);
+  at(new THREE.Mesh(parts.glass, parts.glassMaterial), 0, 0);
+  at(new THREE.Mesh(parts.roof, paint), -0.09, 0.355);
+  at(new THREE.Mesh(parts.splitter, parts.carbon), 0.66, 0.06);
+  at(new THREE.Mesh(parts.skirt, parts.carbon), 0, 0.065);
+  at(new THREE.Mesh(parts.intake, parts.carbon), -0.2, 0.15);
+  at(new THREE.Mesh(parts.spoiler, paint), -0.62, 0.42);
+  for (const z of [0.2, -0.2]) at(new THREE.Mesh(parts.strut, parts.carbon), -0.62, 0.34, z);
   const wheels = [];
-  for (const x of [0.36, -0.36]) for (const z of [0.25, -0.25]) {
-    const wheel = new THREE.Mesh(parts.wheel, parts.tyre);
-    wheel.position.set(x, 0.12, z);
+  for (const x of [0.43, -0.42]) for (const z of [0.265, -0.265]) {
+    const wheel = at(new THREE.Mesh(parts.wheel, parts.tyre), x, 0.135, z);
+    wheel.add(new THREE.Mesh(parts.rim, parts.rimMaterial));
     wheels.push(wheel);
-    car.add(wheel);
   }
-  for (const z of [0.15, -0.15]) {
-    const head = new THREE.Mesh(parts.light, parts.head); head.position.set(0.61, 0.13, z);
-    const tail = new THREE.Mesh(parts.light, parts.tail); tail.position.set(-0.61, 0.16, z);
-    car.add(head, tail);
-  }
+  for (const z of [0.17, -0.17]) at(new THREE.Mesh(parts.light, parts.head), 0.685, 0.14, z);
+  at(new THREE.Mesh(parts.tailbar, parts.tail), -0.705, 0.2);
+  for (const z of [0.1, -0.1]) at(new THREE.Mesh(parts.exhaust, parts.rimMaterial), -0.71, 0.11, z);
   const glowMaterial = new THREE.MeshBasicMaterial({ color: racer.color, transparent: true, opacity: 0.45, blending: THREE.AdditiveBlending, depthWrite: false });
   const glow = new THREE.Mesh(parts.glow, glowMaterial);
   glow.position.y = 0.015;
   const flameMaterial = new THREE.MeshBasicMaterial({ color: '#ffb347', transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false });
   const flame = new THREE.Mesh(parts.flame, flameMaterial);
-  flame.position.set(-0.82, 0.14, 0);
+  flame.position.set(-0.94, 0.12, 0);
   flame.visible = false;
   const badgeTexture = label(racer.marker, racer.color);
   const badge = new THREE.Sprite(new THREE.SpriteMaterial({ map: badgeTexture, depthWrite: false }));
-  badge.position.set(0, 0.95, 0);
+  badge.position.set(0, 0.98, 0);
   badge.scale.setScalar(0.44);
   car.add(glow, flame, badge);
   car.userData = { wheels, flame, paint, glowMaterial, flameMaterial, badgeTexture, badge };

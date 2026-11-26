@@ -150,6 +150,8 @@ Closest-number and put-in-order sessions offer five questions when you choose on
 - **Quiz Race:** Vince calls it from the commentary box: the start, lead changes, close battles and the chequered flag.
 - Scripts are `knockoutReactions` and `raceCalls` in `public/duo-scripts.js`.
 
+**Quiz Race power-ups and cars:** every racer gets **one Boost** (a 3-second burst without answering) and **three Rams** per race. A ram slows the nearest rival for 2.5 seconds, only lands when someone is within range, and a miss costs nothing. The server decides charges, range and timing. Phones show who's in range and what's left, and the victim's phone shakes and names who hit them. Vince calls every hit and boost. The 3D cars are low, wide sports cars with a rear wing, rimmed wheels, a tail-light bar and twin exhausts.
+
 **Game stings:** each game has its own short musical sting on its title card (`public/audio/sfx/sting-<game>.mp3`), written in that game's style.
 
 **TV sound (opt-in, phones silent):** original ElevenLabs sound effects (`public/audio/sfx/`: drum-roll, reveal sting, correct chime, lock-in pop, whoosh, wheel, boxing bell, sizzle, fanfare, cheer) and two original instrumental themes (`public/audio/music/`: a looping lobby theme that dips under the hosts, and a winners' theme). They only play when the TV host turns Sound on. Generated with `scripts/generate-sfx.mjs`; made on a paid ElevenLabs plan.

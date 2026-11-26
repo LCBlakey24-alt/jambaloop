@@ -6,7 +6,7 @@ import { deskAwards } from './awards.js';
 import { answerValue, boardSpeedValues, bonusValues, canSetScore, defaultScoring, doubleSchedules, pointValues, roundMultiplier } from './public/scoring.js';
 import { playlistLimit, queuedSettings } from './public/game-night.js';
 import { isConnected, liveConnection, responseTarget, touchPlayer, trackConnection } from './room-presence.js';
-import { boardLengths, boardRoute, boardPath, boardPathChoices, boardFork, boardFinish, boardMappedPosition, boardRequiresChoice, boardStopsAtFork } from './public/board-route.js';
+import { boardLengths, boardRoute, boardPath, boardPathChoices, boardFork, boardFinish, boardMappedPosition, boardRequiresChoice, boardStopsAtFork, boardIsCorner } from './public/board-route.js';
 import { teamPlayModes, defaultPlayStyle, validPlayStyle, requiredPlayers, teamAssignments } from './public/team-play.js';
 import { partyModes, startParty, advanceParty, advancePartyWhenReady, expireParty, rescuePotato, submitParty, publicParty } from './party-games.js';
 import express from 'express';
@@ -291,6 +291,7 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
           finishedAt:Math.min(Infinity,...racers.map(racer => racer.finishedAt ?? Infinity))};
       }).sort((a,b)=>a.finishedAt-b.finishedAt || b.distance-a.distance) : undefined,
     boardFork: room.mode === 'board' ? boardFork(room.boardLength) : undefined,
+    cornerBonus: room.mode === 'board' && phase === 'ready' && room.cornerBonus?.index === index ? room.cornerBonus.count : undefined,
     players: leaderboard, playerCount: players.size, player: player ? { ...publicPlayer(held(player)), score: scoresPublished ? held(player).score : playerScore } : undefined,
     review: !waiting && phase === 'finished' ? (room.privateQuestions ? room.privateReview.get(key) ?? [] : room.roundReview).map((review, i) => ({
       ...review,
@@ -960,7 +961,9 @@ app.post('/api/rooms/:code/roll', (req, res) => {
     const to = junction ? boardFork(room.boardLength).start : Math.min(path.length - 1, from + die);
     activeTeam.position = to;
     const landed = path[to];
-    room.motion = { die, from, to, junction: junction || undefined, points: die, difficulty: die,
+    // Landing exactly on a corner is a bonus: no question, and the team rolls again.
+    const bonus = !junction && to < path.length - 1 && boardIsCorner(room.boardLength, to, activeTeam.pathChoice);
+    room.motion = { die, from, to, junction: junction || undefined, bonus: bonus || undefined, points: die, difficulty: die,
       category: landed.category, pathChoice: activeTeam.pathChoice || 'power',
       pathMultiplier: landed.lane === 'power' ? 2 : 1,
       pathName: boardPathChoices.find(option => option.id === activeTeam.pathChoice)?.name ?? 'Board Race' };
@@ -972,7 +975,7 @@ app.post('/api/rooms/:code/roll', (req, res) => {
   if (room.mode !== 'dice') {
     const types = formatTypes(room.format);
     const format = types[room.index % types.length];
-    if (room.mode === 'board') room.questions.push(boardQuestion(room.motion.category, format, room.motion.difficulty, room.seen));
+    if (room.mode === 'board') { if (!room.motion.bonus) room.questions.push(boardQuestion(room.motion.category, format, room.motion.difficulty, room.seen)); }
     else {
       const recent = new Set(room.questions.map(question => question.prompt));
       // A topic with nothing in this format falls back to multiple choice.
@@ -984,7 +987,16 @@ app.post('/api/rooms/:code/roll', (req, res) => {
   room.phase = 'rolling';
   room.motion.duration = room.mode === 'board' ? boardRollDuration : 2600;
   room.motion.ends = Date.now() + room.motion.duration;
-  room.timer = setTimeout(() => roomTask(room, 'roll', () => openQuestion(room)), room.motion.duration);
+  room.timer = setTimeout(() => roomTask(room, 'roll', () => {
+    if (room.mode === 'board' && room.motion?.bonus) {
+      // Corner bonus: same team, same turn, straight back to the dice.
+      room.cornerBonus = { team: activeTeam.id, index: room.index, count: (room.cornerBonus?.index === room.index ? room.cornerBonus.count : 0) + 1 };
+      room.motion = null;
+      room.predictions.clear();
+      room.phase = 'ready';
+      publish(room);
+    } else openQuestion(room);
+  }), room.motion.duration);
   publish(room);
   res.sendStatus(204);
 });

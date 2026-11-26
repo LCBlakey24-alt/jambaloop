@@ -29,18 +29,18 @@ test('fork paths share a start, junction, rejoin and finish at all board sizes',
 });
 
 test('a team chooses its lane only when it is standing on the junction', () => {
-  // 16 spaces: the junction is square 4. 24 spaces: square 6.
+  // The junction is the first corner of the lap: space 3 of 16, space 5 of 24.
   assert.equal(boardRequiresChoice(16,0,undefined),false,'not at the start of the game');
-  assert.equal(boardRequiresChoice(16,3,undefined),false,'not one square short');
-  assert.equal(boardRequiresChoice(16,4,undefined),true,'on the junction');
-  assert.equal(boardRequiresChoice(16,4,'power'),false,'already chosen');
-  assert.equal(boardRequiresChoice(24,6,undefined),true);
+  assert.equal(boardRequiresChoice(16,2,undefined),false,'not one square short');
+  assert.equal(boardRequiresChoice(16,3,undefined),true,'on the junction');
+  assert.equal(boardRequiresChoice(16,3,'power'),false,'already chosen');
+  assert.equal(boardRequiresChoice(24,5,undefined),true);
   // A roll that would pass the junction stops on it; landing on it or short of it is a normal move.
   assert.equal(boardStopsAtFork(16,0,6,undefined),true);
-  assert.equal(boardStopsAtFork(16,0,4,undefined),false);
-  assert.equal(boardStopsAtFork(16,2,1,undefined),false);
-  assert.equal(boardStopsAtFork(16,3,2,undefined),true);
-  assert.equal(boardStopsAtFork(16,4,3,'questions'),false,'a team that has chosen moves freely');
+  assert.equal(boardStopsAtFork(16,0,3,undefined),false);
+  assert.equal(boardStopsAtFork(16,1,1,undefined),false);
+  assert.equal(boardStopsAtFork(16,2,2,undefined),true);
+  assert.equal(boardStopsAtFork(16,3,3,'questions'),false,'a team that has chosen moves freely');
 });
 
 test('progress follows geographic position after long-route rejoin', () => {

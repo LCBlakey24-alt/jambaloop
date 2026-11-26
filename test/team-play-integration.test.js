@@ -90,14 +90,15 @@ test('Board Race individual gives each player a separate piece; the lane is chos
     const game=await r.state();
     assert.equal(game.teams.length,3);
     assert.deepEqual(game.teams.map(t=>t.name),['Family 0','Family 1','Family 2']);
-    // Nobody chooses a lane at the start: the choice comes at the junction (square 4).
+    // Nobody chooses a lane at the start: the choice comes at the junction (the first corner, square 3).
     const early=await req(r.path+'/board-path',{game:game.game,index:game.index,path:'questions'},r.host,409);
     assert.match(early.error,/reaches the junction/);
     await req(r.path+'/roll',{game:game.game,index:game.index},r.host,204);
     const moved=await r.state();
     assert.equal(moved.phase,'rolling');
-    assert.ok(moved.motion.to>=1&&moved.motion.to<=4,'an undecided piece never passes the junction');
-    assert.equal(moved.motion.junction,moved.motion.die>4?true:undefined,'a long roll stops on the junction');
+    assert.ok(moved.motion.to>=1&&moved.motion.to<=3,'an undecided piece never passes the junction');
+    assert.equal(moved.motion.junction,moved.motion.die>3?true:undefined,'a long roll stops on the junction');
+    assert.equal(moved.motion.bonus,moved.motion.die===3?true:undefined,'landing exactly on a corner is a bonus roll');
     assert.ok(!moved.teams[0].pathChoice,'no lane chosen yet');
     assert.equal(moved.boardFork.extra,4);
   });
@@ -114,7 +115,7 @@ test('Board Race team grouping supports 2 teams; no lane choice before the junct
     await req(r.path+'/board-path',{game:game.game,index:game.index,path:'power'},r.host,409);
     await req(r.path+'/roll',{game:game.game,index:game.index},r.host,204);
     const moving=await r.state();
-    assert.ok(moving.motion.to<=4,'the team stops at the junction until it has chosen');
+    assert.ok(moving.motion.to<=3,'the team stops at the junction until it has chosen');
   });
 });
 
@@ -129,5 +130,33 @@ test('Quiz Race teams preserve individual racers plus public team standings',asy
     assert.equal(state.raceTeams.length,2);
     assert.equal(state.raceTeams[0].size,2);
     assert.equal(state.raceTeams[1].size,2);
+  });
+});
+
+test('Board Race corner bonus: landing exactly on a corner skips the question and the same team rolls again',async()=>{
+  await withServer(async({req,room})=>{
+    // A 16-space board has its first corner on space 3, so a first roll of 3 lands on it.
+    for(let attempt=0;attempt<60;attempt++){
+      const r=await room('board','teams',4,2,{boardLength:16});
+      await r.advance();
+      const game=await r.state();
+      await req(r.path+'/roll',{game:game.game,index:game.index},r.host,204);
+      const rolling=await r.state();
+      if(rolling.motion.die!==3)continue;
+      assert.equal(rolling.motion.bonus,true);
+      assert.equal(rolling.motion.to,3);
+      let after;
+      for(let wait=0;wait<80;wait++){after=await r.state();if(after.phase!=='rolling')break;await new Promise(done=>setTimeout(done,100));}
+      assert.equal(after.phase,'ready','no question is asked');
+      assert.equal(after.index,game.index,'it is still the same turn');
+      assert.equal(after.activeTeam,game.activeTeam,'and the same team');
+      assert.equal(after.cornerBonus,1);
+      // The corner is also the junction, so the team now chooses a lane and rolls again.
+      await req(r.path+'/board-path',{game:after.game,index:after.index,path:'power'},r.host,204);
+      await req(r.path+'/roll',{game:after.game,index:after.index},r.host,204);
+      assert.equal((await r.state()).motion.from,3);
+      return;
+    }
+    assert.fail('no first roll of 3 in 60 games');
   });
 });

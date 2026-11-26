@@ -988,7 +988,7 @@ function render(s) {
     const action = board || rally ? 'Roll the dice' : 'Spin the wheel';
     const title = board ? `${escape(team.name)}’s turn` : rally ? (rolling ? 'Dice in motion' : 'Roll for points') : rolling ? 'Spinning the wheel' : 'Spin for a category';
     const status = rolling ? (board ? 'Watch the die drop through the tower.' : rally ? 'Rolling the dice…' : 'Choosing a category…')
-      : board ? needsPath ? 'Your team has reached a fork. Choose a path before rolling.' : 'The die sets the move, base points, and question level. Every team answers the landing square’s genre.' : rally ? 'The dice set the multiplier for everyone’s correct answers.' : 'The wheel picks the next topic.';
+      : board ? needsPath ? (s.cornerBonus ? 'Corner bonus! No question this time. Choose your lane, then roll again.' : 'Your team is on the junction. Choose a lane, then roll.') : s.cornerBonus ? 'Corner bonus! You landed on a corner: no question this time, roll again.' : 'The die sets the move, base points, and question level. Every team answers the landing square’s genre.' : rally ? 'The dice set the multiplier for everyone’s correct answers.' : 'The wheel picks the next topic.';
     body = `<div class="game-panel turn-panel ${board || rally ? 'board-turn' : 'wheel-turn'}">
       ${host ? board ? boardView(s) : rally ? diceView(s) : wheelView(s) : ''}
       <div class="turn-copy"><div class="eyebrow">${board ? 'TURN' : 'QUESTION'} ${s.index + 1} OF ${s.total}</div>

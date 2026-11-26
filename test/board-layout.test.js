@@ -1,71 +1,83 @@
-import test from 'node:test';
 import assert from 'node:assert/strict';
+import test from 'node:test';
 import { readFileSync } from 'node:fs';
-import { curvedLayout, routeSketch, smoothCurve, forkKnots, TILE_TOP } from '../public/board-layout.js';
-import { boardFork, boardLengths, boardPath } from '../public/board-route.js';
+import { lapLayout, TILE_TOP, LAP_SPAN } from '../public/board-layout.js';
+import { boardLengths, boardFork, boardPath, boardCorners, boardIsCorner, boardSide } from '../public/board-route.js';
 
-function tilesFor(spaces) {
-  const fork = boardFork(spaces);
-  const layout = curvedLayout(spaces, fork);
-  const tiles = [];
-  for (let i = 0; i <= spaces; i++) {
-    const lane = i > fork.start && i < fork.rejoin ? 'P' : '';
-    tiles.push({ id: lane + i, r: layout.radius * (i === spaces ? 1.18 : lane ? .86 : 1), ...layout.position(i, 'power') });
-  }
-  for (let i = fork.start + 1; i < fork.start + layout.edges; i++) tiles.push({ id: 'Q' + i, r: layout.trailRadius, ...layout.position(i, 'questions') });
-  return { fork, layout, tiles };
-}
+const near = (a, b) => Math.abs(a - b) < 1e-9;
 
-test('the curved board never overlaps tiles and stays on the felt for every length', () => {
+test('the board is one square lap of touching spaces with a corner every side', () => {
   for (const spaces of boardLengths) {
-    const { tiles } = tilesFor(spaces);
-    for (let a = 0; a < tiles.length; a++) {
-      assert.ok(Math.abs(tiles[a].x) + tiles[a].r < 2.9 && Math.abs(tiles[a].z) + tiles[a].r < 2.9, `${spaces}: ${tiles[a].id} leaves the board`);
-      for (let b = a + 1; b < tiles.length; b++) {
-        const gap = Math.hypot(tiles[a].x - tiles[b].x, tiles[a].z - tiles[b].z) - tiles[a].r - tiles[b].r;
-        assert.ok(gap > 0, `${spaces}: ${tiles[a].id} overlaps ${tiles[b].id} (${gap.toFixed(3)})`);
-      }
+    const fork = boardFork(spaces), layout = lapLayout(spaces, fork), side = boardSide(spaces);
+    assert.equal(layout.lap, side * 4);
+    // Neighbours round the lap are exactly one space apart, in a straight line.
+    for (let i = 1; i <= layout.lap; i++) {
+      const a = layout.position(i - 1), b = layout.position(i);
+      assert.ok(near(Math.abs(a.x - b.x) + Math.abs(a.z - b.z), layout.cell), `${spaces}: space ${i} touches space ${i - 1}`);
     }
+    // The four corners of the lap are the four corners of the square, and the lap ends on the start.
+    const corners = boardCorners(spaces).map(index => layout.position(index));
+    for (const corner of corners) assert.ok(near(Math.abs(corner.x), layout.half) && near(Math.abs(corner.z), layout.half));
+    assert.deepEqual(layout.position(layout.lap), layout.position(0), 'a full lap returns to the start corner');
+    assert.equal(new Set(corners.map(c => `${c.x.toFixed(3)},${c.z.toFixed(3)}`)).size, 4);
   }
 });
 
-test('the curved layout keeps the route data meaning of every index', () => {
+test('nothing leaves the board, and the finishing straight ends in the middle', () => {
   for (const spaces of boardLengths) {
-    const { fork, layout } = tilesFor(spaces);
-    // Shared tiles are drawn in the same place on both lanes.
-    for (let i = 0; i <= fork.start; i++) assert.deepEqual(layout.position(i, 'questions'), layout.position(i, 'power'));
-    for (let i = fork.rejoin; i <= spaces; i++) assert.deepEqual(layout.position(i + fork.extra, 'questions'), layout.position(i, 'power'));
-    // Both finishes are the same raised tile; the route lengths are unchanged.
-    assert.equal(layout.position(spaces + fork.extra, 'questions').y, TILE_TOP + .02);
-    assert.equal(layout.position(1, 'power').y, TILE_TOP, 'tiles are inlaid, level with the path');
-    assert.equal(boardPath(spaces, true, 'questions').length - 1, spaces + fork.extra);
-    // Pawns move forward: consecutive spaces are close neighbours.
+    const fork = boardFork(spaces), layout = lapLayout(spaces, fork);
+    const width = layout.radius * 1.4;
+    assert.ok(width <= layout.cell, 'a ring space is no wider than its cell, so neighbours never overlap');
     for (const lane of ['power', 'questions']) {
       const last = lane === 'questions' ? spaces + fork.extra : spaces;
-      for (let i = 1; i <= last; i++) {
-        const a = layout.position(i - 1, lane), b = layout.position(i, lane);
-        assert.ok(Math.hypot(a.x - b.x, a.z - b.z) < 1.6, `${spaces}/${lane}: jump at ${i}`);
+      for (let i = 0; i <= last; i++) {
+        const p = layout.position(i, lane);
+        assert.ok(Math.abs(p.x) + width / 2 <= LAP_SPAN / 2 + 1e-9 && Math.abs(p.z) + width / 2 <= LAP_SPAN / 2 + 1e-9, `${spaces}/${lane}: space ${i} is inside the border`);
       }
+      const finish = layout.position(last, lane);
+      assert.ok(near(finish.x, 0) && near(finish.z, 0), 'the finish is the centre of the board');
+      assert.equal(finish.y, TILE_TOP + .02);
+    }
+    // Home-straight spaces shrink where needed so they never overlap along the diagonal.
+    assert.equal(layout.kind(spaces - 1), 'home');
+    const homeWidth = width * layout.scaleOf(spaces - 1);
+    const a = layout.position(spaces - 2), b = layout.position(spaces - 1);
+    assert.ok(Math.abs(a.x - b.x) >= homeWidth - 1e-9, `${spaces}: home-straight spaces do not overlap`);
+    assert.equal(layout.scaleOf(spaces), 1);
+  }
+});
+
+test('Question Trail is a slimmer lane just inside the right-hand side', () => {
+  for (const spaces of boardLengths) {
+    const fork = boardFork(spaces), layout = lapLayout(spaces, fork);
+    // Shared spaces are drawn in the same place on both lanes.
+    for (let i = 0; i <= fork.start; i++) assert.deepEqual(layout.position(i, 'questions'), layout.position(i, 'power'));
+    for (let i = fork.rejoin; i <= spaces; i++) assert.deepEqual(layout.position(i + fork.extra, 'questions'), layout.position(i, 'power'));
+    assert.equal(boardPath(spaces, true, 'questions').length - 1, spaces + fork.extra);
+    const trailWidth = layout.trailRadius * 1.4;
+    let previous;
+    for (let i = fork.start + 1; i < fork.start + layout.edges; i++) {
+      const p = layout.position(i, 'questions');
+      assert.equal(layout.kind(i, 'questions'), 'trail');
+      assert.ok(p.x < layout.half && p.x > layout.half - layout.cell * 1.05, 'one lane in from the edge');
+      assert.ok(p.x + trailWidth / 2 <= layout.half - layout.cell / 2 + layout.cell * .5, 'clear of the Power Lane spaces');
+      if (previous) assert.ok(previous.z - p.z >= trailWidth - 1e-9, `${spaces}: trail spaces ${i - 1} and ${i} do not overlap`);
+      previous = p;
+      assert.equal(boardIsCorner(spaces, i, 'questions'), false, 'no bonus corners inside the trail');
     }
   }
 });
 
-test('the fork runs up the right-hand side and round the far corner; the route laps inward to finish', () => {
-  const main = smoothCurve(routeSketch);
-  assert.ok(routeSketch[forkKnots[0]][0] > 1, 'the lanes split on the right-hand side');
-  assert.ok(routeSketch[forkKnots[1]][1] < -1, 'and rejoin past the far corner, along the back');
-  const end = main.getPointAt(1);
-  assert.ok(Math.hypot(end.x, end.z) < 1.7, 'finish is inside the board, away from the edges');
-  // Every bend is wider than the painted path, so it cannot fold over itself.
-  const samples = 900, points = Array.from({ length: samples + 1 }, (_, i) => main.getPointAt(i / samples));
-  for (let i = 4; i < samples - 4; i++) {
-    const [a, b, c] = [points[i - 4], points[i], points[i + 4]];
-    const ab = Math.hypot(b.x - a.x, b.z - a.z), bc = Math.hypot(c.x - b.x, c.z - b.z), ca = Math.hypot(a.x - c.x, a.z - c.z);
-    const area = Math.abs((b.x - a.x) * (c.z - a.z) - (c.x - a.x) * (b.z - a.z)) / 2;
-    if (area) assert.ok(ab * bc * ca / (4 * area) > .3, `tight bend at ${b.x.toFixed(2)},${b.z.toFixed(2)}`);
+test('corner bonuses: every corner of the lap, on either lane, and nowhere else', () => {
+  for (const spaces of boardLengths) {
+    const fork = boardFork(spaces), side = boardSide(spaces);
+    assert.deepEqual([fork.start, fork.rejoin], [side, side * 2], 'the lanes split at the first corner and rejoin at the second');
+    const corners = [];
+    for (let i = 1; i <= spaces; i++) if (boardIsCorner(spaces, i, 'power')) corners.push(i);
+    assert.deepEqual(corners, boardCorners(spaces));
+    // On Question Trail the later corners are four spaces further along.
+    assert.equal(boardIsCorner(spaces, side * 3 + fork.extra, 'questions'), true);
   }
-  const board = readFileSync(new URL('../public/board.js', import.meta.url), 'utf8');
-  assert.match(board, /import \{ curvedLayout, TILE_TOP \} from '\.\/board-layout\.js'/);
 });
 
 test('each space\'s block sits square-on under its printed face', () => {
@@ -74,5 +86,5 @@ test('each space\'s block sits square-on under its printed face', () => {
   assert.ok(tiles.length > 200, 'found the tile-building block');
   assert.doesNotMatch(tiles, /tile\.rotation\.y|printed\.rotation\.z/, 'neither the block nor its face is turned, so they always line up');
   assert.match(tiles, /new THREE\.PlaneGeometry\(width,width\)/, 'the face is exactly the size of the block');
-  assert.match(tiles, /const width = r \* 1\.4;/, 'half-diagonal stays inside the tested radius, so bends cannot overlap');
+  assert.match(board, /import \{ curvedLayout, TILE_TOP \} from '\.\/board-layout\.js'/);
 });

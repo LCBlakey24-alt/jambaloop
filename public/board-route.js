@@ -27,8 +27,17 @@ export const boardPathChoices = [
   {id:'questions', name:'Question Trail', detail:'Four extra spaces · more rolls and question opportunities'},
 ];
 
+// The board is one lap of a square ring with a four-space finishing straight
+// into the middle. Each side of the ring is `boardSide` spaces long, so the
+// four corners are at side, 2×side, 3×side and 4×side (back at the start).
+export const BOARD_HOME_STRAIGHT = 4;
+export const boardSide = spaces => (spaces - BOARD_HOME_STRAIGHT) / 4;
+export const boardCorners = spaces => [1, 2, 3, 4].map(turn => turn * boardSide(spaces));
+
+// The lanes split at the first corner and rejoin at the second.
 export function boardFork(spaces) {
-  return {start:spaces / 4, rejoin:spaces / 2, extra:4};
+  const side = boardSide(spaces);
+  return {start:side, rejoin:side * 2, extra:4};
 }
 
 export function boardPath(spaces, includeChristmas, choice = 'power') {
@@ -64,6 +73,13 @@ export function boardMappedPosition(spaces, position, choice) {
   const branchEnd = rejoin + extra;
   if (position >= branchEnd) return position - extra;
   return start+(position-start)*(rejoin-start)/(branchEnd-start);
+}
+
+/** Landing exactly on a corner of the lap earns a bonus (a free roll). */
+export function boardIsCorner(spaces, position, choice) {
+  const {start,rejoin,extra}=boardFork(spaces);
+  if (choice === 'questions' && position > start && position < rejoin + extra) return false;
+  return boardCorners(spaces).includes(boardMappedPosition(spaces, position, choice));
 }
 
 // A team picks its lane only once it is standing on the junction square.

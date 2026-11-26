@@ -165,3 +165,45 @@ export const welcomeBack = [
   ['poppy', '[delighted] Well, well! Look who it is. Everyone here has played before!', 'back'],
   ['max', '[playfully] So... do you want the full tour again, or shall we just crack on?', 'back'],
 ];
+
+/**
+ * Short reactions during quiz rounds, one host at a time. Recorded as
+ * react-<kind>-<n>. They never name players or read anything players typed.
+ */
+export const reactions = {
+  nobody: [
+    ['max', '[surprised] Ooh. Nobody got that one!'],
+    ['poppy', '[laughs] Not a single one of you! Moving swiftly on.'],
+    ['max', '[sighs] A clean sweep... of wrong answers.'],
+  ],
+  everybody: [
+    ['poppy', '[impressed] Everybody got that one! Too easy?'],
+    ['max', '[delighted] A full house! Well done, all of you.'],
+    ['poppy', '[excited] Every single one of you! Show-offs.'],
+  ],
+  onlyone: [
+    ['max', '[impressed] Only one of you got that. Take a bow!'],
+    ['poppy', '[whispers] Just one correct answer. [normal] Somebody\'s been revising.'],
+    ['max', '[chuckles] One of you knew it. The rest of you... did not.'],
+  ],
+  streak: [
+    ['poppy', '[excited] Somebody is on a roll! That\'s three in a row.'],
+    ['max', '[impressed] Three in a row for someone. Can anybody stop them?'],
+  ],
+  noanswers: [
+    ['max', '[curious] Hello? Anyone there? Nobody answered that one.'],
+    ['poppy', '[laughs] No answers at all. Were you all making tea?'],
+  ],
+  final: [
+    ['poppy', '[dramatic] Last question! It all comes down to this.'],
+    ['max', '[excited] Final question, everybody. Make it count!'],
+  ],
+  knockedout: [
+    ['max', '[dramatic] And down they go! We have a knockout.'],
+    ['poppy', '[mock sad] Oh no! Somebody is out of hearts.'],
+  ],
+  halfway: [
+    ['poppy', '[cheerfully] That\'s the halfway point. Still anybody\'s game!'],
+    ['max', '[warmly] Halfway there. Plenty of time to catch up.'],
+  ],
+};

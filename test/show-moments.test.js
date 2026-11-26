@@ -3,6 +3,9 @@ import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { readFileSync } from 'node:fs';
 import { after, before, test } from 'node:test';
+import { reactionFor } from '../public/show-moments.js';
+import { reactions } from '../public/duo-scripts.js';
+import { duoRecordings } from '../public/duo-recordings.js';
 
 let server;
 let origin;
@@ -78,4 +81,22 @@ test('every show-moment animation is opt-in to motion', () => {
   const outside = css.replace(/@media \(prefers-reduced-motion: no-preference\) \{[\s\S]*?\n\}/g, '');
   assert.ok(!/\banimation\s*:/.test(outside), 'no animation outside the no-preference block');
   assert.match(readFileSync('public/show-moments.js', 'utf8'), /prefersReducedMotion\(\)/, 'staged reveal and count-ups respect reduced motion');
+});
+
+test('host reactions fit the moment, use only what the TV shows, and are all recorded', () => {
+  const reveal = (wins, extra = {}) => ({ phase: 'reveal', lockIns: wins.map(won => ({ won })), ...extra });
+  assert.equal(reactionFor(reveal([])), 'noanswers');
+  assert.equal(reactionFor(reveal([false, false])), 'nobody');
+  assert.equal(reactionFor(reveal([true, true])), 'everybody');
+  assert.equal(reactionFor(reveal([true])), undefined, 'one player alone is not a full house');
+  assert.equal(reactionFor(reveal([true, false, false])), 'onlyone');
+  assert.equal(reactionFor(reveal([true, true, false], { players: [{ streak: 3 }] })), 'streak');
+  assert.equal(reactionFor(reveal([true, true, false], { players: [{ streak: 4 }] })), undefined, 'a streak is called once');
+  assert.equal(reactionFor(reveal([false], { knockout: { out: [{ outNow: true }] } })), 'knockedout');
+  assert.equal(reactionFor({ phase: 'reveal' }), undefined, 'phones (no lock-in list) never react');
+  assert.equal(reactionFor({ phase: 'question', index: 9, total: 10 }), 'final');
+  assert.equal(reactionFor({ phase: 'question', index: 5, total: 10 }), 'halfway');
+  assert.equal(reactionFor({ phase: 'question', index: 2, total: 10 }), undefined);
+  for (const [kind, lines] of Object.entries(reactions)) lines.forEach((_, index) =>
+    assert.ok(duoRecordings[`react-${kind}-${index + 1}`], `${kind} ${index + 1} is recorded`));
 });

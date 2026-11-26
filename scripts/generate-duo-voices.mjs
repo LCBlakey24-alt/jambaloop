@@ -8,7 +8,7 @@
 // from XI_API_KEY or a network proxy that adds it. The free plan refuses cloud
 // machines; a paid plan also carries the commercial licence.
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { duoIntros, hosts, skipQuips, welcomeBack, welcomeScript } from '../public/duo-scripts.js';
+import { duoIntros, hosts, reactions, skipQuips, welcomeBack, welcomeScript } from '../public/duo-scripts.js';
 import { duoRecordings } from '../public/duo-recordings.js';
 
 const api = 'https://api.elevenlabs.io/v1';
@@ -17,7 +17,8 @@ const args = process.argv.slice(2);
 const dry = args.includes('--dry-run');
 const redo = args.includes('--redo');
 const scripts = { ...duoIntros, welcome: welcomeScript, 'welcome-back': welcomeBack,
-  ...Object.fromEntries(skipQuips.map((lines, index) => [`skip-${index + 1}`, lines])) };
+  ...Object.fromEntries(skipQuips.map((lines, index) => [`skip-${index + 1}`, lines])),
+  ...Object.fromEntries(Object.entries(reactions).flatMap(([kind, lines]) => lines.map((line, index) => [`react-${kind}-${index + 1}`, [line]]))) };
 const wanted = args.filter(arg => !arg.startsWith('--'));
 const keys = wanted.length ? wanted : Object.keys(scripts);
 const folder = new URL('../public/audio/duo/', import.meta.url);

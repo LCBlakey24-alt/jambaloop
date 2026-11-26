@@ -73,6 +73,7 @@ on:
       - 'scripts/knockout-browser.mjs'
       - 'scripts/lobby-picker-browser.mjs'
       - 'scripts/welcome-show-browser.mjs'
+      - 'scripts/host-reactions-browser.mjs'
       - 'public/welcome-show.js'
       - 'public/narrator.js'
       - 'public/duo-scripts.js'
@@ -139,6 +140,7 @@ jobs:
           node scripts/knockout-browser.mjs
           node scripts/lobby-picker-browser.mjs
           node scripts/welcome-show-browser.mjs
+          node scripts/host-reactions-browser.mjs
           node scripts/tv-immersive-browser.mjs
           node scripts/tv-all-modes.mjs
       - name: Upload screen captures on success or failure

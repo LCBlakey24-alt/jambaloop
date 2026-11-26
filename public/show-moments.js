@@ -126,3 +126,27 @@ export function clockTension(view, { fraction, remaining, paused, live }) {
     view.insertAdjacentHTML('beforeend', '<div class="tension-vignette" aria-hidden="true"></div>');
   return final;
 }
+
+/* -------------------------------------------------------- reactions -- */
+
+/**
+ * Which host reaction (if any) fits this moment on the TV. Uses only what the
+ * TV already shows: who was right, lives and streaks. Never names a player.
+ */
+export function reactionFor(s) {
+  if (s.phase === 'question') {
+    if (s.total >= 3 && s.index === s.total - 1) return 'final';
+    if (s.total >= 6 && s.index === Math.ceil(s.total / 2)) return 'halfway';
+    return undefined;
+  }
+  if (s.phase !== 'reveal' || !Array.isArray(s.lockIns)) return undefined;
+  if (s.knockout?.out?.some(row => row.outNow)) return 'knockedout';
+  const answered = s.lockIns.length;
+  const right = s.lockIns.filter(entry => entry.won).length;
+  if (!answered) return 'noanswers';
+  if (!right) return 'nobody';
+  if (answered >= 2 && right === answered) return 'everybody';
+  if (answered >= 3 && right === 1) return 'onlyone';
+  if (s.players?.some(player => player.streak === 3)) return 'streak';
+  return undefined;
+}

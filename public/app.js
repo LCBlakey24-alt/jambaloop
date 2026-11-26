@@ -19,8 +19,8 @@ import { modeVariables, sceneBackdrop } from './mode-style.js';
 import { launcherTile, launcherPreview, launcherModes, launcherSetupArtwork, LAUNCHER_PAGE_SIZE } from './home-launcher.js';
 import { carouselView, moveCarousel, themeHome, wrapIndex } from './game-carousel.js';
 import { playSting, stingFor } from './show-sting.js';
-import { isWelcomeNarration, playScript, playWelcome, stopNarration, toggleNarration } from './narrator.js';
-import { skipQuips, welcomeBack } from './duo-scripts.js';
+import { isWelcomeNarration, narrationPlaying, playScript, playWelcome, stopNarration, toggleNarration } from './narrator.js';
+import { reactions, skipQuips, welcomeBack } from './duo-scripts.js';
 import { openWelcome } from './welcome-show.js';
 import { playChiptune, playCue, playTick, playTowerImpact } from './sound-cues.js';
 import { duckMusic, playMusic, playSfx, preloadSfx, stopMusic } from './sfx.js';
@@ -30,7 +30,7 @@ import { boardLengths, boardRoute, boardDuration, durationLabel, suggestedTurnCa
 import {teamPlayModes, defaultPlayStyle} from './team-play.js';
 import { avatarView, partyView } from './party-views.js';
 import { identityVariables } from './game-identities.js';
-import { bumpCount, clockTension, lockRail, stageReveal, stageable, updateLockRail } from './show-moments.js';
+import { bumpCount, clockTension, lockRail, reactionFor, stageReveal, stageable, updateLockRail } from './show-moments.js';
 import {connectSketchPainter,paintSketchBoard,clearSketch} from './sketch-canvas.js';
 import { openLibrary, savedQuizzes } from './quiz-editor.js';
 import { answerGuide, helpTypes, closestStep, createDraft, formatNumber, orderedItems, setEstimatePrecision, specialAnswer } from './answer-controls.js';
@@ -1157,7 +1157,7 @@ function render(s) {
   renderGraphics(s, stage, animateRoll);
   // Reveal beat: TV drum-roll and flare; phones hold their verdict to match.
   const held = stageReveal(app, s, { host, enter, onFlare: verdict => {
-    if (host) { if (soundEnabled) { playSfx(sound, 'reveal', { volume: 0.5 }); playSfx(sound, 'correct', { volume: 0.35, at: 0.15 }); } }
+    if (host) { if (soundEnabled) { playSfx(sound, 'reveal', { volume: 0.5 }); playSfx(sound, 'correct', { volume: 0.35, at: 0.15 }); hostReaction(s, 1500); } }
     else if (verdict === 'win') celebrate(`${s.code}/${s.game}/${s.index}/round`, { source: app.querySelector('.game'), intensity: .22 });
     else shatterPhoneHeart(app, s);
   } });
@@ -1169,6 +1169,7 @@ function render(s) {
     rememberLadder(s);
   } else if (!host && enter && !held && s.phase === 'reveal') shatterPhoneHeart(app, s);
   if (host && held && soundEnabled) playSfx(sound, 'drumroll', { volume: 0.45 });
+  if (host && enter && soundEnabled && s.phase === 'question') hostReaction(s, 600);
   celebrateMoment(s, host, enter, result, held);
   // Sofa distance: no in-game TV text below the height-relative floor.
   if (immersive && innerWidth > 760) enforceTvLegibility(app.querySelector('section.game'));
@@ -1418,6 +1419,22 @@ function receive(next, current) {
   updatePresence(next);
   if(next.mode==='sketch')paintSketchBoard(next.party);
   updateTimer();
+}
+
+// Max and Poppy react to the round on the TV (Sound on only): one short line,
+// once per moment, never over another line, rotating through the variants.
+const reactionTurn = {};
+let reactedAt;
+function hostReaction(s, delay) {
+  const kind = reactionFor(s);
+  const moment = `${s.code}/${s.game}/${s.index}/${s.phase}`;
+  if (!kind || reactedAt === moment) return;
+  reactedAt = moment;
+  setTimeout(() => {
+    if (!soundEnabled || narrationPlaying() || state?.game !== s.game || state?.index !== s.index || state?.phase !== s.phase) return;
+    const turn = reactionTurn[kind] = ((reactionTurn[kind] ?? -1) + 1) % reactions[kind].length;
+    playScript(`react-${kind}-${turn + 1}`, [reactions[kind][turn]]);
+  }, delay);
 }
 
 /** The TV's recorded effects and music for each moment of the show. */

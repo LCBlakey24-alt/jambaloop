@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { modes } from '../public/game-config.js';
-import { duoIntros, hosts, skipQuips, spoken, welcomeBack, welcomeScript } from '../public/duo-scripts.js';
+import { duoIntros, hosts, reactions, skipQuips, spoken, welcomeBack, welcomeScript } from '../public/duo-scripts.js';
 import { duoRecordings, duoTake } from '../public/duo-recordings.js';
 
 test('every game has a short Double Act intro where both hosts take turns', () => {
@@ -17,7 +17,8 @@ test('every game has a short Double Act intro where both hosts take turns', () =
 
 test('every recording is committed and has one timing per scripted line', () => {
   const scripts = { ...duoIntros, welcome: welcomeScript, 'welcome-back': welcomeBack,
-    ...Object.fromEntries(skipQuips.map((lines, index) => [`skip-${index + 1}`, lines])) };
+    ...Object.fromEntries(skipQuips.map((lines, index) => [`skip-${index + 1}`, lines])),
+  ...Object.fromEntries(Object.entries(reactions).flatMap(([kind, lines]) => lines.map((line, index) => [`react-${kind}-${index + 1}`, [line]]))) };
   for (const [key, timings] of Object.entries(duoRecordings)) {
     assert.ok(scripts[key], `${key} is a known script`);
     assert.ok(existsSync(new URL('../public' + duoTake(key), import.meta.url)), `${key}.mp3 is committed`);

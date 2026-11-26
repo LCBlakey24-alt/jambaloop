@@ -78,12 +78,11 @@ export function boardMappedPosition(spaces, position, choice) {
 // Each corner of the lap hands out a different power-up. A team keeps it and
 // any teammate can play it from their phone whenever they like.
 export const boardPowers = Object.freeze([
-  { id: 'double', name: 'Double Dice', short: '×2 DICE', detail: 'Your next roll moves you twice as far.' },
-  { id: 'pass', name: 'Free Pass', short: 'FREE PASS', detail: 'On the next question, teammates who get it wrong still score its base points.' },
-  { id: 'points', name: 'Double Points', short: '×2 POINTS', detail: 'Your team scores double on the next question.' },
-  { id: 'leap', name: 'Leap', short: 'LEAP +3', detail: 'Jump forward three spaces straight away.' },
+  { id: 'fifty', name: '50/50', short: '50/50', when: 'question', detail: 'Removes two wrong answers from the live question for your team.' },
+  { id: 'skip', name: 'New Question', short: 'NEW QUESTION', when: 'question', detail: 'Throws out the live question and asks a fresh one.' },
+  { id: 'points', name: 'Double Points', short: '×2 POINTS', when: 'before', detail: 'Your team scores double on a question. Play it before your team answers.' },
+  { id: 'half', name: 'Half Points', short: '½ POINTS', when: 'target', detail: 'Pick a rival: they score half on their next question.' },
 ]);
-export const BOARD_LEAP = 3;
 /** The power-up a corner gives, or undefined for any other space. */
 export function boardCornerPower(spaces, position, choice) {
   if (!boardIsCorner(spaces, position, choice)) return undefined;

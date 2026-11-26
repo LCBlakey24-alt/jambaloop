@@ -37,33 +37,53 @@ export function rollRecap(state, forStage = false) {
   const team = state.teams[state.activeTeam];
   const dice = board ? [motion.die] : motion.dice;
   const summary = board ? `Team ${team.name} rolled ${motion.die} · ${categoryName(motion.category)}` : `Rolled ${dice.join(' + ')} = ${motion.sum}`;
-  const outcome = board ? `Space ${motion.to} of ${boardFinish(state.boardLength,motion.pathChoice)} · Level ${motion.difficulty}/6${motion.pathMultiplier === 2 ? ' · POWER ×2 for active team' : motion.pathChoice === 'questions' ? ' · QUESTION TRAIL' : ''}${forStage ? ' · ' + motion.points + ' base pts' : ''}${motion.doubled ? ' · DOUBLE DICE: moved ' + motion.die * 2 : ''}${motion.reward ? ' · collected ' + powerOf(motion.reward).name.toUpperCase() : ''}`
+  const outcome = board ? `Space ${motion.to} of ${boardFinish(state.boardLength,motion.pathChoice)} · Level ${motion.difficulty}/6${motion.pathMultiplier === 2 ? ' · POWER ×2 for active team' : motion.pathChoice === 'questions' ? ' · QUESTION TRAIL' : ''}${forStage ? ' · ' + motion.points + ' base pts' : ''}${motion.reward ? ' · collected ' + powerOf(motion.reward).name.toUpperCase() : ''}${state.questionRefreshed ? ' · NEW QUESTION played by ' + safeName(state.questionRefreshed) : ''}`
     : `×${motion.multiplier} points`;
   return `<div class="roll-recap ${forStage ? 'stage-score' : board ? 'turn-info' : 'roll-result'}"${team ? ` style="--roll-accent:${team.color}"` : ''}>
-    <div class="roll-faces">${dice.map(dieBadge).join('')}</div><div><strong>${summary}</strong><small>${outcome}</small></div></div>`;
+    <div class="roll-faces">${dice.map(dieBadge).join('')}</div><div><strong>${summary}</strong><small>${outcome}</small></div>${board ? powersInPlay(state) : ''}</div>`;
 }
 
 const powerOf = id => boardPowers.find(power => power.id === id);
-/** Small chips for the power-ups a team is holding or has in play. */
+
+/** What has been played on the live question, for everyone to see on the TV. */
+function powersInPlay(state) {
+  const chips = state.teams.flatMap(team => [
+    ...(team.armed?.points ? [`<i class="power-chip is-armed" style="--chip:${team.color}">×2 POINTS · ${safeName(team.name)}</i>`] : []),
+    ...(team.halved ? [`<i class="power-chip is-hit" style="--chip:${team.color}">½ POINTS · ${safeName(team.name)}</i>`] : []),
+  ]);
+  return chips.length ? `<div class="powers-in-play" role="status"><span>IN PLAY</span>${chips.join('')}</div>` : '';
+}
+/** Small chips for the power-ups a team is holding, has in play, or has had played on it. */
 function powerChips(team) {
   if (!team.powers) return '';
-  const chips = boardPowers.flatMap(power => [
-    ...(team.armed?.[power.id] ? [`<i class="power-chip is-armed" title="${power.name}: in play">${power.short} ▶</i>`] : []),
-    ...(team.powers[power.id] ? [`<i class="power-chip" title="${power.name}">${power.short}${team.powers[power.id] > 1 ? ' ×' + team.powers[power.id] : ''}</i>`] : []),
-  ]);
+  const chips = [
+    ...(team.armed?.points ? ['<i class="power-chip is-armed" title="Double Points: in play">×2 POINTS ▶</i>'] : []),
+    ...(team.halved ? ['<i class="power-chip is-hit" title="Half Points: played on this team">½ POINTS ▼</i>'] : []),
+    ...boardPowers.filter(power => team.powers[power.id]).map(power => `<i class="power-chip" title="${power.name}">${power.short}${team.powers[power.id] > 1 ? ' ×' + team.powers[power.id] : ''}</i>`),
+  ];
   return chips.length ? `<span class="team-powers">${chips.join('')}</span>` : '';
 }
 
-/** A phone's remote for its team's power-ups: one button each, playable at any time. */
+/** A phone's remote for its team's power-ups. Each button says when it can be played. */
 export function powerBar(state, team) {
   if (!team?.powers) return '';
-  const held = boardPowers.filter(power => team.powers[power.id] || team.armed?.[power.id]);
-  if (!held.length) return '<section class="game-panel power-bar is-empty"><div class="eyebrow">POWER-UPS</div><p>Land exactly on a corner to collect one.</p></section>';
-  return `<section class="game-panel power-bar"><div class="eyebrow">YOUR TEAM’S POWER-UPS</div>${held.map(power => {
-    const armed = team.armed?.[power.id], count = team.powers[power.id];
-    const waiting = power.id === 'leap' && state.phase === 'rolling';
-    return `<div class="power-row"><div><strong>${power.name}${count > 1 ? ' ×' + count : ''}</strong><small>${armed ? 'In play: ' + (power.id === 'double' ? 'your next roll is doubled.' : 'it applies to the next question.') : power.detail}</small></div>
-      ${count ? `<button type="button" class="button primary" data-action="board-power" data-power="${power.id}"${armed || waiting ? ' disabled' : ''}>${armed ? 'In play' : waiting ? 'Wait' : 'Use now'}</button>` : '<span class="power-armed">IN PLAY</span>'}</div>`;
+  const held = boardPowers.filter(power => team.powers[power.id]);
+  const notes = `${team.armed?.points ? '<p class="power-note is-good" role="status">Double Points is in play for your team.</p>' : ''}${team.halved ? '<p class="power-note is-bad" role="status">A rival has put your team on half points for the next question.</p>' : ''}`;
+  if (!held.length) return `<section class="game-panel power-bar is-empty"><div class="eyebrow">POWER-UPS</div>${notes}<p>Land exactly on a corner to collect one.</p></section>`;
+  const live = state.phase === 'question';
+  const fourAnswers = state.question?.type === 'choice' && state.question.options?.length >= 4;
+  const answered = state.selection !== undefined;
+  return `<section class="game-panel power-bar"><div class="eyebrow">YOUR TEAM’S POWER-UPS</div>${notes}${held.map(power => {
+    const count = team.powers[power.id];
+    const title = `<div><strong>${power.name}${count > 1 ? ' ×' + count : ''}</strong><small>${power.detail}</small></div>`;
+    if (power.id === 'half') {
+      const rivals = state.teams.filter(rival => rival.id !== team.id);
+      return `<div class="power-row is-target">${title}<div class="power-targets">${rivals.map(rival => `<button type="button" class="button primary" data-action="board-power" data-power="half" data-target="${rival.id}"${rival.halved ? ' disabled' : ''}>${rival.halved ? safeName(rival.name) + ': already halved' : 'Halve ' + safeName(rival.name)}</button>`).join('')}</div></div>`;
+    }
+    const blocked = power.id === 'points' ? (team.armed?.points ? 'In play' : live && answered ? 'Too late' : '')
+      : power.id === 'fifty' ? (!live ? 'Needs a question' : !fourAnswers ? 'Four answers only' : state.removedOptions ? 'Used' : answered ? 'Too late' : '')
+      : (!live ? 'Needs a question' : '');
+    return `<div class="power-row">${title}<button type="button" class="button primary" data-action="board-power" data-power="${power.id}"${blocked ? ' disabled' : ''}>${blocked || 'Use now'}</button></div>`;
   }).join('')}</section>`;
 }
 

@@ -37,7 +37,7 @@ import { openLibrary, savedQuizzes } from './quiz-editor.js';
 import { answerGuide, helpTypes, closestStep, RULER_PITCH, createDraft, formatNumber, orderedItems, setEstimatePrecision, specialAnswer } from './answer-controls.js';
 import { demoView, explainer, hasDemo, practiceView, samples } from './learning.js';
 import { isEstimateShow, categories, categoryGroups, categoryName, modes, themes, questionTypes, formatTypes, formatId, difficulties, defaultTheme, partyModes, fixedQuestionModes, minimumPlayers, questionCounts, scoreIntervals, defaultScoreInterval, supportsScoreCheckpoints } from './game-config.js';
-import { boardView, diceView, lobbyView, reviewView, rollRecap, teamList, teamScoreboard, wheelView } from './game-views.js';
+import { boardView, diceView, lobbyView, powerBar, reviewView, rollRecap, teamList, teamScoreboard, wheelView } from './game-views.js';
 
 const icons = (name, css = '') => `<img class="${css}" src="/icons/${name}.svg" alt="">`;
 const modeName = id => modes.find(mode => mode[0] === id)?.[1] ?? '';
@@ -988,7 +988,7 @@ function render(s) {
     const action = board || rally ? 'Roll the dice' : 'Spin the wheel';
     const title = board ? `${escape(team.name)}’s turn` : rally ? (rolling ? 'Dice in motion' : 'Roll for points') : rolling ? 'Spinning the wheel' : 'Spin for a category';
     const status = rolling ? (board ? 'Watch the die drop through the tower.' : rally ? 'Rolling the dice…' : 'Choosing a category…')
-      : board ? needsPath ? (s.cornerBonus ? 'Corner bonus! No question this time. Choose your lane, then roll again.' : 'Your team is on the junction. Choose a lane, then roll.') : s.cornerBonus ? 'Corner bonus! You landed on a corner: no question this time, roll again.' : 'The die sets the move, base points, and question level. Every team answers the landing square’s genre.' : rally ? 'The dice set the multiplier for everyone’s correct answers.' : 'The wheel picks the next topic.';
+      : board ? needsPath ? 'Your team is on the junction. Choose a lane, then roll.' : 'The die sets the move, base points, and question level. Every team answers the landing square’s genre.' : rally ? 'The dice set the multiplier for everyone’s correct answers.' : 'The wheel picks the next topic.';
     body = `<div class="game-panel turn-panel ${board || rally ? 'board-turn' : 'wheel-turn'}">
       ${host ? board ? boardView(s) : rally ? diceView(s) : wheelView(s) : ''}
       <div class="turn-copy"><div class="eyebrow">${board ? 'TURN' : 'QUESTION'} ${s.index + 1} OF ${s.total}</div>
@@ -1162,7 +1162,7 @@ function render(s) {
     ${host && !['lobby', 'finished'].includes(s.phase) ? '<p class="stage-presence" id="stage-presence"></p>' : ''}
     ${(host || s.isCaptain) && !['lobby', 'finished', 'waiting'].includes(s.phase) && s.night.queue.length ? `<p class="live-lineup">Up next <strong>${modeName(s.night.queue[0])}</strong>
       ${canControl ? '<button class="button outline small" data-action="night">Edit playlist</button>' : ''}</p>` : ''}
-    ${body}<p class="error" id="game-error" role="alert"></p></section>`;
+    ${body}${!host && s.mode === 'board' && ownTeam && !['lobby', 'waiting', 'finished'].includes(s.phase) ? powerBar(s, ownTeam) : ''}<p class="error" id="game-error" role="alert"></p></section>`;
   if (guideWasOpen) {
     const guide = app.querySelector('.player-game-guide');
     if (guide) {
@@ -2140,6 +2140,12 @@ document.addEventListener('click', async event => {
   if (action === 'social-card') return sendParty({ action: 'card', option: Number(button.dataset.option), handVersion: Number(button.dataset.handVersion) }, button);
   if (action === 'social-redraw') return sendParty({ action: 'redraw' }, button);
   if (action === 'bluff-vote') return sendParty({ action: 'vote', id: button.dataset.id }, button);
+  if (action === 'board-power') {
+    button.disabled = true;
+    try { await api('/' + session.code + '/board-power', { game: state.game, power: button.dataset.power }); await refresh(); }
+    catch (error) { await refresh(); const note = document.querySelector('#game-error'); if (note) note.textContent = error.message; }
+    return;
+  }
   if (action === 'catch-answer') return sendParty({ action: 'answer', step: state.party?.step, option: Number(button.dataset.option) }, button);
   if (action === 'blood-ready') return sendParty({ action: 'ready' }, button);
   if (action === 'blood-pick') return sendParty({ action: 'night', night: state.party?.night, id: button.dataset.id }, button);

@@ -98,7 +98,7 @@ test('Board Race individual gives each player a separate piece; the lane is chos
     assert.equal(moved.phase,'rolling');
     assert.ok(moved.motion.to>=1&&moved.motion.to<=3,'an undecided piece never passes the junction');
     assert.equal(moved.motion.junction,moved.motion.die>3?true:undefined,'a long roll stops on the junction');
-    assert.equal(moved.motion.bonus,moved.motion.die===3?true:undefined,'landing exactly on a corner is a bonus roll');
+    assert.equal(moved.motion.reward,moved.motion.die===3?'double':undefined,'landing exactly on the first corner collects Double Dice');
     assert.ok(!moved.teams[0].pathChoice,'no lane chosen yet');
     assert.equal(moved.boardFork.extra,4);
   });
@@ -133,30 +133,92 @@ test('Quiz Race teams preserve individual racers plus public team standings',asy
   });
 });
 
-test('Board Race corner bonus: landing exactly on a corner skips the question and the same team rolls again',async()=>{
+test('Board Race corners: each gives a different power-up, collected by landing exactly on it',async()=>{
+  const {boardCornerPower,boardCorners,boardPowers}=await import('../public/board-route.js');
+  for(const spaces of [16,24,32,40]){
+    const corners=boardCorners(spaces);
+    assert.deepEqual(corners.map(index=>boardCornerPower(spaces,index,'power')),['double','pass','points','leap']);
+    assert.equal(boardCornerPower(spaces,corners[0]+1,'power'),undefined);
+  }
+  assert.equal(new Set(boardPowers.map(power=>power.id)).size,4);
   await withServer(async({req,room})=>{
-    // A 16-space board has its first corner on space 3, so a first roll of 3 lands on it.
     for(let attempt=0;attempt<60;attempt++){
       const r=await room('board','teams',4,2,{boardLength:16});
       await r.advance();
       const game=await r.state();
+      assert.deepEqual(game.teams[0].powers,{double:0,pass:0,points:0,leap:0},'nobody starts with a power-up');
       await req(r.path+'/roll',{game:game.game,index:game.index},r.host,204);
       const rolling=await r.state();
       if(rolling.motion.die!==3)continue;
-      assert.equal(rolling.motion.bonus,true);
-      assert.equal(rolling.motion.to,3);
+      assert.equal(rolling.motion.reward,'double');
+      assert.equal(rolling.teams[rolling.activeTeam].powers.double,1);
       let after;
       for(let wait=0;wait<80;wait++){after=await r.state();if(after.phase!=='rolling')break;await new Promise(done=>setTimeout(done,100));}
-      assert.equal(after.phase,'ready','no question is asked');
-      assert.equal(after.index,game.index,'it is still the same turn');
-      assert.equal(after.activeTeam,game.activeTeam,'and the same team');
-      assert.equal(after.cornerBonus,1);
-      // The corner is also the junction, so the team now chooses a lane and rolls again.
-      await req(r.path+'/board-path',{game:after.game,index:after.index,path:'power'},r.host,204);
-      await req(r.path+'/roll',{game:after.game,index:after.index},r.host,204);
-      assert.equal((await r.state()).motion.from,3);
+      assert.equal(after.phase,'question','the corner still asks its question');
       return;
     }
     assert.fail('no first roll of 3 in 60 games');
   });
+});
+
+test('Board Race power-ups: any teammate can play one at any time, and each does what it says',async()=>{
+  const {spawn}=await import('node:child_process');
+  const {once}=await import('node:events');
+  const server=spawn(process.execPath,['server.js'],{env:{...process.env,PORT:'0',PUBLIC_URL:'',BOARD_START_POWERS:'1'},stdio:['ignore','pipe','inherit']});
+  try{
+    const [output]=await once(server.stdout,'data');
+    const origin=String(output).match(/http:\/\/localhost:\d+/)[0];
+    const call=async(path,key,data)=>{
+      const response=await fetch(origin+'/api/rooms'+path,{method:data===undefined?'GET':'POST',headers:{...(key&&{'x-game-key':key}),'content-type':'application/json'},body:data===undefined?undefined:JSON.stringify(data)});
+      return {status:response.status,body:response.status===204?undefined:await response.json()};
+    };
+    const {body:{code,host}}=await call('',undefined,{mode:'board',category:'mixed',count:12,seconds:0,playStyle:'teams',teamCount:2,boardLength:24,format:'boolean'});
+    const path='/'+code;
+    const keys=[];
+    for(const name of ['Ada','Bo','Cy','Di'])keys.push((await call(path+'/join',undefined,{name})).body.key);
+    const state=async key=>(await call(path,key??host)).body;
+    const lobby=await state();
+    await call(path+'/advance',host,{game:lobby.game,phase:'lobby',index:0,lobbyVersion:lobby.lobbyVersion});
+    let s=await state();
+    const teamOf=async key=>(await state(key)).player.team;
+    const sides=await Promise.all(keys.map(teamOf));
+    const active=keys[sides.indexOf(s.activeTeam)], rival=keys[sides.indexOf(1-s.activeTeam)];
+    const play=(key,power)=>call(path+'/board-power',key,{game:s.game,power});
+    // The TV host is not on a team; a rival cannot spend your power-ups, only their own.
+    assert.equal((await play(host,'leap')).status,403);
+    assert.equal((await play(active,'nonsense')).status,400);
+    // Leap: three spaces, straight away, even on another team's turn.
+    assert.equal((await play(rival,'leap')).status,204);
+    s=await state();
+    assert.equal(s.teams[1-s.activeTeam].position,3);
+    assert.equal(s.teams[1-s.activeTeam].powers.leap,0);
+    assert.equal((await play(rival,'leap')).status,409,'a spent power-up cannot be played again');
+    // Double Dice: the next roll moves twice as far, but never past the junction (space 5) undecided.
+    assert.equal((await play(active,'double')).status,204);
+    assert.equal((await play(active,'double')).status,409,'already in play');
+    s=await state();
+    assert.equal(s.teams[s.activeTeam].armed.double,true);
+    await call(path+'/roll',host,{game:s.game,index:s.index});
+    s=await state();
+    assert.equal(s.motion.doubled,true);
+    assert.equal(s.motion.to,Math.min(5,s.motion.die*2));
+    assert.equal(s.teams[s.activeTeam].armed.double,false);
+    assert.equal((await play(active,'leap')).status,409,'no leaping while the dice are falling');
+    // Double Points and Free Pass, played during the roll, apply to the question that follows.
+    assert.equal((await play(active,'points')).status,204);
+    assert.equal((await play(rival,'pass')).status,204);
+    for(let wait=0;wait<80;wait++){s=await state();if(s.phase==='question')break;await new Promise(done=>setTimeout(done,100));}
+    assert.equal(s.phase,'question');
+    const base=s.motion.points;
+    // Nobody answers: the rival team's Free Pass still pays its members the base points.
+    await call(path+'/advance',host,{game:s.game,phase:'question',index:s.index});
+    s=await state();
+    assert.equal(s.phase,'reveal');
+    const rivalTeam=s.teams[1-s.activeTeam], activeTeam=s.teams[s.activeTeam];
+    assert.equal(rivalTeam.roundPoints,base,'Free Pass: base points for a missed question');
+    assert.equal(activeTeam.roundPoints,0,'Double Points doubles what you earn, and nothing is still nothing');
+    assert.equal(rivalTeam.armed.pass,false);
+    assert.equal(activeTeam.armed.points,false,'both are spent on that question');
+    assert.equal((await state(rival)).player.score,base);
+  }finally{server.kill();}
 });

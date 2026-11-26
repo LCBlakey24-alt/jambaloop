@@ -75,7 +75,23 @@ export function boardMappedPosition(spaces, position, choice) {
   return start+(position-start)*(rejoin-start)/(branchEnd-start);
 }
 
-/** Landing exactly on a corner of the lap earns a bonus (a free roll). */
+// Each corner of the lap hands out a different power-up. A team keeps it and
+// any teammate can play it from their phone whenever they like.
+export const boardPowers = Object.freeze([
+  { id: 'double', name: 'Double Dice', short: '×2 DICE', detail: 'Your next roll moves you twice as far.' },
+  { id: 'pass', name: 'Free Pass', short: 'FREE PASS', detail: 'On the next question, teammates who get it wrong still score its base points.' },
+  { id: 'points', name: 'Double Points', short: '×2 POINTS', detail: 'Your team scores double on the next question.' },
+  { id: 'leap', name: 'Leap', short: 'LEAP +3', detail: 'Jump forward three spaces straight away.' },
+]);
+export const BOARD_LEAP = 3;
+/** The power-up a corner gives, or undefined for any other space. */
+export function boardCornerPower(spaces, position, choice) {
+  if (!boardIsCorner(spaces, position, choice)) return undefined;
+  const turn = boardCorners(spaces).indexOf(boardMappedPosition(spaces, position, choice));
+  return boardPowers[turn]?.id;
+}
+
+/** Landing exactly on a corner of the lap earns that corner's power-up. */
 export function boardIsCorner(spaces, position, choice) {
   const {start,rejoin,extra}=boardFork(spaces);
   if (choice === 'questions' && position > start && position < rejoin + extra) return false;

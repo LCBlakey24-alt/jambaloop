@@ -1,4 +1,4 @@
-import { boardRoute, boardPath, boardPathChoices, boardFinish, boardFork, boardMappedPosition, boardDuration, durationLabel } from './board-route.js';
+import { boardRoute, boardPath, boardPathChoices, boardFinish, boardFork, boardMappedPosition, boardDuration, durationLabel, boardPowers } from './board-route.js';
 import { avatarView } from './party-views.js';
 import { categories, categoryName, modes, partyModes, minimumPlayers, wheelCategories, capacityError } from './game-config.js';
 import {requiredPlayers} from './team-play.js';
@@ -37,10 +37,34 @@ export function rollRecap(state, forStage = false) {
   const team = state.teams[state.activeTeam];
   const dice = board ? [motion.die] : motion.dice;
   const summary = board ? `Team ${team.name} rolled ${motion.die} · ${categoryName(motion.category)}` : `Rolled ${dice.join(' + ')} = ${motion.sum}`;
-  const outcome = board ? `Space ${motion.to} of ${boardFinish(state.boardLength,motion.pathChoice)} · Level ${motion.difficulty}/6${motion.pathMultiplier === 2 ? ' · POWER ×2 for active team' : motion.pathChoice === 'questions' ? ' · QUESTION TRAIL' : ''}${forStage ? ' · ' + motion.points + ' base pts' : ''}`
+  const outcome = board ? `Space ${motion.to} of ${boardFinish(state.boardLength,motion.pathChoice)} · Level ${motion.difficulty}/6${motion.pathMultiplier === 2 ? ' · POWER ×2 for active team' : motion.pathChoice === 'questions' ? ' · QUESTION TRAIL' : ''}${forStage ? ' · ' + motion.points + ' base pts' : ''}${motion.doubled ? ' · DOUBLE DICE: moved ' + motion.die * 2 : ''}${motion.reward ? ' · collected ' + powerOf(motion.reward).name.toUpperCase() : ''}`
     : `×${motion.multiplier} points`;
   return `<div class="roll-recap ${forStage ? 'stage-score' : board ? 'turn-info' : 'roll-result'}"${team ? ` style="--roll-accent:${team.color}"` : ''}>
     <div class="roll-faces">${dice.map(dieBadge).join('')}</div><div><strong>${summary}</strong><small>${outcome}</small></div></div>`;
+}
+
+const powerOf = id => boardPowers.find(power => power.id === id);
+/** Small chips for the power-ups a team is holding or has in play. */
+function powerChips(team) {
+  if (!team.powers) return '';
+  const chips = boardPowers.flatMap(power => [
+    ...(team.armed?.[power.id] ? [`<i class="power-chip is-armed" title="${power.name}: in play">${power.short} ▶</i>`] : []),
+    ...(team.powers[power.id] ? [`<i class="power-chip" title="${power.name}">${power.short}${team.powers[power.id] > 1 ? ' ×' + team.powers[power.id] : ''}</i>`] : []),
+  ]);
+  return chips.length ? `<span class="team-powers">${chips.join('')}</span>` : '';
+}
+
+/** A phone's remote for its team's power-ups: one button each, playable at any time. */
+export function powerBar(state, team) {
+  if (!team?.powers) return '';
+  const held = boardPowers.filter(power => team.powers[power.id] || team.armed?.[power.id]);
+  if (!held.length) return '<section class="game-panel power-bar is-empty"><div class="eyebrow">POWER-UPS</div><p>Land exactly on a corner to collect one.</p></section>';
+  return `<section class="game-panel power-bar"><div class="eyebrow">YOUR TEAM’S POWER-UPS</div>${held.map(power => {
+    const armed = team.armed?.[power.id], count = team.powers[power.id];
+    const waiting = power.id === 'leap' && state.phase === 'rolling';
+    return `<div class="power-row"><div><strong>${power.name}${count > 1 ? ' ×' + count : ''}</strong><small>${armed ? 'In play: ' + (power.id === 'double' ? 'your next roll is doubled.' : 'it applies to the next question.') : power.detail}</small></div>
+      ${count ? `<button type="button" class="button primary" data-action="board-power" data-power="${power.id}"${armed || waiting ? ' disabled' : ''}>${armed ? 'In play' : waiting ? 'Wait' : 'Use now'}</button>` : '<span class="power-armed">IN PLAY</span>'}</div>`;
+  }).join('')}</section>`;
 }
 
 export function teamList(state, personalTeam, compact = false) {
@@ -48,7 +72,7 @@ export function teamList(state, personalTeam, compact = false) {
   return `<div class="board-teams ${compact ? 'compact-teams' : ''}">${state.teams.map(team => `<div class="board-team ${team.id === state.activeTeam ? 'active-team' : ''}" style="--team:${team.color}">
     <span class="team-mark" aria-hidden="true">${pawnMarks[team.id]}</span><span><strong>${safeName(team.name)}${team.id === personalTeam ? (state.playStyle === 'individual' ? ' · you' : ' · your team') : ''}</strong>
     <small>${team.position >= boardFinish(state.boardLength,team.pathChoice) ? 'Finished' : Math.round(boardMappedPosition(state.boardLength,team.position,team.pathChoice)*10)/10 + ' / ' + state.boardLength + ' towards finish'}${team.pathChoice ? ' · ' + (team.pathChoice === 'power' ? 'Power Lane' : 'Question Trail') : ''}${showScores ? ' · ' + team.score.toLocaleString() + ' pts' : ''}</small></span>
-    ${showScores && state.phase === 'reveal' && team.roundPoints ? `<span class="team-bonus">+${team.roundPoints} pts</span>` : ''}</div>`).join('')}</div>`;
+    ${showScores && state.phase === 'reveal' && team.roundPoints ? `<span class="team-bonus">+${team.roundPoints} pts</span>` : ''}${powerChips(team)}</div>`).join('')}</div>`;
 }
 
 export function boardView(state) {

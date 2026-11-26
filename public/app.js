@@ -12,7 +12,7 @@ import { mountQuizRaceTrack } from './quiz-race-track.js';
 import { mobileDeck } from './mobile-deck.js';
 import { awardView, currentFrame, frameView, revealFrames, scoreReveal } from './ceremony.js';
 import { boardSpeedValues, bonusValues, canSetScore, defaultScoring, doubleSchedules, pointValues } from './scoring.js';
-import { gameNightPresets, gameNightView, playlistEditor, playlistLimit, queuedSettings, replayButtons } from './game-night.js';
+import { gameNightPresets, gameNightView, partySettings, playlistEditor, playlistLimit, queuedSettings, replayButtons } from './game-night.js';
 import { clearRoomSession, forgetPlayer, parseRoomCode, recentRooms, rememberPlayer, rememberedPlayer, restoreRoomSession, saveRoomSession } from './room-session.js';
 import {readQuestionHistory, rememberQuestion} from './question-history.js';
 import { modeVariables, sceneBackdrop } from './mode-style.js';
@@ -1974,7 +1974,7 @@ document.addEventListener('click', async event => {
     button.disabled = true;
     const mode = centredPick();
     try {
-      await api('/' + session.code + '/configure', { ...queuedSettings(mode, state.theme), game: state.game, lobbyVersion: state.lobbyVersion });
+      await api('/' + session.code + '/configure', { ...partySettings(mode, state.theme), game: state.game, lobbyVersion: state.lobbyVersion });
     } catch (error) { button.disabled = false; showGameError(error); }
     return;
   }
@@ -2000,7 +2000,7 @@ document.addEventListener('click', async event => {
       // Lobby first: everyone joins, then the captain picks the game on the
       // carousel. Hosting from a game's tile starts the carousel on that game.
       const chosen = modes.some(([id]) => id === button.dataset.mode) ? button.dataset.mode : undefined;
-      const settings = chosen ? queuedSettings(chosen, previewTheme) : { mode: 'classic', category: 'mixed', count: 10, seconds: 20, format: 'mixed', theme: previewTheme, scoreInterval: defaultScoreInterval };
+      const settings = chosen ? partySettings(chosen, previewTheme) : { mode: 'classic', category: 'mixed', count: 10, seconds: 20, format: 'mixed', theme: previewTheme, scoreInterval: defaultScoreInterval };
       // A topic card starts a Classic Quiz party on that topic.
       if (chosen === 'classic' && categories.some(([id]) => id === button.dataset.category)) settings.category = button.dataset.category;
       const room = await api('', { ...settings, picker: true });

@@ -6,6 +6,46 @@ export const raceDifficulties = Object.freeze(['easy', 'medium', 'hard', 'mixed'
 export const raceQuestionWindow = 12000;
 export const raceColors = ['#1dd9be', '#ffbd43', '#ff6b71', '#8954ff', '#65aaff', '#f998d2', '#bbef7d', '#ff9a4d', '#6fd3eb', '#f1a9ff', '#d4e87a', '#efb18c'];
 const wait = 700;
+// Power-ups: one boost and three rams per racer, per race. A ram only lands
+// on a rival within ramRange track units; a miss costs nothing.
+export const racePowers = Object.freeze({ boosts: 1, rams: 3, ramRange: 4,
+  boost: Object.freeze({ amount: .9, duration: 3000 }), rammed: Object.freeze({ amount: -.5, duration: 2500 }) });
+
+/** The rival this racer would hit right now: the nearest one within range. */
+export function ramTarget(race, racer) {
+  let best;
+  for (const other of race.racers.values()) {
+    if (other === racer || other.finishedAt !== undefined) continue;
+    const gap = Math.abs(other.distance - racer.distance);
+    if (gap <= racePowers.ramRange && (!best || gap < Math.abs(best.distance - racer.distance))) best = other;
+  }
+  return best;
+}
+
+/** Use a boost or a ram. Server-authoritative: charges, range and timing. */
+export function useRacePower(race, key, kind, at = race.time) {
+  const racer = race.racers.get(key);
+  if (!racer) return { status: 403, error: 'Join the race to use power-ups.' };
+  if (race.finished || racer.finishedAt !== undefined || at < 3000 || race.paused) return { status: 409, error: 'Power-ups work once the race is under way.' };
+  if (kind === 'boost') {
+    if (racer.boosts < 1) return { status: 409, error: 'You have used your boost.' };
+    racer.boosts--;
+    racer.effect = { ...racePowers.boost, start: at };
+    racer.power = { kind: 'boost', at };
+    return { status: 204 };
+  }
+  if (kind === 'ram') {
+    if (racer.rams < 1) return { status: 409, error: 'You have no rams left.' };
+    const target = ramTarget(race, racer);
+    if (!target) return { status: 409, error: 'Nobody is close enough to ram.' };
+    racer.rams--;
+    target.effect = { ...racePowers.rammed, start: at };
+    target.power = { kind: 'rammed', at, by: racer.name };
+    racer.power = { kind: 'ram', at };
+    return { status: 204, target: target.id };
+  }
+  return { status: 400, error: 'Unknown power-up.' };
+}
 const between = (v, a, b) => Math.max(a, Math.min(b, v));
 
 export function boostEffect(outcome, seconds = 12) {
@@ -52,6 +92,7 @@ export function createQuizRace(entries, questionPool, { length = 'medium', track
       id: player.id, name: player.name, color: raceColors[i % raceColors.length], marker: i + 1,
       distance: 0, effect: null, speed: 1, questionIndex: 0, question: null, nextAt: 3000,
       feedback: null, finishedAt: undefined, correct: 0, wrong: 0, passed: 0, timeouts: 0,
+      boosts: racePowers.boosts, rams: racePowers.rams, power: null,
     }])),
   };
 }
@@ -159,12 +200,15 @@ export function publicRaceState(race, key, isHost) {
     racers: sorted.map((r, i) => ({
       id: r.id, name: r.name, color: r.color, marker: r.marker, distance: +r.distance.toFixed(3), speed: +r.speed.toFixed(3),
       position: i + 1, finishedAt: r.finishedAt, trail: r.feedback?.outcome ?? 'normal',
+      power: r.power && race.time < r.power.at + 1800 ? r.power.kind : undefined,
       connected: true,
     })),
     own: own && !isHost ? {
       question: own.question ? { id: own.question.id, historyId:questionHistoryId(own.question.item.prompt), prompt: own.question.item.prompt, options: own.question.item.options, category: own.question.item.category, deadline: own.question.deadline } : undefined,
       feedback: own.feedback && race.time < own.feedback.at + 1400 ? { ...own.feedback } : undefined,
       correct: own.correct, wrong: own.wrong, passed: own.passed, timeouts: own.timeouts,
+      boosts: own.boosts, rams: own.rams, ramTarget: own.finishedAt === undefined && race.time >= 3000 ? ramTarget(race, own)?.name : undefined,
+      rammedBy: own.power?.kind === 'rammed' && race.time < own.power.at + 2500 ? own.power.by : undefined,
       nextAt: own.nextAt, position: sorted.indexOf(own) + 1, distance: +own.distance.toFixed(3),
     } : undefined,
   };

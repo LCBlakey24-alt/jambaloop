@@ -51,6 +51,28 @@ export function quizRaceView(s, {host,canControl,icons,replayButtons,sending}) {
     ${teamRace ? `<p class="race-team-label">Your team: ${name(s.teams.find(t=>t.id===s.player?.team)?.name || 'Unassigned')}</p>` : ''}
     <div class="race-phone-progress" aria-label="Race progress"><i data-race-progress style="width:${percent(own?.distance||0,r.length)}%;background:${player?.color||'#1dd9be'}"></i></div>
     ${intro?'<div class="race-phone-intro"><h1>Ready, set…</h1><p>Quick, correct answers give you a bigger boost.</p><strong data-race-countdown>3</strong></div>':s.pausedAt?'<div class="race-phone-intro"><h1>Race paused</h1><p>Waiting for the host or captain to resume.</p></div>':q?`<div class="race-question" data-question-id="${q.id}"><div class="race-question-label"><span>QUESTION ${q.id}</span><span data-race-deadline>12s</span></div><h2>${name(q.prompt)}</h2><div class="race-options">${q.options.map((opt,index)=>`<button class="race-answer" data-action="race-answer" data-race-option="${index}" ${sending?'disabled':''}><span>${'ABCD'[index]}</span>${name(opt)}</button>`).join('')}</div><button class="button outline race-pass" data-action="race-pass" ${sending?'disabled':''}>Pass question · small slowdown</button></div>`:`<div class="race-phone-intro"><h2>${feedback?.outcome==='correct'?'Correct! Speed boost!':feedback?.outcome==='wrong'?'Not quite — slowing down':feedback?.outcome==='timeout'?'Time is up!':feedback?.outcome==='pass'?'Question passed':'Next question coming…'}</h2><p>${feedback?.answer?'Correct answer: '+name(feedback.answer):'Keep racing!'}</p></div>`}
+    ${intro?'':`<div class="race-powers" data-race-powers><button type="button" class="race-power is-boost" data-action="race-power" data-kind="boost"><b>🚀 Boost</b><small data-power-note></small></button>
+      <button type="button" class="race-power is-ram" data-action="race-power" data-kind="ram"><b>💥 Ram</b><small data-power-note></small></button></div>
+      <p class="race-power-alert" data-race-alert role="status"></p>`}
     <div class="race-phone-foot"><div><small>YOUR PROGRESS</small><strong data-race-progress-text>${percent(own?.distance||0,r.length)}%</strong></div><div><small>CURRENT SPEED</small><strong data-race-speed-value>${player?.speed?.toFixed(2)||'1.00'}×</strong></div></div>
     ${s.isCaptain?`<button class="button outline small" data-action="clock">${s.pausedAt?'Resume race':'Pause race'}</button>`:''}</section>`;
+}
+
+/** Keep the phone's power-up buttons live without re-rendering the question. */
+export function updateRacePowers(root, state) {
+  const bar = root.querySelector('[data-race-powers]');
+  const own = state.race?.own;
+  if (!bar || !own) return;
+  const live = state.phase === 'race' && !state.pausedAt && !state.race.finished;
+  const set = (kind, enabled, note) => {
+    const button = bar.querySelector(`[data-kind="${kind}"]`);
+    button.disabled = !enabled || button.dataset.sending === '1';
+    button.querySelector('[data-power-note]').textContent = note;
+  };
+  set('boost', live && own.boosts > 0, own.boosts > 0 ? 'Once per race' : 'Used');
+  set('ram', live && own.rams > 0 && Boolean(own.ramTarget), own.rams < 1 ? 'None left' : own.ramTarget ? `Hit ${own.ramTarget} · ${own.rams} left` : `Nobody in range · ${own.rams} left`);
+  const alert = root.querySelector('[data-race-alert]');
+  const text = own.rammedBy ? `💥 Rammed by ${own.rammedBy}!` : '';
+  if (alert && alert.textContent !== text) alert.textContent = text;
+  root.querySelector('.race-phone')?.toggleAttribute('data-rammed', Boolean(own.rammedBy));
 }

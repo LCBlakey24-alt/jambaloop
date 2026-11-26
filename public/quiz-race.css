@@ -111,3 +111,16 @@ html.mobile-deck .game[data-mode="quizrace"] {margin:6px auto 24px}
   .game[data-mode="quizrace"] .race-personal-finish { padding: 7px; }
   .game[data-mode="quizrace"] .race-personal-finish strong { font-size: 31px; }
 }
+
+/* Power-ups on the phone: one boost, three rams. */
+.race-powers { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:10px 0 4px; }
+.race-power { display:grid; gap:2px; justify-items:center; min-height:64px; padding:8px; border-radius:14px; border:2px solid; cursor:pointer;
+  font:800 18px/1.1 var(--head,sans-serif); color:#fff; background:#160f45; }
+.race-power small { font:600 12px/1.2 var(--body,sans-serif); opacity:.9; }
+.race-power.is-boost { border-color:#1df2e0; box-shadow:0 0 14px #1df2e055; }
+.race-power.is-ram { border-color:#ff2bd6; box-shadow:0 0 14px #ff2bd655; }
+.race-power:disabled { opacity:.45; box-shadow:none; cursor:default; }
+.race-power:not(:disabled):active { transform:scale(.96); }
+.race-power-alert { margin:0; min-height:1.3em; text-align:center; font-weight:800; color:#ff8fd8; }
+@media (prefers-reduced-motion:no-preference) { .race-phone[data-rammed] { animation:race-rammed .4s steps(5) 2; } }
+@keyframes race-rammed { 0%,100% { translate:0; } 25% { translate:-6px 0; } 75% { translate:6px 0; } }

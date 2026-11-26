@@ -266,6 +266,15 @@ export const raceCalls = {
     ['vince', '[fast, excited] There is nothing in it at the front. Nothing!'],
     ['vince', '[excited] Wheel to wheel! This is brilliant!'],
   ],
+  ram: [
+    ['vince', '[shouting] Ooh! Contact! That is a big hit!'],
+    ['vince', '[fast, excited] They\'ve been shunted! Is that allowed? It is in this race!'],
+    ['vince', '[laughs] A little bump never hurt anyone, ladies and gentlemen!'],
+  ],
+  boost: [
+    ['vince', '[shouting] They\'ve hit the boost! Look at them go!'],
+    ['vince', '[fast, excited] Boost deployed! That is a rocket ship!'],
+  ],
   finish: [
     ['vince', '[shouting] The chequered flag! What a race!'],
     ['vince', '[shouting] They take the win! Absolutely sensational!'],

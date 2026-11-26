@@ -14,7 +14,7 @@ import QRCode from 'qrcode';
 import { randomBytes, randomInt } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
 import { difficultyQuestions } from './difficulty-questions.js';
-import { advanceQuizRace, createQuizRace, publicRaceState, raceDifficulties, raceLengths, racePlacings, raceTracks, setRacePaused, submitRaceAnswer } from './quiz-race.js';
+import { advanceQuizRace, createQuizRace, publicRaceState, useRacePower, raceDifficulties, raceLengths, racePlacings, raceTracks, setRacePaused, submitRaceAnswer } from './quiz-race.js';
 import { networkInterfaces } from 'node:os';
 import { inviteOriginOptions, qrJoinUrl } from './room-invite.js';
 import { isRoomMember, positiveSetting, readAvatar, requestBudget } from './room-http.js';
@@ -948,6 +948,17 @@ app.post('/api/rooms/:code/race-answer', (req, res) => {
   if (req.body?.game !== room.game || !['race', 'race-countdown'].includes(room.phase)) return res.status(409).json({error:'This race is no longer active.'});
   advanceQuizRace(room.race, performance.now());
   const result = submitRaceAnswer(room.race, key, {questionId:req.body?.questionId, option:req.body?.option, pass:req.body?.pass}, room.race.time);
+  if (result.status !== 204) return res.status(result.status).json({error: result.error});
+  publish(room);
+  res.sendStatus(204);
+});
+
+app.post('/api/rooms/:code/race-power', (req, res) => {
+  const {room, key} = res.locals;
+  if (!room.players.has(key) || room.mode !== 'quizrace' || !room.race) return res.status(403).json({error:'Join an active Quiz Race to use power-ups.'});
+  if (req.body?.game !== room.game || room.phase !== 'race') return res.status(409).json({error:'Power-ups work once the race is under way.'});
+  advanceQuizRace(room.race, performance.now());
+  const result = useRacePower(room.race, key, req.body?.kind, room.race.time);
   if (result.status !== 204) return res.status(result.status).json({error: result.error});
   publish(room);
   res.sendStatus(204);

@@ -7,7 +7,7 @@ import { scoreBreakView, updateScoreBreak } from './score-break.js';
 import { winnerBanner, playerFinish } from './result-highlights.js';
 import { bindRoomAvatars } from './room-avatars.js';
 import { animatePotato, potatoHeat } from './potato-stage.js';
-import { quizRaceView } from './quiz-race-view.js';
+import { quizRaceView, updateRacePowers } from './quiz-race-view.js';
 import { mountQuizRaceTrack } from './quiz-race-track.js';
 import { mobileDeck } from './mobile-deck.js';
 import { awardView, currentFrame, frameView, revealFrames, scoreReveal } from './ceremony.js';
@@ -1407,6 +1407,7 @@ function receive(next, current) {
     if (soundEnabled && app.querySelectorAll('.lock-stamp').length > before) playSfx(sound, 'lockin', { volume: 0.5 });
   }
   if (introduce) toggleNarration(next.mode);
+  if (!current.host && next.mode === 'quizrace') updateRacePowers(app, next);
   if (welcomeMoved) showWelcome(next.welcome);
   if (picker) {
     // The captain has started browsing: the welcome steps aside.
@@ -1461,6 +1462,10 @@ function raceCommentary(before, next) {
   if (before.phase === 'race-countdown' && next.phase === 'race') return call('start');
   if (next.phase === 'finished' && before.phase !== 'finished') return setTimeout(() => call('finish'), 900);
   if (next.phase !== 'race' || before.phase !== 'race') return;
+  // Power-ups: a new ram or boost anywhere on the track gets a call.
+  const fresh = kind => next.race.racers.some(racer => racer.power === kind && before.race?.racers?.find(old => old.id === racer.id)?.power !== kind);
+  if (fresh('rammed')) { if (soundEnabled) playSfx(sound, 'wrong', { volume: 0.4 }); return call('ram', 5000); }
+  if (fresh('boost')) { if (soundEnabled) playSfx(sound, 'whoosh', { volume: 0.5 }); return call('boost', 5000); }
   const [first, second] = next.race.racers;
   const leaderBefore = before.race?.racers?.[0]?.id;
   const length = next.race.length || 1;
@@ -1936,6 +1941,17 @@ document.addEventListener('click', async event => {
     homeSelected = undefined;
     renderModeCards(homeFilter);
     app.querySelector(`[data-action="preview-mode"][data-mode="${id}"]`)?.focus({preventScroll:true});
+    return;
+  }
+  if (action === 'race-power' && session && state?.race?.own) {
+    button.dataset.sending = '1';
+    button.disabled = true;
+    try {
+      await api('/' + session.code + '/race-power', { game: state.game, kind: button.dataset.kind });
+      try { if (navigator.userActivation?.hasBeenActive) navigator.vibrate?.(button.dataset.kind === 'ram' ? [40, 30, 80] : 60); } catch {}
+    } catch (error) { showGameError(error); }
+    delete button.dataset.sending;
+    await refresh();
     return;
   }
   if (action === 'race-answer' || action === 'race-pass') {

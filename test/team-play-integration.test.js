@@ -244,7 +244,7 @@ test('Board Race power-ups: any teammate can play one at any time, and each does
   }finally{server.kill();}
 });
 
-test('Board Race power-ups work everyone-against-everyone and with 2, 3 and 4 teams',async()=>{
+test('Board Race power-ups work everyone-against-everyone (up to 8) and with 2 to 8 teams',async()=>{
   const {spawn}=await import('node:child_process');
   const {once}=await import('node:events');
   const server=spawn(process.execPath,['server.js'],{env:{...process.env,PORT:'0',PUBLIC_URL:'',BOARD_START_POWERS:'1',ROOMS_PER_MINUTE:'5000'},stdio:['ignore','pipe','inherit']});
@@ -255,7 +255,7 @@ test('Board Race power-ups work everyone-against-everyone and with 2, 3 and 4 te
       const response=await fetch(origin+'/api/rooms'+path,{method:data===undefined?'GET':'POST',headers:{...(key&&{'x-game-key':key}),'content-type':'application/json'},body:data===undefined?undefined:JSON.stringify(data)});
       return {status:response.status,body:response.status===204?undefined:await response.json()};
     };
-    for(const [playStyle,teamCount,people] of [['individual',4,2],['individual',4,3],['individual',4,4],['teams',2,5],['teams',3,7],['teams',4,9]]){
+    for(const [playStyle,teamCount,people] of [['individual',4,2],['individual',4,3],['individual',4,4],['individual',4,8],['teams',2,5],['teams',3,7],['teams',4,9],['teams',6,13],['teams',8,17]]){
       const label=`${playStyle} ${playStyle==='teams'?teamCount+' teams':people+' players'}`;
       const {body:{code,host}}=await call('',undefined,{mode:'board',category:'mixed',count:12,seconds:0,playStyle,teamCount,boardLength:24,format:'choice'});
       const path='/'+code;
@@ -315,4 +315,25 @@ test('Board Race power-ups work everyone-against-everyone and with 2, 3 and 4 te
       assert.ok(s.teams.every(team=>!team.halved&&!team.armed.points),label+': all spent');
     }
   }finally{server.kill();}
+});
+
+test('Board Race takes up to eight pieces; other team games stay at four teams',async()=>{
+  const {pieceOffset}=await import('../public/board-route.js');
+  const {teams,maximumTeams}=await import('../public/game-config.js');
+  assert.equal(maximumTeams('board'),8);
+  assert.equal(maximumTeams('classic'),4);
+  assert.equal(new Set(teams.map(([name])=>name)).size,8);
+  assert.equal(new Set(teams.map(([,colour])=>colour)).size,8);
+  // No two pieces share a spot, and every piece stays inside its space.
+  for(let count=1;count<=8;count++){
+    const spots=Array.from({length:count},(_,id)=>pieceOffset(id,count));
+    for(const [x,z] of spots)assert.ok(Math.abs(x)<=.3&&Math.abs(z)<=.3);
+    for(let a=0;a<count;a++)for(let b=a+1;b<count;b++)assert.ok(Math.hypot(spots[a][0]-spots[b][0],spots[a][1]-spots[b][1])>.18,`${count} pieces: ${a} and ${b} overlap`);
+  }
+  await withServer(async({req})=>{
+    const base={category:'mixed',count:12,seconds:0,playStyle:'teams',boardLength:24};
+    await req('',{...base,mode:'board',teamCount:8},undefined,201);
+    await req('',{...base,mode:'board',teamCount:9},undefined,400);
+    await req('',{...base,mode:'classic',count:10,teamCount:5},undefined,400);
+  });
 });

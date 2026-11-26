@@ -1,4 +1,4 @@
-import { teams, modes } from './game-config.js';
+import { teams, modes, maximumTeams } from './game-config.js';
 
 // Modes whose existing rules produce meaningful points, survival or a finish.
 // Fork in the Tracks has a dedicated two-team host-judge rules engine.
@@ -16,7 +16,7 @@ export function requiredPlayers(mode,style,teamCount,minimum) {
 }
 
 // Deterministic balanced round-robin allocation. Stable by lobby join order.
-// For Board Race Individual, each person receives a separate pawn (max four).
+// For Board Race Individual, each person receives a separate pawn (max eight).
 export function teamAssignments(entries, mode, style, teamCount, {allowUnfilled=false} = {}) {
   const players=[...entries];
   if (!validPlayStyle(mode,style)) throw new Error('This play style is not available for this game.');
@@ -24,8 +24,8 @@ export function teamAssignments(entries, mode, style, teamCount, {allowUnfilled=
   const grouped=style==='teams' || boardSolo;
   if (!grouped) return {groups:[],ids:new Map()};
   const total=boardSolo ? players.length : teamCount;
-  if (!Number.isInteger(total) || total<1 || total>4 || (style==='teams' && total<2)) {
-    throw new Error('Choose 2 to 4 teams, or up to four individual board racers.');
+  if (!Number.isInteger(total) || total<1 || total>maximumTeams(mode) || (style==='teams' && total<2)) {
+    throw new Error(mode==='board' ? 'Choose 2 to 8 teams, or up to eight individual board racers.' : 'Choose 2 to 4 teams.');
   }
   if (!allowUnfilled && players.length<total) throw new Error('At least one player must join each team.');
   const ids=new Map();

@@ -270,3 +270,17 @@
 .powers-in-play .power-chip { font-size: 1em; padding: .3em .7em; border-left: .45em solid var(--chip, currentColor); }
 .roll-recap .powers-in-play { margin: 0 0 0 .6rem; }
 @media (max-width: 700px) { .roll-recap .powers-in-play { display: none; } }
+
+/* Five to eight pieces: the list goes two-up and tightens so it still fits the TV. */
+.board-teams.many-teams { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; margin-top: 6px; }
+.board-teams.many-teams .board-team { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; padding: 4px 6px; gap: 2px 6px; font-size: .8em; }
+.board-teams.many-teams .board-team .team-mark { transform: scale(.8); margin: -3px; }
+.board-teams.many-teams .board-team small { font-size: .78em; line-height: 1.1; }
+.board-teams.many-teams .team-powers, .board-teams.many-teams .team-bonus { grid-column: 1 / -1; margin-left: 0; gap: 2px 3px; }
+.board-teams.many-teams .power-chip { font-size: clamp(.5rem, 1.15vh, .72rem); padding: .2em .4em; letter-spacing: 0; }
+.fallback-tile span i { font-size: .8em; }
+/* With five or more pieces the TV side panel drops its helper line so the roll button stays on screen. */
+.host-screen .turn-copy:has(.many-teams) .turn-status { display: none; }
+.host-screen .turn-copy:has(.many-teams) h1 { font-size: clamp(1.4rem, 4.4vh, 2.6rem); margin-bottom: .2em; }
+.board-teams.many-teams .board-team small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.board-teams.many-teams .board-team > span:not(.team-mark):not(.team-powers):not(.team-bonus) { min-width: 0; }

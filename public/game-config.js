@@ -110,7 +110,14 @@ export const teams = [
   ['Sapphire', '#96bcff'],
   ['Jade', '#83edc0'],
   ['Amber', '#ffd381'],
+  ['Violet', '#c9a4ff'],
+  ['Coral', '#ff9a76'],
+  ['Teal', '#62d6e4'],
+  ['Lime', '#c5ec74'],
 ];
+// Board Race fits eight pieces on a space; every other team game plays 2 to 4 teams.
+export const BOARD_PIECES = 8;
+export const maximumTeams = mode => mode === 'board' ? BOARD_PIECES : 4;
 
 export const wheelCategories = includeChristmas => categories.filter(([id]) =>
   id !== 'mixed' && !isSpecialist(id) && (includeChristmas || id !== 'christmas'));
@@ -173,14 +180,14 @@ export const maximumPlayers = (mode, playStyle) =>
   : mode === 'catchup' ? 30
   : mode === 'wayoff' ? 30
   : ['brain', 'topanswers', 'rare'].includes(mode) ? 30
-  : mode === 'board' && playStyle === 'individual' ? 4
+  : mode === 'board' && playStyle === 'individual' ? BOARD_PIECES
   : roomCapacity;
 export const capacityError = (mode, playStyle, players) => {
   const limit = maximumPlayers(mode, playStyle);
   if (players <= limit) return undefined;
   const name = modes.find(([id]) => id === mode)?.[1] ?? 'This game';
   return mode === 'board' && playStyle === 'individual'
-    ? 'Individual Board Race supports up to four racers. Choose Teams for larger groups.'
+    ? 'Individual Board Race supports up to eight racers. Choose Teams for larger groups.'
     : `${name} supports up to ${limit} players; this room has ${players}. Choose another game or a smaller group.`;
 };
 export const boardRollDuration = 5400;

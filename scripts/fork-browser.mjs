@@ -21,18 +21,20 @@ try {
     if(await host.locator('[data-action="carousel-view"]').isVisible())await host.locator('[data-action="carousel-view"]').click();
     await host.locator('[data-action="preview-mode"][data-mode="tracks"]').click();
     assert.match(await host.locator('#game-preview').innerText(),/three|sabotage|driver/i);
-    await host.locator('#game-preview [data-action="host"]').click();
-    const form=host.locator('#host-form');
+    // Hosting a party creates the room; Game settings then shapes the game.
+    const creating=host.waitForResponse(res=>new URL(res.url()).pathname==='/api/rooms'&&res.request().method()==='POST');
+    await host.locator('#game-preview [data-action="party"]').click();
+    const create=await creating;
+    assert.equal(create.status(),201,await create.text());
+    const {code,host:hostKey}=await create.json();
+    await host.locator('[data-picker-tv] [data-action="picker-settings"]').click();
+    const form=host.locator('#configure-form');
     assert.equal(await form.locator('input[name="playStyle"][value="individual"]').isDisabled(),true);
     assert.equal(await form.locator('input[name="playStyle"][value="teams"]').isChecked(),true);
     assert.equal(await form.locator('select[name="teamCount"]').inputValue(),'2');
     // One round per joined player is automatic, so the count field is hidden.
     assert.equal(await form.locator('select[name="count"]').isVisible(),false);
-    const creating=host.waitForResponse(res=>new URL(res.url()).pathname==='/api/rooms'&&res.request().method()==='POST');
     await form.locator('button[type="submit"]').click();
-    const create=await creating;
-    assert.equal(create.status(),201,await create.text());
-    const {code,host:hostKey}=await create.json();
     await host.locator('.room-code').waitFor({timeout:15000});
     const players=[];
     for(let i=0;i<4;i++){

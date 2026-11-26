@@ -19,6 +19,7 @@ export const narration = {
   brain: "Welcome to Brain Ladder! Ten levels of original puzzles, two lives per player, and a tougher challenge at every step. Think carefully, lock an answer and see how high you can climb!",
   topanswers: "Welcome to Top Answers! First, vote for the answer you really prefer. Then guess which choice the rest of this room picked most. We'll reveal the actual votes on the big screen — no mystery surveys, just your crowd!",
   rare: "Welcome to Rare Find! Give a correct answer that you think nobody else will choose. We'll check the verified answer list, review unusual entries, and reveal how many players thought alike. Stand out to score big!",
+  bloodmoon: "Welcome to Bloodmoon. Every phone is dealt a secret role. A few of you are vampires; the rest are villagers, with one Oracle and one Warden among them. Each night, everyone chooses in secret on their own phone. Each day, talk it over and vote to banish a suspect. The village wins when every vampire is out. The vampires win when they match the village. Trust nobody.",
   sketch: "Welcome to Sketch Sprint! One player becomes the artist, with a secret picture to draw on their phone. Everyone else races to guess what appears on the big screen. Fast fingers, sharp eyes, and plenty of laughs. Ready, set, sketch!",    
 };
 // Three professional ElevenLabs recordings were successfully generated on 22 November 2026.

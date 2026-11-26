@@ -1,8 +1,9 @@
 // Animated mode identities are CSS-driven: real text, no photographic covers.
 import { modes, minimumPlayers, partyModes } from './game-config.js';
-import { showMark } from './show-identity.js';
 import { modeStyle, modeVariables } from './mode-style.js';
 import { narration, narratorAsset } from './narration-scripts.js';
+import { duoIntros, hosts, spoken } from './duo-scripts.js';
+import { duoRecordings } from './duo-recordings.js';
 
 export const LAUNCHER_PAGE_SIZE = 8;
 
@@ -25,6 +26,7 @@ const identities = {
   brain: {lines:['BRAIN','LADDER'],strap:'CLIMB WITH YOUR MIND',kind:'PUZZLES',steps:['Choose a five, seven or ten-level climb.','Everyone starts with two lives; answer original number and logic puzzles privately.','Correct answers earn more points as the challenges get harder. Wrong or missed answers cost one life, and losing both means spectating.']},
   topanswers: {lines:['TOP','ANSWERS'],strap:'READ YOUR ROOM',kind:'PARTY SHOW',steps:['Choose one of four answers to an original opinion question. That creates a real secret poll of everyone playing.','Then secretly predict which answer will be the most popular among your group.','The TV reveals real vote counts. Your prediction earns 20 points per vote for your choice, plus 100 if it shares the most votes. Tied top answers both count.']},
   rare: {lines:['RARE','FIND'],strap:'STAND OUT TO SCORE',kind:'GAME SHOW',steps:['Everyone types a different answer to the same question, privately on their phone.','Accepted answers are checked against a finite catalogue; the host can review unusual entries before scores are final.','A valid unique answer scores 200, a shared pair scores 100 each, and answers selected by three or more score 50 each. Invalid answers score zero.']},
+  bloodmoon: {lines:['BLOOD','MOON'],strap:'WHO IS THE VAMPIRE?',kind:'SECRET ROLES',steps:['Every phone is dealt a secret role: a few Vampires, one Oracle, one Warden, and Villagers. The TV never sees who is who.','Each night everyone chooses on their own phone: Vampires pick someone to bite, the Oracle checks one player, the Warden guards one.','Each day the room talks it over and votes to banish a suspect. The village wins when every vampire is out; the vampires win when they match the village.']},
   sketch: {lines:['SKETCH','SPRINT'],strap:'DRAW FAST. GUESS FASTER.',kind:'DRAWING',steps:['Choose 3, 5 or 7 rounds; artists rotate across the group.','One artist draws a private prompt on their phone, live on the TV.','The other players get five guesses each. Earn 150 points for the first correct guess, 100 for second, 75 thereafter, and 50 for the artist when somebody guesses correctly.']},
 };
 
@@ -42,12 +44,10 @@ function identity(id) {
 
 export function tileArt(id, isPreview = false) {
   const style = modeStyle(id);
-  const {lines,strap} = identity(id);
+  const {lines} = identity(id);
   return `<span class="tile-art ${isPreview?'tile-art-preview':''}" data-motif="${style.motif}" data-show="${id}" aria-hidden="true">
     <span class="tile-motion"><i></i><i></i><i></i></span>
-    ${showMark(id)}
     <span class="tile-wordmark">${lines.map(line=>`<span>${line}</span>`).join('')}</span>
-    <span class="tile-strap">${strap}</span>
   </span>`;
 }
 
@@ -79,17 +79,17 @@ export function launcherPreview(id) {
             aria-pressed="false" aria-label="Listen to ${name} introduction">
           <span data-narrator-symbol aria-hidden="true">▶</span><span data-narrator-label>Listen to intro</span>
         </button>
-        <span class="narrator-mode" data-narrator-status role="status">${narratorAsset(key)?'Recorded announcer':'Device read-aloud'}</span>
+        <span class="narrator-mode" data-narrator-status role="status">${duoRecordings[key]?'Recorded: Max and Poppy':narratorAsset(key)?'Recorded announcer':'Device read-aloud'}</span>
       </div>
       <details class="narrator-script">
         <summary>Read spoken introduction</summary>
-        <p>${narration[key]}</p>
+        ${duoRecordings[key] ? duoIntros[key].map(([host,text])=>`<p><b>${hosts[host].name}:</b> ${spoken(text)}</p>`).join('') : `<p>${narration[key]}</p>`}
       </details>
-      ${narratorAsset(key) ? '<a class="narrator-credit" href="https://elevenlabs.io" target="_blank" rel="noopener noreferrer">Voice generated with ElevenLabs</a>' : ''}
+      ${narratorAsset(key) || duoRecordings[key] ? '<a class="narrator-credit" href="https://elevenlabs.io" target="_blank" rel="noopener noreferrer">Voice generated with ElevenLabs</a>' : ''}
       <h3>How to play</h3>
       <ol class="preview-steps">${steps.map((step,i)=>`<li><b>${String(i+1).padStart(2,'0')}</b><span>${step}</span></li>`).join('')}</ol>
       <div class="preview-actions">
-        <button type="button" class="button primary" data-action="host" data-mode="${key}">Set up this game <span aria-hidden="true">→</span></button>
+        <button type="button" class="button primary" data-action="party" data-mode="${key}">Host a party <span aria-hidden="true">→</span></button>
         <button type="button" class="button outline" data-action="close-preview">Back to games</button>
       </div>
     </div>

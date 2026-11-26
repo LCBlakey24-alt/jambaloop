@@ -9,7 +9,7 @@ Existing service (do not create a duplicate):
 - Target branch: **main**
 - Region: Frankfurt, plan: Free
 - Build: `npm ci`, start: `npm start`, Node: 22
-- Automatic deployment: **off** (manually approved releases only)
+- Automatic deployment: `render.yaml` says **off**, but the live service setting (checked 25 Nov 2026) is **on commit**. Every deploy so far has been manual. See [STATUS_2026-11-25.md](STATUS_2026-11-25.md).
 
 ## Before updating the live service
 
@@ -29,7 +29,7 @@ If no deploy starts, use **Manual Deploy → Deploy latest commit** for the now-
 ## Verification
 
 1. Wait for the new deployment to reach **Live**. Verify its Git commit hash matches the latest `main`.
-2. Load the live URL on a desktop/TV browser and a phone. Check all 18 tiles, create a test room, join by QR or room code and toggle Ready.
+2. Load the live URL on a desktop/TV browser and a phone. Check all 19 games in the carousel/tiles, create a test room, join by QR or room code and toggle Ready.
 3. Test at least one quiz (send / locked / reveal), one party vote and one game's final results. Check both portrait and landscape on a phone.
 4. Verify narrator recordings separately: only the three MP3 assets already in GitHub are available until the remaining 15 are uploaded.
 5. If the deploy fails, consult the Build & Deploy logs on Render, then use the previous known-good deployment or rollback option. Check the connected branch again before another attempt.

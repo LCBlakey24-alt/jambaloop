@@ -6,6 +6,7 @@ import { identityOf, identityVariables } from './game-identities.js';
 import { launcherCopy, tileArt } from './home-launcher.js';
 import { minimumPlayers } from './game-config.js';
 import { narratorAsset } from './narration-scripts.js';
+import { duoRecordings } from './duo-recordings.js';
 
 export const CAROUSEL_REACH = 3;
 
@@ -40,12 +41,12 @@ export function carouselInfo([id, name, description], voiceOn) {
     <p class="carousel-description">${escapeHtml(description)}</p>
     <ol class="carousel-steps">${steps.slice(0, 3).map(step => `<li>${escapeHtml(step)}</li>`).join('')}</ol>
     <div class="carousel-actions">
-      <button type="button" class="button primary" data-action="host" data-mode="${id}">Play ${escapeHtml(name)} <span aria-hidden="true">→</span></button>
+      <button type="button" class="button primary" data-action="party" data-mode="${id}">Host a party <span aria-hidden="true">→</span></button>
       <button type="button" class="button outline" data-action="preview-mode" data-mode="${id}">Full details</button>
       <button type="button" class="button outline carousel-voice" data-action="carousel-voice" aria-pressed="${voiceOn}">
         <span aria-hidden="true">${voiceOn ? '🔊' : '🔈'}</span> Voice guide ${voiceOn ? 'on' : 'off'}</button>
     </div>
-    <small class="carousel-voice-note">${narratorAsset(id) ? 'Recorded announcer' : 'Read aloud by this device'} · ← → or swipe to browse · Enter to play</small>
+    <small class="carousel-voice-note">${duoRecordings[id] ? 'Hosted by Max and Poppy' : narratorAsset(id) ? 'Recorded announcer' : 'Read aloud by this device'} · ← → or swipe to browse · Enter to play</small>
   </div>`;
 }
 

@@ -38,6 +38,8 @@ const marks = Object.freeze({
   rare: '<path d="M30 30h60l18 20-48 46-48-46z"/><path d="M12 50h96M42 30l-10 20 28 46 28-46-10-20M60 30v20"/><path d="M96 12v12M90 18h12" stroke-width="2.5"/>',
   // A precision caliper closing on a reading.
   soclose: '<path d="M14 26h92v16H14z"/><path d="M24 26v8M36 26v5M48 26v8M60 26v5M72 26v8M84 26v5M96 26v8" stroke-width="2"/><path d="M22 42v46l10-10V42M70 42v46l-10-10V42"/><path d="M46 60v18" stroke-width="2" stroke-dasharray="3 4"/><circle cx="46" cy="56" r="3" fill="currentColor"/>',
+  // A full moon over rooftops with a bat crossing it.
+  bloodmoon: '<circle cx="60" cy="46" r="30"/><path d="M42 44c6-6 10-2 12 2 2-3 4-4 6-4s4 1 6 4c2-4 6-8 12-2-6 0-8 4-9 8-3-3-6-2-9 2-3-4-6-5-9-2-1-4-3-8-9-8z" fill="currentColor" fill-opacity=".25"/><path d="M10 96V78l14-12 14 12v18M46 96V72l12-10 12 10v24M78 96V80l14-12 14 12v16M6 96h108"/>',
   // A pencil finishing a quick sketch line.
   sketch: '<path d="M80 14l16 16-46 46-22 6 6-22z"/><path d="m72 22 16 16M34 60l16 16"/><path d="M12 96c14-14 26 8 40-6s24 6 34-2" stroke-width="2.5"/>',
 });

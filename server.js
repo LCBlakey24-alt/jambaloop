@@ -1,4 +1,4 @@
-import { clockExpired, setClockPaused, stopDeadline, watchDeadline } from './room-clock.js';
+import { clockExpired, roomTask, setClockPaused, stopDeadline, watchDeadline } from './room-clock.js';
 import { caughtLast, finishRanks as orderedFinishRanks, nightAward, placementRanks } from './result-ranks.js';
 import { revealPlan as estimateRevealPlan } from './public/so-close-reveal.js';
 import { ESTIMATE_LIMIT } from './public/answer-controls.js';
@@ -14,7 +14,7 @@ import QRCode from 'qrcode';
 import { randomBytes, randomInt } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
 import { difficultyQuestions } from './difficulty-questions.js';
-import { advanceQuizRace, createQuizRace, publicRaceState, raceDifficulties, raceLengths, racePlacings, raceTracks, setRacePaused, submitRaceAnswer } from './quiz-race.js';
+import { advanceQuizRace, createQuizRace, publicRaceState, useRacePower, raceDifficulties, raceLengths, racePlacings, raceTracks, setRacePaused, submitRaceAnswer } from './quiz-race.js';
 import { networkInterfaces } from 'node:os';
 import { inviteOriginOptions, qrJoinUrl } from './room-invite.js';
 import { isRoomMember, positiveSetting, readAvatar, requestBudget } from './room-http.js';
@@ -23,7 +23,7 @@ import { validateQuiz, prepareCustomQuiz } from './public/custom-quiz.js';
 import { boardQuestion, makeQuestions, makeSoCloseQuestions, questionCategories, verifiedSourceFor } from './questions.js';
 import { soCloseSourceFor } from './so-close-bank.js';
 import {questionHistoryId, questionHistoryLimit, validQuestionHistoryId} from './public/question-history.js';
-import { modes, themes, formats, difficulties, teams, socialModes, minimumPlayers, boardRollDuration, defaultTheme, fixedQuestionModes, questionCounts, wheelCategories, scoreIntervals, supportsScoreCheckpoints, maximumPlayers, capacityError } from './public/game-config.js';
+import { modes, themes, isQuestionFormat, formatTypes, difficulties, teams, socialModes, minimumPlayers, boardRollDuration, defaultTheme, fixedQuestionModes, questionCounts, wheelCategories, scoreIntervals, supportsScoreCheckpoints, maximumPlayers, capacityError } from './public/game-config.js';
 
 const app = express();
 const rooms = new Map();
@@ -63,7 +63,7 @@ function readSettings(body = {}) {
   if (difficulty !== 'standard' && (!fixedQuestionModes.includes(mode) || privateTeam || quiz || category !== 'mixed' || format !== 'choice' || includeChristmas)) return;
   const allowedCounts = questionCounts(mode, privateTeam ? 'choice' : format, privateTeam ? 'mixed' : category);
   if (!modes.some(([id]) => id === mode) || !themes.some(([id]) => id === theme)
-    || !formats.some(([id]) => id === format) || !categories.includes(category)
+    || !isQuestionFormat(format) || !categories.includes(category)
     || typeof autoReveal !== 'boolean' || typeof includeChristmas !== 'boolean' || (!quiz && !allowedCounts.includes(count)) || ![0, 15, 20, 30, 45].includes(seconds)) return;
   if (scoring !== undefined && (!scoring || !pointValues.includes(scoring.base) || !bonusValues.includes(scoring.bonus)
     || !doubleSchedules.some(([id]) => id === scoring.doubles))) return;
@@ -74,6 +74,13 @@ function readSettings(body = {}) {
   return { mode, theme, difficulty, raceLength, raceTrack, raceDifficulty, scoring: scores, boardSpeed: seconds ? boardSpeed : 0, legacyScoring: mode !== 'soclose' && scoring === undefined, format: privateTeam ? 'choice' : format, category: fixedQuestionModes.includes(mode) && !privateTeam ? category : 'mixed', count: ['tracks', 'samepage', 'spotlight', 'brain', 'topanswers', 'rare', 'sketch', 'punchline', 'cards', 'bluff'].includes(mode) ? count : socialModes.includes(mode) ? 3 : partyModes.includes(mode) ? 1 : quiz?.questions.length ?? count,
     seconds, autoReveal, includeChristmas, phoneView: privateTeam ? 'full' : phoneView, privateQuestions: privateTeam,
     teamCount, boardLength, playStyle, scoreInterval: supportsScoreCheckpoints(mode) ? scoreInterval : 1, customQuiz: quiz };
+}
+
+// Never promise more questions than the chosen topic and format can supply:
+// the round would otherwise run off the end of the list mid-game.
+function clampToQuestions(room) {
+  if (fixedQuestionModes.includes(room.mode) && !room.customQuiz && !room.privateQuestions && room.questions.length)
+    room.count = Math.min(room.count, room.questions.length);
 }
 
 function resetPlayer(player) {
@@ -107,6 +114,7 @@ function resetGame(room, settings) {
     quizTypes: settings.privateQuestions ? ['choice', 'boolean'] : settings.customQuiz ? [...new Set(settings.customQuiz.questions.map(item => item.type))] : undefined,
     questions: settings.customQuiz ? prepareCustomQuiz(settings.customQuiz) : fixedQuestionModes.includes(settings.mode) ? roundQuestions(settings, room.seen) : [],
   });
+  clampToQuestions(room);
   room.answers.clear();
   for (const player of room.players.values()) {
     resetPlayer(player);
@@ -127,6 +135,8 @@ app.post('/api/rooms', async (req, res) => {
   const host = token();
   const room = { code, host, game: 1, revision: 0, clients: new Map(), seen: new Set(), players: new Map(), waiting: new Map(), liveConnections: new Map(), lastSeen: new Map(), night: { queue: [], played: 0, version: 0, results: [], standings: [] }, answers: new Map(), updated: Date.now() };
   resetGame(room, settings);
+  // Lobby-first hosting: the room opens on a game carousel the captain drives.
+  if (req.body?.picker === true) room.picker = { mode: settings.mode, version: 0 };
   // Prefer a real Wi-Fi/LAN address over localhost or virtual adapters.
   // Hosts can switch adapters from the lobby if the recommended one is unreachable.
   // Do not use x-forwarded-host/proto when generating invite links.
@@ -198,7 +208,7 @@ function scheduleEstimateStages(room) {
     if (room.phase === 'reveal' && room.game === game && room.index === index && room.estimateReveal?.starts === starts) publish(room);
   };
   room.estimateTimers = [plan.duration - plan.actual, plan.duration]
-    .map(delay => setTimeout(publishStage, Math.max(0, starts + delay - Date.now())));
+    .map(delay => setTimeout(() => roomTask(room, 'reveal stage', publishStage), Math.max(0, starts + delay - Date.now())));
 }
 
 function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)) {
@@ -210,7 +220,7 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
   const question = room.privateQuestions ? room.privateRound?.get(key) : questions[index];
   const visible = !waiting && (phase === 'question' || phase === 'reveal');
   const hiddenScores = room.scoreInterval !== 1 && !['lobby', 'finished'].includes(phase);
-  const publicPlayer = ({ rounds, fastest, slowest, misses, comebacks, ...entry }) => phase === 'lobby' && isHost
+  const publicPlayer = ({ rounds, fastest, slowest, misses, comebacks, lifeLostAt, outAt, returning, ...entry }) => phase === 'lobby' && isHost
     ? { ...entry, connected: counts.ids.has(entry.id) } : entry;
   const revealed = phase === 'reveal';
   const answer = answers.get(key);
@@ -229,7 +239,24 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
   const scoresPublished = room.scoreInterval === 1 || phase === 'finished';
   const playerScore = room.lastScoreBreak.get(player?.id)?.row.score ?? 0;
   const finalRanks = phase === 'finished' ? finishRanks(room, ranked, comparePlayers) : undefined;
+  // TV only: who has locked in, in lock order, never what they chose. After the
+  // reveal each stamp says right or wrong; So Close stages its own reveal.
+  // Sized for a full room of 300: the TV gets the 12 most recent faces plus
+  // the totals, not one entry per player on every update.
+  const showLocks = isHost && visible && !(revealed && room.mode === 'soclose');
+  const lockList = showLocks ? [...answers] : [];
+  const lockIns = showLocks ? lockList.slice(-12).flatMap(([playerKey, entry]) => {
+    const participant = players.get(playerKey);
+    return participant ? [{ id: participant.id, name: participant.name, avatar: participant.avatar, ...(revealed ? { won: Boolean(entry.won) } : {}) }] : [];
+  }) : undefined;
+  const lockCount = showLocks ? lockList.length : undefined;
+  const lockRight = showLocks && revealed ? lockList.filter(([, entry]) => entry.won).length : undefined;
   return { revision: room.revision, code, category, phase: waiting ? 'waiting' : phase, index, total: room.count, seconds, game, opened, ends, answered: answers.size,
+    lockIns, lockCount, lockRight,
+    picker: phase === 'lobby' && !waiting && room.picker ? { ...room.picker } : undefined,
+    welcome: phase === 'lobby' && !waiting ? room.welcome : undefined,
+    // TV only: everyone here has played or seen the welcome before.
+    everyoneReturning: isHost && players.size > 0 && [...players.values()].every(entry => entry.returning) || undefined,
     connected: counts.connected, waitingCount: room.waiting.size, responseTarget: counts.target,
     readyCount: phase === 'lobby' ? counts.ready : undefined, lobbyVersion: room.lobbyVersion,
     pausedAt: !waiting && room.pausedAt ? room.pausedAt : undefined, clockVersion: room.clockVersion,
@@ -266,6 +293,10 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
       result: player?.rounds[i],
     })) : undefined,
     remaining: room.mode === 'knockout' && phase !== 'lobby' ? room.remaining : undefined,
+    knockout: room.mode === 'knockout' && isHost && visible ? knockoutLadder(room, revealed) : undefined,
+    // Your own phone only: whether you lost a heart this round (and went out).
+    lostLife: room.mode === 'knockout' && revealed && player?.lifeLostAt === index ? true : undefined,
+    knockedOut: room.mode === 'knockout' && revealed && player?.outAt === index ? true : undefined,
     rank: player ? finalRanks?.get(player.id) : undefined, selection: answers.get(key)?.option, now: Date.now(),
     answerCorrect: revealed && answer && !holdOutcome ? Boolean(answer.won) : undefined,
     earned: revealed && !hiddenScores && !holdOutcome && answer?.won ? answer.points : undefined,
@@ -281,6 +312,23 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
     question: visible && question ? { ...publicQuestion, ...(question.type === 'estimate' && !revealed ? { min: undefined, max: undefined } : {}), historyId:questionHistoryId(question.prompt), basePoints: room.motion?.points ?? (question.type === 'estimate' && room.legacyScoring ? 1000 : room.scoring?.base), prompt: isHost || room.phoneView === 'full' ? publicQuestion.prompt : undefined, correct: revealed && !holdAnswer ? correct : undefined, source: revealed && !holdAnswer ? answerSourceFor(room.mode, question.prompt) : undefined } : undefined,
     qr: isHost ? qr : undefined, joinUrl: isHost ? joinUrl : undefined,
     joinOptions: isHost ? room.joinOptions : undefined };
+}
+
+// Knockout's survivor ladder for the TV: lives, never answers. Who lost a heart
+// (and who went out) this round is shown only once the round is revealed.
+function knockoutLadder(room, revealed) {
+  const rows = [...room.players.values()].map(player => ({
+    id: player.id, name: player.name, avatar: player.avatar, lives: player.lives ?? 0, score: player.score,
+    lost: revealed && player.lifeLostAt === room.index, out: !player.lives,
+    outNow: revealed && player.outAt === room.index, outAt: player.outAt,
+  }));
+  const survivors = rows.filter(row => !row.out).sort((a, b) => b.lives - a.lives || b.score - a.score);
+  const out = rows.filter(row => row.out).sort((a, b) => b.outAt - a.outAt || b.score - a.score);
+  // Sized for 300 players: the top of the ladder, everyone who fell this
+  // round (capped) and the most recent knockouts, with the true count.
+  const strip = ({ score, outAt, ...row }) => row;
+  return { survivorCount: survivors.length, survivors: survivors.slice(0, 8).map(strip), out: out.slice(0, 12).map(strip),
+    outNowCount: out.filter(row => row.outNow).length };
 }
 
 const comparePlayers = (a, b) => (b.lives ?? 0) - (a.lives ?? 0) || b.score - a.score;
@@ -377,14 +425,14 @@ function publish(room, hostOnly = false) {
     return;
   }
   if (!room.hostUpdate) {
-    room.hostUpdate = setTimeout(() => {
+    room.hostUpdate = setTimeout(() => roomTask(room, 'host update', () => {
       room.hostUpdate = undefined;
       const ranked = rankings(room);
       const counts = liveCounts(room);
       for (const [client, key] of room.clients) {
         if (room.phase === 'lobby' || controlsRoom(room, key)) sendState(room, key, client, ranked, counts);
       }
-    }, 100);
+    }), 100);
   }
 }
 
@@ -446,7 +494,9 @@ app.post('/api/rooms/:code/join', (req, res) => {
   if (!Array.isArray(seenQuestions) || seenQuestions.length > questionHistoryLimit ||
       seenQuestions.some(id => !validQuestionHistoryId(id)))
     return res.status(400).json({ error: 'Your question history could not be loaded. Clear local game history and retry.' });
-  const player = { id, name, ready: false, avatar: avatar ? '/api/rooms/' + room.code + '/avatar/' + id : undefined };
+  const player = { id, name, ready: false, avatar: avatar ? '/api/rooms/' + room.code + '/avatar/' + id : undefined,
+    // This phone has already seen the welcome or played before.
+    returning: req.body?.returning === true };
   // Each player's optional device history influences the next question selection.
   for (const id of seenQuestions) room.seen.add(id);
   if (avatar) {
@@ -548,6 +598,8 @@ function openScoreBreak(room) {
     const older = previous.get(row.id);
     return {
       id: row.id, name: row.name, avatar: row.avatar, color: row.color,
+      // Individual hot streaks earn a flame on the TV scoreboard.
+      streak: room.teams.length ? undefined : row.streak,
       score: row.score, previousScore: older?.row.score ?? 0, rank, previousRank: older?.row.rank ?? 1,
       previousIndex: older?.index ?? initialOrder.get(row.id),
       position: board ? row.position : undefined, previousPosition: board ? older?.row.position ?? 0 : undefined,
@@ -627,7 +679,8 @@ function reveal(room) {
     for (const [key, player] of room.players) {
       if (!player.lives || room.answers.get(key)?.won) continue;
       player.lives--;
-      if (!player.lives) room.remaining--;
+      player.lifeLostAt = room.index;
+      if (!player.lives) { room.remaining--; player.outAt = room.index; }
     }
   }
   if (room.mode === 'soclose') {
@@ -719,6 +772,7 @@ function startGame(room) {
   // their previous question history, not when the TV room is first created.
   if (fixedQuestionModes.includes(room.mode) && !room.customQuiz && !room.privateQuestions) {
     room.questions = roundQuestions(room, room.seen);
+    clampToQuestions(room);
   }
   if (room.mode === 'tracks') {
     // Exactly one round per joined player; every player drives once.
@@ -736,7 +790,7 @@ function startGame(room) {
   if (room.privateQuestions) for (const key of room.players.keys()) room.privateReview.set(key, []);
   if (room.mode === 'knockout') {
     room.remaining = room.players.size;
-    for (const player of room.players.values()) player.lives = 3;
+    for (const player of room.players.values()) { player.lives = 3; delete player.lifeLostAt; delete player.outAt; }
   }
   if (fixedQuestionModes.includes(room.mode) && room.mode !== 'dice') return openQuestion(room);
   readyTurn(room);
@@ -798,18 +852,21 @@ app.post('/api/rooms/:code/roll', (req, res) => {
     room.motion = { category };
   }
   if (room.mode !== 'dice') {
-    const format = room.format === 'mixed' ? ['choice', 'boolean', 'estimate', 'order'][room.index % 4] : room.format;
+    const types = formatTypes(room.format);
+    const format = types[room.index % types.length];
     if (room.mode === 'board') room.questions.push(boardQuestion(room.motion.category, format, room.motion.difficulty, room.seen));
     else {
       const recent = new Set(room.questions.map(question => question.prompt));
+      // A topic with nothing in this format falls back to multiple choice.
       const candidates = makeQuestions(room.motion.category, 15, room.seen, format);
-      room.questions.push(candidates.find(question => !recent.has(question.prompt)) ?? candidates[0]);
+      const usable = candidates.length ? candidates : makeQuestions(room.motion.category, 15, room.seen, 'choice');
+      room.questions.push(usable.find(question => !recent.has(question.prompt)) ?? usable[0]);
     }
   }
   room.phase = 'rolling';
   room.motion.duration = room.mode === 'board' ? boardRollDuration : 2600;
   room.motion.ends = Date.now() + room.motion.duration;
-  room.timer = setTimeout(() => openQuestion(room), room.motion.duration);
+  room.timer = setTimeout(() => roomTask(room, 'roll', () => openQuestion(room)), room.motion.duration);
   publish(room);
   res.sendStatus(204);
 });
@@ -862,6 +919,8 @@ app.post('/api/rooms/:code/advance', (req, res) => {
   if (req.body?.game !== room.game || req.body?.phase !== room.phase || req.body?.index !== room.index) return res.sendStatus(204);
   if (room.pausedAt) return res.status(409).json({ error: 'Resume the timer before advancing.' });
   if (room.phase === 'lobby') {
+    if (room.picker) return res.status(409).json({ error: 'Choose a game from the carousel first.' });
+    room.welcome = undefined;
     const minimum = requiredPlayers(room.mode,room.playStyle,room.teamCount,minimumPlayers(room.mode));
     if (liveCounts(room).connected < minimum) return res.status(409).json({ error: `You need at least ${minimum} connected ${minimum === 1 ? 'player' : 'players'} to start.` });
     const tooMany = capacityError(room.mode, room.playStyle, room.players.size);
@@ -903,6 +962,17 @@ app.post('/api/rooms/:code/race-answer', (req, res) => {
   res.sendStatus(204);
 });
 
+app.post('/api/rooms/:code/race-power', (req, res) => {
+  const {room, key} = res.locals;
+  if (!room.players.has(key) || room.mode !== 'quizrace' || !room.race) return res.status(403).json({error:'Join an active Quiz Race to use power-ups.'});
+  if (req.body?.game !== room.game || room.phase !== 'race') return res.status(409).json({error:'Power-ups work once the race is under way.'});
+  advanceQuizRace(room.race, performance.now());
+  const result = useRacePower(room.race, key, req.body?.kind, room.race.time);
+  if (result.status !== 204) return res.status(result.status).json({error: result.error});
+  publish(room);
+  res.sendStatus(204);
+});
+
 app.post('/api/rooms/:code/answer', (req, res) => {
   const { room, key } = res.locals;
   const player = room.players.get(key);
@@ -930,10 +1000,10 @@ app.post('/api/rooms/:code/answer', (req, res) => {
 function scheduleReveal(room) {
   if (room.phase !== 'question' || room.pausedAt || !room.autoReveal || room.autoTimer
     || !room.answers.size || room.answers.size !== responseTarget(room)) return;
-  room.autoTimer = setTimeout(() => {
+  room.autoTimer = setTimeout(() => roomTask(room, 'auto-reveal', () => {
     room.autoTimer = undefined;
     if (room.phase === 'question' && !room.pausedAt && room.answers.size === responseTarget(room)) reveal(room);
-  }, 800);
+  }), 800);
 }
 
 function publicPrediction(room, key) {
@@ -1017,6 +1087,59 @@ app.post('/api/rooms/:code/configure', (req, res) => {
   const tooMany = capacityError(settings.mode, settings.playStyle, groupSize(room));
   if (tooMany) return res.status(409).json({ error: tooMany });
   resetGame(room, settings);
+  // Choosing a game closes the lobby's game carousel.
+  room.picker = undefined;
+  publish(room);
+  res.sendStatus(204);
+});
+
+// Max and Poppy's welcome, in step on every screen. The TV starts it ('start',
+// or 'ask' when everyone has played before); the captain or TV can 'skip', or
+// answer 'ask' with 'tour'; the TV ends it.
+const welcomeMoves = { start: [undefined, 'playing'], ask: [undefined, 'asking'], tour: ['asking', 'playing'], skip: [['playing', 'asking'], 'skipping'], end: [null, undefined] };
+app.post('/api/rooms/:code/welcome', (req, res) => {
+  const { room, key } = res.locals;
+  const action = req.body?.action;
+  const move = Object.hasOwn(welcomeMoves, action) ? welcomeMoves[action] : undefined;
+  if (!move) return res.status(400).json({ error: 'Unknown welcome action.' });
+  const hostOnly = ['start', 'ask', 'end'].includes(action);
+  if (hostOnly ? key !== room.host : !controlsRoom(room, key)) return res.status(403).json({ error: 'Only the captain or TV host can do that.' });
+  if (room.phase !== 'lobby' || req.body?.game !== room.game) return res.status(409).json({ error: 'The lobby has closed.' });
+  const [from, to] = move;
+  const current = room.welcome;
+  const allowed = from === null || (Array.isArray(from) ? from.includes(current) : from === current);
+  if (!allowed) return res.status(409).json({ error: 'The welcome has moved on.' });
+  room.welcome = to;
+  // The TV normally ends the welcome. If it has gone away, the room moves on
+  // by itself so phones are never left waiting on it.
+  clearTimeout(room.welcomeTimer);
+  if (to) {
+    const limit = Number(process.env.WELCOME_LIMIT_MS) || { playing: 100_000, asking: 90_000, skipping: 20_000 }[to];
+    room.welcomeTimer = setTimeout(() => roomTask(room, 'welcome', () => {
+      if (room.welcome !== to) return;
+      room.welcome = undefined;
+      publish(room);
+    }), limit);
+    room.welcomeTimer.unref?.();
+  }
+  publish(room);
+  res.sendStatus(204);
+});
+
+// The lobby's shared game carousel: the captain (or TV) scrolls it and every
+// screen follows. { mode } moves it; { open: true } reopens it from a lobby.
+app.post('/api/rooms/:code/browse', (req, res) => {
+  const { room, key } = res.locals;
+  if (!controlsRoom(room, key)) return res.status(403).json({ error: 'Only the captain or TV host can choose the game.' });
+  if (room.phase !== 'lobby' || req.body?.game !== room.game) return res.status(409).json({ error: 'The lobby has closed.' });
+  const { mode, open } = req.body ?? {};
+  if (open === true) room.picker ??= { mode: room.mode, version: 0 };
+  else if (!room.picker) return res.status(409).json({ error: 'Open the game carousel first.' });
+  if (mode !== undefined) {
+    if (!modes.some(([id]) => id === mode)) return res.status(400).json({ error: 'Choose a game from the carousel.' });
+    room.picker.mode = mode;
+  }
+  room.picker.version++;
   publish(room);
   res.sendStatus(204);
 });
@@ -1059,8 +1182,8 @@ app.use('/api', (error, _req, res, next) => {
 });
 
 setInterval(() => {
-  for (const room of rooms.values()) {
-    if (!room.race || !['race-countdown', 'race'].includes(room.phase)) continue;
+  for (const room of rooms.values()) roomTask(room, 'race tick', () => {
+    if (!room.race || !['race-countdown', 'race'].includes(room.phase)) return;
     const phaseWas = room.phase;
     const event = advanceQuizRace(room.race, performance.now());
     if (room.race.finished) {
@@ -1077,7 +1200,7 @@ setInterval(() => {
       room.race.lastBroadcast = now;
       publish(room);
     }
-  }
+  });
 }, 100).unref();
 
 setInterval(() => {
@@ -1096,16 +1219,16 @@ setInterval(() => {
   joinBudget.sweep(now);
 }, Math.min(60_000, idleRoomMs)).unref();
 setInterval(() => {
-  for (const room of rooms.values()) {
-    if (!room.clients.size && Date.now() - room.updated > 60000) continue;
+  for (const room of rooms.values()) roomTask(room, 'presence', () => {
+    if (!room.clients.size && Date.now() - room.updated > 60000) return;
     const counts = liveCounts(room);
     const presence = [...counts.ids].join('/');
-    if (room.presence === presence) continue;
+    if (room.presence === presence) return;
     room.presence = presence;
     publish(room, true);
     scheduleReveal(room);
     advancePartyWhenReady(room, publish);
-  }
+  });
 }, 3000).unref();
 setInterval(() => {
   for (const room of rooms.values()) {

@@ -1,6 +1,7 @@
 # Free, single-instance family test deployment for the existing Node.js multiplayer server.
 # This file configures a Render Blueprint, but does not itself create a service.
-# Automatic redeploys remain disabled; release only after tests and a deliberate manual deploy.
+# Intended policy: deliberate manual deploys only. NOTE: this blueprint is not synced; the live
+# service setting is autoDeploy on commit (see docs/STATUS_2026-11-25.md).
 # Editing this blueprint file does not itself change a service already created in Render.
 # The existing jambaloop-family-test service must also be switched to main in Render Settings.
 services:

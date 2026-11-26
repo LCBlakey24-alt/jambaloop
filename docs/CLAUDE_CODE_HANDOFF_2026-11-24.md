@@ -1,5 +1,7 @@
 # Claude Code handoff — Jambaloop, 24 November 2026
 
+> **Superseded in part (25 Nov 2026):** deploy status and game counts below are historical. Current truth: [STATUS_2026-11-25.md](STATUS_2026-11-25.md) — 19 games live on `main` 630732a.
+
 **Purpose:** When the user's Claude Code access returns, use this file and [../README.md](../README.md) to continue improving the existing Jambaloop repo. No separate "new site" is required. The user's intent is to make the current 18 modes reliable, polished and replayable, steadily expand original content, and prototype distinct future modes without cloning third-party games.
 
 ## Verified baseline (at the time this handoff was prepared)

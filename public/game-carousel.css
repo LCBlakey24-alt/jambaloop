@@ -95,3 +95,180 @@
   .lobby-game.is-swapping { animation:lobby-swap-in .5s cubic-bezier(.2,.8,.2,1) both; }
 }
 @keyframes lobby-swap-in { from { transform:translateX(calc(var(--swap-from,1) * 60px)) rotateY(calc(var(--swap-from,1) * -14deg)); opacity:0; } }
+
+/* Lobby game carousel: the TV mirrors the captain's phone. */
+.lobby-picker { display:grid; grid-template-rows:auto auto; gap:clamp(10px,2dvh,26px); }
+.picker-carousel { --card:clamp(170px,min(36dvh,26vw),420px); padding-top:clamp(6px,2dvh,24px); }
+.picker-carousel .carousel-card { cursor:default; }
+.picker-footer { display:grid; grid-template-columns:minmax(0,.9fr) minmax(0,1.3fr) minmax(0,1fr); gap:clamp(10px,1.4vw,22px); align-items:stretch; }
+.picker-join { display:grid; grid-template-columns:auto auto; align-items:center; column-gap:14px; }
+.picker-join .eyebrow { grid-column:1 / -1; }
+.picker-join .room-code { font-size:clamp(26px,4.4dvh,54px); margin:0; letter-spacing:.04em; white-space:nowrap; }
+.picker-join .qr { width:clamp(84px,14dvh,140px); height:auto; margin:0; border-radius:8px; }
+.picker-info { height:100%; display:grid; align-content:center; gap:6px; padding:clamp(12px,1.6dvh,22px) clamp(14px,1.6vw,26px);
+  border-radius:var(--id-radius); color:var(--id-ink); background:color-mix(in srgb,var(--id-surface) 88%,transparent);
+  border:1px solid color-mix(in srgb,var(--id-accent) 50%,transparent); }
+.picker-kind { margin:0; font:800 clamp(11px,1.5dvh,15px)/1.2 var(--head); letter-spacing:.14em; text-transform:uppercase; color:var(--id-accent); }
+.picker-name { margin:0; font:var(--id-weight) clamp(30px,5.6dvh,66px)/1 var(--id-display),var(--head); text-transform:var(--id-case); }
+.picker-description { margin:0; color:var(--id-muted) !important; font-size:clamp(14px,2dvh,22px); }
+.picker-room { display:flex; flex-direction:column; gap:8px; min-height:0; }
+.picker-room .players { max-height:16dvh; overflow:auto; margin:0; }
+.picker-room .button { margin-top:auto; }
+.picker-hint { margin:0; color:var(--id-muted,#ccc); }
+.lobby-switcher .lobby-browse { grid-column:1 / -1; }
+
+/* Phones: a swipe strip of tiles that snaps to the centre. */
+.picker-phone { display:grid; gap:10px; overflow:hidden; }
+.picker-strip { display:flex; gap:14px; overflow-x:auto; scroll-snap-type:x mandatory; padding:8px calc(50% - min(34vw,150px)); scrollbar-width:none; }
+.picker-strip::-webkit-scrollbar { display:none; }
+.picker-tile { flex:0 0 min(68vw,300px); aspect-ratio:1; scroll-snap-align:center; border-radius:18px; overflow:hidden; container-type:inline-size;
+  border:2px solid color-mix(in srgb,var(--id-accent) 60%,transparent); box-shadow:0 12px 28px #0007; }
+.picker-tile .tile-art { width:100%; height:100%; }
+.picker-controls { display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:8px; align-items:center; }
+.picker-controls .button { min-height:52px; }
+.picker-controls [data-action="picker-step"] { min-width:56px; font-size:24px; }
+.picker-now { grid-column:1 / -1; margin:0; text-align:center; }
+@media (prefers-reduced-motion:reduce) { .picker-strip { scroll-behavior:auto; } }
+
+/* Double Act captions: who is speaking and exactly what they say. */
+.duo-caption { position:fixed; left:50%; bottom:clamp(16px,4dvh,48px); translate:-50% 0; z-index:2147483000; width:min(900px,calc(100% - 32px));
+  display:grid; grid-template-columns:auto minmax(0,1fr); align-items:center; gap:14px; padding:clamp(10px,1.6dvh,18px) clamp(14px,2vw,24px);
+  border-radius:16px; color:#fff; background:#0b0e22e6; border:2px solid #ffffff26; box-shadow:0 18px 40px #0009; backdrop-filter:blur(8px);
+  font:600 clamp(16px,2.6dvh,28px)/1.3 var(--head,sans-serif); pointer-events:none; }
+.duo-caption b { padding:.3em .8em; border-radius:999px; font-size:.8em; letter-spacing:.08em; text-transform:uppercase; color:#0b0e22; }
+.duo-caption[data-host="max"] b { background:#5ec8ff; }
+.duo-caption[data-host="poppy"] b { background:#ff8fc8; }
+@media (prefers-reduced-motion:no-preference) { .duo-caption { animation:duo-in .3s ease-out; } }
+@keyframes duo-in { from { opacity:0; translate:-50% 12px; } }
+
+/* ============================================================ WELCOME SHOW ===== */
+/* Max and Poppy's opener on the TV: one animated scene per spoken line. */
+.welcome-show { position:fixed; inset:0; z-index:2000; display:grid; place-items:center; overflow:hidden; color:#fff;
+  background:radial-gradient(circle at 50% 40%,#3b2a8f,#120b33 60%,#07051a); }
+.welcome-show.is-closing { opacity:0; transition:opacity .45s; }
+.welcome-stage { position:relative; width:min(1200px,94vw); height:min(640px,72dvh); display:grid; place-items:center; }
+.welcome-scene { position:relative; display:grid; place-items:center; width:100%; height:100%; }
+.welcome-skip { position:absolute; top:clamp(14px,3dvh,30px); right:clamp(14px,3vw,36px); }
+.welcome-tile { display:block; width:clamp(90px,13vw,190px); aspect-ratio:1; border-radius:16px; overflow:hidden; container-type:inline-size; box-shadow:0 14px 30px #0008; }
+.welcome-tile .tile-art { width:100%; height:100%; }
+
+.welcome-logo { display:grid; justify-items:center; gap:10px; z-index:1; }
+.welcome-logo span { font:900 clamp(64px,12vw,170px)/1 var(--head); letter-spacing:-.04em; text-shadow:0 .06em 0 #0006; }
+.welcome-logo b { color:#ffd166; }
+.welcome-logo small { font:800 clamp(14px,2.2vw,26px)/1 var(--head); letter-spacing:.3em; color:#9fe8ff; }
+.welcome-burst { position:absolute; inset:0; pointer-events:none; }
+.welcome-burst i { position:absolute; left:50%; top:50%; width:8px; height:38%; border-radius:4px; transform-origin:50% 0;
+  background:linear-gradient(#ffd16699,transparent); }
+.welcome-burst i:nth-child(n) { rotate:calc(var(--n,0) * 30deg); }
+.welcome-burst.is-confetti i { width:14px; height:22px; transform-origin:center; border-radius:3px; background:hsl(calc(var(--n,0) * 37) 90% 65%); }
+
+.welcome-devices { display:grid; grid-template-columns:auto auto auto; align-items:center; gap:clamp(18px,4vw,60px); }
+.welcome-tv { display:grid; place-items:center; width:clamp(260px,36vw,520px); aspect-ratio:16/9; padding:12px; border-radius:18px; background:#111;
+  box-shadow:0 0 0 6px #2b2b38, 0 26px 60px #000a; }
+.welcome-tv-screen { display:grid; place-items:center; width:100%; height:100%; border-radius:8px; background:#0b1d6b; }
+.welcome-links { display:flex; gap:10px; }
+.welcome-links i { width:14px; height:14px; border-radius:50%; background:#9fe8ff; }
+.welcome-phones { display:flex; gap:18px; }
+.welcome-phone { display:grid; place-items:center; width:clamp(90px,10vw,150px); aspect-ratio:9/18; padding:10px 8px; border-radius:22px; background:#15152a;
+  box-shadow:0 0 0 4px #3a3a58, 0 18px 40px #000a; overflow:hidden; }
+.welcome-phone.is-tilted { rotate:8deg; }
+.welcome-pads { display:grid; gap:6px; width:100%; }
+.welcome-pads i { display:block; height:clamp(22px,3.4vw,46px); border-radius:8px; background:var(--c); }
+
+.welcome-join { display:grid; grid-template-columns:auto auto; grid-template-rows:auto auto; align-items:center; column-gap:clamp(20px,4vw,60px); }
+.welcome-code-label { grid-column:1; font:800 clamp(14px,2vw,22px)/1 var(--head); letter-spacing:.3em; color:#9fe8ff; }
+.welcome-code { grid-column:1; font:900 clamp(56px,9vw,130px)/1 ui-monospace,Menlo,monospace; letter-spacing:.12em; color:#ffd166; }
+.welcome-qr { grid-column:2; grid-row:1 / span 2; width:clamp(150px,18vw,260px); border-radius:14px; background:#fff; padding:8px; }
+.welcome-join .welcome-phone { position:absolute; right:6%; bottom:2%; width:clamp(80px,8vw,120px); }
+.welcome-scan { width:70%; height:3px; background:#3fe4c4; box-shadow:0 0 12px #3fe4c4; }
+
+.welcome-captain { position:relative; display:grid; place-items:center; }
+.welcome-captain .welcome-phone { width:clamp(200px,22vw,300px); aspect-ratio:9/16; }
+.welcome-strip { display:flex; gap:10px; }
+.welcome-strip .welcome-tile { flex:none; width:clamp(150px,16vw,230px); }
+.welcome-crown { position:absolute; top:-12%; font-size:clamp(50px,7vw,96px); }
+
+.welcome-play { display:grid; justify-items:center; gap:clamp(16px,3dvh,34px); }
+.welcome-question { padding:.5em 1em; border-radius:14px; background:#0b1d6b; font:800 clamp(24px,3.6vw,48px)/1.2 var(--head); box-shadow:0 14px 30px #0008; }
+.welcome-play .welcome-phone { width:clamp(130px,13vw,190px); }
+
+.welcome-parade { display:flex; gap:clamp(12px,1.6vw,24px); width:max-content; }
+.welcome-ready span { font:900 clamp(70px,12vw,180px)/1 var(--head); color:#ffd166; text-shadow:0 .06em 0 #0006; }
+
+@media (prefers-reduced-motion:no-preference) {
+  .welcome-show { animation:welcome-in .5s ease-out; }
+  .welcome-scene { animation:welcome-scene .55s cubic-bezier(.2,.9,.3,1); }
+  .welcome-logo { animation:welcome-pop .8s cubic-bezier(.2,1.5,.4,1); }
+  .welcome-burst:not(.is-confetti) i { animation:welcome-ray 2.4s ease-out infinite; }
+  .welcome-burst.is-confetti i { animation:welcome-confetti 2.2s ease-out infinite; }
+  .welcome-links i { animation:welcome-link 1.2s ease-in-out infinite; }
+  .welcome-links i:nth-child(2) { animation-delay:.2s; } .welcome-links i:nth-child(3) { animation-delay:.4s; }
+  .welcome-phone.is-tilted { animation:welcome-wobble 2s ease-in-out infinite; }
+  .welcome-scan { animation:welcome-scan 1.4s ease-in-out infinite alternate; }
+  .welcome-strip { animation:welcome-swipe 3.2s cubic-bezier(.6,0,.3,1) infinite; }
+  .welcome-crown { animation:welcome-bob 1.6s ease-in-out infinite; }
+  .welcome-pads.is-live i:nth-child(2) { animation:welcome-tap 1.6s ease-in-out infinite; }
+  .welcome-parade { animation:welcome-parade 16s linear infinite; }
+  .welcome-ready span { animation:welcome-pop .7s cubic-bezier(.2,1.5,.4,1); }
+}
+@keyframes welcome-in { from { opacity:0; } }
+@keyframes welcome-scene { from { opacity:0; transform:translateY(24px) scale(.97); } }
+@keyframes welcome-pop { 0% { transform:scale(.3); opacity:0; } 70% { transform:scale(1.08); } 100% { transform:none; } }
+@keyframes welcome-ray { 0% { opacity:0; scale:1 .4; } 30% { opacity:1; } 100% { opacity:0; scale:1 1.2; } }
+@keyframes welcome-confetti { 0% { transform:translate(0,0) rotate(0); opacity:1; } 100% { transform:translate(calc((var(--n,0) - 12) * 34px), 46vh) rotate(540deg); opacity:0; } }
+@keyframes welcome-link { 0%,100% { opacity:.25; scale:.7; } 50% { opacity:1; scale:1.2; } }
+@keyframes welcome-wobble { 0%,100% { rotate:8deg; } 50% { rotate:3deg; } }
+@keyframes welcome-scan { from { translate:0 -60px; } to { translate:0 60px; } }
+@keyframes welcome-swipe { 0%,20% { translate:0; } 40%,60% { translate:calc(-1 * clamp(160px,17vw,240px)); } 80%,100% { translate:calc(-2 * clamp(160px,17vw,240px)); } }
+@keyframes welcome-bob { 0%,100% { translate:0 0; rotate:-6deg; } 50% { translate:0 -10px; rotate:6deg; } }
+@keyframes welcome-tap { 0%,60%,100% { filter:none; scale:1; } 70% { filter:brightness(1.5); scale:.94; } 80% { box-shadow:0 0 0 4px #fff; } }
+@keyframes welcome-parade { to { translate:-50% 0; } }
+.welcome-back { display:grid; justify-items:center; gap:14px; text-align:center; }
+.welcome-back-title { font:900 clamp(56px,9vw,130px)/1 var(--head); color:#ffd166; text-shadow:0 .06em 0 #0006; }
+.welcome-back small { font:700 clamp(16px,2.2vw,26px)/1.2 var(--head); color:#c9d3ff; }
+.welcome-choice { display:flex; gap:16px; margin-top:10px; }
+.welcome-choice .button { min-height:64px; padding-inline:28px; font-size:clamp(18px,2vw,24px); }
+.welcome-ready.is-skip span { color:#7cf0a8; }
+@media (prefers-reduced-motion:no-preference) { .welcome-back-title { animation:welcome-pop .7s cubic-bezier(.2,1.5,.4,1); } }
+.picker-welcome { display:grid; gap:8px; padding:12px; border-radius:14px; background:color-mix(in srgb,var(--id-surface) 85%,transparent); border:1px solid color-mix(in srgb,var(--id-accent) 50%,transparent); }
+.picker-welcome p { margin:0; font-weight:700; }
+.picker-welcome .actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:0; }
+.picker-welcome .button { min-height:52px; }
+/* Phones: the same 3D shelf as the TV, sized for a thumb. */
+.picker-carousel.is-phone { --card:min(60vw,270px); padding:10px 0 6px; overflow:visible; }
+.picker-phone { overflow:hidden; }
+.picker-phone .carousel-track { touch-action:pan-y; cursor:grab; }
+.picker-phone-info { margin:0; text-align:center; }
+.picker-phone .picker-name { display:block; font:var(--id-weight) clamp(26px,8vw,40px)/1.05 var(--id-display),var(--head),sans-serif; text-transform:var(--id-case); color:var(--id-ink); }
+.picker-controls .picker-settings { grid-column:1 / -1; }
+.picker-room-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.duo-caption[data-host="baz"] b { background:#ff5a4d; color:#fff; }
+.duo-caption[data-host="clive"] b { background:#ffe14d; }
+.duo-caption[data-host="vince"] b { background:#1df2e0; }
+
+/* ================================================================ 3D POLISH ===== */
+/* Live 3D backdrop (stage-3d.js): behind the content, above the page colour. */
+.stage-3d { position:fixed; inset:0; width:100%; height:100%; z-index:-1; pointer-events:none; opacity:.5; }
+.game[data-phase="lobby"] { isolation:isolate; }
+@media (prefers-reduced-motion:no-preference) { .stage-3d { animation:stage-in 1.2s ease-out; } }
+@keyframes stage-in { from { opacity:0; } }
+
+/* Screens arrive with depth: panels tilt up from their bottom edge. The
+   animation never moves a panel outside its final box (no translate, scale
+   below 1, hinge on the bottom edge) and leaves nothing behind when it ends
+   (fill: backwards), so layout checks and hidden TV chrome are unaffected. */
+@media (prefers-reduced-motion:no-preference) {
+  .game.phase-enter > .game-panel, .game.phase-enter > .tv-round, .game.phase-enter > .lobby, .game.host-screen.phase-enter > .lobby-picker {
+    animation:panel-swing .55s cubic-bezier(.2,.85,.25,1) backwards; transform-origin:50% 100%; }
+  .home-shell .carousel-info { animation:panel-swing .5s cubic-bezier(.2,.85,.25,1) backwards; transform-origin:50% 100%; }
+  dialog[open] .dialog-inner { animation:dialog-rise .38s cubic-bezier(.2,.85,.25,1) backwards; }
+  /* Answer pads on the TV stand up like physical buttons. */
+  .game.host-screen.phase-enter[data-phase="question"] .answers .answer { animation:pad-stand .55s cubic-bezier(.2,1.2,.3,1) backwards; transform-origin:50% 100%; }
+}
+/* perspective() lives in the keyframe so nothing becomes a containing block for fixed layers. */
+@keyframes panel-swing { from { opacity:0; transform:perspective(1600px) rotateX(13deg) scale(.975); } }
+@keyframes dialog-rise { from { opacity:0; transform:scale(.96); } }
+@keyframes pad-stand { from { opacity:0; transform:perspective(900px) rotateX(60deg) scale(.96); } }
+.picker-room .players-more { font-weight:800; opacity:.85; }
+.picker-room-actions { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.picker-room-actions .button { min-width:0; padding-inline:8px; font-size:clamp(12px,1.05vw,15px); white-space:normal; }

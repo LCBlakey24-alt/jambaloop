@@ -13,7 +13,7 @@
 @font-face { font-family: 'Club Potato'; font-style: normal; font-weight: 400; font-display: swap; src: url('/fonts/lilitaone.woff2') format('woff2'); }
 @font-face { font-family: 'Club Teams'; font-style: normal; font-weight: 700; font-display: swap; src: url('/fonts/unbounded.woff2') format('woff2'); }
 /* Show faces: one per game (all SIL OFL, self-hosted). See game-identities.js. */
-@font-face { font-family: 'Show Classic'; font-weight: 400; font-display: swap; src: url('/fonts/abrilfatface.woff2') format('woff2'); }
+@font-face { font-family: 'Show Classic'; font-weight: 700; font-display: swap; src: url('/fonts/outfit.woff2') format('woff2'); }
 @font-face { font-family: 'Show Wheel'; font-weight: 400; font-display: swap; src: url('/fonts/bungee.woff2') format('woff2'); }
 @font-face { font-family: 'Show Board'; font-weight: 700; font-display: swap; src: url('/fonts/cinzel.woff2') format('woff2'); }
 @font-face { font-family: 'Show Dice'; font-weight: 400; font-display: swap; src: url('/fonts/limelight.woff2') format('woff2'); }
@@ -29,6 +29,7 @@
 @font-face { font-family: 'Show Brain'; font-weight: 800; font-display: swap; src: url('/fonts/orbitron.woff2') format('woff2'); }
 @font-face { font-family: 'Show Top'; font-weight: 400; font-display: swap; src: url('/fonts/righteous.woff2') format('woff2'); }
 @font-face { font-family: 'Show Rare'; font-weight: 400; font-display: swap; src: url('/fonts/marcellussc.woff2') format('woff2'); }
+@font-face { font-family: 'Show Bloodmoon'; font-weight: 700; font-display: swap; src: url('/fonts/cormorantgaramond.woff2') format('woff2'); }
 @font-face { font-family: 'Show Sketch'; font-weight: 700; font-display: swap; src: url('/fonts/caveat.woff2') format('woff2'); }
 @font-face { font-family: 'Show Race'; font-weight: 700; font-display: swap; src: url('/fonts/barlowcondensed.woff2') format('woff2'); }
 @font-face { font-family: 'Show SoClose'; font-weight: 600; font-display: swap; src: url('/fonts/ibmplexmono.woff2') format('woff2'); }

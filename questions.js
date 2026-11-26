@@ -5,6 +5,10 @@ import { verifiedChoiceQuestions } from './verified-questions.js';
 import { extraChoiceQuestions, extraBooleanQuestions } from './question-expansion-v2.js';
 import { difficultyQuestions } from './difficulty-questions.js';
 import { estimates, orders } from './extra-questions.js';
+import { sportChoice, sportBoolean, sportEstimate, sportOrder } from './trivia-pack-sports.js';
+import { screenChoice, screenBoolean, screenEstimate, screenOrder } from './trivia-pack-screen.js';
+import { topupChoice, topupBoolean } from './trivia-pack-topups.js';
+import { isSpecialist, formatTypes } from './public/game-config.js';
 
 const banks = {
   general: [
@@ -494,6 +498,14 @@ for (const [category,items] of Object.entries(extraBooleanQuestions)) {
   trueFalse[category]??=[];
   trueFalse[category].push(...items);
 }
+// November 2026 packs: six sports, two screen fandoms and everyday top-ups.
+const addPack = (target, pack) => {
+  for (const [category, items] of Object.entries(pack)) (target[category] ??= []).push(...items);
+};
+for (const pack of [sportChoice, screenChoice, topupChoice]) addPack(banks, pack);
+for (const pack of [sportBoolean, screenBoolean, topupBoolean]) addPack(trueFalse, pack);
+for (const pack of [sportEstimate, screenEstimate]) addPack(estimates, pack);
+for (const pack of [sportOrder, screenOrder]) addPack(orders, pack);
 for (const [category, items] of Object.entries(verifiedChoiceQuestions)) {
   banks[category] ??= [];
   banks[category].push(...items.map(({prompt,answer,distractors}) => [prompt, answer, ...distractors]));
@@ -513,16 +525,33 @@ export function makeQuestions(category, count, seen = new Set(), format = 'choic
       return { category: id, prompt, type: 'choice', options, correct: options.indexOf(correct) };
     });
   }
-  if (format === 'mixed') {
-    const types = ['choice', 'boolean', 'estimate', 'order'];
-    const queues = types.map((type, index) =>
-      makeQuestions(category, Math.max(0, Math.ceil((count - index) / types.length)), seen, type, includeChristmas));
-    return Array.from({ length: count }, (_, index) => queues[index % types.length][Math.floor(index / types.length)]).filter(Boolean);
+  const types = formatTypes(format);
+  if (types.length > 1) {
+    // Take the picked types in turn. When one runs dry (a topic has only a
+    // handful of estimates), the others fill its slots so the round is full.
+    const queues = types.map(type => makeQuestions(category, count, seen, type, includeChristmas));
+    const picked = [];
+    const used = new Set();
+    for (let turn = 0; picked.length < count && queues.some(queue => queue.length); turn++) {
+      const queue = queues[turn % queues.length];
+      while (queue.length) {
+        const question = queue.shift();
+        const id = questionHistoryId(question.prompt);
+        if (used.has(id)) continue;
+        used.add(id);
+        picked.push(question);
+        break;
+      }
+    }
+    return picked;
   }
-  const ids = category === 'mixed' ? questionCategories.filter(id => includeChristmas || id !== 'christmas') : [category];
+  // Mixed Bag keeps to the everyday topics; specialist packs are chosen on purpose.
+  const ids = category === 'mixed' ? questionCategories.filter(id => !isSpecialist(id) && (includeChristmas || id !== 'christmas')) : [category];
   const groups = ids.map(id => {
-    const binary = trueFalse[id].map(([prompt, correct]) => [prompt, correct ? 'True' : 'False']);
-    const pool = { boolean: binary, estimate: estimates[id], order: orders[id] }[format] ?? banks[id];
+    const binary = (trueFalse[id] ?? []).map(([prompt, correct]) => [prompt, correct ? 'True' : 'False']);
+    // A topic without questions in this format contributes none, rather than
+    // passing its multiple-choice rows off as estimates or orders.
+    const pool = (format === 'choice' ? banks[id] : { boolean: binary, estimate: estimates[id], order: orders[id] }[format]) ?? [];
     const rows = shuffle(pool).map(row => ({ id, row }));
     return {
       fresh: rows.filter(({ row }) => !hasSeen(seen,row[0])),

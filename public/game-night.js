@@ -18,6 +18,16 @@ export function queuedSettings(mode, theme) {
   };
 }
 
+/**
+ * Settings for a game chosen in a party: the quick-switch defaults, but quiz
+ * games start on the standard bank with every question type and ten rounds.
+ */
+export function partySettings(mode, theme) {
+  const quick = queuedSettings(mode, theme);
+  if (!['classic', 'dice', 'knockout', 'wheel', 'board'].includes(mode)) return quick;
+  return { ...quick, format: 'mixed', difficulty: 'standard', ...(mode === 'board' ? {} : { count: 10 }) };
+}
+
 export function replayButtons(state, icons) {
   return `${state.night.queue.length ? '' : `<button class="button primary" data-action="quick-replay">${icons('rotate-ccw')} Replay this game</button>`}
     <button class="button outline" data-action="again">Play again with this group</button>`;

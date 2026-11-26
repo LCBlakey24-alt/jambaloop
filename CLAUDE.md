@@ -8,14 +8,14 @@
 
 ## Project constraints
 
-- Jambaloop is an existing Node 22 / Express 5 multiplayer browser game. TV host and phone controllers support **18 released game mode IDs on `main`**; So Close (`soclose`) is the 19th, integrated on a review branch but not deployed. `released-games.js` is the single explicit list tests compare against — update it deliberately when adding a game, with vanilla JavaScript UI and 3D only where appropriate. Do not rebuild it from scratch.
+- Jambaloop is an existing Node 22 / Express 5 multiplayer browser game. TV host and phone controllers support **20 released game mode IDs on `main`**, including So Close (`soclose`) and Bloodmoon (`bloodmoon`, the vampire hidden-role game, merged 26 November 2026 and not yet playtested with a real group). Check the Render deploy before calling any of it live. `released-games.js` is the single explicit list tests compare against — update it deliberately when adding a game, with vanilla JavaScript UI and 3D only where appropriate. Do not rebuild it from scratch.
 - Run `npm ci` and `npm test` before edits; add regression tests for each confirmed bug. Check full gameplay/content and browser workflows as relevant.
 - Improve stability, reconnects, authoritative timers/scoring, player and host UX, responsive layouts, and original question/prompt coverage **before** expanding the number of game tiles.
 - Preserve API/auth semantics and existing modes, themes, quiz editor, private data filters, SSE events, three.js fallback, session continuity and accessibility unless a tested change is explicitly scoped.
 - Keep spoilers/private roles, secret submissions, ballots, hands, tokens, and answer keys out of other players' views, neutral TV/host state, logs and streams.
-- Use small, reviewable branches/PRs. **`main` is configured for Render auto-deploy; merging can restart active games** because server room state is currently in-memory ([#41](https://github.com/LCBlakey24-alt/jambaloop/issues/41)). Do not automatically merge experimental code. Check current Render service and latest live SHA before claiming release.
+- Use small, reviewable branches/PRs. **`main` is set to Render auto-deploy on commit (though every release so far was a manual API deploy; check Deploys after merging); merging can restart active games** because server room state is currently in-memory ([#41](https://github.com/LCBlakey24-alt/jambaloop/issues/41)). Do not automatically merge experimental code. Check current Render service and latest live SHA before claiming release.
 - Do not add paid services/dependencies, age-restricted content, external login systems or persistent user-generated secrets without explicit review.
-- New game designs **are not shipped**. In particular: [Secret Suspects #42](https://github.com/LCBlakey24-alt/jambaloop/issues/42) and [Bloodmoon Council #43](https://github.com/LCBlakey24-alt/jambaloop/issues/43) are planning-only. Read [Bloodmoon brief](docs/BLOODMOON_COUNCIL_DESIGN.md) before implementation. Keep the two distinct from Spot the Bluff.
+- New game designs **are not shipped**. In particular: [Secret Suspects #42](https://github.com/LCBlakey24-alt/jambaloop/issues/42) is planning-only. [Bloodmoon #43](https://github.com/LCBlakey24-alt/jambaloop/issues/43) was approved by the owner on 26 November 2026 and is implemented (engine `bloodmoon.js`, view `public/bloodmoon-view.js`); it has automated tests but **no real-group playtest yet**, so role balance and timings are provisional. Read [Bloodmoon brief](docs/BLOODMOON_COUNCIL_DESIGN.md) before implementation. Keep the two distinct from Spot the Bluff.
 - All art, narration and card/question copy must be original or properly licensed, not replications of another show's branded assets.
 - Expand and fact-check content regularly, avoiding immediate repeats; use honest source and answer provenance.
 
@@ -42,3 +42,6 @@ Read [the next development handoff](docs/CLAUDE_NEXT_DEVELOPMENT_HANDOFF_2026-11
 
 ## Integration batch status (24 November 2026, late)
 [docs/INTEGRATION_STATUS_2026-11-24.md](docs/INTEGRATION_STATUS_2026-11-24.md) records which PRs were reviewed and integrated, defects fixed (So Close server-staged reveal, wheel drag direction, hardcoded game counts), content added (72 sourced So Close prompts), test results and what is **not** deployed. For games with secret submissions, follow the So Close pattern: stage reveal data on the server, never only in the animation.
+
+## Current status (25 November 2026)
+[docs/STATUS_2026-11-25.md](docs/STATUS_2026-11-25.md) is the latest snapshot: `main` 630732a is live with 19 games; open review PRs (#78 code-audit hardening, trivia specialist packs, party prompts v4); the Render auto-deploy vs `render.yaml` mismatch. It supersedes deploy and game-count statements in the 24 November files.

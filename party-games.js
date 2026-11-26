@@ -3,6 +3,7 @@ import { connectedPlayers, isConnected, responseTarget } from './room-presence.j
 import { randomInt } from 'node:crypto';
 import { makeQuestions } from './questions.js';
 import {v2Bluff} from './creative-expansion-v2.js';
+import {bluffV4} from './creative-expansion-v4.js';
 
 import { partyModes, socialModes } from './public/game-config.js';
 import { startSocialRound, advanceSocial, submitSocial, publicSocial, advanceSocialWhenReady } from './social-games.js';
@@ -12,6 +13,7 @@ import {startSpotlightGame,advanceSpotlight,submitSpotlight,publicSpotlight} fro
 import {startBrainGame,advanceBrain,submitBrain,publicBrain} from './brain-ladder.js';
 import {startTopAnswersRound,advanceTopAnswers,submitTopAnswers,publicTopAnswers} from './top-answers.js';
 import {startRareRound,advanceRare,advanceRareWhenReady,submitRare,publicRare} from './rare-find.js';
+import {startBloodmoon,advanceBloodmoon,expireBloodmoon,submitBloodmoon,publicBloodmoon} from './bloodmoon.js';
 import {startSketchRound,advanceSketch,expireSketch,submitSketch,publicSketch} from './sketch-sprint.js';
 export { partyModes };
 const prompts = [
@@ -44,6 +46,7 @@ const prompts = [
   'Name a terrible item to use as a bookmark.',
   'What might a superhero forget to take to work?',
   ...v2Bluff,
+  ...bluffV4,
 ];
 
 const random = list => list[randomInt(list.length)];
@@ -121,6 +124,7 @@ function advanceBluff(room,publish) {
 }
 
 export function startParty(room, publish) {
+  if(room.mode==='bloodmoon')return startBloodmoon(room,publish);
   if(room.mode==='sketch')return startSketchRound(room,publish);
   if (room.mode === 'rare') return startRareRound(room,publish);
   if (room.mode === 'topanswers') return startTopAnswersRound(room,publish);
@@ -161,6 +165,7 @@ export function rescuePotato(room, publish) {
 }
 
 export function expireParty(room, publish) {
+  if(room.mode==='bloodmoon')return expireBloodmoon(room,publish);
   if(room.mode==='sketch')return expireSketch(room,publish);
   if (room.phase === 'party-potato' && clockExpired(room)) {
     room.phase = 'finished';
@@ -170,6 +175,7 @@ export function expireParty(room, publish) {
 }
 
 export function advanceParty(room, publish) {
+  if(room.mode==='bloodmoon')return advanceBloodmoon(room,publish);
   if(room.mode==='sketch')return advanceSketch(room,publish);
   if (room.mode === 'rare') return advanceRare(room,publish);
   if (room.mode === 'topanswers') return advanceTopAnswers(room,publish);
@@ -182,6 +188,7 @@ export function advanceParty(room, publish) {
 }
 
 export function submitParty(room, key, data, publish) {
+  if(room.mode==='bloodmoon')return submitBloodmoon(room,key,data,publish);
   if(room.mode==='sketch')return submitSketch(room,key,data,publish);
   expireParty(room, publish);
   if (room.mode === 'rare') {
@@ -239,6 +246,7 @@ export function submitParty(room, key, data, publish) {
 }
 
 export function publicParty(room, key) {
+  if(room.mode==='bloodmoon')return publicBloodmoon(room,key);
   if(room.mode==='sketch')return publicSketch(room,key);
   if (room.mode === 'rare') return publicRare(room,key);
   if (room.mode === 'topanswers') return publicTopAnswers(room,key);
@@ -288,6 +296,7 @@ export function publicParty(room, key) {
 }
 
 export function advancePartyWhenReady(room, publish) {
+  if (room.mode === 'bloodmoon') return false;
   if (room.mode === 'rare') return advanceRareWhenReady(room,publish);
   if (room.mode === 'samepage') return advanceSamePageWhenReady(room, publish);
   if (room.mode === 'tracks') return advanceForkWhenReady(room,publish);

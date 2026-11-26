@@ -89,3 +89,46 @@ export function playTowerImpact(context, hit) {
     tone.stop(start + .085);
   }
 }
+
+/** Original 8-bit cues for Knockout: a quick "hit" when a heart breaks and a
+ *  falling "KO" jingle when a player is out. Square waves and a noise crunch,
+ *  synthesised here, so there are no audio files or licences involved. */
+export function playChiptune(context, kind) {
+  if (context?.state !== 'running') return;
+  const start = context.currentTime + .01;
+  const blip = (frequency, at, length, type = 'square', level = .07, slideTo) => {
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.type = type;
+    oscillator.frequency.setValueAtTime(frequency, at);
+    if (slideTo) oscillator.frequency.exponentialRampToValueAtTime(slideTo, at + length);
+    gain.gain.setValueAtTime(level, at);
+    gain.gain.setValueAtTime(level, at + length * .8);
+    gain.gain.exponentialRampToValueAtTime(.001, at + length);
+    oscillator.connect(gain).connect(context.destination);
+    oscillator.start(at);
+    oscillator.stop(at + length + .02);
+  };
+  const crunch = (at, length) => {
+    const buffer = context.createBuffer(1, Math.ceil(context.sampleRate * length), context.sampleRate);
+    const samples = buffer.getChannelData(0);
+    // Coarse, stepped noise sounds like an 8-bit explosion.
+    for (let i = 0, value = 0; i < samples.length; i++) { if (i % 24 === 0) value = Math.random() * 2 - 1; samples[i] = value; }
+    const noise = context.createBufferSource();
+    noise.buffer = buffer;
+    const gain = context.createGain();
+    gain.gain.setValueAtTime(.09, at);
+    gain.gain.exponentialRampToValueAtTime(.001, at + length);
+    noise.connect(gain).connect(context.destination);
+    noise.start(at);
+  };
+  if (kind === 'hit') {
+    blip(880, start, .06);
+    blip(440, start + .06, .1, 'square', .07, 220);
+    crunch(start + .04, .22);
+  } else if (kind === 'ko') {
+    [784, 659, 523, 392, 330, 262].forEach((frequency, i) => blip(frequency, start + i * .11, .1));
+    blip(196, start + .7, .55, 'square', .08, 65);
+    crunch(start + .7, .5);
+  }
+}

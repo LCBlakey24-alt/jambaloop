@@ -58,8 +58,9 @@ test('Two added genres are playable in every trivia format, including Board Race
  const configured=new Set(categories.map(row=>row[0]));
  assert.equal(configured.size,categories.length,'Category IDs must be unique');
  assert.deepEqual(modes.map(([id])=>id),[...releasedGameIds],'The game library must retain every released game');
- assert.equal(categories.length,19,'The library must expose 18 named topics and Mixed Bag');
- assert.equal(questionCategories.length,18);
+ // 18 everyday topics, 8 specialist packs (November 2026) and Mixed Bag.
+ assert.equal(categories.length,27,'The library must expose 26 named topics and Mixed Bag');
+ assert.equal(questionCategories.length,26);
  for(const category of newCategories){
    assert.ok(configured.has(category),category+' not in UI');
    assert.ok(questionCategories.includes(category),category+' not in live question library');

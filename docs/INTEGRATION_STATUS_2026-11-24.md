@@ -1,5 +1,7 @@
 # Integration batch status — 24 November 2026 (late)
 
+> **Superseded in part (25 Nov 2026):** deploy status and game counts below are historical. Current truth: [STATUS_2026-11-25.md](STATUS_2026-11-25.md) — 19 games live on `main` 630732a.
+
 Branch `ccr-f45d5751-1l0u82` integrates the open stability, redesign, So Close and roadmap PRs on top of `main` @ `140187e`, with fixes found in review. Statuses are kept separate on purpose.
 
 ## Reviewed and integrated (merged into the integration branch, **not into main**)
@@ -40,6 +42,8 @@ Branch `ccr-f45d5751-1l0u82` integrates the open stability, redesign, So Close a
 - Not done: physical TV/phone playtest, screen-reader pass, CI on GitHub for this branch (runs when the PR opens).
 
 ## Deployed
+
+**Update 25 Nov:** merged as PR #67 and live (`630732a`). The original note follows.
 
 **Nothing.** Live `index.html` on jambaloop-family-test.onrender.com is byte-identical to `main` and serves no So Close or batch-one assets. Render's deploy SHA was not read (needs an owner-chosen Render workspace). Merging this branch to `main` will auto-deploy and restart in-memory rooms (#41): merge only in a quiet window.
 

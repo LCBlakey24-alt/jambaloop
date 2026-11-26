@@ -38,10 +38,11 @@ async function withGame(run){
   await run({request,create});
  }finally{child.kill();}
 }
-test('Sketch Sprint has 300 unique drawable prompts, validated categories and 3/5/7 round settings',async()=>{
- assert.equal(sketchPrompts.length,300);
- assert.equal(new Set(sketchPrompts.map(p=>p.answer)).size,300);
- assert.equal(new Set(sketchPrompts.map(p=>p.id)).size,300);
+test('Sketch Sprint has 300+ unique drawable prompts, validated categories and 3/5/7 round settings',async()=>{
+ // 300 originals plus the November 2026 objects; ids and answers stay unique.
+ assert.ok(sketchPrompts.length>=340);
+ assert.equal(new Set(sketchPrompts.map(p=>p.answer)).size,sketchPrompts.length);
+ assert.equal(new Set(sketchPrompts.map(p=>p.id)).size,sketchPrompts.length);
  assert.ok(sketchPrompts.every(p=>p.category&&p.historyId&&p.answer.length>=3));
  assert.deepEqual(questionCounts('sketch','choice','mixed'),[3,5,7]);
  assert.equal(normaliseSketchGuess(' A   GIRÁFFE, riding a BICYCLE! '),'giraffe riding a bicycle');

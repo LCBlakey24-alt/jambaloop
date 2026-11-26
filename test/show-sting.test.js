@@ -28,5 +28,5 @@ test('stings wear the show identity, are decorative and respect reduced motion',
   assert.match(css, /\.show-sting \{ position:fixed; inset:0; z-index:900; pointer-events:none;/);
   assert.match(css, /@media \(prefers-reduced-motion:reduce\) \{ \.show-sting \{ display:none; \} \}/);
   const app = readFileSync(new URL('../public/app.js', import.meta.url), 'utf8');
-  assert.match(app, /if \(enter\) playSting\(stingFor\(renderedPhase, s, host\), s, \{ reducedMotion: matchMedia/);
+  assert.match(app, /const stingKind = enter \? stingFor\(renderedPhase, s, host\) : null;\s+if \(enter\) playSting\(stingKind, s, \{ reducedMotion: matchMedia/);
 });

@@ -4,6 +4,7 @@ import { socialModes } from './public/game-config.js';
 import {refreshGroupScores} from './public/team-play.js';
 import {v2Punchlines,v2Blanks,v2Cards} from './creative-expansion-v2.js';
 import {punchlineV3,blankV3,cardV3} from './party-content-v3.js';
+import {punchlineV4,blankV4,cardV4} from './creative-expansion-v4.js';
 
 const punchlines = [
   'What is the worst name for a very fancy restaurant?',
@@ -20,6 +21,7 @@ const punchlines = [
   'What is a terrible name for a children’s bedtime story?',
   ...v2Punchlines,
   ...punchlineV3,
+  ...punchlineV4,
 ];
 const blanks = [
   'The holiday brochure promised sunshine and ____.',
@@ -36,6 +38,7 @@ const blanks = [
   'This holiday’s most popular souvenir is ____.',
   ...v2Blanks,
   ...blankV3,
+  ...blankV4,
 ];
 const cards = [
   'a goose in sunglasses', 'a very dramatic potato', 'six minutes of awkward silence', 'a marching band of hamsters',
@@ -49,6 +52,7 @@ const cards = [
   'a lopsided trophy', 'a parade of shopping trolleys', 'an important meeting about snacks', 'a banana wearing a crown',
   ...v2Cards,
   ...cardV3,
+  ...cardV4,
 ];
 const dilemmas = [
   ['The town can fund one annual festival. Which track gets your vote?', 'A parade where all the floats are made of cake', 'A silent disco in the supermarket'],

@@ -32,10 +32,11 @@ try{
   if(await setup.locator('[data-action="carousel-view"]').isVisible())await setup.locator('[data-action="carousel-view"]').click();
   await setup.locator('.game-tile[data-mode="soclose"]').click();
   assert.match(await setup.locator('#game-preview').innerText(),/So Close/i);
-  await setup.locator('#game-preview [data-action="host"]').click();
-  const form=setup.locator('#host-form');
+  await setup.locator('#game-preview [data-action="party"]').click();
+  await setup.locator('[data-picker-tv] [data-action="picker-settings"]').click();
+  const form=setup.locator('#configure-form');
   assert.equal(await form.locator('input[name="mode"]:checked').inputValue(),'soclose');
-  assert.equal(await form.locator('select[name="format"]').isVisible(),false,'Format is fixed to estimates');
+  assert.equal(await form.locator('#format-field').isVisible(),false,'Question types are fixed to estimates');
   assert.match(await form.locator('#scoring-note').innerText(),/100 points.*200/);
   await setupContext.close();
   console.log('PASS: So Close setup from the launcher');

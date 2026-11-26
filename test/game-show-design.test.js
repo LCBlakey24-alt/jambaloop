@@ -47,8 +47,9 @@ test('first three games have original distinct cover art and finale identity',()
     const mark=showMark(id);
     assert.match(mark,/aria-hidden="true"/);
     assert.match(mark,/focusable="false"/);
+    // Tiles show only the game's logo over its scene: no emblem badge.
     for(const view of [launcherTile(mode),launcherPreview(id),launcherSetupArtwork(id)]){
-      assert.ok(view.includes(mark));
+      assert.ok(!view.includes('show-mark'));
       assert.ok(view.includes('data-show="'+id+'"'));
     }
     const reveal=scoreReveal(true,{mode:id,ceremony:{starts:0}});
@@ -56,15 +57,15 @@ test('first three games have original distinct cover art and finale identity',()
     assert.ok(reveal.includes('data-action="ceremony-skip"'));
   }
 });
-test('every show has its own decorative emblem on launcher, preview and setup art',()=>{
+test('every show has its own decorative emblem on its lobby card, kept off the launcher tiles',()=>{
   const marks=modes.map(([id])=>showMark(id));
   assert.equal(new Set(marks).size,modes.length,'Each emblem is distinct');
   for(const [index,mode] of modes.entries()){
     const [id]=mode;
     assert.match(marks[index],/^<svg class="show-mark"[^>]*aria-hidden="true" focusable="false"/);
     assert.doesNotMatch(marks[index],/<(script|image|foreignObject|text)\b|href=/,'Emblems are inline vector paths only');
-    assert.ok(launcherTile(mode).includes(marks[index]));
-    assert.ok(launcherPreview(id).includes(marks[index]));
+    assert.ok(!launcherTile(mode).includes('show-mark'));
+    assert.ok(!launcherPreview(id).includes('show-mark'));
   }
 });
 test('other modes retain the generic ceremony until their redesign batch lands',()=>{
@@ -73,4 +74,5 @@ test('other modes retain the generic ceremony until their redesign batch lands',
     assert.ok(!scoreReveal(true,{mode:id,ceremony:{starts:0}}).includes('show-finale-identity'));
   }
   assert.equal(showMark('__proto__'),'');
+  assert.match(readFileSync(new URL('../public/game-views.js',import.meta.url),'utf8'),/class="lobby-tile"[^`]*\$\{showMark\(state\.mode\)\}/,'The lobby card carries the emblem');
 });

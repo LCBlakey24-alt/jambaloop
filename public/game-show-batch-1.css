@@ -17,14 +17,14 @@
 }
 .game[data-mode="classic"] .scene-backdrop > i {display:none}
 .game[data-mode="classic"] .game-top {border-bottom:2px solid #dcb36b;background:linear-gradient(90deg,#101d38,#233b65,#101d38)}
-.game[data-mode="classic"] .screen-mode-title {font-family:'House Serif',Georgia,serif;letter-spacing:.03em}
+.game[data-mode="classic"] .screen-mode-title {font-family:var(--id-display),var(--head),sans-serif;letter-spacing:.01em}
 .game[data-mode="classic"] :is(.question-panel,.results,.join-panel,.roster-panel,.tv-status,.tv-leaders) {
   border:1px solid #9b7843;border-radius:8px;
   background:linear-gradient(150deg,#233e6d,#10203f 62%);
   box-shadow:inset 0 0 0 3px #0a132a,inset 0 0 0 4px #dcb36b45,0 12px 28px #0005;
 }
 .game[data-mode="classic"] .question-panel .round-kicker {color:#f5d58d;letter-spacing:.11em}
-.game.host-screen[data-mode="classic"] .question-panel > h2 {font-family:'House Serif',Georgia,serif;font-weight:400;text-align:center;margin-inline:auto;max-width:30ch}
+.game.host-screen[data-mode="classic"] .question-panel > h2 {font-family:var(--id-display),var(--head),sans-serif;font-weight:var(--id-weight);text-align:center;margin-inline:auto;max-width:30ch}
 .game[data-mode="classic"] .question-panel .answer {
   border-radius:4px;border:1px solid #b89759;
   background:linear-gradient(115deg,#213d70,#132744);color:#fff9e9;
@@ -32,7 +32,7 @@
 .game[data-mode="classic"] .question-panel .answer strong {border:1px solid #dcb36b;background:#f5d58d;color:#14213c;border-radius:3px}
 .game[data-mode="classic"] .tv-clock {border-radius:8px;background:#101d38;border:1px solid #dcb36b}
 .game[data-mode="classic"] .tv-clock .timer {color:#f5d58d;font-variant-numeric:tabular-nums}
-.game[data-mode="classic"] .results h1 {font-family:'House Serif',Georgia,serif;font-weight:400;color:#f5d58d}
+.game[data-mode="classic"] .results h1 {font-family:var(--id-display),var(--head),sans-serif;font-weight:var(--id-weight);color:#f5d58d}
 
 /* Spin the Wheel: carnival cabinet, circular controls, warm marquee lamps. */
 .game[data-mode="wheel"] {
@@ -151,7 +151,7 @@
 .show-finale-identity .show-mark {width:clamp(24px,4dvh,42px);height:auto;flex:none;}
 .game[data-mode="classic"] .score-ceremony {background:radial-gradient(ellipse at 50% 0,#345987,#0c1730 68%);border:2px solid #cda866;border-radius:8px;}
 .game[data-mode="classic"] .ceremony-rank {color:#f5d58d;}
-.game[data-mode="classic"] .ceremony-slide h1,.game[data-mode="classic"] .ceremony-slide h2 {font-family:'House Serif',Georgia,serif;font-weight:400;}
+.game[data-mode="classic"] .ceremony-slide h1,.game[data-mode="classic"] .ceremony-slide h2 {font-family:var(--id-display),var(--head),sans-serif;font-weight:var(--id-weight);}
 .game[data-mode="wheel"] .score-ceremony {background:radial-gradient(ellipse at 50% 40%,#682f85,#2a1048 72%);border:3px dotted #ffcf74;border-radius:26px;}
 .game[data-mode="wheel"] .ceremony-ranks li {border-radius:999px;}
 .game[data-mode="wheel"] .ceremony-rank {color:#ffcf74;}
@@ -168,3 +168,64 @@
   .game[data-mode="wheel"] .ceremony-winner {animation:show-wheel-reveal .5s ease-out;}
   .game[data-mode="knockout"] .ceremony-winner {animation:show-knockout-reveal .35s ease-out;}
 }
+
+/* ======================================================= KNOCKOUT LADDER ===== */
+/* Survivor ladder beside the question on the TV; pixel hearts per player. */
+body.playing .immersive[data-mode="knockout"] .tv-round { grid-template-columns:minmax(0,1fr) clamp(250px,25vw,420px); gap:clamp(10px,1.4vw,22px); }
+.ko-ladder { display:flex; flex-direction:column; gap:10px; min-height:0; overflow:hidden; padding:clamp(12px,1.4vw,22px) !important; }
+.ko-rungs { list-style:none; margin:0; padding:0; display:grid; gap:8px; }
+.ko-rung { position:relative; display:grid; grid-template-columns:auto auto minmax(0,1fr) auto; align-items:center; gap:10px; padding:7px 10px;
+  background:#ffffff0d; border:1px solid #ffffff1f; transition:transform .8s cubic-bezier(.2,.9,.3,1), opacity .4s; }
+.ko-rung:first-child { background:linear-gradient(90deg,#ffe60024,#ffffff0d); border-color:#ffe60088; }
+.ko-rank { display:grid; place-items:center; width:1.8em; height:1.8em; font:400 clamp(14px,1.3vw,20px)/1 var(--id-display),sans-serif; background:var(--id-surface2); color:var(--id-ink); }
+.ko-rung:nth-child(1) .ko-rank { background:#ffe600; color:#000; }
+.ko-rung:nth-child(2) .ko-rank { background:#d9dde3; color:#000; }
+.ko-rung:nth-child(3) .ko-rank { background:#d8904a; color:#000; }
+.ko-face { position:relative; display:inline-grid; width:clamp(30px,2.7vw,44px); aspect-ratio:1; }
+.ko-face .player-avatar { width:100%; height:100%; flex:none; border-radius:50%; object-fit:cover; }
+.ko-x { position:absolute; inset:-10%; opacity:0; pointer-events:none; }
+.ko-x::before, .ko-x::after { content:''; position:absolute; left:50%; top:50%; width:125%; height:17%; background:#ff2a2a; box-shadow:0 0 0 2px #000; transform:translate(-50%,-50%) rotate(45deg); }
+.ko-x::after { transform:translate(-50%,-50%) rotate(-45deg); }
+.ko-face.is-out .ko-x, .ko-rung.is-ko .ko-x { opacity:1; }
+.ko-face.is-out .player-avatar, .ko-rung.is-ko .player-avatar { filter:grayscale(1) brightness(.85); box-shadow:0 0 0 2px #ffffff88; }
+.ko-name { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font:400 clamp(15px,1.5vw,24px)/1.1 var(--id-display),sans-serif; text-transform:uppercase; }
+.ko-hearts { display:inline-flex; gap:4px; }
+.pixel-heart { width:clamp(16px,1.5vw,26px); height:auto; overflow:visible; }
+.pixel-heart rect { fill:#ff2a2a; transform-box:fill-box; transform-origin:center; }
+.pixel-heart rect.shine { fill:#ffb8b8; }
+.pixel-heart[data-heart="empty"] rect { fill:#ffffff24; }
+/* Not animating (re-render or reduced motion): a heart lost this round shows as lost. */
+:is(.ko-ladder,.ko-phone-hearts):not([data-ko-stage]) .pixel-heart[data-heart="breaking"] rect { fill:#ffffff24; }
+.ko-ladder:not([data-ko-stage]) .ko-rung[data-out-now], .ko-rung[hidden] { display:none; }
+.ko-more { margin:0; font-size:13px; opacity:.8; }
+.ko-out { margin-top:6px; padding-top:10px; border-top:2px dashed #ff2a2a66; }
+.ko-out ul { list-style:none; margin:6px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:8px; }
+.ko-out .ko-face { width:clamp(34px,3vw,48px); }
+.ko-ladder[data-ko-stage="ready"] .ko-out li[data-now] { opacity:0; }
+.game.player-only .ko-phone-hearts { vertical-align:middle; margin-right:6px; }
+.game.player-only .ko-phone-hearts .pixel-heart { width:22px; }
+
+@media (prefers-reduced-motion:no-preference) {
+  .ko-ladder[data-ko-stage="ready"] .ko-rung { transform:translateY(calc(var(--from,0) * (100% + 8px))); }
+  .ko-ladder[data-ko-stage="settle"] .ko-rung { transform:none; }
+  .ko-rung.is-hit { animation:ko-shake .45s steps(6) both; }
+  .pixel-heart.is-shattering rect { animation:px-burst .72s cubic-bezier(.2,.7,.4,1) forwards; }
+  .pixel-heart.is-shattering rect:nth-child(3n) { animation-delay:.03s; }
+  .pixel-heart.is-shattering rect:nth-child(3n+1) { animation-delay:.06s; }
+  .ko-rung.is-ko { animation:ko-flash .5s steps(4) both; }
+  .ko-rung.is-ko .ko-x { animation:ko-stamp .45s cubic-bezier(.2,1.5,.4,1) both; }
+  .ko-rung.is-gone { animation:ko-fall .55s ease-in forwards; }
+  .ko-ladder[data-ko-stage="settle"] .ko-out li[data-now] { animation:ko-pop .45s cubic-bezier(.2,1.5,.4,1) both; }
+}
+@keyframes px-burst {
+  0% { transform:none; fill:#fff; opacity:1; }
+  12% { transform:scale(1.4); fill:#ff2a2a; }
+  100% { transform:translate(var(--dx),var(--dy)) rotate(var(--spin)) scale(.5); opacity:0; }
+}
+@keyframes ko-shake { 0%,100% { translate:0; } 20% { translate:-5px 0; } 40% { translate:5px 0; } 60% { translate:-3px 0; } 80% { translate:3px 0; } }
+@keyframes ko-flash { 0%,50% { background:#ff2a2a55; } 25%,75%,100% { background:#ffffff0d; } }
+@keyframes ko-stamp { 0% { opacity:0; transform:scale(3) rotate(-20deg); } 100% { opacity:1; transform:none; } }
+@keyframes ko-fall { to { transform:translateY(70px) rotate(4deg); opacity:0; } }
+@keyframes ko-pop { from { opacity:0; transform:scale(0); } to { opacity:1; transform:none; } }
+/* Knockout: the status bar sits under the question, clear of the ladder. */
+@media (min-width: 761px) { body.playing .immersive[data-mode="knockout"] .tv-round-hud { left:36%; max-width:52%; } }

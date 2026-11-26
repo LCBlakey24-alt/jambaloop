@@ -1,5 +1,5 @@
 import { showIdentity } from './show-identity.js';
-import { bindTilt, celebrate, countUp } from './motion.js';
+import { bindTilt, celebrate, countUp, prefersReducedMotion } from './motion.js';
 import { enforceTvLegibility } from './tv-legibility.js';
 import {soCloseView,numberWheelRows,soCloseRevealView} from './so-close-view.js';
 import {revealFrame as soCloseFrame, stageFrame as soCloseStage} from './so-close-reveal.js';
@@ -7,28 +7,36 @@ import { scoreBreakView, updateScoreBreak } from './score-break.js';
 import { winnerBanner, playerFinish } from './result-highlights.js';
 import { bindRoomAvatars } from './room-avatars.js';
 import { animatePotato, potatoHeat } from './potato-stage.js';
-import { quizRaceView } from './quiz-race-view.js';
+import { quizRaceView, updateRacePowers } from './quiz-race-view.js';
 import { mountQuizRaceTrack } from './quiz-race-track.js';
 import { mobileDeck } from './mobile-deck.js';
 import { awardView, currentFrame, frameView, revealFrames, scoreReveal } from './ceremony.js';
 import { boardSpeedValues, bonusValues, canSetScore, defaultScoring, doubleSchedules, pointValues } from './scoring.js';
-import { gameNightPresets, gameNightView, playlistEditor, playlistLimit, queuedSettings, replayButtons } from './game-night.js';
+import { gameNightPresets, gameNightView, partySettings, playlistEditor, playlistLimit, queuedSettings, replayButtons } from './game-night.js';
 import { clearRoomSession, forgetPlayer, parseRoomCode, recentRooms, rememberPlayer, rememberedPlayer, restoreRoomSession, saveRoomSession } from './room-session.js';
 import {readQuestionHistory, rememberQuestion} from './question-history.js';
 import { modeVariables, sceneBackdrop } from './mode-style.js';
 import { launcherTile, launcherPreview, launcherModes, launcherSetupArtwork, LAUNCHER_PAGE_SIZE } from './home-launcher.js';
 import { carouselView, moveCarousel, themeHome, wrapIndex } from './game-carousel.js';
 import { playSting, stingFor } from './show-sting.js';
-import { stopNarration, toggleNarration } from './narrator.js';
-import { playCue, playTick, playTowerImpact } from './sound-cues.js';
+import { isWelcomeNarration, narrationPlaying, playScript, playWelcome, stopNarration, toggleNarration } from './narrator.js';
+import { bloodmoonCalls, knockoutReactions, raceCalls, reactions, skipQuips, welcomeBack } from './duo-scripts.js';
+import { openWelcome } from './welcome-show.js';
+import { playChiptune, playCue, playTick, playTowerImpact } from './sound-cues.js';
+import { duckMusic, playMusic, playSfx, preloadSfx, stopMusic } from './sfx.js';
+import { bindPickerSwipe, movePicker, pickerPhone, pickerTv, stepMode } from './lobby-picker.js';
+import { knockoutLadder, phoneHearts, playKnockout, rememberLadder, shatterPhoneHeart } from './knockout-ladder.js';
 import { boardLengths, boardRoute, boardDuration, durationLabel, suggestedTurnCap, boardRequiresChoice, boardPathChoices } from './board-route.js';
 import {teamPlayModes, defaultPlayStyle} from './team-play.js';
 import { avatarView, partyView } from './party-views.js';
+import { identityOf, identityVariables } from './game-identities.js';
+import { hideStage, showStage } from './stage-3d.js';
+import { bumpCount, clockTension, lockRail, reactionFor, stageReveal, stageable, updateLockRail } from './show-moments.js';
 import {connectSketchPainter,paintSketchBoard,clearSketch} from './sketch-canvas.js';
 import { openLibrary, savedQuizzes } from './quiz-editor.js';
 import { answerGuide, helpTypes, closestStep, createDraft, formatNumber, orderedItems, setEstimatePrecision, specialAnswer } from './answer-controls.js';
 import { demoView, explainer, hasDemo, practiceView, samples } from './learning.js';
-import { categories, categoryGroups, categoryName, modes, themes, formats, difficulties, defaultTheme, partyModes, fixedQuestionModes, minimumPlayers, questionCounts, scoreIntervals, defaultScoreInterval, supportsScoreCheckpoints } from './game-config.js';
+import { categories, categoryGroups, categoryName, modes, themes, questionTypes, formatTypes, formatId, difficulties, defaultTheme, partyModes, fixedQuestionModes, minimumPlayers, questionCounts, scoreIntervals, defaultScoreInterval, supportsScoreCheckpoints } from './game-config.js';
 import { boardView, diceView, lobbyView, reviewView, rollRecap, teamList, teamScoreboard, wheelView } from './game-views.js';
 
 const icons = (name, css = '') => `<img class="${css}" src="/icons/${name}.svg" alt="">`;
@@ -259,8 +267,9 @@ function renderModeCards(group = homeFilter) {
     app.querySelector('#mode-pager').hidden = true;
     shell.dataset.homeView = 'carousel';
     themeHome(shell, matches[carouselIndex][0]);
+    stageFor(shell, matches[carouselIndex][0]);
     const count = app.querySelector('#mode-count');
-    if (count) count.textContent = 'Use ← → or swipe to browse';
+    if (count) count.textContent = 'Every game, one party · ← → to browse';
     return;
   }
   if (carousel) { carousel.hidden = true; carousel.innerHTML = ''; }
@@ -288,7 +297,7 @@ function renderModeCards(group = homeFilter) {
   next.disabled = homePage >= pages - 1;
   pager.querySelector('#mode-page-output').textContent = `Page ${homePage + 1} of ${pages} · ${matches.length} games`;
   const count = app.querySelector('#mode-count');
-  if (count) count.textContent = homeSelected ? 'How to play and game setup' : 'Select a tile to see how it works';
+  if (count) count.textContent = homeSelected ? 'How to play' : 'Tap a game to see how it works';
 }
 
 function setupPreview(mode, play = false) {
@@ -304,7 +313,7 @@ function renderCategories() {
     (!group.length || group.includes(id)) && (name + ' ' + description).toLocaleLowerCase().includes(query));
   document.querySelector('#category-empty').hidden = Boolean(visible.length);
   document.querySelector('#category-list').innerHTML = visible.map(([id, name, description, icon, color]) => `
-    <button class="card" data-action="host" data-category="${id}" style="--accent:${color}">
+    <button class="card" data-action="party" data-mode="classic" data-category="${id}" style="--accent:${color}">
       <span class="category-icon" style="--icon:url('/icons/${icon}.svg')"><i></i></span>
       ${icons('arrow-up-right', 'arrow')}<h3>${name}</h3><p>${description}</p>
     </button>`).join('');
@@ -317,7 +326,8 @@ function openDialog(mode, value, gameMode, quizId) {
   if (['host', 'configure', 'rematch'].includes(mode)) {
     const configured = mode !== 'host';
     const rematch = mode === 'rematch';
-    const selectedMode = quizId ? 'classic' : configured ? state.mode : gameMode ?? 'classic';
+    // From the lobby carousel, settings open on the game being browsed.
+    const selectedMode = quizId ? 'classic' : configured ? gameMode ?? state.mode : gameMode ?? 'classic';
     const raceSetup = configured && state.mode === 'quizrace' ? state : {}; 
     const seconds = configured ? state.seconds : 20;
     const scoring = configured && state.scoring ? state.scoring : defaultScoring(seconds);
@@ -335,17 +345,20 @@ function openDialog(mode, value, gameMode, quizId) {
     content.innerHTML = `<div class="eyebrow">GAME SETUP</div><h2>${rematch ? 'Set up a rematch' : configured ? 'Choose a game' : 'Host a game'}</h2>
     <p>${rematch ? 'Everyone stays in the room and starts with a fresh score.' : configured ? 'Changes appear on every screen in this room.' : 'Choose a mode, then share the room code with your group.'}</p>
     <form id="${mode}-form">
-    <fieldset class="mode-options"><legend>Game mode</legend>${modes.map(([id, name, description, icon]) => `<label>
+    <fieldset class="mode-options"><legend>Game mode</legend>${modes.map(([id, name, description]) => `<label>
       <input name="mode" type="radio" value="${id}" ${id === selectedMode ? 'checked' : ''}>
-      <span>${icons(icon)}<strong>${name}</strong><small>${description}</small></span></label>`).join('')}</fieldset>
+      <span><i class="mode-thumb" style="${identityVariables(id)}" aria-hidden="true"></i><strong>${name}</strong><small>${description}</small></span></label>`).join('')}</fieldset>
     <div class="explainer-slot">${setupPreview(selectedMode, Boolean(gameMode))}</div>
     <div class="quiz-source" id="quiz-source"><label>Question source<select name="quiz">${selected(quizChoices, selectedQuiz)}</select></label>
       <button type="button" class="button outline small" data-action="library">My quizzes</button></div>
     <label id="difficulty-field">Difficulty<select name="difficulty">${selected(difficulties, configured ? state.difficulty : 'standard')}</select></label>
     <div class="form-row"><label id="category-field">Category<select name="category">${selected(categories, value ?? 'mixed')}</select></label>
-    <label>Question format<select name="format">${selected(formats, configured ? state.format : 'mixed')}</select></label>
     <label><span id="count-label">Questions</span><select name="count" aria-labelledby="count-label"></select></label>
     <label>Time per question<select name="seconds">${selected([15, 20, 30, 45, 0].map(value => [value, value ? value + ' seconds' : 'No timer']), seconds)}</select></label></div>
+    <input type="hidden" name="format" value="${configured ? state.format : 'mixed'}">
+    <fieldset class="format-picks" id="format-field"><legend>Question types <small>Tick as many as you like</small></legend>
+      <div class="format-picks-grid">${questionTypes.map(([id, name]) => `<label><input type="checkbox" name="questionType" value="${id}" ${formatTypes(configured ? state.format : 'mixed').includes(id) ? 'checked' : ''}><span>${name}</span></label>`).join('')}</div>
+      <small class="error format-picks-note" id="format-note" aria-live="polite"></small></fieldset>
     <fieldset id="race-setup" class="race-setup"><legend>Quiz Race</legend><div class="form-row">
       <label>Race length<select name="raceLength">${selected([['short','Short · ~1 min'],['medium','Medium · ~2 min'],['long','Long · ~3 min']],raceSetup.raceLength ?? 'medium')}</select></label>
       <label>Track theme<select name="raceTrack">${selected([['neon','Neon Circuit'],['desert','Desert Run'],['snow','Snow Circuit'],['jungle','Jungle Trail'],['space','Space Route']],raceSetup.raceTrack ?? 'neon')}</select></label>
@@ -411,10 +424,22 @@ function openDialog(mode, value, gameMode, quizId) {
       const board = game === 'board';
       const race = game === 'quizrace';
       const soClose = game === 'soclose';
-      if(soClose){form.elements.format.value='estimate';form.elements.difficulty.value='standard';}
+      if(soClose){form.elements.difficulty.value='standard';}
       form.querySelector('#race-setup').hidden = !race;
       form.querySelector('#race-setup').disabled = !race;
-      if(race){form.elements.format.value='choice';form.elements.seconds.value='0';form.elements.difficulty.value='standard';}
+      if(race){form.elements.seconds.value='0';form.elements.difficulty.value='standard';}
+      // The ticked types become one canonical format; at least one stays ticked.
+      const typeBoxes = [...form.querySelectorAll('[name="questionType"]')];
+      let ticked = typeBoxes.filter(box => box.checked).map(box => box.value);
+      let formatNote = '';
+      if (!ticked.length) {
+        const last = event?.target?.name === 'questionType' ? event.target : typeBoxes[0];
+        last.checked = true;
+        ticked = [last.value];
+        formatNote = 'Keep at least one question type ticked.';
+      }
+      form.querySelector('#format-note').textContent = formatNote;
+      form.elements.format.value = soClose ? 'estimate' : race ? 'choice' : formatId(ticked);
       const timed = form.elements.seconds.value !== '0';
       const scoreFields = form.querySelector('#quiz-scoring');
       scoreFields.hidden = !canSetScore(game);
@@ -472,7 +497,9 @@ function openDialog(mode, value, gameMode, quizId) {
       form.querySelector('#difficulty-field').hidden = form.elements.difficulty.disabled;
       const curated = !form.elements.difficulty.disabled && form.elements.difficulty.value !== 'standard';
       categoryField.hidden = (!supportsCustom && !race && !soClose) || custom || curated;
-      form.elements.format.closest('label').hidden = custom || party || privateQuiz || curated || race || soClose;
+      const formatField = form.querySelector('#format-field');
+      formatField.hidden = custom || party || privateQuiz || curated || race || soClose;
+      formatField.disabled = formatField.hidden;
       form.elements.count.closest('label').hidden = custom || (party && !matching && !spotlight && !brain && !topAnswers && !rare && !creativeRounds) || race;
       form.elements.seconds.closest('label').hidden = party || race;
       form.elements.autoReveal.closest('label').hidden = party || race;
@@ -505,7 +532,7 @@ function openDialog(mode, value, gameMode, quizId) {
       const format = form.elements.format.value;
       const scoringNote = format === 'estimate' ? 'Closest guesses receive equal base points.'
         : form.elements.seconds.value === '0' ? 'No speed bonus.'
-        : format === 'mixed' ? 'Timed correct answers can earn a speed bonus. Closest guesses receive equal base points.'
+        : formatTypes(format).includes('estimate') ? 'Timed correct answers can earn a speed bonus. Closest guesses receive equal base points.'
         : 'Faster correct answers earn more.';
       form.querySelector('#scoring-note').textContent = soClose ? 'Closest guesses earn 100 points; exact guesses earn 200. No speed bonus.' : race ? 'You steer your speed with answers. Correct boosts you, Pass and wrong answers slow you down. First to finish wins.' : party ? (rare ? 'Everyone secretly enters a valid answer that the other players might not think of. A verified unique answer earns 200 points, a pair earns 100 each, three or more matches earn 50 each. Unrecognised answers need the TV host to review them before reveal. Choose 3, 5 or 7 rounds.' : topAnswers ? 'Everyone privately votes for their genuine favourite among four options. Then secretly predicts the room’s most popular answer. The TV reveals real room vote counts (never invented surveys). Score 20 per vote for your prediction, plus 100 when you predict a top-ranked option. Choose 3, 5 or 7 rounds.' : brain ? 'Climb 5, 7 or 10 original reasoning puzzles. Start with 2 lives; a missed or wrong answer costs 1 life. Each higher level earns more points, and eliminated players can watch the remaining climb.' : spotlight ? 'Everyone takes one contestant turn. A randomly selected expert suggests an answer first. Contestants earn 100 points for a correct answer; experts earn 40 for a correct suggestion. Choose one, two or three turns each, for up to twenty players.' : matching ? 'Write a short answer privately. Each other player who matches it earns you 100 points. Choose 3, 5 or 7 rounds.' : trolley ? 'Each round: two teams choose one of three cards in each phase (defend, sabotage, reinforce). The Trolley Driver pulls the lever. One round per player.' : game === 'bluff' ? 'Play 3, 5 or 7 rounds. One player per round never sees the secret prompt, and the bluff role rotates. A correct vote earns +100 points. If the bluff escapes the vote, they earn +100. Strict most votes catches the bluff; tied top votes let them escape.' : game === 'potato' ? 'Two or more players. The potato has one shared two-minute timer.' : creativeRounds ? 'Choose 3, 5 or 7 rounds. Players select cards or write punchlines privately, then vote on the funniest entry each round. The same room and cumulative scores continue throughout.' : 'Players use their phones to enter or vote.')
         : privateQuiz ? 'Each player gets a unique multiple-choice or True or False question in each round.'
@@ -538,7 +565,7 @@ function openDialog(mode, value, gameMode, quizId) {
     });
   } else if (mode === 'practice') {
     if (!value && hasDemo(state?.mode)) showDemo(state.mode, 0);
-    else showPractice(value ?? (samples[state?.format] ? state.format : 'choice'));
+    else showPractice(value ?? (samples[formatTypes(state?.format)[0]] ? formatTypes(state?.format)[0] : 'choice'));
   } else if (mode === 'themes') {
     content.innerHTML = `<div class="eyebrow">VISUAL STYLE</div><h2>Set the mood</h2><div class="theme-options">
       ${themes.map(([id, name, color, panel]) => `<button class="button outline" data-action="theme" data-theme="${id}" aria-pressed="${previewTheme === id}">
@@ -560,11 +587,11 @@ function openDialog(mode, value, gameMode, quizId) {
       <h2>Join game night<span class="brand-dot">.</span></h2>
       <p>Ask the host for their six-digit room code, or scan their QR code to join directly.</p>
     </div>
-    <ol class="join-quick-steps" aria-label="How joining works">
-      <li><b>01</b><span>Get the code</span></li>
-      <li><b>02</b><span>Pick your name</span></li>
-      <li><b>03</b><span>Tap Ready</span></li>
-    </ol>
+    <div class="join-card" aria-hidden="true">
+      <span class="join-card-avatar" data-join-avatar>?</span>
+      <span class="join-card-copy"><small>PLAYER</small><strong data-join-name>Your name here</strong><small data-join-room>${roomCode ? 'Room ' + escape(roomCode) : 'Room ——————'}</small></span>
+      <span class="join-card-stamp">${roomCode ? 'TICKET READY' : 'NEW PLAYER'}</span>
+    </div>
     <form id="join-form" autocomplete="on">
       <label class="join-room-field" for="join-room-code">Room code
         <input id="join-room-code" name="code" value="${escape(roomCode)}" placeholder="123456"
@@ -616,6 +643,25 @@ async function api(path, body, key = session?.key) {
   if (response.status !== 204) return response.json();
 }
 
+/** The join form's player card follows the name, room code and photo as you go. */
+function updateJoinCard(form = document.querySelector('#join-form')) {
+  const card = form?.closest('#dialog-content, dialog')?.querySelector('.join-card');
+  if (!card) return;
+  const name = form.elements.name.value.trim();
+  const code = parseRoomCode(form.elements.code.value);
+  card.querySelector('[data-join-name]').textContent = name || 'Your name here';
+  card.querySelector('[data-join-room]').textContent = code ? 'Room ' + code : 'Room ——————';
+  card.querySelector('.join-card-stamp').textContent = code && name ? 'TICKET READY' : code ? 'ADD YOUR NAME' : 'NEW PLAYER';
+  card.toggleAttribute('data-ready', Boolean(code && name));
+  const avatar = card.querySelector('[data-join-avatar]');
+  avatar.style.backgroundImage = joinAvatar ? `url("${joinAvatar}")` : '';
+  avatar.textContent = joinAvatar ? '' : (Array.from(name)[0] ?? '?').toUpperCase();
+}
+document.addEventListener('input', event => { if (event.target.closest?.('#join-form')) updateJoinCard(event.target.form); });
+
+// What the connecting screen shows while the room answers.
+let pendingJoin;
+
 function startSession(next) {
   stream?.abort();
   stream = undefined;
@@ -639,15 +685,23 @@ function startSession(next) {
   boardDisplay = undefined;
   raceTrackView?.dispose(); raceTrackView = undefined; disposeRace3d();
   cancelAnimationFrame(raceAnimationFrame); raceAnimationFrame = 0;
-  app.innerHTML = `<section class="game connection-screen"><div class="game-panel">
-    <div class="eyebrow">ROOM ${escape(next.code)}</div><h1>Joining the lobby<span class="brand-dot">.</span></h1>
-    <p role="status"><span class="connection-indicator" aria-hidden="true"></span>Connecting to the room…</p>
-    <div class="actions"><button class="button outline" data-action="leave">Home</button></div>
+  const joining = !next.host ? pendingJoin ?? { name: next.name } : undefined;
+  pendingJoin = undefined;
+  const initial = (Array.from(joining?.name ?? '')[0] ?? '').toUpperCase();
+  app.innerHTML = `<section class="game connection-screen"><div class="connect-stage">
+    <div class="connect-rings" aria-hidden="true"><i></i><i></i><i></i>
+      <span class="connect-avatar"${joining?.avatar ? ` style="background-image:url('${joining.avatar}')"` : ''}>${next.host ? '📺' : joining?.avatar ? '' : escape(initial || '★')}</span></div>
+    <div class="eyebrow">ROOM ${escape(next.code)}</div>
+    <h1>${next.host ? 'Opening the studio' : 'Finding your seat'}<span class="connect-dots" aria-hidden="true"><b>.</b><b>.</b><b>.</b></span></h1>
+    <p role="status">${next.host ? 'Setting up the big screen' : joining?.name ? `Getting ${escape(joining.name)} into the room` : 'Connecting to the room'}</p>
+    <button class="button outline" data-action="leave">Cancel</button>
   </div></section>`;
   connect();
 }
 
 function leave() {
+  closeWelcome();
+  stopMusic();
   stream?.abort();
   stream = undefined;
   session = undefined;
@@ -745,7 +799,8 @@ document.addEventListener('submit', async event => {
         startSession(known);
         return;
       }
-      const player = await api('/' + code + '/join', { name, avatar: joinAvatar, seenQuestions: readQuestionHistory() });
+      const player = await api('/' + code + '/join', { name, avatar: joinAvatar, seenQuestions: readQuestionHistory(), returning: isReturning() });
+      pendingJoin = { name, avatar: joinAvatar };
       startSession({ code, key: player.key, host: false });
     }
   } catch (error) {
@@ -810,7 +865,7 @@ function tvRoundHud(s, timer, progress, host) {
     <section class="game-panel tv-status">
       <div class="eyebrow">${revealed ? 'ROUND COMPLETE' : 'LIVE ROUND'}</div>
       ${timer || `<strong class="tv-status-title">${revealed ? 'Answer revealed' : 'No timer'}</strong>`}
-      <p class="status" id="host-answer-count" role="status">${answerCount(s)}</p>${progress}
+      <p class="status" id="host-answer-count" role="status">${answerCount(s)}</p>${progress}${lockRail(s, escape, avatarView)}
     </section>
     ${groupPlay ? `<section class="game-panel tv-leaders"><div class="eyebrow">TEAM SCORES</div>${teamScoreboard(s.teams)}</section>` : ''}
     ${leaders.length ? `<section class="game-panel tv-leaders"><div class="eyebrow">${s.players.length > leaders.length ? 'TOP SCORES' : 'LEADERBOARD'}</div>${leaderboard(leaders)}${s.players.length > leaders.length ? `<p class="tv-leaders-more">+${s.players.length - leaders.length} more players</p>` : ''}</section>` : ''}
@@ -847,6 +902,12 @@ function phaseCaption(s) {
     'rare-review': 'Host reviewing unusual Rare Find answers',
     'rare-reveal': 'Real Rare Find answer reveal',
     'party-potato': 'Potato in play',
+    'blood-roles': 'Secret roles dealt',
+    'blood-night': 'Night: choose on your phone',
+    'blood-dawn': 'Dawn',
+    'blood-day': 'The village debates',
+    'blood-vote': 'The village votes',
+    'blood-verdict': 'The verdict',
     'sketch-draw': 'Artist drawing',
     'sketch-reveal': 'Drawing revealed',
     'race-countdown': 'Race about to start',
@@ -856,7 +917,7 @@ function phaseCaption(s) {
 }
 
 // Decorative celebration for genuine winning moments; keys stop repeats on re-render.
-function celebrateMoment(s, host, enter, result) {
+function celebrateMoment(s, host, enter, result, held = 0) {
   const view = app.querySelector('.game');
   if (!view) return;
   const key = `${s.code}/${s.game}`;
@@ -865,7 +926,7 @@ function celebrateMoment(s, host, enter, result) {
     if (host && !document.querySelector('#post-ceremony[hidden]')) celebrate(key + '/finale', { source: view, origin: 'sides' });
     const teamWin = s.teams?.length && s.teamWinners?.includes(s.player?.team);
     if (!host && enter && (s.rank === 1 || teamWin)) celebrate(key + '/finale/player', { source: view, intensity: .45 });
-  } else if (!host && enter && result === 'win') {
+  } else if (!host && enter && result === 'win' && !held) {
     celebrate(`${key}/${s.index}/round`, { source: view, intensity: .22 });
   }
 }
@@ -907,9 +968,11 @@ function render(s) {
     body = partyView(s, { host, canControl, escape, icons, reply: partyReply });
     if (s.phase === 'party-potato' && pauseButton) body = `<div class="round-pace">${pauseButton}</div>` + body;
     if (s.phase === 'party-potato' && !host) timer = '<span class="timer potato-timer" id="timer"></span>';
+  } else if (s.phase === 'lobby' && s.picker) {
+    body = host ? pickerTv(s, { escape, canDrive: true }) : pickerPhone(s, { escape, canDrive: s.isCaptain });
   } else if (s.phase === 'lobby') {
     body = lobbyView(s, { host, escape, icons, modeName });
-    const types = s.quizTypes ?? (s.format === 'mixed' ? helpTypes : [s.format]);
+    const types = s.quizTypes ?? (s.format === 'mixed' ? helpTypes : formatTypes(s.format));
     if (!partyModes.includes(s.mode)) body += `<section class="game-panel lobby-guide"><h2>How to answer</h2><dl>${types.map(type => {
       const [label, description] = answerGuide(type);
       return `<div><dt>${label}</dt><dd>${description}</dd></div>`;
@@ -989,7 +1052,7 @@ function render(s) {
       ? host ? '<div class="tv-clock"><span class="timer" id="timer"></span><small>TIME LEFT</small></div>'
         : '<span class="player-timer" aria-label="Time remaining"><span class="player-timer-label">TIME LEFT</span><span class="timer" id="timer"></span></span>'
       : '';
-    const lifeInfo = knockout ? `<p class="life-info">${host ? s.remaining + ' still in' : eliminated ? 'Out of lives · Spectating' : '♥ ' + lifeLabel(s.player.lives) + ' left'}</p>` : '';
+    const lifeInfo = knockout ? `<p class="life-info">${host ? s.remaining + ' still in' : phoneHearts(s) + (s.knockedOut ? 'Knocked out!' : eliminated ? 'Out of lives · Spectating' : lifeLabel(s.player.lives) + ' left')}</p>` : '';
     const answerStatus = eliminated ? 'Watch the rest of the game, then join the rematch.' : locked ? 'Answer locked in. Waiting for the reveal…' : sending ? 'Sending your answer…' : s.ends ? 'Tap your answer before time runs out.' : 'Choose an answer to lock it in.';
     const revealStatus = won ? (question.type === 'estimate' ? 'Closest guess!' : 'Correct!')
         + (showLiveScores && s.earned ? ` +${s.earned.toLocaleString()} ${s.earned === 1 ? 'point' : 'points'}.` : '')
@@ -1003,6 +1066,7 @@ function render(s) {
         <span class="feedback-mark" aria-hidden="true">${revealed ? won ? '✓' : '!' : eliminated ? '•' : locked ? '✓' : '…'}</span>
         <span><strong>${revealed ? won ? 'Correct answer!' : 'Round complete' : eliminated ? 'Spectating' : locked ? 'Answer locked in' : 'Sending your answer'}</strong>
         <small>${revealed ? revealStatus : eliminated ? 'You can watch the remaining rounds.' : locked ? 'You can relax while everyone else finishes.' : 'Hold on while we save your choice.'}</small></span>
+        ${revealed && won && showLiveScores && s.earned ? `<b class="points-pop" aria-hidden="true">+${s.earned.toLocaleString()}</b>` : ''}
       </div>` : '';
     body = `${host ? '<div class="tv-round">' : ''}<div class="game-panel question-panel ${revealed ? 'is-reveal' : ''}">
       <div class="eyebrow round-kicker"><span>${board ? 'TURN' : 'QUESTION'} ${s.index + 1} OF ${s.total}</span>
@@ -1015,13 +1079,13 @@ function render(s) {
       ${promptHelp}
       ${s.mode === 'soclose' ? soCloseView(question,{draft,selection,revealed,host,disabled:eliminated || sending,closest:s.closest,guesses:s.estimateGuesses},escape) : special ? specialAnswer(question, { draft, selection, revealed, host, disabled: eliminated || sending, closest: s.closest }, escape) : `<div class="answers ${s.question.options.length === 2 ? 'binary-answers' : ''}">${s.question.options.map((option, index) => `<button style="--answer:${colors[index]};--share:${s.breakdown && s.answered ? s.breakdown[index] * 100 / s.answered : 0}%" class="answer ${selection === index ? 'selected' : ''} ${revealed && s.question.correct === index ? 'correct' : ''}"
        data-dim="${revealed ? s.question.correct !== index : !host && selection !== undefined && selection !== index}" data-action="answer" data-option="${index}" ${host || revealed || locked || sending || eliminated ? 'disabled' : ''}>
-      <strong>${'ABCD'[index]}</strong><span>${escape(option)}${revealed && s.question.correct === index ? ' ✓' : ''}</span>
+      <strong>${'ABCD'[index]}</strong><span>${escape(option)}${revealed && s.question.correct === index ? '<b class="answer-tick" aria-hidden="true"> ✓</b>' : ''}</span>
       ${s.breakdown ? `<small class="answer-count"><b class="vote-share">${s.answered ? Math.round(100 * s.breakdown[index] / s.answered) : 0}%</b><span>${s.breakdown[index]} ${s.breakdown[index] === 1 ? 'vote' : 'votes'}</span></small>` : ''}</button>`).join('')}</div>`}
       ${revealed && s.question.source ? `<a class="question-source" href="${escape(s.question.source)}" target="_blank" rel="noopener noreferrer">Verified answer source</a>` : ''}
        ${checkpointNote(s)}<div class="round-footer">${host ? '' : `<div class="round-status"><p class="status" ${playerFeedback ? '' : 'role="status"'}>${revealed ? revealStatus + (showLiveScores ? ' Total: ' + s.player.score.toLocaleString() + ' pts.' : '') : answerStatus}</p>${revealed && s.player.streak >= 2 ? `<span class="streak-tag">${s.player.streak} in a row</span>` : ''}</div>`}
       ${pauseButton}
       ${canControl ? `<button class="button primary captain-next" data-action="advance">${nextQuestionLabel(s)} ${icons('arrow-right')}</button>` : ''}</div>
-      </div>${tvRoundHud(s, timer, response, host)}${host ? '</div>' : ''}${revealed && board && showLiveScores ? `<div class="game-panel round-leaders"><h2>Race standings</h2>${teamList(s, ownTeam?.id, true)}</div>` : ''}
+      </div>${host && knockout ? knockoutLadder(s, escape) : ''}${tvRoundHud(s, timer, response, host)}${host ? '</div>' : ''}${revealed && board && showLiveScores ? `<div class="game-panel round-leaders"><h2>Race standings</h2>${teamList(s, ownTeam?.id, true)}</div>` : ''}
 `;
   }
   if (s.phase === 'finished') {
@@ -1035,12 +1099,14 @@ function render(s) {
     } else {
       body = (s.night.queue.length ? nextUp : '') + body + awardView(s.awards, escape, icons) + (s.night.queue.length ? '' : nextUp);
     }
-  } else if (['lobby', 'waiting'].includes(s.phase)) body += gameNightView(s, { canControl, escape, icons });
+  } else if (['lobby', 'waiting'].includes(s.phase) && !s.picker) body += gameNightView(s, { canControl, escape, icons });
   const phaseKey = `${s.code}/${s.game}/${s.index}/${s.phase}${s.pausedAt ? '/paused' : ''}${s.party?.holding || s.party?.type === 'fork' ? '/' + s.party.step : ''}`;
   const enter = renderedPhase !== phaseKey;
   // TV broadcast stings: the show's title card at kick-off, a band before the last round.
-  if (enter) playSting(stingFor(renderedPhase, s, host), s, { reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
-    onStart: () => { if (soundEnabled) playCue(sound, s.mode, 'rolling'); } });
+  const stingKind = enter ? stingFor(renderedPhase, s, host) : null;
+  if (enter) playSting(stingKind, s, { reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
+    // The title card plays the game's own musical sting.
+    onStart: () => { if (!soundEnabled) return; if (stingKind === 'title') playSfx(sound, 'sting-' + s.mode, { volume: 0.5 }); else playCue(sound, s.mode, 'rolling'); } });
   const animateRoll = Boolean(boardDisplay && s.phase === 'rolling' && renderedPhase === `${s.code}/${s.game}/${s.index}/ready`);
   renderedPhase = phaseKey;
   const stage = enter && !animateRoll ? null : app.querySelector('#board-stage, .wheel-frame');
@@ -1068,10 +1134,12 @@ function render(s) {
     ${Array.from({ length: s.total }, (_, index) => `<i class="${index < completed ? 'done' : index === s.index ? 'current' : ''}"></i>`).join('')}</div>` : '';
   // Once play starts, the TV is locked to the game: chrome hides until summoned.
   const immersive = host && !['lobby', 'waiting'].includes(s.phase);
-  app.innerHTML = `<section class="game ${host ? 'host-screen' : 'player-only'} ${immersive ? 'immersive' : ''} ${host && tvFocus ? 'tv-focus' : ''} ${enter ? 'phase-enter' : ''}" data-deck-key="${phaseKey}" data-phase="${s.phase}" data-paused="${Boolean(s.pausedAt)}" data-mode="${s.mode}" data-result="${result}" style="${modeVariables(s.mode)}">${sceneBackdrop(s.mode, enter && (s.phase === 'finished' || result === 'win'))}<div class="game-top">
+  // While the lobby carousel is open, every screen wears the browsed game's look.
+  const shownMode = s.phase === 'lobby' && s.picker ? s.picker.mode : s.mode;
+  app.innerHTML = `<section class="game ${host ? 'host-screen' : 'player-only'} ${immersive ? 'immersive' : ''} ${host && tvFocus ? 'tv-focus' : ''} ${enter ? 'phase-enter' : ''}" data-deck-key="${phaseKey}" data-phase="${s.phase}" data-paused="${Boolean(s.pausedAt)}" data-mode="${shownMode}" data-result="${result}" style="${modeVariables(shownMode)}">${sceneBackdrop(shownMode, enter && (s.phase === 'finished' || result === 'win'))}<div class="game-top">
     <div class="screen-identity"><span class="screen-mode-icon" aria-hidden="true">${icons(mode[3])}</span>
-      <div><div class="screen-mode-title">${escape(s.quizTitle || (s.mode === 'classic' ? categoryName(s.category) : modeName(s.mode)))}</div>
-      <div class="screen-status">${host && s.phase === 'lobby' && showIdentity(s.mode) ? `<span class="show-studio-label">${showIdentity(s.mode).studio}</span>` : ''}<span class="phase-caption">${caption}</span>
+      <div><div class="screen-mode-title">${s.phase === 'lobby' && s.picker ? 'Pick a game' : escape(s.quizTitle || (s.mode === 'classic' ? categoryName(s.category) : modeName(s.mode)))}</div>
+      <div class="screen-status">${host && s.phase === 'lobby' && !s.picker && showIdentity(s.mode) ? `<span class="show-studio-label">${showIdentity(s.mode).studio}</span>` : ''}<span class="phase-caption">${caption}</span>
       ${s.isCaptain && s.phase !== 'lobby' ? '<span class="captain-tag">★ Captain</span>' : ''}${boost}
       ${host && ['lobby','finished'].includes(s.phase) ? '<span class="studio-publisher">A ROOKIE QUEST GAMES PRODUCTION</span>' : ''}
       ${host && !['lobby','waiting'].includes(s.phase) ? `<span class="tv-live-pill"><i aria-hidden="true"></i>JAMBALOOP LIVE · <span data-tv-connected>${s.connected}</span> PLAYERS</span>` : ''}</div></div></div>${track}
@@ -1097,7 +1165,22 @@ function render(s) {
   switchAvatarSession.refresh();
   if (backdrop) app.querySelector('.scene-backdrop').replaceWith(backdrop);
   renderGraphics(s, stage, animateRoll);
-  celebrateMoment(s, host, enter, result);
+  // Reveal beat: TV drum-roll and flare; phones hold their verdict to match.
+  const held = stageReveal(app, s, { host, enter, onFlare: verdict => {
+    if (host) { if (soundEnabled) { playSfx(sound, 'reveal', { volume: 0.5 }); playSfx(sound, 'correct', { volume: 0.35, at: 0.15 }); hostReaction(s, 1500); } }
+    else if (verdict === 'win') celebrate(`${s.code}/${s.game}/${s.index}/round`, { source: app.querySelector('.game'), intensity: .22 });
+    else shatterPhoneHeart(app, s);
+  } });
+  // Knockout: hearts shatter and KOs land just after the answer.
+  if (host && s.mode === 'knockout') {
+    playKnockout(app, s, { enter, delay: held + 350,
+      onHit: () => { if (soundEnabled) playChiptune(sound, 'hit'); },
+      onKo: () => { if (soundEnabled) { playChiptune(sound, 'ko'); playSfx(sound, 'bell', { volume: 0.5, at: 0.9 }); } } });
+    rememberLadder(s);
+  } else if (!host && enter && !held && s.phase === 'reveal') shatterPhoneHeart(app, s);
+  if (host && held && soundEnabled) playSfx(sound, 'drumroll', { volume: 0.45 });
+  if (host && enter && soundEnabled && s.phase === 'question') hostReaction(s, 600);
+  celebrateMoment(s, host, enter, result, held);
   // Sofa distance: no in-game TV text below the height-relative floor.
   if (immersive && innerWidth > 760) enforceTvLegibility(app.querySelector('section.game'));
   // The lobby's game card slides in from the side the switcher moved towards.
@@ -1109,6 +1192,11 @@ function render(s) {
   }
   lastLobbyMode = s.phase === 'lobby' ? s.mode : undefined;
   if(s.mode==='sketch')paintSketchBoard(s.party);
+  // The welcome plays once the room has players and a captain to hand over to.
+  if (host && s.phase === 'lobby' && s.picker && s.playerCount > 0 && s.captainName && !s.welcome && !welcomedRooms().includes(s.code)) requestWelcome();
+  if (welcome && s.phase !== 'lobby') closeWelcome();
+  if (s.phase === 'lobby' && s.picker) bindPickerSwipe(app, direction => stepPicker(direction));
+  if (host && s.phase === 'lobby') stageFor(app.querySelector('.game'), shownMode); else hideStage();
   // Hot Potato: the potato arcs from the old holder's seat to the new one.
   animatePotato(host?app:null, s.code+'/'+s.game, matchMedia('(prefers-reduced-motion: reduce)').matches);
   if(s.mode!=='quizrace'&&race3d) disposeRace3d();
@@ -1209,6 +1297,12 @@ function updateTimer() {
   const fill = document.querySelector('#time-fill');
   if (fill) fill.style.transform = `scaleX(${fraction})`;
   timer.closest('.tv-clock, .potato-stage-clock')?.style.setProperty('--clock-fill', `${fraction * 100}%`);
+  const final = clockTension(timer.closest('.game'), { fraction, remaining, paused: Boolean(state.pausedAt), live: state.phase === 'question' });
+  // A tick each second through the last five on the TV (sound is opt-in).
+  if (final && session?.host && soundEnabled) {
+    const beat = `${state.game}/${state.index}/${secondsLeft}`;
+    if (beat !== lastQuestionTick) { lastQuestionTick = beat; playTick(sound, true); }
+  }
   if (state.phase === 'party-potato') {
     potatoHeat(app, fraction);
     // A tick each second on the TV (sound is opt-in), quicker in the last ten.
@@ -1219,6 +1313,7 @@ function updateTimer() {
   }
 }
 let lastPotatoTick;
+let lastQuestionTick;
 
 function boardPrediction(state, host) {
   const prediction = state.prediction;
@@ -1267,12 +1362,20 @@ function receive(next, current) {
   setConnectionStatus(false);
   if (soundEnabled && current.host && state) {
     if (state.phase !== next.phase || state.index !== next.index) {
-      if (!(next.mode==='soclose' && next.phase==='reveal') && (!next.ceremony || matchMedia('(prefers-reduced-motion: reduce)').matches)) playCue(sound, next.mode, next.phase);
+      const staged = stageable(next) && !prefersReducedMotion();
+      if (!(next.mode==='soclose' && next.phase==='reveal') && !staged && (!next.ceremony || matchMedia('(prefers-reduced-motion: reduce)').matches)) playCue(sound, next.mode, next.phase);
     }
     else if (next.mode === 'potato' && next.party?.passes > state.party?.passes) playCue(sound, next.mode, 'pass');
+    soundMoments(state, next);
+    raceCommentary(state, next);
+    bloodmoonCommentary(state, next);
   }
   if (dialog.open && state && (state.game !== next.game || state.phase === 'lobby' && next.phase !== 'lobby')) dialog.close();
   if (state?.game !== next.game || state?.index !== next.index || next.phase === 'lobby') partyReply = '';
+  // A game chosen from the lobby carousel: the TV introduces it out loud.
+  const introduce = current.host && state?.phase === 'lobby' && state.picker && !next.picker && next.phase === 'lobby';
+  const welcomeMoved = current.host && (state?.welcome ?? null) !== (next.welcome ?? null);
+  if (!current.host && (['playing', 'skipping'].includes(next.welcome) || next.phase === 'finished')) markReturning();
   state = next;
   // Store only opaque question IDs, never answer keys or other players' data.
   if (!current.host) {
@@ -1289,7 +1392,9 @@ function receive(next, current) {
     Object.assign(current, { name: next.player.name, mode: next.mode });
     rememberPlayer(current);
   }
-  const { now, revision, answered, connected, waitingCount, responseTarget, race, ...stable } = next;
+  const { now, revision, answered, connected, waitingCount, responseTarget, race, lockIns, lockCount, lockRight, picker, ...stable } = next;
+  // The lobby carousel glides in place; only opening or closing it re-renders.
+  stable.pickerOpen = Boolean(picker);
   const raceSignature = race && { question:race.own?.question?.id, feedback:race.own?.feedback?.outcome, paused:race.paused, finished:race.finished };
   const lobbyStatus = next.phase === 'lobby' ? { connected } : undefined;
   const raceStable = next.mode==='quizrace' ? { ...stable, players: next.phase==='finished' ? stable.players : undefined, player: stable.player ? {...stable.player, score: undefined} : undefined } : stable;
@@ -1305,7 +1410,22 @@ function receive(next, current) {
   }
   const counter = current.host && document.querySelector('#host-answer-count');
   const countText = answerCount(next);
-  if (counter && counter.textContent !== countText) counter.textContent = countText;
+  if (counter && counter.textContent !== countText) { counter.textContent = countText; bumpCount(counter); }
+  if (current.host) {
+    const before = app.querySelectorAll('.lock-stamp').length;
+    updateLockRail(app, next, escape, avatarView);
+    if (soundEnabled && app.querySelectorAll('.lock-stamp').length > before) playSfx(sound, 'lockin', { volume: 0.5 });
+  }
+  if (introduce) toggleNarration(next.mode);
+  if (!current.host && next.mode === 'quizrace') updateRacePowers(app, next);
+  if (welcomeMoved) showWelcome(next.welcome);
+  if (picker) {
+    // The captain has started browsing: the welcome steps aside.
+    if (welcome && picker.version !== welcome.version) { welcome.version = picker.version; welcomeAction('end'); }
+    // Follow the room, except just after this screen moved it itself.
+    if (Date.now() - lastLocalPick > 700) movePicker(app, picker.mode, escape);
+    if (current.host) stageFor(app.querySelector('.game'), picker.mode);
+  }
   const responseProgress = document.querySelector('#response-progress');
   if (responseProgress) {
     responseProgress.max = Math.max(1, next.responseTarget);
@@ -1314,6 +1434,162 @@ function receive(next, current) {
   updatePresence(next);
   if(next.mode==='sketch')paintSketchBoard(next.party);
   updateTimer();
+}
+
+// Max and Poppy react to the round on the TV (Sound on only): one short line,
+// once per moment, never over another line, rotating through the variants.
+const reactionTurn = {};
+let reactedAt;
+/** Say the next variant of a reaction, unless someone is already talking. */
+function sayReaction(prefix, variants) {
+  if (!soundEnabled || narrationPlaying() || !variants?.length) return;
+  const turn = reactionTurn[prefix] = ((reactionTurn[prefix] ?? -1) + 1) % variants.length;
+  const take = variants[turn];
+  playScript(`${prefix}-${turn + 1}`, Array.isArray(take[0]) ? take : [take]);
+}
+
+function hostReaction(s, delay) {
+  const kind = reactionFor(s);
+  const moment = `${s.code}/${s.game}/${s.index}/${s.phase}`;
+  if (!kind || reactedAt === moment) return;
+  reactedAt = moment;
+  // Knockout is called by Baz and Clive at ringside.
+  const ringside = s.mode === 'knockout' && knockoutReactions[kind];
+  setTimeout(() => {
+    if (state?.game !== s.game || state?.index !== s.index || state?.phase !== s.phase) return;
+    if (ringside) sayReaction(`react-ko-${kind}`, ringside); else sayReaction(`react-${kind}`, reactions[kind]);
+  }, delay);
+}
+
+// Vince calls Quiz Race: the start, lead changes, close battles and the flag.
+let raceCalledAt = 0;
+/** Bloodmoon: the hosts call each public beat on the TV. */
+function bloodmoonCommentary(before, next) {
+  if (next.mode !== 'bloodmoon' || !next.party || before.phase === next.phase) return;
+  const party = next.party;
+  const kind = { 'blood-night': 'night', 'blood-day': 'day', 'blood-vote': 'vote',
+    'blood-dawn': party.dawn?.victim ? 'bitten' : 'safe',
+    'blood-verdict': party.verdict?.banished ? (party.verdict.banished.role === 'vampire' ? 'caught' : 'wrong') : 'nobody',
+    finished: party.winner }[next.phase];
+  if (kind && bloodmoonCalls[kind]) setTimeout(() => sayReaction(`react-blood-${kind}`, bloodmoonCalls[kind]), 700);
+}
+
+function raceCommentary(before, next) {
+  if (next.mode !== 'quizrace' || !next.race) return;
+  const call = (kind, gap = 0) => {
+    if (Date.now() - raceCalledAt < gap) return;
+    raceCalledAt = Date.now();
+    sayReaction(`react-race-${kind}`, raceCalls[kind]);
+  };
+  if (before.phase === 'race-countdown' && next.phase === 'race') return call('start');
+  if (next.phase === 'finished' && before.phase !== 'finished') return setTimeout(() => call('finish'), 900);
+  if (next.phase !== 'race' || before.phase !== 'race') return;
+  // Power-ups: a new ram or boost anywhere on the track gets a call.
+  const fresh = kind => next.race.racers.some(racer => racer.power === kind && before.race?.racers?.find(old => old.id === racer.id)?.power !== kind);
+  if (fresh('rammed')) { if (soundEnabled) playSfx(sound, 'wrong', { volume: 0.4 }); return call('ram', 5000); }
+  if (fresh('boost')) { if (soundEnabled) playSfx(sound, 'whoosh', { volume: 0.5 }); return call('boost', 5000); }
+  const [first, second] = next.race.racers;
+  const leaderBefore = before.race?.racers?.[0]?.id;
+  const length = next.race.length || 1;
+  if (first && leaderBefore && first.id !== leaderBefore && first.distance > length * 0.08) return call('lead', 9000);
+  if (first && second && first.distance > length * 0.4 && first.distance - second.distance < length * 0.015) call('close', 20000);
+}
+
+/** The TV's recorded effects and music for each moment of the show. */
+function soundMoments(before, next) {
+  const moved = before.phase !== next.phase || before.index !== next.index;
+  // Music: the lobby theme under the lobby and carousel, the winners' theme at the end.
+  if (next.phase === 'lobby') playMusic('lobby');
+  else if (next.phase === 'finished' && before.phase !== 'finished') {
+    playMusic('finale', { loop: false });
+    playSfx(sound, 'fanfare', { volume: 0.5 });
+    playSfx(sound, 'cheer', { volume: 0.45, at: 0.6 });
+  } else if (next.phase !== 'finished') stopMusic();
+  if (!moved) return;
+  // The first question arrives under the title sting, so no whoosh there.
+  if (next.phase === 'question' && next.index > 0) playSfx(sound, 'whoosh', { volume: 0.4 });
+  // Warm the next game's sting while everyone is still in the lobby.
+  if (next.phase === 'lobby') preloadSfx(sound, ['sting-' + (next.picker?.mode ?? next.mode)]);
+  if (next.phase === 'rolling' && next.mode === 'wheel') playSfx(sound, 'wheel', { volume: 0.5 });
+  if (next.mode === 'potato' && before.phase === 'party-potato' && next.phase !== 'party-potato') playSfx(sound, 'sizzle', { volume: 0.6 });
+}
+
+function showGameError(error) {
+  const notice = document.querySelector('#game-error');
+  if (notice) notice.textContent = error.message;
+}
+
+// Max and Poppy's welcome to Jambaloop. The room holds its state (playing,
+// asking or skipping) so the TV, the captain's phone and everyone else agree.
+let welcome;
+const welcomedKey = 'jambaloop-welcomed';
+const welcomedRooms = () => { try { return JSON.parse(sessionStorage.getItem(welcomedKey) ?? '[]'); } catch { return []; } };
+// A phone that has seen the welcome or played a game is a returning player.
+const returningKey = 'jambaloop-returning';
+const isReturning = () => { try { return localStorage.getItem(returningKey) === '1'; } catch { return false; } };
+const markReturning = () => { try { localStorage.setItem(returningKey, '1'); } catch {} };
+
+function welcomeAction(action) {
+  if (!session || !state) return Promise.resolve();
+  return api('/' + session.code + '/welcome', { action, game: state.game }).catch(() => {});
+}
+
+/** TV: start the welcome once per room (or offer a skip if everyone's been before). */
+function requestWelcome() {
+  if (!session?.host || !state) return;
+  try { sessionStorage.setItem(welcomedKey, JSON.stringify([...welcomedRooms(), state.code].slice(-20))); } catch {}
+  welcomeAction(state.everyoneReturning ? 'ask' : 'start');
+}
+
+function welcomeOverlay() {
+  welcome ??= openWelcome(document.body, { code: state.code, qr: state.qr },
+    { onSkip: () => welcomeAction('skip'), onTour: () => welcomeAction('tour') });
+  welcome.version = state.picker?.version;
+  return welcome;
+}
+
+/** TV: follow the room's welcome state with the matching scene and lines. */
+function showWelcome(to) {
+  if (!to) { closeWelcome(); return; }
+  const show = welcomeOverlay();
+  if (to === 'playing') playWelcome({ onLine: (index, [, , scene]) => show.scene(scene), onDone: () => welcomeAction('end') });
+  else if (to === 'asking') { show.scene('back'); playScript('welcome-back', welcomeBack); }
+  else if (to === 'skipping') {
+    show.scene('skip');
+    const pick = Math.floor(Math.random() * skipQuips.length);
+    playScript(`skip-${pick + 1}`, skipQuips[pick], { onDone: () => welcomeAction('end') });
+  }
+}
+
+function closeWelcome() {
+  if (isWelcomeNarration()) stopNarration();
+  welcome?.close();
+  welcome = undefined;
+}
+
+/** The live 3D backdrop, tinted for a game. */
+function stageFor(element, mode) {
+  const { accent, accent2, ink } = identityOf(mode);
+  showStage(element, { accent, accent2, ink });
+}
+
+// The game in front of the shelf on this screen (it can be a step ahead of the room).
+const centredPick = () => app.querySelector('.picker-carousel .carousel-card[aria-current]')?.dataset.mode ?? state?.picker?.mode;
+let lastLocalPick = 0;
+
+/** One step along the shelf: move here at once, then tell the room. */
+function stepPicker(direction) {
+  if (!state?.picker) return;
+  const next = stepMode(centredPick(), direction);
+  lastLocalPick = Date.now();
+  movePicker(app, next, escape);
+  browseTo(next);
+}
+
+/** Move the lobby carousel for every screen in the room. */
+function browseTo(mode) {
+  if (!session || !state?.picker) return;
+  api('/' + session.code + '/browse', { mode, game: state.game }).catch(showGameError);
 }
 
 function connectionError(error, current) {
@@ -1527,6 +1803,7 @@ document.addEventListener('change', async event => {
     preview.src = joinAvatar;
     preview.hidden = false;
     form.querySelector('[data-action="clear-selfie"]').hidden = false;
+    updateJoinCard(form);
     message.textContent = '';
   } catch (error) {
     message.textContent = error.message || 'Could not open this photo.';
@@ -1632,6 +1909,7 @@ document.addEventListener('click', async event => {
     preview.removeAttribute('src');
     preview.hidden = true;
     button.hidden = true;
+    updateJoinCard();
     return;
   }
   if (action === 'home-tab') {
@@ -1656,7 +1934,8 @@ document.addEventListener('click', async event => {
     const list = launcherModes(homeFilter);
     if (action === 'carousel-go') {
       const target = list.findIndex(([id]) => id === button.dataset.mode);
-      if (target === wrapIndex(carouselIndex, list.length)) return button.closest('#game-carousel')?.querySelector('.carousel-info [data-action="host"]')?.click();
+      // On the landing showcase the centre card opens its details; hosting is a separate tap.
+      if (target === wrapIndex(carouselIndex, list.length)) return button.closest('#game-carousel')?.querySelector('.carousel-info [data-action="preview-mode"]')?.click();
       stepCarousel(target - wrapIndex(carouselIndex, list.length));
     } else stepCarousel(Number(button.dataset.direction));
     return;
@@ -1690,6 +1969,17 @@ document.addEventListener('click', async event => {
     homeSelected = undefined;
     renderModeCards(homeFilter);
     app.querySelector(`[data-action="preview-mode"][data-mode="${id}"]`)?.focus({preventScroll:true});
+    return;
+  }
+  if (action === 'race-power' && session && state?.race?.own) {
+    button.dataset.sending = '1';
+    button.disabled = true;
+    try {
+      await api('/' + session.code + '/race-power', { game: state.game, kind: button.dataset.kind });
+      try { if (navigator.userActivation?.hasBeenActive) navigator.vibrate?.(button.dataset.kind === 'ram' ? [40, 30, 80] : 60); } catch {}
+    } catch (error) { showGameError(error); }
+    delete button.dataset.sending;
+    await refresh();
     return;
   }
   if (action === 'race-answer' || action === 'race-pass') {
@@ -1739,6 +2029,9 @@ document.addEventListener('click', async event => {
   if (action === 'social-card') return sendParty({ action: 'card', option: Number(button.dataset.option), handVersion: Number(button.dataset.handVersion) }, button);
   if (action === 'social-redraw') return sendParty({ action: 'redraw' }, button);
   if (action === 'bluff-vote') return sendParty({ action: 'vote', id: button.dataset.id }, button);
+  if (action === 'blood-ready') return sendParty({ action: 'ready' }, button);
+  if (action === 'blood-pick') return sendParty({ action: 'night', night: state.party?.night, id: button.dataset.id }, button);
+  if (action === 'blood-vote') return sendParty({ action: 'vote', night: state.party?.night, id: button.dataset.id }, button);
   if (action === 'potato-skip' || action === 'potato-answer') {
     return sendParty({ action: action === 'potato-skip' ? 'skip' : 'answer', option: Number(button.dataset.option), step: state.party.step }, button);
   }
@@ -1791,6 +2084,22 @@ document.addEventListener('click', async event => {
   if (action === 'close') return dialog.close();
   if (action === 'night' && session && state) return openDialog('night');
   if (action === 'leave') return leave();
+  if (action === 'welcome-play' && session?.host && !state?.welcome) return welcomeAction('start');
+  if (action === 'welcome-skip' && session) return welcomeAction('skip');
+  if (action === 'welcome-tour' && session) return welcomeAction('tour');
+  if (action === 'picker-open' && session && state?.phase === 'lobby') {
+    return api('/' + session.code + '/browse', { open: true, game: state.game }).catch(error => showGameError(error));
+  }
+  if (action === 'picker-step' && session && state?.picker) return stepPicker(Number(button.dataset.direction));
+  if (action === 'picker-settings' && session && state?.picker) return openDialog('configure', state.category, centredPick());
+  if (action === 'picker-play' && session && state?.picker) {
+    button.disabled = true;
+    const mode = centredPick();
+    try {
+      await api('/' + session.code + '/configure', { ...partySettings(mode, state.theme), game: state.game, lobbyVersion: state.lobbyVersion });
+    } catch (error) { button.disabled = false; showGameError(error); }
+    return;
+  }
   if (action === 'lobby-mode' && session && state?.phase === 'lobby') {
     // Quick switch from the lobby: the new game arrives with sensible defaults
     // (the full setup is still one tap away under Choose game).
@@ -1810,7 +2119,13 @@ document.addEventListener('click', async event => {
     button.disabled = true;
     const message = document.querySelector('#home-error');
     try {
-      const room = await api('', { mode: 'classic', category: 'mixed', count: 10, seconds: 20, format: 'mixed', theme: previewTheme, scoreInterval: defaultScoreInterval });
+      // Lobby first: everyone joins, then the captain picks the game on the
+      // carousel. Hosting from a game's tile starts the carousel on that game.
+      const chosen = modes.some(([id]) => id === button.dataset.mode) ? button.dataset.mode : undefined;
+      const settings = chosen ? partySettings(chosen, previewTheme) : { mode: 'classic', category: 'mixed', count: 10, seconds: 20, format: 'mixed', theme: previewTheme, scoreInterval: defaultScoreInterval };
+      // A topic card starts a Classic Quiz party on that topic.
+      if (chosen === 'classic' && categories.some(([id]) => id === button.dataset.category)) settings.category = button.dataset.category;
+      const room = await api('', { ...settings, picker: true });
       startSession({ code: room.code, key: room.host, host: true });
     } catch (error) {
       if (message) message.textContent = error.message;
@@ -1837,7 +2152,9 @@ document.addEventListener('click', async event => {
         sound ??= new AudioContext();
         await sound.resume();
         playCue(sound, state.mode, 'preview');
-      }
+        preloadSfx(sound, ['whoosh', 'lockin', 'drumroll', 'reveal', 'correct', 'fanfare', 'cheer', 'bell', 'wheel', 'sizzle']);
+        if (state.phase === 'lobby') playMusic('lobby');
+      } else stopMusic();
       render(state);
       updateTimer();
     } else if (action === 'fullscreen') {
@@ -1955,15 +2272,25 @@ matchMedia('(max-width: 760px)').addEventListener('change', () => {
   renderModeCards(homeFilter);
 });
 
+// The landing shelf turns by itself while nobody is browsing it.
+let carouselTouchedAt = performance.now();
+setInterval(() => {
+  if (session || document.hidden || prefersReducedMotion() || performance.now() - carouselTouchedAt < 15000) return;
+  if (dialog.open || carouselVoice || homeSelected) return;
+  stepCarousel(1, { auto: true });
+}, 6500);
+
 /** Turn the shelf by `delta` games; the page and voice guide follow. */
-function stepCarousel(delta) {
+function stepCarousel(delta, { auto = false } = {}) {
   const carousel = app.querySelector('#game-carousel');
   if (!carousel || carousel.hidden || !delta) return;
+  if (!auto) carouselTouchedAt = performance.now();
   const list = launcherModes(homeFilter);
   carouselIndex = wrapIndex(carouselIndex + delta, list.length);
   if (!moveCarousel(carousel, list, carouselIndex, carouselVoice)) carousel.innerHTML = carouselView(list, carouselIndex, carouselVoice);
   const mode = list[carouselIndex][0];
   themeHome(app.querySelector('[data-home-shell]'), mode);
+  stageFor(app.querySelector('[data-home-shell]'), mode);
   stopNarration();
   clearTimeout(carouselTimer);
   // Speak only once the shelf settles, so quick browsing stays quiet.

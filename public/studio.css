@@ -341,3 +341,16 @@ body.playing[data-theme="club"] .lobby .join-panel { background: radial-gradient
   body:not(.playing) .hero-art { animation: match-in .43s ease-out both; }
   #dialog-content > h2, #quiz-library > h2 { animation: match-in .2s ease-out both; }
 }
+
+/* Question-type picker: tick any combination of the four formats. */
+.format-picks { border: 0; padding: 0; margin: 0; min-width: 0; display: grid; gap: 8px; }
+/* One block, so the phone's paged setup never splits the four boxes across pages. */
+.format-picks-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.format-picks[hidden] { display: none; }
+.format-picks legend { padding: 0; margin-bottom: 8px; font-weight: 700; font-size: 14px; }
+.format-picks legend small { font-weight: 500; opacity: .75; margin-left: 6px; }
+.format-picks label { display: flex; align-items: center; gap: 9px; min-height: 46px; padding: 8px 12px; border-radius: 10px; cursor: pointer;
+  border: 1px solid color-mix(in srgb, currentColor 22%, transparent); background: color-mix(in srgb, currentColor 4%, transparent); }
+.format-picks label:has(input:checked) { border-color: var(--home-accent, var(--pink)); background: color-mix(in srgb, var(--home-accent, var(--pink)) 16%, transparent); }
+.format-picks label:has(input:focus-visible) { outline: 2px solid var(--home-accent, var(--pink)); outline-offset: 2px; }
+.format-picks input { width: 20px; height: 20px; flex: 0 0 20px; margin: 0; padding: 0; accent-color: var(--home-accent, var(--pink)); }

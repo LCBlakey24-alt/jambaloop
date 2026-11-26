@@ -1,12 +1,14 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { boardQuestion, questionCategories } from '../questions.js';
+import { isSpecialist } from '../public/game-config.js';
 import { answerValue } from '../public/scoring.js';
 import { revealFrames } from '../public/ceremony.js';
 
 test('Board Race has a question with each grade, genre and format', () => {
   const prompts = new Set();
-  for (const category of questionCategories) {
+  // Board Race lays out the everyday genres; specialist packs never appear on its tiles.
+  for (const category of questionCategories.filter(id => !isSpecialist(id))) {
     for (const type of ['choice', 'boolean', 'estimate', 'order']) {
       const grades = new Set();
       for (let level = 1; level <= 6; level++) {

@@ -8,7 +8,7 @@
 // accent / accent2: highlights. question: whether prompts use the display
 // face ('display') or the readable house sans ('body').
 export const identities = {
-  classic:    { title: 'Golden Hour', display: 'Show Classic', weight: 400, question: 'display', upper: false, scheme: 'dark',
+  classic:    { title: 'Golden Hour', display: 'Show Classic', weight: 700, question: 'display', upper: false, scheme: 'dark',
     bg: ['#0b1d6b', '#040b30'], surface: '#0f2479', surface2: '#18339b', ink: '#fffaf0', muted: '#ccd6ff', accent: '#ffc93c', accent2: '#ff6b5a', radius: '6px' },
   wheel:      { title: 'Carnival Midway', display: 'Show Wheel', weight: 400, question: 'body', upper: true, scheme: 'dark',
     bg: ['#7412c4', '#2b0548'], surface: '#3d0a6b', surface2: '#561092', ink: '#ffffff', muted: '#ead2ff', accent: '#ffd23f', accent2: '#ff3fa4', radius: '22px' },
@@ -40,6 +40,8 @@ export const identities = {
     bg: ['#de5a20', '#74270d'], surface: '#561d0a', surface2: '#70270f', ink: '#fff4e0', muted: '#ffdcbf', accent: '#ffc145', accent2: '#4fd8d1', radius: '20px' },
   rare:       { title: 'Treasure Vault', display: 'Show Rare', weight: 400, question: 'display', upper: false, scheme: 'dark',
     bg: ['#0b6249', '#022419'], surface: '#04342a', surface2: '#08483a', ink: '#f6f0dc', muted: '#c6e4d4', accent: '#e8c35a', accent2: '#7ee8ff', radius: '6px' },
+  bloodmoon:  { title: 'Moonlit Village', display: 'Show Bloodmoon', weight: 700, question: 'display', upper: false, scheme: 'dark',
+    bg: ['#2a1846', '#0d0718'], surface: '#1a1030', surface2: '#2a1846', ink: '#ffffff', muted: '#cdbfe6', accent: '#ff8a8f', accent2: '#ffe9c2', radius: '18px' },
   sketch:     { title: 'Sketch Pad', display: 'Show Sketch', weight: 700, question: 'display', upper: false, scheme: 'light',
     bg: ['#fdfcf7', '#ebe6d8'], surface: '#ffffff', surface2: '#f4f0e6', ink: '#1d2433', muted: '#545c6e', accent: '#e0294c', accent2: '#2a6fdb', radius: '16px' },
   quizrace:   { title: 'Neon Grand Prix', display: 'Show Race', weight: 700, question: 'body', upper: true, scheme: 'dark',
@@ -48,7 +50,7 @@ export const identities = {
     bg: ['#0f5457', '#052a2d'], surface: '#073a3d', surface2: '#0d4b4f', ink: '#f6f4e6', muted: '#bfd8d5', accent: '#ffbf68', accent2: '#7fe3d6', radius: '6px' },
 };
 
-export const identityOf = mode => identities[mode] ?? identities.classic;
+export const identityOf = mode => Object.hasOwn(identities, mode) ? identities[mode] : identities.classic;
 
 /** CSS custom properties for a game's screens and launcher tile. */
 export function identityVariables(mode) {
@@ -59,5 +61,7 @@ export function identityVariables(mode) {
     `--id-case:${id.upper ? 'uppercase' : 'none'}`, `--id-bg1:${id.bg[0]}`, `--id-bg2:${id.bg[1]}`,
     `--id-surface:${id.surface}`, `--id-surface2:${id.surface2}`, `--id-ink:${id.ink}`, `--id-muted:${id.muted}`,
     `--id-accent:${id.accent}`, `--id-accent2:${id.accent2}`, `--id-radius:${id.radius}`,
+    // The show's illustrated scene: launcher tile artwork and game backdrop.
+    `--id-scene:url('/scenes/${Object.hasOwn(identities, mode) ? mode : 'classic'}.svg')`,
   ].join(';');
 }

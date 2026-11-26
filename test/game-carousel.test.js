@@ -26,7 +26,8 @@ test('only nearby cards are reachable; the centre one is current and speaks its 
   assert.equal(html.match(/tabindex="-1" aria-hidden="true"/g).length, modes.length - (2 * CAROUSEL_REACH + 1));
   const info = carouselInfo(modes.find(([id]) => id === 'cards'), false);
   assert.match(info, /--id-display:'Show Cards'/);
-  assert.match(info, /data-action="host" data-mode="cards"/);
+  // The landing page only starts parties; this one opens on Fill the Blank.
+  assert.match(info, /data-action="party" data-mode="cards"/);
   assert.match(info, /aria-pressed="false"/, 'voice guide starts off');
   assert.match(carouselInfo(modes[0], true), /aria-pressed="true"/);
   assert.match(carouselInfo(['x', '<b>', '<i>'], false), /&#60;b&#62;/, 'escaped copy');

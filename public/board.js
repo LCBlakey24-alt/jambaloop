@@ -308,32 +308,27 @@ function buildBoard(scene, state, shadowMap) {
     const original = id ? categoryById.get(id)?.[4] : '#fff0d4';
     const color = lane === 'power' ? '#f9c45d' : lane === 'questions' ? '#54dccc' : original;
     const r = finish ? layout.radius * 1.18 : lane === 'questions' ? layout.trailRadius : layout.radius * (lane ? .86 : 1);
-    // Square spaces, like a printed board: sized to sit inside the old disc
-    // so neighbours never touch, and turned to follow the track.
-    const width = r * 1.56;
+    // Square spaces, like a printed board. Every block sits square-on to the
+    // board, exactly under its printed face, and is sized so that even two
+    // diagonal neighbours on a bend cannot touch.
+    const width = r * 1.4;
     const thickness = TILE_TOP + (finish ? .02 : 0) - .19;
     const choice = lane === 'questions' ? 'questions' : 'power';
     const here = tilePosition(i, choice);
-    const route = paths[choice];
-    const ahead = tilePosition(Math.min(route.length - 1, i + 1), choice), behind = tilePosition(Math.max(0, i - 1), choice);
-    const heading = Math.atan2(ahead.x - behind.x, ahead.z - behind.z);
     const tile = roundedBox(width, thickness, width, Math.min(.04, width * .12), 4, coated('#f3e6c4', .5));
     tile.position.copy(here);
     const top = tile.position.y;
     tile.position.y = top - thickness / 2;
-    tile.rotation.y = heading;
     const labelText = lane === 'power' ? '×2 POWER' : lane === 'questions' ? 'QUIZ TRAIL' :
       id ? categoryById.get(id)?.[5] : 'Start';
     const displayNumber = lane === 'power' ? 'P'+(i-fork.start) :
       lane === 'questions' ? 'Q'+(i-fork.start) : i;
-    const printed = new THREE.Mesh(new THREE.PlaneGeometry(width*.97,width*.97),new THREE.MeshBasicMaterial({
+    const printed = new THREE.Mesh(new THREE.PlaneGeometry(width,width),new THREE.MeshBasicMaterial({
       map:tileCard(displayNumber,color,finish ? 'Finish' : labelText,finish ? '⚑' : !i ? '✦' : undefined),
       transparent:true,
     }));
     printed.position.set(tile.position.x,top+.003,tile.position.z);
     printed.rotation.x=-Math.PI/2;
-    // Every space reads upright from the players' side of the table.
-    printed.rotation.z=0;
     board.add(tile,printed);
   }
   const finish = tilePosition(state.boardLength);

@@ -231,6 +231,18 @@ const scenes = {
     path('M318 108c-30 24-60 50-96 70', { fill: 'none', stroke: c.ink, 'stroke-width': 3, 'stroke-dasharray': '6 9', opacity: .5 }),
     ...[[340, 300, 9], [60, 60, 7], [300, 360, 6]].map(([x, y, s]) => sparkle(x, y, s, c.accent, .8)),
   ],
+  catchup: c => [
+    `<defs>${linear('sky', [[0, c.bg[0]], [1, c.bg[1]]])}</defs>`,
+    rect(0, 0, 400, 400, 'url(#sky)'),
+    // Floodlights and a running track curving away.
+    ...[[60, 40], [340, 40]].map(([x, y]) => `${poly([[x - 26, y], [x + 26, y], [x + 120, 400], [x - 120, 400]], c.ink, { opacity: .06 })}${rect(x - 22, y - 14, 44, 16, c.accent, { rx: 4 })}`),
+    ...range(4).map(i => path(`M-20 ${250 + i * 34}C120 ${210 + i * 30} 280 ${210 + i * 30} 420 ${250 + i * 34}`, { fill: 'none', stroke: i % 2 ? c.accent2 : c.ink, 'stroke-width': 4, opacity: .5 })),
+    // The runner's flag ahead, the chaser's arrow closing in.
+    path('M300 250V196l34 12-34 12', { fill: c.accent, stroke: c.ink, 'stroke-width': 3, 'stroke-linejoin': 'round' }),
+    path('M70 286h120M168 266l26 20-26 20', { fill: 'none', stroke: c.accent2, 'stroke-width': 10, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }),
+    circle(200, 120, 46, c.bg[1], { stroke: c.accent, 'stroke-width': 6 }), path('M200 120V92M200 120l18 14', { fill: 'none', stroke: c.ink, 'stroke-width': 6, 'stroke-linecap': 'round' }),
+    rect(190, 62, 20, 14, c.accent, { rx: 3 }),
+  ],
   sketch: c => [
     rect(0, 0, 400, 400, c.bg[0]),
     ...range(14).map(i => line(0, 40 + i * 28, 400, 40 + i * 28, c.accent2, 1.5, { opacity: .2 })),

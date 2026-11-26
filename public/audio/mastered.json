@@ -638,5 +638,15 @@
   "tempo": 1,
   "loudness": -14.2,
   "seconds": 2.72
+ },
+ "duo/catchup.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 16.56
+ },
+ "sfx/sting-catchup.mp3": {
+  "tempo": 1,
+  "loudness": -14.4,
+  "seconds": 2.85
  }
 }

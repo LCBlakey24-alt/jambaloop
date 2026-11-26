@@ -42,6 +42,8 @@ const marks = Object.freeze({
   bloodmoon: '<circle cx="60" cy="46" r="30"/><path d="M42 44c6-6 10-2 12 2 2-3 4-4 6-4s4 1 6 4c2-4 6-8 12-2-6 0-8 4-9 8-3-3-6-2-9 2-3-4-6-5-9-2-1-4-3-8-9-8z" fill="currentColor" fill-opacity=".25"/><path d="M10 96V78l14-12 14 12v18M46 96V72l12-10 12 10v24M78 96V80l14-12 14 12v16M6 96h108"/>',
   // A target with one dart well wide of it.
   wayoff: '<circle cx="48" cy="56" r="34"/><circle cx="48" cy="56" r="21"/><circle cx="48" cy="56" r="8" fill="currentColor"/><path d="M96 14l14 6-10 6zM100 20 84 34"/><path d="M88 82l8 8m0-8-8 8" stroke-width="3"/>',
+  // A runner's flag ahead of a chasing arrow, under a stopwatch.
+  catchup: '<circle cx="60" cy="34" r="22"/><path d="M60 12V6M52 6h16M60 34V20M60 34l10 8"/><path d="M10 84h70M68 74l12 10-12 10" stroke-width="5"/><path d="M96 96V70l14 6-14 6"/>',
   // A pencil finishing a quick sketch line.
   sketch: '<path d="M80 14l16 16-46 46-22 6 6-22z"/><path d="m72 22 16 16M34 60l16 16"/><path d="M12 96c14-14 26 8 40-6s24 6 34-2" stroke-width="2.5"/>',
 });

@@ -903,6 +903,9 @@ function phaseCaption(s) {
     'rare-review': 'Host reviewing unusual Rare Find answers',
     'rare-reveal': 'Real Rare Find answer reveal',
     'party-potato': 'Potato in play',
+    'catch-ready': 'Sides get ready',
+    'catch-leg': 'The clock is running',
+    'catch-result': 'Round result',
     'blood-roles': 'Secret roles dealt',
     'blood-night': 'Night: choose on your phone',
     'blood-dawn': 'Dawn',
@@ -1198,6 +1201,8 @@ function render(s) {
   }
   lastLobbyMode = s.phase === 'lobby' ? s.mode : undefined;
   if (host) { if (s.phase !== 'question') liveShown.clear(); updateLiveGuesses(app, s); }
+  // Catch Up: a frozen side's buttons come back by themselves when the freeze ends.
+  if (s.mode === 'catchup' && s.party?.frozenFor > 0) setTimeout(() => app.querySelectorAll('.catch-button[disabled]').forEach(button => { button.disabled = false; }), s.party.frozenFor + 60);
   if(s.mode==='sketch')paintSketchBoard(s.party);
   // The welcome plays once the room has players and a captain to hand over to.
   if (host && s.phase === 'lobby' && s.picker && s.playerCount > 0 && s.captainName && !s.welcome && !welcomedRooms().includes(s.code)) requestWelcome();
@@ -2135,6 +2140,7 @@ document.addEventListener('click', async event => {
   if (action === 'social-card') return sendParty({ action: 'card', option: Number(button.dataset.option), handVersion: Number(button.dataset.handVersion) }, button);
   if (action === 'social-redraw') return sendParty({ action: 'redraw' }, button);
   if (action === 'bluff-vote') return sendParty({ action: 'vote', id: button.dataset.id }, button);
+  if (action === 'catch-answer') return sendParty({ action: 'answer', step: state.party?.step, option: Number(button.dataset.option) }, button);
   if (action === 'blood-ready') return sendParty({ action: 'ready' }, button);
   if (action === 'blood-pick') return sendParty({ action: 'night', night: state.party?.night, id: button.dataset.id }, button);
   if (action === 'blood-vote') return sendParty({ action: 'vote', night: state.party?.night, id: button.dataset.id }, button);

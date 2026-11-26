@@ -25,6 +25,7 @@ body.playing:has(.game[data-mode="brain"]) { background:#010d18; }
 body.playing:has(.game[data-mode="topanswers"]) { background:#74270d; }
 body.playing:has(.game[data-mode="rare"]) { background:#022419; }
 body.playing:has(.game[data-mode="sketch"]) { background:#ebe6d8; }
+body.playing:has(.game[data-mode="catchup"]) { background:#060e2a; }
 body.playing:has(.game[data-mode="wayoff"]) { background:#2b0a1c; }
 body.playing:has(.game[data-mode="bloodmoon"]) { background:#0d0718; }
 body.playing:has(.game[data-mode="quizrace"]) { background:#05010f; }

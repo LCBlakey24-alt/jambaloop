@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { modes } from '../public/game-config.js';
-import { duoClip, duoIntros, hosts, recordedDuos } from '../public/duo-scripts.js';
+import { duoClip, duoIntros, hosts, recordedDuos, welcomeScript } from '../public/duo-scripts.js';
 
 test('every game has a short Double Act intro where both hosts take turns', () => {
   assert.deepEqual(Object.keys(duoIntros).sort(), modes.map(([id]) => id).sort());
@@ -23,4 +23,16 @@ test('captions always show the exact line, and nothing is generated at runtime',
   const narrator = readFileSync(new URL('../public/narrator.js', import.meta.url), 'utf8');
   assert.match(narrator, /showCaption\(host, text\)/);
   assert.doesNotMatch(narrator, /elevenlabs\.io|xi-api-key/i, 'no API calls from the browser');
+});
+
+test('the Jambaloop welcome: both hosts, alternating, each line paired with a TV scene', async () => {
+  const show = readFileSync(new URL('../public/welcome-show.js', import.meta.url), 'utf8');
+  for (let i = 0; i < welcomeScript.length; i++) {
+    const [host, text, scene] = welcomeScript[i];
+    assert.ok(hosts[host] && text.length <= 140, `line ${i + 1}`);
+    if (i) assert.notEqual(host, welcomeScript[i - 1][0], `line ${i + 1} alternates`);
+    assert.match(show, new RegExp(`\\b${scene}: `), `scene ${scene} is drawn`);
+  }
+  assert.ok(/phone/i.test(welcomeScript.map(([, text]) => text).join(' ')), 'explains phones as controllers');
+  assert.ok(/captain/i.test(welcomeScript.map(([, text]) => text).join(' ')), 'explains the captain');
 });

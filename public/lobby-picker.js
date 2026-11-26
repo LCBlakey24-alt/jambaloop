@@ -41,7 +41,8 @@ export function pickerTv(state, { escape, canDrive }) {
       <div class="game-panel picker-room"><div class="eyebrow">IN THE ROOM · ${state.players.length || state.playerCount || 0}</div>
         <ul class="players">${(state.players ?? []).map(player => `<li>${avatarView(player, escape)}${escape(player.name)}</li>`).join('')}</ul>
         <p class="picker-hint">${state.playerCount ? `${captain} is choosing on their phone` : 'Waiting for players to join'}</p>
-        ${canDrive ? `<button type="button" class="button primary" data-action="picker-play">Play this game</button>` : ''}</div>
+        ${canDrive ? `<button type="button" class="button primary" data-action="picker-play">Play this game</button>
+        <button type="button" class="button outline" data-action="welcome-play">▶ Play the welcome</button>` : ''}</div>
     </div></section>`;
 }
 

@@ -1,7 +1,7 @@
 // Optional single-channel Jambaloop narrator. Pre-recorded MP3 where available;
 // otherwise speechSynthesis reads the exact transcript locally (no AI calls or charges).
 import { narration, narratorAsset } from './narration-scripts.js';
-import { duoClip, duoIntros, hasDuo, hosts } from './duo-scripts.js';
+import { duoClip, duoIntros, hasDuo, hosts, welcomeScript } from './duo-scripts.js';
 
 let currentMode = null;
 let currentAudio = null;
@@ -97,15 +97,15 @@ function hostVoice(host) {
   return pick ?? voices[host === 'max' ? 0 : Math.min(1, voices.length - 1)] ?? null;
 }
 
-function playDuo(mode, token) {
-  const lines = duoIntros[mode];
-  const recorded = hasDuo(mode);
+function playDuo(mode, token, { lines = duoIntros[mode], onLine, onDone } = {}) {
+  const recorded = hasDuo(mode) || (mode === 'welcome' && recordedWelcome);
   let index = 0;
   const next = () => {
     if (token !== generation || currentMode !== mode) return;
-    if (index >= lines.length) { hideCaption(); finished(mode, token); return; }
+    if (index >= lines.length) { hideCaption(); finished(mode, token); onDone?.(); return; }
     const [host, text] = lines[index];
     const clip = recorded ? duoClip(mode, index) : null;
+    onLine?.(index, lines[index]);
     index += 1;
     showCaption(host, text);
     if (clip) {
@@ -135,6 +135,23 @@ function playDuo(mode, token) {
   presentation(mode, true, recorded ? 'Playing Max and Poppy' : 'Max and Poppy, read aloud by this device');
   next();
 }
+
+// The welcome clips are recorded alongside the game intros.
+const recordedWelcome = false;
+
+/**
+ * Max and Poppy's welcome to Jambaloop. onLine(index, [host, text, scene])
+ * fires as each line starts so the TV can change scene; onDone when it ends
+ * (not when it is stopped early).
+ */
+export function playWelcome({ onLine, onDone } = {}) {
+  stopNarration();
+  const token = generation;
+  currentMode = 'welcome';
+  playDuo('welcome', token, { lines: welcomeScript, onLine, onDone });
+}
+
+export const narrationPlaying = () => currentMode;
 
 export function toggleNarration(mode) {
   if (!narration[mode] && !duoIntros[mode]) return;

@@ -133,3 +133,23 @@ export const recordedDuos = new Set([]);
 
 export const duoClip = (mode, index) => `/audio/duo/${mode}-${index + 1}.mp3`;
 export const hasDuo = mode => recordedDuos.has(mode) && Boolean(duoIntros[mode]);
+
+/**
+ * The Jambaloop welcome: Max and Poppy introduce the whole night once the
+ * room is open. Each line names the scene the TV shows while it is spoken.
+ */
+export const welcomeScript = [
+  ['poppy', 'Hello, hello! Welcome to Jambaloop!', 'hello'],
+  ['max', 'I\'m Max.', 'hello'],
+  ['poppy', 'And I\'m Poppy. We\'re your hosts tonight.', 'hello'],
+  ['max', 'Here\'s how it works. The TV is the big screen, and your phone is your controller.', 'devices'],
+  ['poppy', 'No app to download, and no remote to lose down the back of the sofa.', 'devices'],
+  ['max', 'Anyone still joining? Scan the QR code, or type the room code into Jambaloop on your phone.', 'join'],
+  ['poppy', 'Our captain picks the games. Swipe through them on your phone, and the TV follows along.', 'captain'],
+  ['max', 'Choose wisely, captain. That power will go straight to your head.', 'captain'],
+  ['poppy', 'Questions pop up on the TV, and you answer on your phone. Quick and correct scores best.', 'play'],
+  ['max', 'We\'ve got quizzes, races, drawing, bluffing, and a potato that will not stop ticking.', 'shows'],
+  ['poppy', 'Every game has its own look, and we\'ll explain each one before you play.', 'shows'],
+  ['max', 'Right, that\'s quite enough from us. Captain, over to you!', 'ready'],
+  ['poppy', 'Let\'s play!', 'ready'],
+];

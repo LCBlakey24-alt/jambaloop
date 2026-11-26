@@ -19,7 +19,8 @@ import { modeVariables, sceneBackdrop } from './mode-style.js';
 import { launcherTile, launcherPreview, launcherModes, launcherSetupArtwork, LAUNCHER_PAGE_SIZE } from './home-launcher.js';
 import { carouselView, moveCarousel, themeHome, wrapIndex } from './game-carousel.js';
 import { playSting, stingFor } from './show-sting.js';
-import { stopNarration, toggleNarration } from './narrator.js';
+import { narrationPlaying, playWelcome, stopNarration, toggleNarration } from './narrator.js';
+import { openWelcome } from './welcome-show.js';
 import { playChiptune, playCue, playTick, playTowerImpact } from './sound-cues.js';
 import { bindPhonePicker, movePickerTv, pickerPhone, pickerTv, stepMode, syncPhonePicker } from './lobby-picker.js';
 import { knockoutLadder, phoneHearts, playKnockout, rememberLadder, shatterPhoneHeart } from './knockout-ladder.js';
@@ -694,6 +695,7 @@ function startSession(next) {
 }
 
 function leave() {
+  endWelcome();
   stream?.abort();
   stream = undefined;
   session = undefined;
@@ -1174,6 +1176,9 @@ function render(s) {
   }
   lastLobbyMode = s.phase === 'lobby' ? s.mode : undefined;
   if(s.mode==='sketch')paintSketchBoard(s.party);
+  // The welcome plays once the room has players and a captain to hand over to.
+  if (host && s.phase === 'lobby' && s.picker && s.playerCount > 0 && s.captainName && !welcomedRooms().includes(s.code)) startWelcome();
+  if (welcome && !(s.phase === 'lobby' && s.picker)) endWelcome();
   if (s.phase === 'lobby' && s.picker && !host) {
     syncPhonePicker(app, s.picker.mode, false);
     bindPhonePicker(app, mode => browseTo(mode));
@@ -1390,6 +1395,8 @@ function receive(next, current) {
   if (current.host) updateLockRail(app, next, escape, avatarView);
   if (introduce) toggleNarration(next.mode);
   if (picker) {
+    // The captain has started browsing: the welcome steps aside.
+    if (welcome && picker.version !== welcome.version) endWelcome();
     if (current.host) movePickerTv(app, next, escape);
     else if (app.querySelector('.picker-strip')?.dataset.reported !== picker.mode) syncPhonePicker(app, picker.mode);
   }
@@ -1406,6 +1413,26 @@ function receive(next, current) {
 function showGameError(error) {
   const notice = document.querySelector('#game-error');
   if (notice) notice.textContent = error.message;
+}
+
+// Max and Poppy's welcome to Jambaloop: once per room on the TV, replayable.
+let welcome;
+const welcomedKey = 'jambaloop-welcomed';
+const welcomedRooms = () => { try { return JSON.parse(sessionStorage.getItem(welcomedKey) ?? '[]'); } catch { return []; } };
+
+function startWelcome() {
+  if (!session?.host || !state || welcome) return;
+  try { sessionStorage.setItem(welcomedKey, JSON.stringify([...welcomedRooms(), state.code].slice(-20))); } catch {}
+  welcome = openWelcome(document.body, { code: state.code, qr: state.qr }, { onSkip: endWelcome });
+  welcome.version = state.picker?.version;
+  playWelcome({ onLine: (index, [, , scene]) => welcome?.scene(scene), onDone: endWelcome });
+}
+
+function endWelcome() {
+  if (!welcome) return;
+  if (narrationPlaying() === 'welcome') stopNarration();
+  welcome.close();
+  welcome = undefined;
 }
 
 /** Move the lobby carousel for every screen in the room. */
@@ -1891,6 +1918,7 @@ document.addEventListener('click', async event => {
   if (action === 'close') return dialog.close();
   if (action === 'night' && session && state) return openDialog('night');
   if (action === 'leave') return leave();
+  if (action === 'welcome-play' && session?.host) { endWelcome(); return startWelcome(); }
   if (action === 'picker-open' && session && state?.phase === 'lobby') {
     return api('/' + session.code + '/browse', { open: true, game: state.game }).catch(error => showGameError(error));
   }

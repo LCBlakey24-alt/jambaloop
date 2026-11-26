@@ -72,6 +72,10 @@ on:
       - 'scripts/show-moments-browser.mjs'
       - 'scripts/knockout-browser.mjs'
       - 'scripts/lobby-picker-browser.mjs'
+      - 'scripts/welcome-show-browser.mjs'
+      - 'public/welcome-show.js'
+      - 'public/narrator.js'
+      - 'public/duo-scripts.js'
       - 'public/lobby-picker.js'
       - 'public/knockout-ladder.js'
       - 'public/show-moments.*'
@@ -134,6 +138,7 @@ jobs:
           node scripts/show-moments-browser.mjs
           node scripts/knockout-browser.mjs
           node scripts/lobby-picker-browser.mjs
+          node scripts/welcome-show-browser.mjs
           node scripts/tv-immersive-browser.mjs
           node scripts/tv-all-modes.mjs
       - name: Upload screen captures on success or failure

@@ -67,3 +67,12 @@ test('the fork runs up the right-hand side and round the far corner; the route l
   const board = readFileSync(new URL('../public/board.js', import.meta.url), 'utf8');
   assert.match(board, /import \{ curvedLayout, TILE_TOP \} from '\.\/board-layout\.js'/);
 });
+
+test('each space\'s block sits square-on under its printed face', () => {
+  const board = readFileSync(new URL('../public/board.js', import.meta.url), 'utf8');
+  const tiles = board.slice(board.indexOf('// Square spaces, like a printed board'), board.indexOf('board.add(tile,printed);'));
+  assert.ok(tiles.length > 200, 'found the tile-building block');
+  assert.doesNotMatch(tiles, /tile\.rotation\.y|printed\.rotation\.z/, 'neither the block nor its face is turned, so they always line up');
+  assert.match(tiles, /new THREE\.PlaneGeometry\(width,width\)/, 'the face is exactly the size of the block');
+  assert.match(tiles, /const width = r \* 1\.4;/, 'half-diagonal stays inside the tested radius, so bends cannot overlap');
+});

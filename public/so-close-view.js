@@ -13,7 +13,7 @@ export function soCloseView(question,{draft,selection,revealed,host,disabled,clo
         <ol class="so-close-guesses" aria-label="Guesses, closest first">${rows.map(row=>`<li data-nearest="${row.won}"><strong>${escape(row.name)}</strong><span>${formatNumber(row.guess,unit)}</span><small>${formatNumber(row.distance,unit==='year'?'years':unit)} away${row.won?' · +'+row.points+' pts':''}</small></li>`).join('')}</ol>`:selection===undefined?'<p>No guess submitted.</p>':`<p>Your guess: <b>${formatNumber(selection,unit)}</b></p><p>${formatNumber(Math.abs(selection-correct),unit==='year'?'years':unit)} away</p>`}
       <p>${closest?closest.count+' closest · '+formatNumber(closest.distance,unit==='year'?'years':unit)+' away':'No guesses submitted.'}</p></section>`;
   }
-  if(host)return `<section class="so-close-result so-close-no-range"><div class="eyebrow">NO RANGE · NO CLUES</div><strong class="so-close-actual">${unit?(unit==='year'?'Name the year':'Answer in '+escape(unit)):'Name the number'}</strong><p>Every guess stays secret until the reveal.</p></section>`;
+  if(host)return `<section class="so-close-result so-close-no-range"><div class="eyebrow">NO RANGE · NO CLUES</div><strong class="so-close-actual">${unit?(unit==='year'?'Name the year':'Answer in '+escape(unit)):'Name the number'}</strong><p>Watch the guesses turn below. Nothing counts until it is locked in.</p></section>`;
   const value=selection??draft;
   if(selection!==undefined||disabled)return `<section class="so-close-result"><div class="eyebrow">${selection!==undefined?'GUESS LOCKED':'SENDING GUESS'}</div><strong class="so-close-actual">${formatNumber(value,unit)}</strong></section>`;
   return `<div class="answer-editor so-close-editor" data-editor="estimate">

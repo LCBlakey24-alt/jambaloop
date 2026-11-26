@@ -7,7 +7,7 @@ export function winnerBanner(state, escape) {
   const teamFinish = state.mode === 'board' || state.playStyle === 'teams';
   const ranked = state.players ?? [];
   const top = ranked[0];
-  const leaders = top ? ranked.filter(player => player.score === top.score && player.lives === top.lives) : [];
+  const leaders = top ? ranked.filter(player => player.score === top.score && player.lives === top.lives && (player.pace ?? 0) === (top.pace ?? 0)) : [];
   const teams = (state.teams ?? []).filter(team => state.teamWinners?.includes(team.id));
   const winners = teamFinish ? teams.map(team => state.playStyle === 'individual' ? team.name : 'Team ' + team.name)
     : leaders.map(player => player.name);
@@ -15,7 +15,7 @@ export function winnerBanner(state, escape) {
   const label = winners.length === 1 ? (teamFinish && state.playStyle !== 'individual' ? 'WINNING TEAM' : 'GAME WINNER') : 'SHARED VICTORY';
   const score = teamFinish
     ? teams.length === 1 && Number.isFinite(teams[0].score) ? teams[0].score.toLocaleString('en-GB') + ' points' : 'Final team standings'
-    : top.score.toLocaleString('en-GB') + ' points';
+    : top.score.toLocaleString('en-GB') + ' points' + (leaders.length === 1 && ranked[1] && ranked[1].score === top.score && ranked[1].lives === top.lives ? ' · level on points, won on speed' : '');
   return `<div class="results-winner-banner" role="note">
     <span class="results-winner-mark" aria-hidden="true">★</span>
     <div class="results-winner-copy"><small>${label}</small>

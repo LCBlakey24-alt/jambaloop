@@ -98,7 +98,10 @@ test('three-question checkpoints preserve the prior standings and expose movemen
   assert.ok(initial.scoreBreak.starts <= initial.now);
   assert.equal(initial.scoreBreak.number, 3);
   assert.equal(initial.scoreBreak.entryCount, 4);
-  assert.deepEqual(initial.scoreBreak.entries.map(row => [row.rank, row.score]), [[1, 3000], [2, 1000], [2, 1000], [4, 0]]);
+  // Two players level on 1,000 share second unless one answered measurably faster.
+  assert.deepEqual(initial.scoreBreak.entries.map(row => row.score), [3000, 1000, 1000, 0]);
+  assert.deepEqual(initial.scoreBreak.entries.map(row => row.rank).filter((_, i) => i !== 2), [1, 2, 4]);
+  assert.ok([2, 3].includes(initial.scoreBreak.entries[2].rank));
   assert.deepEqual(initial.scoreBreak.entries.map(row => row.previousIndex).sort(), [0, 1, 2, 3]);
   assert.ok(initial.scoreBreak.entries.every(row => row.previousRank === 1 && row.previousScore === 0));
   const phone = await room.state(first.key);
@@ -121,7 +124,9 @@ test('three-question checkpoints preserve the prior standings and expose movemen
   }
   const latest = await room.state();
   assert.equal(latest.scoreBreak.number, 6);
-  assert.deepEqual(latest.scoreBreak.entries.map(row => [row.rank, row.score]), [[1, 4000], [2, 3000], [2, 3000], [4, 0]]);
+  assert.deepEqual(latest.scoreBreak.entries.map(row => row.score), [4000, 3000, 3000, 0]);
+  assert.deepEqual(latest.scoreBreak.entries.map(row => row.rank).filter((_, i) => i !== 2), [1, 2, 4]);
+  assert.ok([2, 3].includes(latest.scoreBreak.entries[2].rank));
   for (const row of latest.scoreBreak.entries) {
     const oldIndex = initial.scoreBreak.entries.findIndex(entry => entry.id === row.id);
     assert.equal(row.previousIndex, oldIndex);
@@ -540,4 +545,26 @@ test('Hot Potato keeps the same holder and question while paused', async () => {
   await request(room.path + '/pause', room.host, { ...round, clockVersion: paused.clockVersion, paused: false }, 204);
   await skip(204);
   assert.equal((await room.state()).party.step, party.step + 1);
+});
+
+test('level on points in a quiz is settled by who answered faster, and resets for a rematch', async () => {
+  const room = await roomWith('classic', 3, { customQuiz: checkpointQuiz(1) });
+  await room.advance();
+  const { game, index } = await room.state();
+  // Players 0 and 1 are both right with no timer, so they score the same; player 1 answers first.
+  await request(room.path + '/answer', room.players[1].key, { game, index, option: 0 }, 204);
+  await pause(60);
+  await request(room.path + '/answer', room.players[0].key, { game, index, option: 0 }, 204);
+  await request(room.path + '/answer', room.players[2].key, { game, index, option: 1 }, 204);
+  await room.advance();
+  await room.advance();
+  const done = await room.state();
+  assert.equal(done.phase, 'finished');
+  assert.equal(done.players[0].score, done.players[1].score, 'level on points');
+  assert.equal(done.players[0].name, 'Player 1', 'the faster player is placed first');
+  assert.ok(done.players[0].pace < done.players[1].pace);
+  assert.deepEqual(done.night.results[0].winners, [done.players[0].id], 'one winner, not a shared victory');
+  assert.equal(done.players[0].rightTime, undefined, 'working totals are not published');
+  await request(room.path + '/rematch', room.host, { game: done.game, sameGame: true }, 204);
+  assert.ok((await room.state()).players.every(player => player.pace === undefined), 'the tie-break starts fresh');
 });

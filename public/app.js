@@ -812,7 +812,7 @@ document.addEventListener('submit', async event => {
   }
 });
 
-const sameRank = (a, b) => a.score === b.score && a.lives === b.lives;
+const sameRank = (a, b) => a.score === b.score && a.lives === b.lives && (a.pace ?? 0) === (b.pace ?? 0);
 const rankOf = (players, player) => players.findIndex(entry => sameRank(entry, player)) + 1;
 const lifeLabel = lives => lives === 1 ? '1 life' : lives + ' lives';
 const leaderboard = players => `<ol class="ranking">${players.map(player => `<li><span>${avatarView(player, escape)}${rankOf(players, player)}. ${escape(player.name)}</span>

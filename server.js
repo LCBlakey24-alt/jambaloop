@@ -85,7 +85,7 @@ function clampToQuestions(room) {
 }
 
 function resetPlayer(player) {
-  Object.assign(player, { score: 0, wins: 0, streak: 0, bestStreak: 0, misses: 0, comebacks: 0, fastest: undefined, slowest: undefined, rounds: [] });
+  Object.assign(player, { score: 0, wins: 0, streak: 0, bestStreak: 0, misses: 0, comebacks: 0, fastest: undefined, slowest: undefined, pace: undefined, rightTime: undefined, rights: undefined, rounds: [] });
 }
 
 // Everyone who will play the next game: current players plus anyone queued.
@@ -221,7 +221,7 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
   const question = room.privateQuestions ? room.privateRound?.get(key) : questions[index];
   const visible = !waiting && (phase === 'question' || phase === 'reveal');
   const hiddenScores = room.scoreInterval !== 1 && !['lobby', 'finished'].includes(phase);
-  const publicPlayer = ({ rounds, fastest, slowest, misses, comebacks, lifeLostAt, outAt, returning, ...entry }) => phase === 'lobby' && isHost
+  const publicPlayer = ({ rounds, fastest, slowest, misses, comebacks, lifeLostAt, outAt, returning, rightTime, rights, ...entry }) => phase === 'lobby' && isHost
     ? { ...entry, connected: counts.ids.has(entry.id) } : entry;
   const revealed = phase === 'reveal';
   const answer = answers.get(key);
@@ -345,8 +345,11 @@ function knockoutLadder(room, revealed) {
     outNowCount: out.filter(row => row.outNow).length };
 }
 
-const comparePlayers = (a, b) => (b.lives ?? 0) - (a.lives ?? 0) || b.score - a.score;
-const compareTeams = (mode, spaces) => mode === 'board' ? compareBoardTeams(spaces) : (a, b) => b.score - a.score;
+// Level on points in a quiz goes to whoever answered their right answers faster
+// (`pace`, average milliseconds). Games that never set a pace still share places.
+const paceOf = entry => entry.pace ?? 0;
+const comparePlayers = (a, b) => (b.lives ?? 0) - (a.lives ?? 0) || b.score - a.score || paceOf(a) - paceOf(b);
+const compareTeams = (mode, spaces) => mode === 'board' ? compareBoardTeams(spaces) : (a, b) => b.score - a.score || paceOf(a) - paceOf(b);
 
 // Hot Potato awards no points: whoever is caught holding it finishes last and
 // everyone else shares first. Ranking by score would tie the whole room, so the
@@ -707,7 +710,12 @@ function reveal(room) {
     player.score += answer.points;
     if (room.mode === 'board') player.score = Math.round(player.score * 100) / 100;
     if (room.teams.length) tallies[player.team] += answer.points;
-    if (room.mode === 'board' && room.teams[player.team]) { const side = room.teams[player.team]; side.rights = (side.rights ?? 0) + 1; side.time = (side.time ?? 0) + answer.elapsed; }
+    if (room.teams[player.team] && !isEstimateShow(room.mode)) { const side = room.teams[player.team]; side.rights = (side.rights ?? 0) + 1; side.time = (side.time ?? 0) + answer.elapsed; }
+    if (!isEstimateShow(room.mode)) {
+      player.rightTime = (player.rightTime ?? 0) + answer.elapsed;
+      player.rights = (player.rights ?? 0) + 1;
+      player.pace = Math.round(player.rightTime / player.rights);
+    }
   }
   if (room.mode === 'board') {
     // Whatever was played on this question is now spent.
@@ -725,6 +733,7 @@ function reveal(room) {
       team.roundPoints = Math.round(precision * tallies[team.id] / team.size) / precision;
       team.score = Math.round(precision * (team.score + team.roundPoints)) / precision;
       if (room.mode === 'board') { team.correct = (team.rights ?? 0) / team.size; team.pace = team.rights ? team.time / team.rights : Infinity; }
+      else if (team.rights) team.pace = Math.round(team.time / team.rights);
     }
   }
   const correct = question.type === 'estimate' ? question.correct

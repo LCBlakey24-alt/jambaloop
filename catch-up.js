@@ -44,7 +44,7 @@ export function startCatchUp(room, publish) {
   const keys = shuffle(connectedPlayers(room));
   if (keys.length < 2) { room.phase = 'finished'; room.ends = 0; stopDeadline(room); publish(room); return; }
   const sides = [0, 1].map(id => ({ id, name: sideNames[id], colour: sideColours[id], keys: keys.filter((_, index) => index % 2 === id) }));
-  room.party = { type: 'catchup', sides, leg: 0, scores: [], count: 0, step: 0, pool: [], question: undefined, last: undefined, frozenUntil: 0, wins: [0, 0], earned: new Map() };
+  room.party = { type: 'catchup', sides, leg: 0, scores: [], count: 0, step: 0, pool: [], question: undefined, last: undefined, frozenUntil: 0, wins: [0, 0], right: [0, 0], wrong: [0, 0], earned: new Map() };
   room.count = CATCH_UP_ROUNDS;
   room.index = 0;
   room.phase = 'catch-ready';
@@ -125,6 +125,7 @@ export function submitCatchUp(room, key, data, publish) {
   const correct = data.option === party.question.correct;
   const player = room.players.get(key);
   party.last = { correct, answer: party.question.options[party.question.correct], by: player?.name };
+  party[correct ? 'right' : 'wrong'][side.id]++;
   if (correct) {
     party.count++;
     if (player) { player.score += 20; player.wins++; party.earned.set(key, (party.earned.get(key) ?? 0) + 20); }
@@ -132,6 +133,14 @@ export function submitCatchUp(room, key, data, publish) {
   nextQuestion(room);
   publish(room);
   return [204];
+}
+
+/** A round each is settled on right answers across the whole game, then on fewer wrong ones. */
+function champion(party) {
+  for (const [decidedBy, score] of [['rounds', party.wins], ['answers', party.right], ['mistakes', party.wrong.map(count => -count)]]) {
+    if (score[0] !== score[1]) return { champion: score[0] > score[1] ? 0 : 1, decidedBy, right: party.right };
+  }
+  return { champion: null, right: party.right };
 }
 
 export function publicCatchUp(room, key) {
@@ -153,6 +162,6 @@ export function publicCatchUp(room, key) {
     result: room.phase === 'catch-result' || room.phase === 'finished' ? party.result : undefined,
     side: mine?.id, canAnswer: playing && mine?.id === turn,
     earned: room.phase === 'finished' ? party.earned.get(key) ?? 0 : undefined,
-    champion: room.phase === 'finished' ? (party.wins[0] === party.wins[1] ? null : party.wins[0] > party.wins[1] ? 0 : 1) : undefined,
+    ...(room.phase === 'finished' ? champion(party) : {}),
   };
 }

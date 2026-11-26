@@ -145,6 +145,8 @@ Closest-number and put-in-order sessions offer five questions when you choose on
 
 **Host reactions (Sound on):** during quiz rounds Max or Poppy drops in one short recorded line on the TV: nobody right, everybody right, only one right, a three-in-a-row streak, no answers, a knockout, the halfway point and the final question. The rules live in `reactionFor()` (`public/show-moments.js`). Lines never name players, never overlap another line, and rotate through variants.
 
+**Game stings:** each game has its own short musical sting on its title card (`public/audio/sfx/sting-<game>.mp3`), written in that game's style.
+
 **TV sound (opt-in, phones silent):** original ElevenLabs sound effects (`public/audio/sfx/`: drum-roll, reveal sting, correct chime, lock-in pop, whoosh, wheel, boxing bell, sizzle, fanfare, cheer) and two original instrumental themes (`public/audio/music/`: a looping lobby theme that dips under the hosts, and a winners' theme). They only play when the TV host turns Sound on. Generated with `scripts/generate-sfx.mjs`; made on a paid ElevenLabs plan.
 
 **Lobby first:** **Host game night** puts a lobby on the TV before any game is chosen. Everyone joins, then the captain swipes a carousel of game tiles on their phone. The TV's 3D shelf glides in step and takes on each game's look, and other phones show what's being browsed. **Play** chooses the game, and the TV introduces it out loud. **Browse all games** reopens the carousel from any lobby.

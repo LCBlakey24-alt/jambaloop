@@ -15,8 +15,28 @@ export const effects = {
   bell: ['Boxing ring bell, three quick dings', 2.0],
   wheel: ['Prize wheel spinning with a ratcheting clicker that slows down and stops', 4.0],
   sizzle: ['Cartoon hot potato sizzling then a comedic puff explosion', 2.0],
-  tick: ['Single tense clock tick, game show countdown, crisp and short', 0.5],
+  tick: ['Single tense clock tick, game show countdown, crisp and short', 0.5],  // One short musical sting per game, in that game's style (title card).
+  'sting-classic': ['Classic TV quiz show opening sting, bright brass and timpani, grand and warm, instrumental', 4],
+  'sting-wheel': ['Carnival fairground game show sting, calliope organ and cymbal crash, playful, instrumental', 4],
+  'sting-board': ['Cheerful board game adventure sting, plucky strings and woodblock, cosy, instrumental', 4],
+  'sting-dice': ['Art deco jazz club sting, swinging brass and brushed drums with a rattle of dice, instrumental', 4],
+  'sting-knockout': ['Boxing arena entrance sting, heavy drums, stadium brass hit and a ring bell, instrumental', 4],
+  'sting-punchline': ['Comedy club sting, cheeky slide whistle, rimshot and a brass wah-wah, instrumental', 3.5],
+  'sting-cards': ['Elegant parlour card game sting, harpsichord flourish and soft chime, instrumental', 3.5],
+  'sting-tracks': ['Steam train whistle then a punchy industrial percussion sting, instrumental', 4],
+  'sting-bluff': ['Film noir detective sting, sneaky double bass, muted trumpet and a suspense hit, instrumental', 4],
+  'sting-potato': ['Frantic comedic countdown sting, fast xylophone run ending in a sizzle, instrumental', 3.5],
+  'sting-quizrace': ['Synthwave racing game sting, neon arpeggio and engine rev into a big synth hit, instrumental', 4],
+  'sting-showdown': ['Sports arena team showdown sting, stomping drums, crowd clap and brass stab, instrumental', 4],
+  'sting-samepage': ['Breezy tropical sting, marimba and ukulele with a light chime, friendly, instrumental', 3.5],
+  'sting-spotlight': ['Theatre spotlight sting, dramatic piano glissando and velvet orchestral swell, instrumental', 4],
+  'sting-brain': ['Futuristic science lab sting, glassy synth pulses rising to a clean digital chime, instrumental', 4],
+  'sting-topanswers': ['Seventies funk game show sting, wah guitar, disco strings and horn stab, instrumental', 4],
+  'sting-rare': ['Treasure discovery sting, mysterious harp shimmer into a triumphant chime, instrumental', 4],
+  'sting-sketch': ['Playful doodle sting, pencil scribble sound then bouncy pizzicato and a pop, instrumental', 3.5],
+  'sting-soclose': ['Precise measuring sting, ticking tape measure, plucked notes stepping up to a ding, instrumental', 3.5],
 };
+
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const headers = { 'xi-api-key': process.env.XI_API_KEY || 'proxy-injected', 'content-type': 'application/json' };

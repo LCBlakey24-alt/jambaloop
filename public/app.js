@@ -1095,8 +1095,10 @@ function render(s) {
   const phaseKey = `${s.code}/${s.game}/${s.index}/${s.phase}${s.pausedAt ? '/paused' : ''}${s.party?.holding || s.party?.type === 'fork' ? '/' + s.party.step : ''}`;
   const enter = renderedPhase !== phaseKey;
   // TV broadcast stings: the show's title card at kick-off, a band before the last round.
-  if (enter) playSting(stingFor(renderedPhase, s, host), s, { reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
-    onStart: () => { if (soundEnabled) playCue(sound, s.mode, 'rolling'); } });
+  const stingKind = enter ? stingFor(renderedPhase, s, host) : null;
+  if (enter) playSting(stingKind, s, { reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
+    // The title card plays the game's own musical sting.
+    onStart: () => { if (!soundEnabled) return; if (stingKind === 'title') playSfx(sound, 'sting-' + s.mode, { volume: 0.5 }); else playCue(sound, s.mode, 'rolling'); } });
   const animateRoll = Boolean(boardDisplay && s.phase === 'rolling' && renderedPhase === `${s.code}/${s.game}/${s.index}/ready`);
   renderedPhase = phaseKey;
   const stage = enter && !animateRoll ? null : app.querySelector('#board-stage, .wheel-frame');
@@ -1448,7 +1450,10 @@ function soundMoments(before, next) {
     playSfx(sound, 'cheer', { volume: 0.45, at: 0.6 });
   } else if (next.phase !== 'finished') stopMusic();
   if (!moved) return;
-  if (next.phase === 'question') playSfx(sound, 'whoosh', { volume: 0.4 });
+  // The first question arrives under the title sting, so no whoosh there.
+  if (next.phase === 'question' && next.index > 0) playSfx(sound, 'whoosh', { volume: 0.4 });
+  // Warm the next game's sting while everyone is still in the lobby.
+  if (next.phase === 'lobby') preloadSfx(sound, ['sting-' + (next.picker?.mode ?? next.mode)]);
   if (next.phase === 'rolling' && next.mode === 'wheel') playSfx(sound, 'wheel', { volume: 0.5 });
   if (next.mode === 'potato' && before.phase === 'party-potato' && next.phase !== 'party-potato') playSfx(sound, 'sizzle', { volume: 0.6 });
 }

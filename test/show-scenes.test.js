@@ -46,3 +46,7 @@ test('tiles show only the game logo, with no tagline', () => {
     assert.doesNotMatch(launcherPreview(mode[0]), /tile-strap/);
   }
 });
+
+test('every game has its own recorded title sting', () => {
+  for (const id of ids) assert.ok(readFileSync(new URL(`../public/audio/sfx/sting-${id}.mp3`, import.meta.url)).length > 5000, id);
+});

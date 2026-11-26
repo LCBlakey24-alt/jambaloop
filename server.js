@@ -1090,6 +1090,18 @@ app.post('/api/rooms/:code/welcome', (req, res) => {
   const allowed = from === null || (Array.isArray(from) ? from.includes(current) : from === current);
   if (!allowed) return res.status(409).json({ error: 'The welcome has moved on.' });
   room.welcome = to;
+  // The TV normally ends the welcome. If it has gone away, the room moves on
+  // by itself so phones are never left waiting on it.
+  clearTimeout(room.welcomeTimer);
+  if (to) {
+    const limit = Number(process.env.WELCOME_LIMIT_MS) || { playing: 100_000, asking: 90_000, skipping: 20_000 }[to];
+    room.welcomeTimer = setTimeout(() => roomTask(room, 'welcome', () => {
+      if (room.welcome !== to) return;
+      room.welcome = undefined;
+      publish(room);
+    }), limit);
+    room.welcomeTimer.unref?.();
+  }
   publish(room);
   res.sendStatus(204);
 });

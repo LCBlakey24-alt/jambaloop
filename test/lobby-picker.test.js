@@ -6,7 +6,7 @@ import { after, before, test } from 'node:test';
 let server;
 let origin;
 before(async () => {
-  server = spawn(process.execPath, ['server.js'], { env: { ...process.env, PORT: '0', PUBLIC_URL: '' }, stdio: ['ignore', 'pipe', 'inherit'] });
+  server = spawn(process.execPath, ['server.js'], { env: { ...process.env, PORT: '0', PUBLIC_URL: '', WELCOME_LIMIT_MS: '400' }, stdio: ['ignore', 'pipe', 'inherit'] });
   const [output] = await once(server.stdout, 'data');
   origin = String(output).match(/http:\/\/localhost:\d+/)[0];
 });
@@ -88,4 +88,15 @@ test('the welcome: the TV starts it, the captain can skip it, and returning room
   assert.equal((await call(backPath + '/welcome', cap.key, { action: 'tour', game: backGame })).status, 204);
   assert.equal((await backState(back.host)).welcome, 'playing', 'the captain chose the full tour');
   assert.equal((await call(backPath + '/welcome', cap.key, { action: 'nonsense', game: backGame })).status, 400);
+});
+
+test('a welcome the TV never ends times out, so phones are not left waiting', async () => {
+  const { data: room } = await call('', undefined, { mode: 'classic', category: 'mixed', count: 10, seconds: 20, format: 'mixed', picker: true });
+  const path = '/' + room.code;
+  const { data: captain } = await call(path + '/join', undefined, { name: 'Ada' });
+  const { game } = (await call(path, room.host)).data;
+  assert.equal((await call(path + '/welcome', room.host, { action: 'start', game })).status, 204);
+  assert.equal((await call(path, captain.key)).data.welcome, 'playing');
+  await new Promise(resolve => setTimeout(resolve, 700));
+  assert.equal((await call(path, captain.key)).data.welcome, undefined);
 });

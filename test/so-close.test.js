@@ -1,4 +1,5 @@
 import {test} from 'node:test';
+import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
 import {once} from 'node:events';
@@ -227,4 +228,20 @@ test('estimate steps use the chosen precision and never go below zero', async ()
   assert.equal(setEstimatePrecision(7),100,'only listed step sizes');
   setEstimatePrecision(1);
   assert.equal(closestStep(question,41,1),42);
+});
+
+test('the ruler wheel: a ruler, the numbers beside it, and extra rows to scroll into view', async () => {
+  const { rulerWheel, numberWheelRows } = await import('../public/answer-controls.js');
+  const wheel = rulerWheel({ type: 'estimate', unit: 'metres' }, 50);
+  assert.match(wheel, /class="ruler-wheel" data-ruler/);
+  assert.match(wheel, /class="ruler-ticks" aria-hidden="true"/);
+  assert.match(wheel, /data-so-close-rows aria-hidden="true"/);
+  const rows = numberWheelRows({ type: 'estimate', unit: 'metres' }, 50).match(/<span class="so-close-number[^>]*>[^<]*<\/span>/g);
+  assert.equal(rows.length, 9, 'four spare rows above and below the centre');
+  assert.match(rows[4], /current">50 metres</, 'the centre row carries the unit');
+  assert.match(rows[0], />54</, 'larger numbers sit above');
+  assert.match(numberWheelRows({ type: 'estimate' }, 0), /&nbsp;/, 'nothing below the floor');
+  const css = readFileSync(new URL('../public/so-close.css', import.meta.url), 'utf8');
+  assert.match(css, /\.ruler-wheel \{[^}]*mask-image: linear-gradient\(to bottom, transparent 0/, 'fades at the top and bottom');
+  assert.match(css, /\.host-screen \.ruler-wheel \{ display: none; \}/, 'never on the TV');
 });

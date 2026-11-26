@@ -34,7 +34,7 @@ import { hideStage, showStage } from './stage-3d.js';
 import { bumpCount, clockTension, lockRail, reactionFor, stageReveal, stageable, updateLockRail } from './show-moments.js';
 import {connectSketchPainter,paintSketchBoard,clearSketch} from './sketch-canvas.js';
 import { openLibrary, savedQuizzes } from './quiz-editor.js';
-import { answerGuide, helpTypes, closestStep, createDraft, formatNumber, orderedItems, setEstimatePrecision, specialAnswer } from './answer-controls.js';
+import { answerGuide, helpTypes, closestStep, RULER_PITCH, createDraft, formatNumber, orderedItems, setEstimatePrecision, specialAnswer } from './answer-controls.js';
 import { demoView, explainer, hasDemo, practiceView, samples } from './learning.js';
 import { categories, categoryGroups, categoryName, modes, themes, questionTypes, formatTypes, formatId, difficulties, defaultTheme, partyModes, fixedQuestionModes, minimumPlayers, questionCounts, scoreIntervals, defaultScoreInterval, supportsScoreCheckpoints } from './game-config.js';
 import { boardView, diceView, lobbyView, reviewView, rollRecap, teamList, teamScoreboard, wheelView } from './game-views.js';
@@ -1728,7 +1728,7 @@ document.addEventListener('input', event => {
 });
 
 document.addEventListener('wheel', event => {
-  const target = event.target.closest('[data-so-close-rows], .number-scroller');
+  const target = event.target.closest('[data-ruler], [data-so-close-rows], .number-scroller');
   if (!target || !event.deltaY) return;
   const editor = target.closest('[data-editor]');
   const context = editorContext(editor);
@@ -1737,26 +1737,65 @@ document.addEventListener('wheel', event => {
   setEditorNumber(editor, closestStep(context.question, context.value, -Math.sign(event.deltaY)));
 }, { passive: false });
 
-let soCloseDrag;
-document.addEventListener('pointerdown',event=>{
-  const rows=event.target.closest('[data-so-close-rows]');
-  if(!rows || !event.isPrimary || event.button!==0)return;
-  soCloseDrag={rows,id:event.pointerId,y:event.clientY};
-  rows.setPointerCapture(event.pointerId);
+// The ruler wheel follows the thumb pixel for pixel, clicks over one step per
+// row, and coasts to a stop after a flick. Larger numbers sit above the
+// centre, so dragging down brings the next larger number in.
+let rulerDrag;
+let rulerCoast;
+const rulerShift = (rows, px) => rows.closest('[data-ruler]')?.style.setProperty('--shift', px.toFixed(1) + 'px');
+function rulerMove(drag, dy) {
+  const { rows } = drag;
+  if (!rows.isConnected) return false;
+  const editor = rows.closest('[data-editor]');
+  const context = editorContext(editor);
+  if (!context) return false;
+  drag.offset += dy;
+  const steps = Math.trunc(drag.offset / RULER_PITCH);
+  if (steps) {
+    const next = closestStep(context.question, context.value, steps);
+    drag.offset -= steps * RULER_PITCH;
+    // Nothing further to scroll to: hold at the end stop.
+    if (next === context.value) { drag.offset = 0; drag.velocity = 0; }
+    else {
+      setEditorNumber(editor, next);
+      if (navigator.userActivation?.hasBeenActive) try { navigator.vibrate?.(4); } catch {}
+    }
+  }
+  rulerShift(rows, drag.offset);
+  return true;
+}
+document.addEventListener('pointerdown', event => {
+  const rows = event.target.closest('[data-ruler]')?.querySelector('[data-so-close-rows]');
+  if (!rows || !event.isPrimary || event.button !== 0) return;
+  cancelAnimationFrame(rulerCoast);
+  rulerDrag = { rows, id: event.pointerId, y: event.clientY, at: event.timeStamp, offset: 0, velocity: 0 };
+  rows.closest('[data-ruler]').setPointerCapture(event.pointerId);
 });
-document.addEventListener('pointermove',event=>{
-  if(!soCloseDrag || soCloseDrag.id!==event.pointerId)return;
-  const {rows,y}=soCloseDrag;
-  if(!rows.isConnected){soCloseDrag=undefined;return;}
-  const editor=rows.closest('[data-editor]');
-  const context=editorContext(editor);
-  if(!context)return;
-  const steps=Math.trunc((event.clientY-y)/24);
-  // Larger numbers sit above the centre row, so content follows the finger:
-  // dragging down brings the next larger number into the centre.
-  if(steps){setEditorNumber(editor,closestStep(context.question,context.value,steps));soCloseDrag.y+=steps*24;}
+document.addEventListener('pointermove', event => {
+  if (!rulerDrag || rulerDrag.id !== event.pointerId) return;
+  const dy = event.clientY - rulerDrag.y;
+  const dt = Math.max(1, event.timeStamp - rulerDrag.at);
+  rulerDrag.velocity = 0.7 * rulerDrag.velocity + 0.3 * dy / dt;
+  rulerDrag.y = event.clientY;
+  rulerDrag.at = event.timeStamp;
+  if (!rulerMove(rulerDrag, dy)) rulerDrag = undefined;
 });
-for(const type of ['pointerup','pointercancel','lostpointercapture'])document.addEventListener(type,event=>{if(soCloseDrag?.id===event.pointerId)soCloseDrag=undefined;});
+for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) document.addEventListener(type, event => {
+  if (rulerDrag?.id !== event.pointerId) return;
+  const drag = rulerDrag;
+  rulerDrag = undefined;
+  const settle = () => { if (drag.rows.isConnected) rulerShift(drag.rows, 0); };
+  if (type !== 'pointerup' || Math.abs(drag.velocity) < 0.35 || matchMedia('(prefers-reduced-motion: reduce)').matches) return settle();
+  let last = performance.now();
+  const coast = now => {
+    const dt = Math.min(32, now - last);
+    last = now;
+    drag.velocity *= Math.pow(0.94, dt / 16);
+    if (Math.abs(drag.velocity) < 0.04 || !rulerMove(drag, drag.velocity * dt)) return settle();
+    rulerCoast = requestAnimationFrame(coast);
+  };
+  rulerCoast = requestAnimationFrame(coast);
+});
 
 document.addEventListener('keydown', event => {
   if (event.key !== 'Enter' || !event.target.matches('[data-number]')) return;

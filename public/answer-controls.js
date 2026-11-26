@@ -27,6 +27,26 @@ export function precisionChips() {
 }
 const estimateFloor = question => Math.min(0, question.min ?? 0);
 
+// The ruler wheel: one row per step, the current guess in the centre. Extra
+// rows above and below are there to slide into view while a thumb drags.
+export const RULER_PITCH = 34;
+export function guessRows(value, step = 1, floor = 0, reach = 2) {
+  return Array.from({ length: reach * 2 + 1 }, (_, i) => {
+    const number = value + (reach - i) * step;
+    return number < floor || number > ESTIMATE_LIMIT ? null : number;
+  });
+}
+export function numberWheelRows(question, value) {
+  const reach = 4;
+  return guessRows(value, estimatePrecision(), estimateFloor(question), reach).map((number, i) =>
+    `<span class="so-close-number ruler-number${i === reach ? ' current' : ''}">${number === null ? '&nbsp;' : formatNumber(number, i === reach ? question.unit : '')}</span>`).join('');
+}
+/** A ruler that scrolls under the thumb, with the number beside it. */
+export const rulerWheel = (question, value) => `<div class="ruler-wheel" data-ruler>
+  <div class="ruler-ticks" aria-hidden="true"></div>
+  <div class="ruler-rows so-close-wheel-rows" data-so-close-rows aria-hidden="true">${numberWheelRows(question, value)}</div>
+  <span class="ruler-pointer" aria-hidden="true"></span></div>`;
+
 export function createDraft(question) {
   return question.type === 'estimate' ? Math.max(estimateFloor(question), 0)
     : question.type === 'order' ? question.options.map((_, index) => index) : undefined;
@@ -60,6 +80,7 @@ export function specialAnswer(question, { draft, selection, revealed, host, disa
     return `<div class="answer-editor" data-editor="estimate">
       <div class="number-editor">
         <div class="number-field"><label>Your guess${unit && unit !== 'year' ? ' (' + escape(unit) + ')' : ''}<input type="number" inputmode="numeric" min="${estimateFloor(question)}" max="${ESTIMATE_LIMIT}" step="1" data-number value="${value}"></label></div>
+        ${rulerWheel(question, value)}
         <div class="number-scroller"><button type="button" data-step="-1" aria-label="Decrease guess by one step">−</button>
           ${precisionChips()}
           <button type="button" data-step="1" aria-label="Increase guess by one step">+</button></div>

@@ -118,3 +118,38 @@ body.playing .game-top {
   .connection-screen .game-panel { animation: phase-detail-in .22s ease-out both; }
   .connection-indicator { animation: connection-pulse 1.15s ease-in-out infinite; }
 }
+
+/* TV results fit one screen: the headline, winner and podium on the left,
+   the standings on the right. Nobody can scroll a TV from the sofa. */
+@media (min-width: 900px) {
+  .game.host-screen[data-phase="finished"] .results {
+    display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); column-gap: clamp(1rem, 2.6vw, 3rem); align-content: start; align-items: start;
+  }
+  .game.host-screen[data-phase="finished"] .results > * { grid-column: 1; min-width: 0; }
+  .game.host-screen[data-phase="finished"] .results > .ranking {
+    grid-column: 2; grid-row: 1 / span 12; align-self: stretch; margin: 0;
+    max-height: calc(100dvh - 11rem); overflow: auto; display: grid; align-content: start; gap: clamp(.3rem, .8vh, .6rem);
+  }
+  .game.host-screen[data-phase="finished"] .results > .ranking > li { font-size: clamp(1.05rem, 2.4vh, 1.6rem); padding-block: clamp(.4rem, 1.1vh, .8rem); }
+  .game.host-screen[data-phase="finished"] .results > .ranking ~ .review-details { grid-column: 1; }
+  .game.host-screen[data-phase="finished"] .results .podium { margin-block: clamp(.4rem, 1.4vh, 1rem); }
+}
+/* A comfortable tap target for the review toggle on phones. */
+.player-only .review-details > summary { min-height: 44px; display: flex; align-items: center; }
+
+/* TV results get the whole screen; the "plan the next game" panel sits below
+   it instead of squeezing the final scores out of view. */
+@media (min-width: 900px) {
+  body.playing .host-screen[data-phase="finished"] > .game-panel:not(.night-panel):not(.score-ceremony) { flex: 0 0 auto; min-height: calc(100dvh - 8.5rem); }
+  body.playing .host-screen[data-phase="finished"] { overflow-y: auto; }
+  /* Team results: the heading stays a headline, and the individual list needs no second title. */
+  .game.host-screen[data-phase="finished"] .results h1 { font-size: clamp(2.2rem, 8.5vh, 5rem); line-height: 1.02; }
+  .game.host-screen[data-phase="finished"] .results > h2 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+}
+/* Light-themed games: the highlighted leaderboard row keeps readable text. */
+body .game:is([data-mode="punchline"],[data-mode="cards"],[data-mode="sketch"]) .ranking > li:first-child { background: color-mix(in srgb, var(--id-accent) 16%, #fff) !important; }
+body .game:is([data-mode="punchline"],[data-mode="cards"],[data-mode="sketch"]) .ranking > li:first-child :is(span, strong) { color: var(--id-ink) !important; }
+@media (min-width: 900px) {
+  /* The replay buttons stay in reach however long the results are. */
+  .game.host-screen[data-phase="finished"] .results > .actions { position: sticky; bottom: clamp(.5rem, 2vh, 1.2rem); z-index: 3; width: max-content; max-width: 100%; }
+}

@@ -1,0 +1,602 @@
+{
+ "duo/bloodmoon.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 27.17
+ },
+ "duo/bluff.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 17.24
+ },
+ "duo/board.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 13.98
+ },
+ "duo/brain.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 15.54
+ },
+ "duo/cards.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 11.76
+ },
+ "duo/classic.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 14.5
+ },
+ "duo/dice.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 13.24
+ },
+ "duo/knockout.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 24.35
+ },
+ "duo/potato.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 11.96
+ },
+ "duo/punchline.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 15.36
+ },
+ "duo/quizrace.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 17.08
+ },
+ "duo/rare.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 12.04
+ },
+ "duo/react-blood-bitten-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 5.93
+ },
+ "duo/react-blood-bitten-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 7.5
+ },
+ "duo/react-blood-caught-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 5.09
+ },
+ "duo/react-blood-day-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 7.68
+ },
+ "duo/react-blood-day-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 5.67
+ },
+ "duo/react-blood-night-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 5.09
+ },
+ "duo/react-blood-night-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 6.03
+ },
+ "duo/react-blood-nobody-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 5.04
+ },
+ "duo/react-blood-safe-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 5.46
+ },
+ "duo/react-blood-vampires-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.6,
+  "seconds": 6.48
+ },
+ "duo/react-blood-village-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 7.97
+ },
+ "duo/react-blood-vote-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 8.12
+ },
+ "duo/react-blood-wrong-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 7.44
+ },
+ "duo/react-everybody-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.7,
+  "seconds": 2.43
+ },
+ "duo/react-everybody-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.7,
+  "seconds": 3.16
+ },
+ "duo/react-everybody-3.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 3.24
+ },
+ "duo/react-final-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 3.29
+ },
+ "duo/react-final-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 2.56
+ },
+ "duo/react-halfway-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 3
+ },
+ "duo/react-halfway-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.3,
+  "seconds": 3
+ },
+ "duo/react-knockedout-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 2.87
+ },
+ "duo/react-knockedout-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.3,
+  "seconds": 3.45
+ },
+ "duo/react-ko-everybody-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -16.9,
+  "seconds": 5.96
+ },
+ "duo/react-ko-everybody-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 4.73
+ },
+ "duo/react-ko-final-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -16.6,
+  "seconds": 5.22
+ },
+ "duo/react-ko-halfway-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 4.13
+ },
+ "duo/react-ko-knockedout-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.6,
+  "seconds": 4.86
+ },
+ "duo/react-ko-knockedout-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 5.09
+ },
+ "duo/react-ko-knockedout-3.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 4.78
+ },
+ "duo/react-ko-noanswers-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.8,
+  "seconds": 6.32
+ },
+ "duo/react-ko-nobody-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 5.59
+ },
+ "duo/react-ko-nobody-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 4.02
+ },
+ "duo/react-ko-onlyone-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 5.69
+ },
+ "duo/react-ko-streak-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 6.09
+ },
+ "duo/react-noanswers-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.6,
+  "seconds": 4.57
+ },
+ "duo/react-noanswers-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.6,
+  "seconds": 3.53
+ },
+ "duo/react-nobody-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 2.95
+ },
+ "duo/react-nobody-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 4.18
+ },
+ "duo/react-nobody-3.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 4.36
+ },
+ "duo/react-onlyone-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 2.56
+ },
+ "duo/react-onlyone-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 4.47
+ },
+ "duo/react-onlyone-3.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 4.34
+ },
+ "duo/react-race-boost-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.3,
+  "seconds": 2.56
+ },
+ "duo/react-race-boost-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -16.3,
+  "seconds": 3.79
+ },
+ "duo/react-race-close-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -16.9,
+  "seconds": 2.12
+ },
+ "duo/react-race-close-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -16.8,
+  "seconds": 2.72
+ },
+ "duo/react-race-finish-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -16.8,
+  "seconds": 2.35
+ },
+ "duo/react-race-finish-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -16.2,
+  "seconds": 3.68
+ },
+ "duo/react-race-lead-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.7,
+  "seconds": 1.93
+ },
+ "duo/react-race-lead-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -18.6,
+  "seconds": 3.84
+ },
+ "duo/react-race-lead-3.mp3": {
+  "tempo": 1.08,
+  "loudness": -17.1,
+  "seconds": 2.72
+ },
+ "duo/react-race-ram-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -16.7,
+  "seconds": 3.24
+ },
+ "duo/react-race-ram-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.9,
+  "seconds": 3.4
+ },
+ "duo/react-race-ram-3.mp3": {
+  "tempo": 1.08,
+  "loudness": -16.6,
+  "seconds": 3.66
+ },
+ "duo/react-race-start-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -16,
+  "seconds": 2.19
+ },
+ "duo/react-race-start-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -16.2,
+  "seconds": 1.75
+ },
+ "duo/react-streak-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 4.05
+ },
+ "duo/react-streak-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.6,
+  "seconds": 3.66
+ },
+ "duo/samepage.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 11.39
+ },
+ "duo/showdown.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 13.17
+ },
+ "duo/sketch.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 12.9
+ },
+ "duo/skip-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 6.64
+ },
+ "duo/skip-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 6.64
+ },
+ "duo/skip-3.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.6,
+  "seconds": 5.15
+ },
+ "duo/soclose.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 14.94
+ },
+ "duo/spotlight.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 15.8
+ },
+ "duo/topanswers.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 11.68
+ },
+ "duo/tracks.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 15.46
+ },
+ "duo/welcome-back.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 8.41
+ },
+ "duo/welcome.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 57.6
+ },
+ "duo/wheel.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 14.73
+ },
+ "narrator/board.mp3": {
+  "tempo": 1.05,
+  "loudness": -16.8,
+  "seconds": 9.43
+ },
+ "narrator/classic.mp3": {
+  "tempo": 1.05,
+  "loudness": -17.8,
+  "seconds": 9.43
+ },
+ "narrator/quizrace.mp3": {
+  "tempo": 1.05,
+  "loudness": -17,
+  "seconds": 10.11
+ },
+ "sfx/bell.mp3": {
+  "tempo": 1,
+  "loudness": -14.5,
+  "seconds": 2.04
+ },
+ "sfx/cheer.mp3": {
+  "tempo": 1,
+  "loudness": -14.4,
+  "seconds": 3.42
+ },
+ "sfx/correct.mp3": {
+  "tempo": 1,
+  "loudness": -14.4,
+  "seconds": 0.89
+ },
+ "sfx/drumroll.mp3": {
+  "tempo": 1,
+  "loudness": -14.6,
+  "seconds": 2.61
+ },
+ "sfx/fanfare.mp3": {
+  "tempo": 1,
+  "loudness": -14.5,
+  "seconds": 3.03
+ },
+ "sfx/reveal.mp3": {
+  "tempo": 1,
+  "loudness": -17,
+  "seconds": 2.25
+ },
+ "sfx/sizzle.mp3": {
+  "tempo": 1,
+  "loudness": -14.8,
+  "seconds": 1.96
+ },
+ "sfx/sting-bloodmoon.mp3": {
+  "tempo": 1,
+  "loudness": -14.5,
+  "seconds": 4.05
+ },
+ "sfx/sting-bluff.mp3": {
+  "tempo": 1,
+  "loudness": -14.4,
+  "seconds": 2.48
+ },
+ "sfx/sting-board.mp3": {
+  "tempo": 1,
+  "loudness": -14.4,
+  "seconds": 4.05
+ },
+ "sfx/sting-brain.mp3": {
+  "tempo": 1,
+  "loudness": -14.4,
+  "seconds": 4.05
+ },
+ "sfx/sting-cards.mp3": {
+  "tempo": 1,
+  "loudness": -15.2,
+  "seconds": 3.53
+ },
+ "sfx/sting-classic.mp3": {
+  "tempo": 1,
+  "loudness": -14.3,
+  "seconds": 4.05
+ },
+ "sfx/sting-knockout.mp3": {
+  "tempo": 1,
+  "loudness": -14.5,
+  "seconds": 3.42
+ },
+ "sfx/sting-potato.mp3": {
+  "tempo": 1,
+  "loudness": -14.5,
+  "seconds": 3.53
+ },
+ "sfx/sting-punchline.mp3": {
+  "tempo": 1,
+  "loudness": -14.5,
+  "seconds": 2.69
+ },
+ "sfx/sting-quizrace.mp3": {
+  "tempo": 1,
+  "loudness": -14.5,
+  "seconds": 4.05
+ },
+ "sfx/sting-rare.mp3": {
+  "tempo": 1,
+  "loudness": -14.6,
+  "seconds": 4.05
+ },
+ "sfx/sting-samepage.mp3": {
+  "tempo": 1,
+  "loudness": -14.5,
+  "seconds": 3.53
+ },
+ "sfx/sting-showdown.mp3": {
+  "tempo": 1,
+  "loudness": -14.5,
+  "seconds": 3.29
+ },
+ "sfx/sting-sketch.mp3": {
+  "tempo": 1,
+  "loudness": -15.2,
+  "seconds": 2.87
+ },
+ "sfx/sting-spotlight.mp3": {
+  "tempo": 1,
+  "loudness": -14.4,
+  "seconds": 4.05
+ },
+ "sfx/sting-topanswers.mp3": {
+  "tempo": 1,
+  "loudness": -14.5,
+  "seconds": 2.59
+ },
+ "sfx/sting-tracks.mp3": {
+  "tempo": 1,
+  "loudness": -14.4,
+  "seconds": 3.13
+ },
+ "sfx/sting-wheel.mp3": {
+  "tempo": 1,
+  "loudness": -14.5,
+  "seconds": 3.34
+ },
+ "sfx/wheel.mp3": {
+  "tempo": 1,
+  "loudness": -19,
+  "seconds": 3.47
+ },
+ "sfx/whoosh.mp3": {
+  "tempo": 1,
+  "loudness": -14.3,
+  "seconds": 0.63
+ },
+ "sfx/wrong.mp3": {
+  "tempo": 1,
+  "loudness": -12.5,
+  "seconds": 0.44
+ },
+ "music/finale.mp3": {
+  "tempo": 1,
+  "loudness": -20.4,
+  "seconds": 17.89
+ },
+ "music/lobby.mp3": {
+  "tempo": 1,
+  "loudness": -20.4,
+  "seconds": 59.06
+ },
+ "sfx/lockin.mp3": {
+  "tempo": 1,
+  "loudness": -70,
+  "seconds": 0.29
+ },
+ "sfx/sting-dice.mp3": {
+  "tempo": 1,
+  "loudness": -15.4,
+  "seconds": 4.05
+ },
+ "sfx/sting-soclose.mp3": {
+  "tempo": 1,
+  "loudness": -22.7,
+  "seconds": 3.06
+ },
+ "sfx/tick.mp3": {
+  "tempo": 1,
+  "loudness": -17.5,
+  "seconds": 0.52
+ }
+}

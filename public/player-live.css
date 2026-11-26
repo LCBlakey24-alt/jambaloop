@@ -218,3 +218,7 @@ html.mobile-deck body:has(#app > .game.player-only [data-picker-phone]) > .heade
 .player-only[data-mode="punchline"] .bluff-prompt, .player-only[data-mode="cards"] .bluff-prompt { font-size: clamp(1.15rem, 5vw, 1.5rem); line-height: 1.25; }
 .player-only .so-close-wheel > button { min-height: 44px; }
 .player-only .brain-head { flex-wrap: wrap; row-gap: .3rem; }
+.player-only .rare-source a, .player-only .spotlight-source a { display: inline-flex; align-items: center; min-height: 44px; padding-inline: 8px; }
+/* Small phones: Brain Ladder's header, rail and puzzle keep their own height instead of overlapping. */
+.player-only .brain-game > *, .player-only .brain-stage > * { flex-shrink: 0; min-height: max-content; }
+.player-only .brain-game { height: auto; overflow: visible; }

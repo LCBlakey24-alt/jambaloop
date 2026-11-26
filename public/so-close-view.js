@@ -1,13 +1,8 @@
-import {ESTIMATE_LIMIT,estimatePrecision,formatNumber,precisionChips} from './answer-controls.js';
+import {ESTIMATE_LIMIT,formatNumber,precisionChips,guessRows,numberWheelRows,rulerWheel} from './answer-controls.js';
 
-// No range is shown while guessing: the wheel starts at zero and every arrow,
-// drag or scroll moves by the step size the player picks (1, 10, 100 … 1M).
-export function guessRows(value,step=1,floor=0){
-  return [2,1,0,-1,-2].map(offset=>{const n=value+offset*step;return n<floor||n>ESTIMATE_LIMIT?null:n;});
-}
-export function numberWheelRows(question,value){
-  return guessRows(value,estimatePrecision(),Math.min(0,question.min??0)).map((number,i)=>`<span class="so-close-number ${i===2?'current':''}">${number===null?'&nbsp;':formatNumber(number,i===2?question.unit:'')}</span>`).join('');
-}
+// No range is shown while guessing: the ruler wheel starts at zero and every
+// arrow, drag or scroll moves by the step size the player picks (1, 10, 100 … 1M).
+export {guessRows,numberWheelRows};
 export function soCloseView(question,{draft,selection,revealed,host,disabled,closest,guesses},escape){
   const {min,max,unit,correct}=question; // min and max arrive only with the reveal
   if(revealed){
@@ -22,7 +17,7 @@ export function soCloseView(question,{draft,selection,revealed,host,disabled,clo
   const value=selection??draft;
   if(selection!==undefined||disabled)return `<section class="so-close-result"><div class="eyebrow">${selection!==undefined?'GUESS LOCKED':'SENDING GUESS'}</div><strong class="so-close-actual">${formatNumber(value,unit)}</strong></section>`;
   return `<div class="answer-editor so-close-editor" data-editor="estimate">
-    <div class="so-close-wheel"><button type="button" data-step="1" aria-label="Increase guess by one step">▲</button><div class="so-close-wheel-rows" data-so-close-rows aria-hidden="true">${numberWheelRows(question,value)}</div><button type="button" data-step="-1" aria-label="Decrease guess by one step">▼</button></div>
+    <div class="so-close-wheel"><button type="button" data-step="1" aria-label="Increase guess by one step">▲</button>${rulerWheel(question,value)}<button type="button" data-step="-1" aria-label="Decrease guess by one step">▼</button></div>
     <div class="so-close-precision"><span>Step size</span>${precisionChips()}</div>
     <label>Your guess ${unit?'('+escape(unit)+')':''}<input type="number" data-number inputmode="numeric" min="${Math.min(0,question.min??0)}" max="${ESTIMATE_LIMIT}" step="1" value="${value}"></label>
     <button type="button" class="button primary" data-action="submit-special">Lock in my guess</button></div>`;

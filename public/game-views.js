@@ -134,7 +134,7 @@ export function lobbyView(state, { host, escape, icons, modeName }) {
   </details>` : '';
   if (!host) return `<div class="game-panel phone-lobby">
     <div class="lobby-eyebrow"><span class="eyebrow">ROOM ${state.code}</span>${state.isCaptain ? '<span class="captain-tag">★ Captain</span>' : ''}</div>
-    <h2>${state.game > 1 ? 'Rematch ready, ' : 'You’re in, '}${escape(state.player.name)}!</h2>
+    <h2 class="phone-welcome">${avatarView(state.player, escape)}<span>${state.game > 1 ? 'Rematch ready, ' : 'You’re in, '}${escape(state.player.name)}!</span></h2>
     <p>${state.isCaptain ? 'Choose a game for the room and start when everyone is ready.' : 'Stay here while the captain sets up the game.'}</p>
     ${switcher}${summary}${teamPreview}${playerGuide}
     <div class="ready-actions"><button class="button outline" data-action="ready-toggle" aria-label="I’m ready" aria-pressed="${Boolean(state.player.ready)}">

@@ -581,11 +581,11 @@ function openDialog(mode, value, gameMode, quizId) {
       <h2>Join game night<span class="brand-dot">.</span></h2>
       <p>Ask the host for their six-digit room code, or scan their QR code to join directly.</p>
     </div>
-    <ol class="join-quick-steps" aria-label="How joining works">
-      <li><b>01</b><span>Get the code</span></li>
-      <li><b>02</b><span>Pick your name</span></li>
-      <li><b>03</b><span>Tap Ready</span></li>
-    </ol>
+    <div class="join-card" aria-hidden="true">
+      <span class="join-card-avatar" data-join-avatar>?</span>
+      <span class="join-card-copy"><small>PLAYER</small><strong data-join-name>Your name here</strong><small data-join-room>${roomCode ? 'Room ' + escape(roomCode) : 'Room ——————'}</small></span>
+      <span class="join-card-stamp">${roomCode ? 'TICKET READY' : 'NEW PLAYER'}</span>
+    </div>
     <form id="join-form" autocomplete="on">
       <label class="join-room-field" for="join-room-code">Room code
         <input id="join-room-code" name="code" value="${escape(roomCode)}" placeholder="123456"
@@ -637,6 +637,25 @@ async function api(path, body, key = session?.key) {
   if (response.status !== 204) return response.json();
 }
 
+/** The join form's player card follows the name, room code and photo as you go. */
+function updateJoinCard(form = document.querySelector('#join-form')) {
+  const card = form?.closest('#dialog-content, dialog')?.querySelector('.join-card');
+  if (!card) return;
+  const name = form.elements.name.value.trim();
+  const code = parseRoomCode(form.elements.code.value);
+  card.querySelector('[data-join-name]').textContent = name || 'Your name here';
+  card.querySelector('[data-join-room]').textContent = code ? 'Room ' + code : 'Room ——————';
+  card.querySelector('.join-card-stamp').textContent = code && name ? 'TICKET READY' : code ? 'ADD YOUR NAME' : 'NEW PLAYER';
+  card.toggleAttribute('data-ready', Boolean(code && name));
+  const avatar = card.querySelector('[data-join-avatar]');
+  avatar.style.backgroundImage = joinAvatar ? `url("${joinAvatar}")` : '';
+  avatar.textContent = joinAvatar ? '' : (Array.from(name)[0] ?? '?').toUpperCase();
+}
+document.addEventListener('input', event => { if (event.target.closest?.('#join-form')) updateJoinCard(event.target.form); });
+
+// What the connecting screen shows while the room answers.
+let pendingJoin;
+
 function startSession(next) {
   stream?.abort();
   stream = undefined;
@@ -660,10 +679,16 @@ function startSession(next) {
   boardDisplay = undefined;
   raceTrackView?.dispose(); raceTrackView = undefined; disposeRace3d();
   cancelAnimationFrame(raceAnimationFrame); raceAnimationFrame = 0;
-  app.innerHTML = `<section class="game connection-screen"><div class="game-panel">
-    <div class="eyebrow">ROOM ${escape(next.code)}</div><h1>Joining the lobby<span class="brand-dot">.</span></h1>
-    <p role="status"><span class="connection-indicator" aria-hidden="true"></span>Connecting to the room…</p>
-    <div class="actions"><button class="button outline" data-action="leave">Home</button></div>
+  const joining = !next.host ? pendingJoin ?? { name: next.name } : undefined;
+  pendingJoin = undefined;
+  const initial = (Array.from(joining?.name ?? '')[0] ?? '').toUpperCase();
+  app.innerHTML = `<section class="game connection-screen"><div class="connect-stage">
+    <div class="connect-rings" aria-hidden="true"><i></i><i></i><i></i>
+      <span class="connect-avatar"${joining?.avatar ? ` style="background-image:url('${joining.avatar}')"` : ''}>${next.host ? '📺' : joining?.avatar ? '' : escape(initial || '★')}</span></div>
+    <div class="eyebrow">ROOM ${escape(next.code)}</div>
+    <h1>${next.host ? 'Opening the studio' : 'Finding your seat'}<span class="connect-dots" aria-hidden="true"><b>.</b><b>.</b><b>.</b></span></h1>
+    <p role="status">${next.host ? 'Setting up the big screen' : joining?.name ? `Getting ${escape(joining.name)} into the room` : 'Connecting to the room'}</p>
+    <button class="button outline" data-action="leave">Cancel</button>
   </div></section>`;
   connect();
 }
@@ -767,6 +792,7 @@ document.addEventListener('submit', async event => {
         return;
       }
       const player = await api('/' + code + '/join', { name, avatar: joinAvatar, seenQuestions: readQuestionHistory() });
+      pendingJoin = { name, avatar: joinAvatar };
       startSession({ code, key: player.key, host: false });
     }
   } catch (error) {
@@ -1599,6 +1625,7 @@ document.addEventListener('change', async event => {
     preview.src = joinAvatar;
     preview.hidden = false;
     form.querySelector('[data-action="clear-selfie"]').hidden = false;
+    updateJoinCard(form);
     message.textContent = '';
   } catch (error) {
     message.textContent = error.message || 'Could not open this photo.';
@@ -1704,6 +1731,7 @@ document.addEventListener('click', async event => {
     preview.removeAttribute('src');
     preview.hidden = true;
     button.hidden = true;
+    updateJoinCard();
     return;
   }
   if (action === 'home-tab') {

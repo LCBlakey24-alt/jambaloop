@@ -71,6 +71,8 @@ on:
       - 'scripts/question-types-browser.mjs'
       - 'scripts/show-moments-browser.mjs'
       - 'scripts/knockout-browser.mjs'
+      - 'scripts/lobby-picker-browser.mjs'
+      - 'public/lobby-picker.js'
       - 'public/knockout-ladder.js'
       - 'public/show-moments.*'
       - 'public/show-scenes.js'
@@ -131,6 +133,7 @@ jobs:
           node scripts/question-types-browser.mjs
           node scripts/show-moments-browser.mjs
           node scripts/knockout-browser.mjs
+          node scripts/lobby-picker-browser.mjs
           node scripts/tv-immersive-browser.mjs
           node scripts/tv-all-modes.mjs
       - name: Upload screen captures on success or failure

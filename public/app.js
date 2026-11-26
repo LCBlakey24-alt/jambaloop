@@ -21,6 +21,7 @@ import { carouselView, moveCarousel, themeHome, wrapIndex } from './game-carouse
 import { playSting, stingFor } from './show-sting.js';
 import { stopNarration, toggleNarration } from './narrator.js';
 import { playChiptune, playCue, playTick, playTowerImpact } from './sound-cues.js';
+import { bindPhonePicker, movePickerTv, pickerPhone, pickerTv, stepMode, syncPhonePicker } from './lobby-picker.js';
 import { knockoutLadder, phoneHearts, playKnockout, rememberLadder, shatterPhoneHeart } from './knockout-ladder.js';
 import { boardLengths, boardRoute, boardDuration, durationLabel, suggestedTurnCap, boardRequiresChoice, boardPathChoices } from './board-route.js';
 import {teamPlayModes, defaultPlayStyle} from './team-play.js';
@@ -927,6 +928,8 @@ function render(s) {
     body = partyView(s, { host, canControl, escape, icons, reply: partyReply });
     if (s.phase === 'party-potato' && pauseButton) body = `<div class="round-pace">${pauseButton}</div>` + body;
     if (s.phase === 'party-potato' && !host) timer = '<span class="timer potato-timer" id="timer"></span>';
+  } else if (s.phase === 'lobby' && s.picker) {
+    body = host ? pickerTv(s, { escape, canDrive: true }) : pickerPhone(s, { escape, canDrive: s.isCaptain });
   } else if (s.phase === 'lobby') {
     body = lobbyView(s, { host, escape, icons, modeName });
     const types = s.quizTypes ?? (s.format === 'mixed' ? helpTypes : formatTypes(s.format));
@@ -1056,7 +1059,7 @@ function render(s) {
     } else {
       body = (s.night.queue.length ? nextUp : '') + body + awardView(s.awards, escape, icons) + (s.night.queue.length ? '' : nextUp);
     }
-  } else if (['lobby', 'waiting'].includes(s.phase)) body += gameNightView(s, { canControl, escape, icons });
+  } else if (['lobby', 'waiting'].includes(s.phase) && !s.picker) body += gameNightView(s, { canControl, escape, icons });
   const phaseKey = `${s.code}/${s.game}/${s.index}/${s.phase}${s.pausedAt ? '/paused' : ''}${s.party?.holding || s.party?.type === 'fork' ? '/' + s.party.step : ''}`;
   const enter = renderedPhase !== phaseKey;
   // TV broadcast stings: the show's title card at kick-off, a band before the last round.
@@ -1089,10 +1092,12 @@ function render(s) {
     ${Array.from({ length: s.total }, (_, index) => `<i class="${index < completed ? 'done' : index === s.index ? 'current' : ''}"></i>`).join('')}</div>` : '';
   // Once play starts, the TV is locked to the game: chrome hides until summoned.
   const immersive = host && !['lobby', 'waiting'].includes(s.phase);
-  app.innerHTML = `<section class="game ${host ? 'host-screen' : 'player-only'} ${immersive ? 'immersive' : ''} ${host && tvFocus ? 'tv-focus' : ''} ${enter ? 'phase-enter' : ''}" data-deck-key="${phaseKey}" data-phase="${s.phase}" data-paused="${Boolean(s.pausedAt)}" data-mode="${s.mode}" data-result="${result}" style="${modeVariables(s.mode)}">${sceneBackdrop(s.mode, enter && (s.phase === 'finished' || result === 'win'))}<div class="game-top">
+  // While the lobby carousel is open, every screen wears the browsed game's look.
+  const shownMode = s.phase === 'lobby' && s.picker ? s.picker.mode : s.mode;
+  app.innerHTML = `<section class="game ${host ? 'host-screen' : 'player-only'} ${immersive ? 'immersive' : ''} ${host && tvFocus ? 'tv-focus' : ''} ${enter ? 'phase-enter' : ''}" data-deck-key="${phaseKey}" data-phase="${s.phase}" data-paused="${Boolean(s.pausedAt)}" data-mode="${shownMode}" data-result="${result}" style="${modeVariables(shownMode)}">${sceneBackdrop(shownMode, enter && (s.phase === 'finished' || result === 'win'))}<div class="game-top">
     <div class="screen-identity"><span class="screen-mode-icon" aria-hidden="true">${icons(mode[3])}</span>
-      <div><div class="screen-mode-title">${escape(s.quizTitle || (s.mode === 'classic' ? categoryName(s.category) : modeName(s.mode)))}</div>
-      <div class="screen-status">${host && s.phase === 'lobby' && showIdentity(s.mode) ? `<span class="show-studio-label">${showIdentity(s.mode).studio}</span>` : ''}<span class="phase-caption">${caption}</span>
+      <div><div class="screen-mode-title">${s.phase === 'lobby' && s.picker ? 'Pick a game' : escape(s.quizTitle || (s.mode === 'classic' ? categoryName(s.category) : modeName(s.mode)))}</div>
+      <div class="screen-status">${host && s.phase === 'lobby' && !s.picker && showIdentity(s.mode) ? `<span class="show-studio-label">${showIdentity(s.mode).studio}</span>` : ''}<span class="phase-caption">${caption}</span>
       ${s.isCaptain && s.phase !== 'lobby' ? '<span class="captain-tag">★ Captain</span>' : ''}${boost}
       ${host && ['lobby','finished'].includes(s.phase) ? '<span class="studio-publisher">A ROOKIE QUEST GAMES PRODUCTION</span>' : ''}
       ${host && !['lobby','waiting'].includes(s.phase) ? `<span class="tv-live-pill"><i aria-hidden="true"></i>JAMBALOOP LIVE · <span data-tv-connected>${s.connected}</span> PLAYERS</span>` : ''}</div></div></div>${track}
@@ -1143,6 +1148,10 @@ function render(s) {
   }
   lastLobbyMode = s.phase === 'lobby' ? s.mode : undefined;
   if(s.mode==='sketch')paintSketchBoard(s.party);
+  if (s.phase === 'lobby' && s.picker && !host) {
+    syncPhonePicker(app, s.picker.mode, false);
+    bindPhonePicker(app, mode => browseTo(mode));
+  }
   // Hot Potato: the potato arcs from the old holder's seat to the new one.
   animatePotato(host?app:null, s.code+'/'+s.game, matchMedia('(prefers-reduced-motion: reduce)').matches);
   if(s.mode!=='quizrace'&&race3d) disposeRace3d();
@@ -1315,6 +1324,8 @@ function receive(next, current) {
   }
   if (dialog.open && state && (state.game !== next.game || state.phase === 'lobby' && next.phase !== 'lobby')) dialog.close();
   if (state?.game !== next.game || state?.index !== next.index || next.phase === 'lobby') partyReply = '';
+  // A game chosen from the lobby carousel: the TV introduces it out loud.
+  const introduce = current.host && state?.phase === 'lobby' && state.picker && !next.picker && next.phase === 'lobby';
   state = next;
   // Store only opaque question IDs, never answer keys or other players' data.
   if (!current.host) {
@@ -1331,7 +1342,9 @@ function receive(next, current) {
     Object.assign(current, { name: next.player.name, mode: next.mode });
     rememberPlayer(current);
   }
-  const { now, revision, answered, connected, waitingCount, responseTarget, race, lockIns, ...stable } = next;
+  const { now, revision, answered, connected, waitingCount, responseTarget, race, lockIns, picker, ...stable } = next;
+  // The lobby carousel glides in place; only opening or closing it re-renders.
+  stable.pickerOpen = Boolean(picker);
   const raceSignature = race && { question:race.own?.question?.id, feedback:race.own?.feedback?.outcome, paused:race.paused, finished:race.finished };
   const lobbyStatus = next.phase === 'lobby' ? { connected } : undefined;
   const raceStable = next.mode==='quizrace' ? { ...stable, players: next.phase==='finished' ? stable.players : undefined, player: stable.player ? {...stable.player, score: undefined} : undefined } : stable;
@@ -1349,6 +1362,11 @@ function receive(next, current) {
   const countText = answerCount(next);
   if (counter && counter.textContent !== countText) { counter.textContent = countText; bumpCount(counter); }
   if (current.host) updateLockRail(app, next, escape, avatarView);
+  if (introduce) toggleNarration(next.mode);
+  if (picker) {
+    if (current.host) movePickerTv(app, next, escape);
+    else if (app.querySelector('.picker-strip')?.dataset.reported !== picker.mode) syncPhonePicker(app, picker.mode);
+  }
   const responseProgress = document.querySelector('#response-progress');
   if (responseProgress) {
     responseProgress.max = Math.max(1, next.responseTarget);
@@ -1357,6 +1375,17 @@ function receive(next, current) {
   updatePresence(next);
   if(next.mode==='sketch')paintSketchBoard(next.party);
   updateTimer();
+}
+
+function showGameError(error) {
+  const notice = document.querySelector('#game-error');
+  if (notice) notice.textContent = error.message;
+}
+
+/** Move the lobby carousel for every screen in the room. */
+function browseTo(mode) {
+  if (!session || !state?.picker) return;
+  api('/' + session.code + '/browse', { mode, game: state.game }).catch(showGameError);
 }
 
 function connectionError(error, current) {
@@ -1834,6 +1863,23 @@ document.addEventListener('click', async event => {
   if (action === 'close') return dialog.close();
   if (action === 'night' && session && state) return openDialog('night');
   if (action === 'leave') return leave();
+  if (action === 'picker-open' && session && state?.phase === 'lobby') {
+    return api('/' + session.code + '/browse', { open: true, game: state.game }).catch(error => showGameError(error));
+  }
+  if (action === 'picker-step' && session && state?.picker) {
+    const next = stepMode(state.picker.mode, Number(button.dataset.direction));
+    // The captain's phone scrolls its strip (which reports the move); the TV moves directly.
+    if (!session.host && app.querySelector('[data-driver] .picker-strip')) return syncPhonePicker(app, next, true, { report: true });
+    return browseTo(next);
+  }
+  if (action === 'picker-play' && session && state?.picker) {
+    button.disabled = true;
+    const mode = state.picker.mode;
+    try {
+      await api('/' + session.code + '/configure', { ...queuedSettings(mode, state.theme), game: state.game, lobbyVersion: state.lobbyVersion });
+    } catch (error) { button.disabled = false; showGameError(error); }
+    return;
+  }
   if (action === 'lobby-mode' && session && state?.phase === 'lobby') {
     // Quick switch from the lobby: the new game arrives with sensible defaults
     // (the full setup is still one tap away under Choose game).
@@ -1853,7 +1899,8 @@ document.addEventListener('click', async event => {
     button.disabled = true;
     const message = document.querySelector('#home-error');
     try {
-      const room = await api('', { mode: 'classic', category: 'mixed', count: 10, seconds: 20, format: 'mixed', theme: previewTheme, scoreInterval: defaultScoreInterval });
+      // Lobby first: everyone joins, then the captain picks the game on the carousel.
+      const room = await api('', { mode: 'classic', category: 'mixed', count: 10, seconds: 20, format: 'mixed', theme: previewTheme, scoreInterval: defaultScoreInterval, picker: true });
       startSession({ code: room.code, key: room.host, host: true });
     } catch (error) {
       if (message) message.textContent = error.message;

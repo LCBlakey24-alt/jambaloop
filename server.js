@@ -135,6 +135,8 @@ app.post('/api/rooms', async (req, res) => {
   const host = token();
   const room = { code, host, game: 1, revision: 0, clients: new Map(), seen: new Set(), players: new Map(), waiting: new Map(), liveConnections: new Map(), lastSeen: new Map(), night: { queue: [], played: 0, version: 0, results: [], standings: [] }, answers: new Map(), updated: Date.now() };
   resetGame(room, settings);
+  // Lobby-first hosting: the room opens on a game carousel the captain drives.
+  if (req.body?.picker === true) room.picker = { mode: settings.mode, version: 0 };
   // Prefer a real Wi-Fi/LAN address over localhost or virtual adapters.
   // Hosts can switch adapters from the lobby if the recommended one is unreachable.
   // Do not use x-forwarded-host/proto when generating invite links.
@@ -246,6 +248,7 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
     }) : undefined;
   return { revision: room.revision, code, category, phase: waiting ? 'waiting' : phase, index, total: room.count, seconds, game, opened, ends, answered: answers.size,
     lockIns,
+    picker: phase === 'lobby' && !waiting && room.picker ? { ...room.picker } : undefined,
     connected: counts.connected, waitingCount: room.waiting.size, responseTarget: counts.target,
     readyCount: phase === 'lobby' ? counts.ready : undefined, lobbyVersion: room.lobbyVersion,
     pausedAt: !waiting && room.pausedAt ? room.pausedAt : undefined, clockVersion: room.clockVersion,
@@ -902,6 +905,7 @@ app.post('/api/rooms/:code/advance', (req, res) => {
   if (req.body?.game !== room.game || req.body?.phase !== room.phase || req.body?.index !== room.index) return res.sendStatus(204);
   if (room.pausedAt) return res.status(409).json({ error: 'Resume the timer before advancing.' });
   if (room.phase === 'lobby') {
+    if (room.picker) return res.status(409).json({ error: 'Choose a game from the carousel first.' });
     const minimum = requiredPlayers(room.mode,room.playStyle,room.teamCount,minimumPlayers(room.mode));
     if (liveCounts(room).connected < minimum) return res.status(409).json({ error: `You need at least ${minimum} connected ${minimum === 1 ? 'player' : 'players'} to start.` });
     const tooMany = capacityError(room.mode, room.playStyle, room.players.size);
@@ -1057,6 +1061,26 @@ app.post('/api/rooms/:code/configure', (req, res) => {
   const tooMany = capacityError(settings.mode, settings.playStyle, groupSize(room));
   if (tooMany) return res.status(409).json({ error: tooMany });
   resetGame(room, settings);
+  // Choosing a game closes the lobby's game carousel.
+  room.picker = undefined;
+  publish(room);
+  res.sendStatus(204);
+});
+
+// The lobby's shared game carousel: the captain (or TV) scrolls it and every
+// screen follows. { mode } moves it; { open: true } reopens it from a lobby.
+app.post('/api/rooms/:code/browse', (req, res) => {
+  const { room, key } = res.locals;
+  if (!controlsRoom(room, key)) return res.status(403).json({ error: 'Only the captain or TV host can choose the game.' });
+  if (room.phase !== 'lobby' || req.body?.game !== room.game) return res.status(409).json({ error: 'The lobby has closed.' });
+  const { mode, open } = req.body ?? {};
+  if (open === true) room.picker ??= { mode: room.mode, version: 0 };
+  else if (!room.picker) return res.status(409).json({ error: 'Open the game carousel first.' });
+  if (mode !== undefined) {
+    if (!modes.some(([id]) => id === mode)) return res.status(400).json({ error: 'Choose a game from the carousel.' });
+    room.picker.mode = mode;
+  }
+  room.picker.version++;
   publish(room);
   res.sendStatus(204);
 });

@@ -91,6 +91,7 @@ export function lobbyView(state, { host, escape, icons, modeName }) {
   const at = order.indexOf(state.mode);
   const neighbour = step => order[(at + step + order.length) % order.length];
   const switcher = canControl && !state.quizTitle && at >= 0 ? `<div class="lobby-switcher" role="group" aria-label="Switch game">
+    <button type="button" class="button outline lobby-browse" data-action="picker-open">Browse all games</button>
     <button type="button" class="button outline" data-action="lobby-mode" data-mode="${neighbour(-1)}" aria-label="Previous game: ${escape(modeName(neighbour(-1)))}"><span aria-hidden="true">‹</span> ${escape(modeName(neighbour(-1)))}</button>
     <button type="button" class="button outline" data-action="lobby-mode" data-mode="${neighbour(1)}" aria-label="Next game: ${escape(modeName(neighbour(1)))}">${escape(modeName(neighbour(1)))} <span aria-hidden="true">›</span></button></div>` : '';
   const minimum = requiredPlayers(state.mode,state.playStyle,state.teamCount,minimumPlayers(state.mode));

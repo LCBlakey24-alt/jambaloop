@@ -95,3 +95,37 @@
   .lobby-game.is-swapping { animation:lobby-swap-in .5s cubic-bezier(.2,.8,.2,1) both; }
 }
 @keyframes lobby-swap-in { from { transform:translateX(calc(var(--swap-from,1) * 60px)) rotateY(calc(var(--swap-from,1) * -14deg)); opacity:0; } }
+
+/* Lobby game carousel: the TV mirrors the captain's phone. */
+.lobby-picker { display:grid; grid-template-rows:auto auto; gap:clamp(10px,2dvh,26px); }
+.picker-carousel { --card:clamp(170px,min(36dvh,26vw),420px); padding-top:clamp(6px,2dvh,24px); }
+.picker-carousel .carousel-card { cursor:default; }
+.picker-footer { display:grid; grid-template-columns:minmax(0,.9fr) minmax(0,1.3fr) minmax(0,1fr); gap:clamp(10px,1.4vw,22px); align-items:stretch; }
+.picker-join { display:grid; grid-template-columns:auto auto; align-items:center; column-gap:14px; }
+.picker-join .eyebrow { grid-column:1 / -1; }
+.picker-join .room-code { font-size:clamp(26px,4.4dvh,54px); margin:0; letter-spacing:.04em; white-space:nowrap; }
+.picker-join .qr { width:clamp(84px,14dvh,140px); height:auto; margin:0; border-radius:8px; }
+.picker-info { height:100%; display:grid; align-content:center; gap:6px; padding:clamp(12px,1.6dvh,22px) clamp(14px,1.6vw,26px);
+  border-radius:var(--id-radius); color:var(--id-ink); background:color-mix(in srgb,var(--id-surface) 88%,transparent);
+  border:1px solid color-mix(in srgb,var(--id-accent) 50%,transparent); }
+.picker-kind { margin:0; font:800 clamp(11px,1.5dvh,15px)/1.2 var(--head); letter-spacing:.14em; text-transform:uppercase; color:var(--id-accent); }
+.picker-name { margin:0; font:var(--id-weight) clamp(30px,5.6dvh,66px)/1 var(--id-display),var(--head); text-transform:var(--id-case); }
+.picker-description { margin:0; color:var(--id-muted) !important; font-size:clamp(14px,2dvh,22px); }
+.picker-room { display:flex; flex-direction:column; gap:8px; min-height:0; }
+.picker-room .players { max-height:16dvh; overflow:auto; margin:0; }
+.picker-room .button { margin-top:auto; }
+.picker-hint { margin:0; color:var(--id-muted,#ccc); }
+.lobby-switcher .lobby-browse { grid-column:1 / -1; }
+
+/* Phones: a swipe strip of tiles that snaps to the centre. */
+.picker-phone { display:grid; gap:10px; overflow:hidden; }
+.picker-strip { display:flex; gap:14px; overflow-x:auto; scroll-snap-type:x mandatory; padding:8px calc(50% - min(34vw,150px)); scrollbar-width:none; }
+.picker-strip::-webkit-scrollbar { display:none; }
+.picker-tile { flex:0 0 min(68vw,300px); aspect-ratio:1; scroll-snap-align:center; border-radius:18px; overflow:hidden; container-type:inline-size;
+  border:2px solid color-mix(in srgb,var(--id-accent) 60%,transparent); box-shadow:0 12px 28px #0007; }
+.picker-tile .tile-art { width:100%; height:100%; }
+.picker-controls { display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:8px; align-items:center; }
+.picker-controls .button { min-height:52px; }
+.picker-controls [data-action="picker-step"] { min-width:56px; font-size:24px; }
+.picker-now { grid-column:1 / -1; margin:0; text-align:center; }
+@media (prefers-reduced-motion:reduce) { .picker-strip { scroll-behavior:auto; } }

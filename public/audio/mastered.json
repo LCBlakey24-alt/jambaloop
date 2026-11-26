@@ -628,5 +628,15 @@
   "tempo": 1.08,
   "loudness": -15.5,
   "seconds": 6.16
+ },
+ "duo/wayoff.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 17.01
+ },
+ "sfx/sting-wayoff.mp3": {
+  "tempo": 1,
+  "loudness": -14.2,
+  "seconds": 2.72
  }
 }

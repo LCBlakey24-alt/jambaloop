@@ -43,7 +43,7 @@ const measure = (page, tv) => page.evaluate(tv => {
 
 for (const [mode] of modes) {
   if (only.length && !only.includes(mode)) continue;
-  const setup = { mode, format: mode === 'soclose' ? 'estimate' : 'choice', category: 'mixed',
+  const setup = { mode, format: ['soclose', 'wayoff'].includes(mode) ? 'estimate' : 'choice', category: 'mixed',
     count: mode === 'board' ? 12 : ['spotlight', 'bloodmoon'].includes(mode) ? 1 : ['tracks', 'samepage', 'punchline', 'cards', 'bluff', 'rare', 'sketch', 'topanswers'].includes(mode) ? 3 : 5,
     seconds: mode === 'quizrace' || ['tracks', 'samepage'].includes(mode) ? 0 : 20,
     ...(['board', 'tracks', 'showdown'].includes(mode) ? { playStyle: 'teams', teamCount: 2 } : { playStyle: 'individual' }) };
@@ -81,7 +81,7 @@ for (const [mode] of modes) {
         }
       }
       if (s.phase === 'finished') break;
-      if (s.phase === 'question') for (const [i, key] of keys.entries()) await api.request.post(`${site}/api/rooms/${code}/answer`, { headers: { 'x-game-key': key }, data: { game: s.game, index: s.index, option: mode === 'soclose' ? 100 + i * 40 : i % 2 } });
+      if (s.phase === 'question') for (const [i, key] of keys.entries()) await api.request.post(`${site}/api/rooms/${code}/answer`, { headers: { 'x-game-key': key }, data: { game: s.game, index: s.index, option: ['soclose', 'wayoff'].includes(mode) ? 100 + i * 40 : i % 2 } });
       await api.request.post(`${site}/api/rooms/${code}/advance`, { headers: { 'x-game-key': host }, data: { phase: s.phase, index: s.index, game: s.game, lobbyVersion: s.lobbyVersion } });
       await pages.tv.waitForTimeout(700);
     }

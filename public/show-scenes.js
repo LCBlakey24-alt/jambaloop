@@ -219,6 +219,18 @@ const scenes = {
     ...[[30, 330], [98, 300], [136, 332], [208, 300], [262, 334], [322, 316], [372, 344]].map(([x, y], i) => rect(x, y, 9, 13, c.accent2, { opacity: i % 2 ? .75 : .45, rx: 1.5 })),
     path('M0 372c60-14 120-14 200 0s140 14 200 0v28H0z', { fill: c.muted, opacity: .1 }),
   ],
+  wayoff: c => [
+    `<defs>${radial('bg', [[0, c.bg[0]], [1, c.bg[1]]], [.4, .5, .8])}</defs>`,
+    rect(0, 0, 400, 400, 'url(#bg)'),
+    ...range(5).map(i => circle(150, 210, 150 - i * 30, i % 2 ? c.bg[1] : c.accent, { opacity: i % 2 ? .55 : .5 })),
+    circle(150, 210, 12, c.accent2),
+    ...range(8).map(i => line(...polar(150, 210, 150, i * 45), ...polar(150, 210, 158, i * 45), c.ink, 3, { opacity: .5 })),
+    // One dart in the bullseye region, one miles away.
+    `<g transform="rotate(-35 180 190)">${rect(176, 150, 8, 44, c.accent2)}${poly([[170, 150], [190, 150], [180, 128]], c.ink)}</g>`,
+    `<g transform="rotate(28 342 70)">${rect(338, 40, 8, 44, c.ink)}${poly([[332, 40], [352, 40], [342, 18]], c.accent)}</g>`,
+    path('M318 108c-30 24-60 50-96 70', { fill: 'none', stroke: c.ink, 'stroke-width': 3, 'stroke-dasharray': '6 9', opacity: .5 }),
+    ...[[340, 300, 9], [60, 60, 7], [300, 360, 6]].map(([x, y, s]) => sparkle(x, y, s, c.accent, .8)),
+  ],
   sketch: c => [
     rect(0, 0, 400, 400, c.bg[0]),
     ...range(14).map(i => line(0, 40 + i * 28, 400, 40 + i * 28, c.accent2, 1.5, { opacity: .2 })),

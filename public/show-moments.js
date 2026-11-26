@@ -12,6 +12,7 @@
 // With reduced motion, the final state shows at once.
 
 import { prefersReducedMotion } from './motion.js';
+import { isEstimateShow } from './game-config.js';
 
 const DRUMROLL = 900;
 const DROP_GAP = 330;
@@ -22,7 +23,7 @@ let stageToken = 0;
 export const flareDelay = wrongCount => DRUMROLL + wrongCount * DROP_GAP + FLARE;
 
 /** A round with A–D style buttons the TV can choreograph. */
-export const stageable = s => s.phase === 'reveal' && !s.privateQuestions && s.mode !== 'soclose'
+export const stageable = s => s.phase === 'reveal' && !s.privateQuestions && !isEstimateShow(s.mode)
   && ['choice', 'boolean'].includes(s.question?.type) && Array.isArray(s.question?.options);
 
 const holdFor = s => stageable(s) && !prefersReducedMotion() ? flareDelay(s.question.options.length - 1) : 0;

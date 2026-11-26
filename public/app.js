@@ -36,7 +36,7 @@ import {connectSketchPainter,paintSketchBoard,clearSketch} from './sketch-canvas
 import { openLibrary, savedQuizzes } from './quiz-editor.js';
 import { answerGuide, helpTypes, closestStep, RULER_PITCH, createDraft, formatNumber, orderedItems, setEstimatePrecision, specialAnswer } from './answer-controls.js';
 import { demoView, explainer, hasDemo, practiceView, samples } from './learning.js';
-import { categories, categoryGroups, categoryName, modes, themes, questionTypes, formatTypes, formatId, difficulties, defaultTheme, partyModes, fixedQuestionModes, minimumPlayers, questionCounts, scoreIntervals, defaultScoreInterval, supportsScoreCheckpoints } from './game-config.js';
+import { isEstimateShow, categories, categoryGroups, categoryName, modes, themes, questionTypes, formatTypes, formatId, difficulties, defaultTheme, partyModes, fixedQuestionModes, minimumPlayers, questionCounts, scoreIntervals, defaultScoreInterval, supportsScoreCheckpoints } from './game-config.js';
 import { boardView, diceView, lobbyView, reviewView, rollRecap, teamList, teamScoreboard, wheelView } from './game-views.js';
 
 const icons = (name, css = '') => `<img class="${css}" src="/icons/${name}.svg" alt="">`;
@@ -423,7 +423,7 @@ function openDialog(mode, value, gameMode, quizId) {
       form.elements.privateQuestions.disabled = game !== 'showdown';
       const board = game === 'board';
       const race = game === 'quizrace';
-      const soClose = game === 'soclose';
+      const soClose = isEstimateShow(game);
       if(soClose){form.elements.difficulty.value='standard';}
       form.querySelector('#race-setup').hidden = !race;
       form.querySelector('#race-setup').disabled = !race;
@@ -877,7 +877,7 @@ function phaseCaption(s) {
   if (s.phase === 'ready') return s.mode === 'wheel' ? 'Ready to spin' : 'Ready to roll';
   if (s.phase === 'rolling') return s.mode === 'wheel' ? 'Wheel spinning' : 'Dice rolling';
   // The caption must not announce the answer while So Close guesses are still showing.
-  if (s.mode === 'soclose' && s.phase === 'reveal' && s.estimateReveal?.stage !== 'results') return 'The big reveal';
+  if (isEstimateShow(s.mode) && s.phase === 'reveal' && s.estimateReveal?.stage !== 'results') return 'The big reveal';
   return {
     lobby: 'Lobby open',
     waiting: 'Queued to join',
@@ -946,7 +946,7 @@ function render(s) {
   const showdown = s.mode === 'showdown';
   const rally = s.mode === 'dice';
   const knockout = s.mode === 'knockout';
-  const eliminated = knockout && s.player?.lives === 0;
+  const eliminated = (knockout && s.player?.lives === 0) || Boolean(s.out);
   const team = s.teams[s.activeTeam];
   const ownTeam = s.teams[s.player?.team];
   let body;
@@ -1020,8 +1020,8 @@ function render(s) {
       ${!host ? `<dl class="personal-scorecard"><div><dt>Rounds won</dt><dd>${s.player.wins} / ${s.index + 1}</dd></div><div><dt>Best streak</dt><dd>${s.player.bestStreak}</dd></div><div><dt>Final rank</dt><dd>#${s.rank}</dd></div></dl>` : ''}
       ${!host && s.playerCount > s.players.length ? '<h2>Top 10</h2>' : ''}${fullLeaderboard(s.players, 'Full standings')}${s.review.length ? reviewView(s.review, escape, formatNumber) : ''}<div class="actions">${canControl ? replayButtons(s, icons) : `<button class="button outline" data-action="leave">Back to home ${icons('arrow-right')}</button>`}</div>
       ${host ? '' : '<p class="status">Stay here if the captain or host starts a rematch.</p>'}</div>`;
-  } else if(s.mode==='soclose' && s.phase==='reveal' && s.estimateReveal){
-    body=`<div class="game-panel so-close-broadcast"><div class="eyebrow">ROUND ${s.index+1} OF ${s.total}</div><p class="so-close-reveal-prompt">${controllerOnly?'Round results':escape(s.question.prompt)}</p><div id="so-close-frame" aria-live="polite"></div>${canControl?`<div class="actions so-close-reveal-actions"><button class="button outline" data-action="estimate-reveal-skip">Skip to results</button><button class="button primary" data-action="advance" hidden>${nextQuestionLabel(s)} ${icons('arrow-right')}</button></div>`:''}</div>`;
+  } else if(isEstimateShow(s.mode) && s.phase==='reveal' && s.estimateReveal){
+    body=`<div class="game-panel so-close-broadcast"><div class="eyebrow">ROUND ${s.index+1}${s.mode==='wayoff'?` · ${s.stillIn} STILL IN`:` OF ${s.total}`}</div><p class="so-close-reveal-prompt">${controllerOnly?'Round results':escape(s.question.prompt)}</p>${s.wayOut?`<div class="way-out" role="status">${s.wayOut.length?`<strong>WAY OFF!</strong> ${s.wayOut.map(row=>`<span class="way-out-player">${avatarView(row,escape)}${escape(row.name)}</span>`).join('')} ${s.wayOut.length===1?'is':'are'} out.${!host&&s.out?' That includes you.':''}`:'<strong>NOBODY IS OUT</strong> Not enough guesses to cut anyone.'}</div>`:''}<div id="so-close-frame" aria-live="polite"></div>${canControl?`<div class="actions so-close-reveal-actions"><button class="button outline" data-action="estimate-reveal-skip">Skip to results</button><button class="button primary" data-action="advance" hidden>${nextQuestionLabel(s)} ${icons('arrow-right')}</button></div>`:''}</div>`;
   } else if (host && s.privateQuestions) {
     const revealed = s.phase === 'reveal';
     timer = !revealed && s.ends ? '<div class="tv-clock"><span class="timer" id="timer"></span><small>TIME LEFT</small></div>' : '';
@@ -1062,7 +1062,7 @@ function render(s) {
       : locked ? question.type === 'estimate' ? 'Another guess was closer.' : 'Incorrect.' : 'Question closed.';
     const response = host && !revealed
       ? `<progress id="response-progress" class="response-progress" value="${s.answered}" max="${Math.max(1, responseTarget(s))}" aria-label="Players who answered"></progress>` : '';
-    const promptHelp = !revealed ? `<p class="question-guide">${host && special ? 'On your phone: ' : ''}${s.mode === 'soclose' ? 'Swipe the number wheel or enter a number, then lock in your guess.' : answerGuide(question.type)[1]}</p>` : '';
+    const promptHelp = !revealed ? `<p class="question-guide">${host && special ? 'On your phone: ' : ''}${isEstimateShow(s.mode) ? 'Swipe the number wheel or enter a number, then lock in your guess.' : answerGuide(question.type)[1]}</p>` : '';
     const playerFeedback = !host && (revealed || locked || sending || eliminated)
       ? `<div class="player-answer-feedback" role="status" data-feedback="${revealed ? won ? 'correct' : 'incorrect' : eliminated ? 'spectating' : locked ? 'locked' : 'sending'}">
         <span class="feedback-mark" aria-hidden="true">${revealed ? won ? '✓' : '!' : eliminated ? '•' : locked ? '✓' : '…'}</span>
@@ -1079,7 +1079,7 @@ function render(s) {
       ${playerFeedback}
       ${timer && !host ? '<div class="time-track" aria-hidden="true"><div id="time-fill"></div></div>' : ''}
       ${promptHelp}
-      ${s.mode === 'soclose' ? soCloseView(question,{draft,selection,revealed,host,disabled:eliminated || sending,closest:s.closest,guesses:s.estimateGuesses},escape) : special ? specialAnswer(question, { draft, selection, revealed, host, disabled: eliminated || sending, closest: s.closest }, escape) : `<div class="answers ${s.question.options.length === 2 ? 'binary-answers' : ''}">${s.question.options.map((option, index) => `<button style="--answer:${colors[index]};--share:${s.breakdown && s.answered ? s.breakdown[index] * 100 / s.answered : 0}%" class="answer ${selection === index ? 'selected' : ''} ${revealed && s.question.correct === index ? 'correct' : ''}"
+      ${isEstimateShow(s.mode) ? soCloseView(question,{draft,selection,revealed,host,disabled:eliminated || sending,closest:s.closest,guesses:s.estimateGuesses},escape) : special ? specialAnswer(question, { draft, selection, revealed, host, disabled: eliminated || sending, closest: s.closest }, escape) : `<div class="answers ${s.question.options.length === 2 ? 'binary-answers' : ''}">${s.question.options.map((option, index) => `<button style="--answer:${colors[index]};--share:${s.breakdown && s.answered ? s.breakdown[index] * 100 / s.answered : 0}%" class="answer ${selection === index ? 'selected' : ''} ${revealed && s.question.correct === index ? 'correct' : ''}"
        data-dim="${revealed ? s.question.correct !== index : !host && selection !== undefined && selection !== index}" data-action="answer" data-option="${index}" ${host || revealed || locked || sending || eliminated ? 'disabled' : ''}>
       <strong>${'ABCD'[index]}</strong><span>${escape(option)}${revealed && s.question.correct === index ? '<b class="answer-tick" aria-hidden="true"> ✓</b>' : ''}</span>
       ${s.breakdown ? `<small class="answer-count"><b class="vote-share">${s.answered ? Math.round(100 * s.breakdown[index] / s.answered) : 0}%</b><span>${s.breakdown[index]} ${s.breakdown[index] === 1 ? 'vote' : 'votes'}</span></small>` : ''}</button>`).join('')}</div>`}
@@ -1129,7 +1129,7 @@ function render(s) {
   const boost = s.boost > 1 && ['ready', 'rolling', 'question', 'reveal'].includes(s.phase)
     ? `<span class="score-boost">${icons('zap')} Double points</span>` : '';
   const mode = modes.find(([id]) => id === s.mode);
-  const result = !host && s.phase === 'reveal' && s.mode!=='soclose' ? won ? 'win' : s.selection !== undefined ? 'miss' : 'skip'
+  const result = !host && s.phase === 'reveal' && !isEstimateShow(s.mode) ? won ? 'win' : s.selection !== undefined ? 'miss' : 'skip'
     : !host && s.phase === 'question' && s.selection !== undefined ? 'locked' : '';
   const completed = ['reveal', 'score-break', 'party-reveal','sketch-reveal'].includes(s.phase) ? s.index + 1 : s.index;
   // Knockout shows its six levels rather than sixty dots.
@@ -1253,7 +1253,7 @@ function render(s) {
 
 function updateSoCloseReveal(s=state){
   const target=document.querySelector('#so-close-frame');
-  if(!target||!s?.estimateReveal||s.mode!=='soclose'||s.phase!=='reveal')return;
+  if(!target||!s?.estimateReveal||!isEstimateShow(s.mode)||s.phase!=='reveal')return;
   const frame=soCloseStage(soCloseFrame(s.estimateReveal,Date.now()+offset),s.estimateReveal);
   const key=frame.kind+'/'+frame.shown;
   if(target.dataset.frame===key)return;
@@ -1370,7 +1370,7 @@ function receive(next, current) {
   if (soundEnabled && current.host && state) {
     if (state.phase !== next.phase || state.index !== next.index) {
       const staged = stageable(next) && !prefersReducedMotion();
-      if (!(next.mode==='soclose' && next.phase==='reveal') && !staged && (!next.ceremony || matchMedia('(prefers-reduced-motion: reduce)').matches)) playCue(sound, next.mode, next.phase);
+      if (!(isEstimateShow(next.mode) && next.phase==='reveal') && !staged && (!next.ceremony || matchMedia('(prefers-reduced-motion: reduce)').matches)) playCue(sound, next.mode, next.phase);
     }
     else if (next.mode === 'potato' && next.party?.passes > state.party?.passes) playCue(sound, next.mode, 'pass');
     soundMoments(state, next);

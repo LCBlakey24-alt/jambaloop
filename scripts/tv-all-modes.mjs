@@ -14,7 +14,7 @@ await mkdir('browser-screenshots',{recursive:true});
 const report=[];
 
 async function stageFor(mode,width,height) {
-  const setup={mode,format:mode==='soclose'?'estimate':'choice',category:'mixed',
+  const setup={mode,format:['soclose','wayoff'].includes(mode)?'estimate':'choice',category:'mixed',
     count:mode==='board'?12:['spotlight','bloodmoon'].includes(mode)?1:['tracks','samepage'].includes(mode)?3:5,
     seconds:mode==='quizrace'||['tracks','samepage'].includes(mode)?0:20,
     ...(mode==='board'||mode==='tracks'||mode==='showdown'?{playStyle:'teams',teamCount:2}:{playStyle:'individual'}),

@@ -54,9 +54,9 @@ export function partyView(state, { host, canControl, escape, reply, icons }) {
     if (host) return `<section class="game-panel party-panel potato-panel potato-circle-stage">
       <div class="eyebrow">HOT POTATO · SHARED COUNTDOWN</div>
       ${potatoCircleView(party, escape, avatarView)}${rescue}</section>`;
-    return `<section class="game-panel party-panel potato-panel">
+    return `<section class="game-panel party-panel potato-panel"${party.holding ? ' data-holding' : ''}>
       <div class="eyebrow">HOT POTATO · SHARED COUNTDOWN</div>
-      ${party.holding ? `<div class="phone-potato" aria-hidden="true"><div class="hot-potato-pulse">${potatoSvg}</div></div>` : ''}
+      <div class="phone-potato" aria-hidden="true"><div class="hot-potato-pulse">${potatoSvg}</div></div>
       <h1>${party.holding ? 'You have the potato!' : holder + ' has the potato'}</h1>
       <div class="party-holder">${avatarView(party.holder, escape)}<p>${party.passes} successful ${party.passes === 1 ? 'pass' : 'passes'}</p></div>
       ${feedback ? `<p class="party-feedback" role="status">${feedback}</p>` : ''}

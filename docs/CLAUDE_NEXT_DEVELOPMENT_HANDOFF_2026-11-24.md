@@ -1,5 +1,7 @@
 # Claude Code — next development handoff (24 November 2026, evening)
 
+> **Superseded in part (25 Nov 2026):** deploy status and game counts below are historical. Current truth: [STATUS_2026-11-25.md](STATUS_2026-11-25.md) — 19 games live on `main` 630732a.
+
 Owner-approved direction: Jambaloop should feel like a library of individually designed original TV game shows, with dramatic reveals, TV-first play, optional full-question accessibility on phones, continuous content expansion, and eventual original British presenter narration. This addendum supersedes earlier planning where the library size or new-game priority conflicts; read the previous dated handoff and root CLAUDE.md as well.
 
 ## Current work and release order

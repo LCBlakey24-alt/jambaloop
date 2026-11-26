@@ -1,0 +1,113 @@
+/* Bloodmoon: a moonlit village in deep plum and crimson. Text always sits on
+   a solid dark panel; the moon and mist are decoration at the edges. */
+.game[data-mode="bloodmoon"] .blood-game {
+  --blood: #e5484d; --blood-soft: #ff8a8f; --moon: #ffe9c2; --dusk: #1a1030; --dusk-2: #2a1846; --mist: #cdbfe6; --safe: #7be0a8;
+  position: relative; overflow: hidden; display: grid; gap: clamp(.8rem, 2vh, 1.4rem); align-content: start;
+  color: #fff; background: linear-gradient(170deg, var(--dusk-2), var(--dusk) 70%); border: 2px solid #4a2d6e; border-radius: 22px;
+  padding: clamp(1rem, 3vh, 2rem) clamp(1rem, 3vw, 2.4rem);
+}
+.blood-game[data-blood="dawn"], .blood-game[data-blood="day"], .blood-game[data-blood="vote"], .blood-game[data-blood="verdict"] {
+  background: linear-gradient(170deg, #4a2440, #2a1838 70%); border-color: #7a4560;
+}
+.blood-head { display: flex; justify-content: space-between; align-items: start; gap: 1rem; position: relative; z-index: 1; }
+.blood-kicker { display: inline-block; font-weight: 800; letter-spacing: .16em; font-size: .82rem; color: var(--blood-soft); }
+.blood-head h1 { margin: .15em 0 .2em; font-size: clamp(1.7rem, 5.4vw, 3.4rem); line-height: 1.05; color: #fff; text-wrap: balance; }
+.blood-head p { margin: 0; font-size: clamp(1rem, 2.2vw, 1.5rem); color: var(--mist); max-width: 46ch; }
+.blood-timer { text-align: center; flex: none; background: #0d0718; border: 2px solid #4a2d6e; border-radius: 14px; padding: .4rem .8rem; }
+.blood-timer small { display: block; font-size: .65rem; letter-spacing: .14em; color: var(--mist); }
+.blood-timer .timer { font-size: clamp(1.4rem, 3vw, 2.2rem); font-weight: 800; color: var(--moon); }
+
+/* The moon sits in the top-right corner, clear of the text. */
+.blood-moon { position: absolute; right: -4vmin; top: -6vmin; width: 34vmin; aspect-ratio: 1; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle at 38% 36%, #ffb3a0, #d5413f 55%, #7a1626 100%); opacity: .32; box-shadow: 0 0 12vmin 2vmin #e5484d55; }
+.blood-moon i { position: absolute; border-radius: 50%; background: #5a0f1e55; }
+.blood-moon i:nth-child(1) { width: 18%; aspect-ratio: 1; left: 24%; top: 30%; }
+.blood-moon i:nth-child(2) { width: 11%; aspect-ratio: 1; left: 56%; top: 54%; }
+.blood-moon i:nth-child(3) { width: 8%; aspect-ratio: 1; left: 40%; top: 66%; }
+
+.blood-progress { display: flex; align-items: baseline; gap: .6rem; margin: 0; position: relative; z-index: 1; }
+.blood-progress strong { font-size: clamp(1.8rem, 5vw, 3.2rem); color: var(--moon); font-variant-numeric: tabular-nums; }
+.blood-progress span { font-size: clamp(1rem, 2vw, 1.4rem); color: var(--mist); }
+
+.blood-seats { list-style: none; margin: 0; padding: 0; display: grid; gap: .6rem; grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); position: relative; z-index: 1; }
+.blood-seat { width: 100%; min-height: 4.6rem; display: grid; justify-items: center; align-content: center; gap: .2rem; padding: .6rem .4rem; text-align: center;
+  color: #fff; background: #120a22; border: 2px solid #3d2760; border-radius: 16px; font: inherit; }
+button.blood-seat { cursor: pointer; }
+button.blood-seat:hover, button.blood-seat:focus-visible { border-color: var(--moon); outline: none; }
+.blood-seats li[data-chosen] .blood-seat { border-color: var(--blood); background: #3a1024; box-shadow: 0 0 0 3px #e5484d55; }
+.blood-seats li[data-out] .blood-seat { opacity: .62; border-style: dashed; }
+.blood-seats li[data-out] .blood-seat-name { text-decoration: line-through; }
+.blood-seats li[data-away] .blood-face { filter: grayscale(1); }
+.blood-seat-name { font-weight: 800; font-size: 1.05rem; overflow-wrap: anywhere; }
+.blood-seat small { font-size: .78rem; color: var(--mist); }
+.blood-mate-pick { color: var(--blood-soft) !important; font-weight: 700; }
+.blood-face .player-avatar { width: 2.6rem; height: 2.6rem; font-size: 1.1rem; }
+.blood-tag { display: inline-flex; align-items: center; gap: .3em; font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+  padding: .18em .6em; border-radius: 99px; background: #2c3f66; color: #dbe7ff; }
+.blood-tag[data-role="vampire"] { background: #6e1524; color: #ffd9db; }
+.blood-tag[data-role="oracle"] { background: #3c2a7a; color: #e3d9ff; }
+.blood-tag[data-role="warden"] { background: #17503a; color: #c9f5de; }
+.blood-tag .blood-role-icon { width: 1.1em; height: 1.1em; }
+
+.blood-role-card { background: #0d0718; border: 2px solid #4a2d6e; border-radius: 16px; position: relative; z-index: 1; }
+.blood-role-card summary { display: flex; justify-content: space-between; gap: 1rem; padding: .8rem 1rem; cursor: pointer; font-weight: 800; list-style: none; }
+.blood-role-card summary::-webkit-details-marker { display: none; }
+.blood-role-card summary em { font-style: normal; font-weight: 600; color: var(--mist); }
+.blood-role-body { padding: 0 1rem 1rem; display: grid; justify-items: center; text-align: center; gap: .4rem; }
+.blood-role-body .blood-role-icon { width: 4rem; height: 4rem; color: var(--moon); }
+.blood-role-card[data-role="vampire"] { border-color: var(--blood); }
+.blood-role-card[data-role="vampire"] .blood-role-icon, .blood-role-card[data-role="vampire"] h2 { color: var(--blood-soft); }
+.blood-role-body h2 { margin: 0; font-size: 2rem; color: var(--moon); }
+.blood-role-body p { margin: 0; color: #efe8ff; font-size: 1.05rem; }
+.blood-findings { list-style: none; margin: .4rem 0 0; padding: 0; display: grid; gap: .3rem; width: 100%; }
+.blood-findings li, .blood-vision { background: #17503a; color: #e6fff2; border-radius: 10px; padding: .5rem .7rem; margin: 0; }
+.blood-findings li[data-vampire="true"], .blood-vision[data-vampire="true"] { background: #6e1524; color: #ffe3e4; }
+.blood-vision { position: relative; z-index: 1; font-size: 1.1rem; }
+.blood-locked, .blood-own-result { margin: 0; padding: .7rem 1rem; border-radius: 12px; background: #0d0718; border: 2px solid #4a2d6e; color: var(--moon); font-weight: 700; text-align: center; position: relative; z-index: 1; }
+
+.blood-news { display: grid; justify-items: center; text-align: center; gap: .3rem; padding: clamp(.8rem, 3vh, 1.8rem); border-radius: 18px; background: #0d0718; border: 3px solid var(--blood); position: relative; z-index: 1; }
+.blood-news[data-kind="safe"], .blood-news[data-kind="caught"] { border-color: var(--safe); }
+.blood-news h2 { margin: 0; font-size: clamp(1.5rem, 4.6vw, 3rem); color: #fff; text-wrap: balance; }
+.blood-news p { margin: 0; font-size: clamp(1.05rem, 2.4vw, 1.7rem); color: var(--moon); }
+.blood-news .player-avatar { width: clamp(3.4rem, 9vmin, 6rem); height: clamp(3.4rem, 9vmin, 6rem); font-size: 2rem; }
+
+.blood-tally { list-style: none; margin: 0; padding: 0; display: grid; gap: .45rem; position: relative; z-index: 1; }
+.blood-tally li { display: grid; grid-template-columns: auto minmax(5rem, 12rem) 1fr auto; align-items: center; gap: .7rem; background: #120a22; border-radius: 12px; padding: .4rem .8rem; font-size: clamp(1rem, 2vw, 1.4rem); }
+.blood-tally .blood-abstained { grid-template-columns: 1fr auto; color: var(--mist); }
+.blood-bar { height: .9rem; background: #2a1846; border-radius: 99px; overflow: hidden; }
+.blood-bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--blood), var(--blood-soft)); border-radius: 99px; }
+
+.blood-cast { list-style: none; margin: 0; padding: 0; display: grid; gap: .6rem; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); position: relative; z-index: 1; }
+.blood-cast li { display: grid; justify-items: center; gap: .25rem; padding: .7rem .4rem; border-radius: 16px; background: #120a22; border: 2px solid #3d2760; text-align: center; }
+.blood-cast li[data-role="vampire"] { border-color: var(--blood); background: #2a0d1b; }
+.blood-cast li[data-out] { opacity: .75; }
+.blood-finished[data-winner="village"] { background: linear-gradient(170deg, #5b3a2a, #2a1838 75%); border-color: #c98a4a; }
+.blood-actions { position: relative; z-index: 1; }
+
+/* TV: bigger seats and names for the sofa. */
+.game.host-screen[data-mode="bloodmoon"] .blood-seats { grid-template-columns: repeat(auto-fill, minmax(clamp(9rem, 13vw, 14rem), 1fr)); gap: clamp(.5rem, 1.2vh, 1rem); }
+.game.host-screen[data-mode="bloodmoon"] .blood-seat-name { font-size: clamp(1.1rem, 1.9vw, 1.7rem); }
+.game.host-screen[data-mode="bloodmoon"] .blood-face .player-avatar { width: clamp(2.6rem, 7vh, 4.4rem); height: clamp(2.6rem, 7vh, 4.4rem); }
+.game.host-screen[data-mode="bloodmoon"] .blood-game { min-height: 72vh; }
+
+/* Phones: two big tap targets per row. */
+@media (max-width: 760px) {
+  .blood-seats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .blood-seat { min-height: 5.2rem; }
+  .blood-moon { width: 44vmin; opacity: .22; }
+  .blood-tally li { grid-template-columns: auto 1fr auto; }
+  .blood-tally .blood-bar { display: none; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .blood-moon { animation: blood-moon-rise 1.6s cubic-bezier(.2, .8, .2, 1) backwards, blood-moon-glow 6s ease-in-out 1.6s infinite alternate; }
+  .blood-news { animation: blood-news-in .7s cubic-bezier(.2, 1.2, .3, 1) .25s backwards; }
+  .blood-seats li[data-chosen] .blood-seat { animation: blood-chosen .35s ease-out; }
+  .blood-bar i { animation: blood-bar 1s ease-out .5s backwards; transform-origin: left; }
+  .blood-role-card[open] .blood-role-body { animation: blood-news-in .45s ease-out backwards; }
+}
+@keyframes blood-moon-rise { from { transform: translateY(30vmin); opacity: 0; } }
+@keyframes blood-moon-glow { to { box-shadow: 0 0 16vmin 5vmin #e5484d66; } }
+@keyframes blood-news-in { from { transform: scale(.86); opacity: 0; } }
+@keyframes blood-chosen { from { transform: scale(.94); } }
+@keyframes blood-bar { from { transform: scaleX(0); } }

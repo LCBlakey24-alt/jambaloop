@@ -3,7 +3,7 @@ import { curvedLayout, TILE_TOP } from './board-layout.js';
 import * as THREE from '/vendor/three.module.js';
 import { boardRollDuration, categories } from './game-config.js';
 import { tableSurface, towerDieScale, towerExit, towerImpacts, towerOrigin, towerPose, towerRamps, towerSettle } from './tower-motion.js';
-import { boardPrint, checkerFace, coated, dieFace, tileCard, tileDisc, tileFace, woodMaterial } from './table-materials.js';
+import { boardPrint, brushedMetal, checkerFace, coated, dieFace, tileCard, tileDisc, tileFace, woodMaterial } from './table-materials.js';
 
 const diceFaces = [
   [1, [0, 1, 0]], [6, [0, -1, 0]], [2, [0, 0, 1]],
@@ -31,43 +31,66 @@ function tableTone(state) {
   return tone[state.theme] ?? tone.club;
 }
 
-function label(text, background, foreground, detail) {
+// A nameplate texture drawn at the same shape as the plate it goes on, so the
+// lettering is never stretched. `aspect` is the plate's width divided by height.
+function label(text, background, foreground, detail, aspect = 1) {
   const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 512;
+  const width = 1024, height = Math.max(64, Math.round(width / aspect));
+  canvas.width = width;
+  canvas.height = height;
   const context = canvas.getContext('2d');
+  const corner = height * .16;
   context.fillStyle = background;
   context.beginPath();
-  context.roundRect(0, 0, 512, 512, 36);
+  context.roundRect(0, 0, width, height, corner);
   context.fill();
-  const sheen = context.createLinearGradient(0, 0, 512, 512);
-  sheen.addColorStop(0, '#ffffff30');
-  sheen.addColorStop(.47, '#ffffff04');
-  sheen.addColorStop(1, '#00000021');
+  const sheen = context.createLinearGradient(0, 0, 0, height);
+  sheen.addColorStop(0, '#ffffff38');
+  sheen.addColorStop(.5, '#ffffff05');
+  sheen.addColorStop(1, '#00000030');
   context.fillStyle = sheen;
   context.fill();
+  const inset = height * .09;
   context.beginPath();
-  context.roundRect(20, 20, 472, 472, 28);
-  context.strokeStyle = foreground + '47';
-  context.lineWidth = 5;
+  context.roundRect(inset, inset, width - inset * 2, height - inset * 2, corner * .7);
+  context.strokeStyle = foreground + '70';
+  context.lineWidth = Math.max(3, height * .025);
   context.stroke();
+  // Engraved screws at each end.
   context.fillStyle = foreground;
-  for (const x of [46, 466]) for (const y of [46, 466]) {
+  for (const x of [inset * 2.4, width - inset * 2.4]) {
     context.beginPath();
-    context.arc(x, y, 6, 0, 2 * Math.PI);
+    context.arc(x, height / 2, height * .045, 0, 2 * Math.PI);
     context.fill();
   }
   context.textAlign = 'center';
   context.textBaseline = 'middle';
-  context.font = detail ? 'bold 168px sans-serif' : 'bold 102px sans-serif';
-  context.fillText(text, 256, detail ? 203 : 256, 455);
-  if (detail) {
-    context.font = 'bold 62px sans-serif';
-    context.fillText(detail.toUpperCase(), 256, 363, 440);
+  if (detail && aspect < 1.6) {
+    // A squarer plate: the name above, the detail below.
+    context.fillStyle = foreground;
+    context.font = `800 ${height * .26}px Georgia, 'Times New Roman', serif`;
+    context.fillText(text, width / 2, height * .42, width - inset * 4);
+    context.font = `700 ${height * .1}px Georgia, 'Times New Roman', serif`;
+    context.fillText(detail.toUpperCase(), width / 2, height * .66, width - inset * 4);
+    const square = new THREE.CanvasTexture(canvas);
+    square.colorSpace = THREE.SRGBColorSpace;
+    square.anisotropy = 8;
+    return square;
   }
+  const words = detail ? `${text} ${detail.toUpperCase()}` : text;
+  // One line of lettering, sized to the plate's height and never squeezed sideways.
+  let size = height * .56;
+  context.font = `800 ${size}px Georgia, 'Times New Roman', serif`;
+  const room = width - inset * 7;
+  const measured = context.measureText(words).width;
+  if (measured > room) { size *= room / measured; context.font = `800 ${size}px Georgia, 'Times New Roman', serif`; }
+  context.fillStyle = '#00000055';
+  context.fillText(words, width / 2 + 2, height / 2 + 3);
+  context.fillStyle = foreground;
+  context.fillText(words, width / 2, height / 2);
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
-  texture.anisotropy = 4;
+  texture.anisotropy = 8;
   return texture;
 }
 
@@ -244,7 +267,7 @@ function buildBoard(scene, state, shadowMap) {
     board.add(stud);
   }
   const plaque = new THREE.Mesh(new THREE.PlaneGeometry(1.56, .18), new THREE.MeshBasicMaterial({
-    map: label('BOARD RACE', baseColor, accent, ''), transparent: true,
+    map: label('BOARD RACE', baseColor, accent, '', 1.56 / .18), transparent: true,
   }));
   plaque.position.set(0, -.17, 3.183);
   board.add(plaque);
@@ -432,10 +455,10 @@ function buildBoard(scene, state, shadowMap) {
 function buildTower(scene, baseColor, accent) {
   const group = new THREE.Group();
   group.position.set(towerOrigin.x, 0, towerOrigin.z);
-  const frame = woodMaterial('#654233');
-  const brass = coated('#bd8e56', .32, .55);
-  const edge = coated('#f5c88c', .26, .45);
-  const cabinet = coated(baseColor, .39);
+  const frame = woodMaterial('#5a3524');
+  const brass = brushedMetal('#c79a55');
+  const edge = brushedMetal('#e8c487', .3);
+  const cabinet = feltMaterial(baseColor);
   const glass = new THREE.MeshPhysicalMaterial({
     color: '#c7e9ea', transparent: true, opacity: .13, roughness: .22, side: THREE.DoubleSide,
     depthWrite: false, metalness: .2,
@@ -477,11 +500,34 @@ function buildTower(scene, baseColor, accent) {
   box(1.32, .087, .13, brass, 0, 1.61, .6);
   box(1.1, .39, .077, frame, 0, 3.56, .621, .036);
   const badge = new THREE.Mesh(new THREE.PlaneGeometry(1.0, .31), new THREE.MeshBasicMaterial({
-    map: label('DICE', '#382534', '#fff1cb', 'Tower'), transparent: true,
+    map: label('DICE', '#2a1a14', '#f3d9a4', 'Tower', 1.0 / .31), transparent: true,
   }));
   badge.position.set(0, 3.56, .662);
   group.add(badge);
 
+  // Rivets up each front post, corner brackets, a cross-brace on the back and turned feet.
+  const rivet = new THREE.SphereGeometry(.026, 10, 8);
+  for (const x of [-.62, .62]) for (let y = .55; y < 3.7; y += .32) {
+    const stud = new THREE.Mesh(rivet, edge);
+    stud.position.set(x, y, .705);
+    stud.scale.z = .5;
+    group.add(stud);
+  }
+  for (const x of [-.62, .62]) for (const y of [.5, 3.6]) for (const z of [-.6, .6]) {
+    box(.24, .05, .24, brass, x, y, z, .012);
+  }
+  for (const turn of [-1, 1]) {
+    const brace = roundedBox(.05, 3.6, .03, .01, 3, brass);
+    brace.position.set(0, 2.05, -.66);
+    brace.rotation.z = turn * .33;
+    group.add(brace);
+  }
+  for (const x of [-.72, .72]) for (const z of [-.72, .72]) {
+    const foot = new THREE.Mesh(new THREE.SphereGeometry(.11, 14, 10), brass);
+    foot.position.set(x, -.02, z);
+    foot.scale.y = .6;
+    group.add(foot);
+  }
   // A warm lamp inside, so the die is easy to follow as it tumbles.
   const glow = new THREE.PointLight('#ffd9a0', 9, 5, 1.6);
   glow.position.set(0, 2.4, .1);

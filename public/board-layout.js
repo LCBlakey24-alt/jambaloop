@@ -18,26 +18,27 @@ function wave(from, to, amplitude, waves, samples = 22) {
     return [x0 + dx * t + nx * bump, z0 + dz * t + nz * bump];
   });
 }
-// A classic race-round-the-board track: start at the near-left, along the
-// front edge, up the right side (where the lanes fork), along the back, down
-// the left side and then in to a finish in the middle of the board.
+// A classic race-round-the-board track, long enough for plenty of spaces:
+// start at the near-left, along the front edge, up the right side and round
+// the far corner (where the lanes fork), along the back, down the left side,
+// then one lap inside the board to a finish in the middle.
 // Before the fork: the near-left corner and the front edge.
 const front = [
-  [-2.38, 1.05], [-2.38, 1.75], [-2.02, 2.3], [-1.3, 2.38], [-.4, 2.38], [.5, 2.38], [1.15, 2.3], [1.6, 1.95],
+  [-2.38, .62], [-2.38, 1.3], [-2.3, 1.95], [-1.85, 2.36], [-1.0, 2.4], [0, 2.4], [.9, 2.4], [1.35, 2.3], [1.62, 1.95],
 ];
-// The fork: Power Lane runs straight up the right side while Question Trail
-// swings out to the board edge, so the two lanes split clearly.
-const right = [[1.68, 1.4], [1.68, .7], [1.68, 0], [1.68, -.7], [1.68, -1.4], [1.5, -1.98]];
-// After the fork: along the back edge, down the left side, then in to the middle.
+// The fork: Power Lane runs up the right side a little in from the edge and
+// round the far corner; Question Trail runs outside it, along the board edge.
+const right = [[1.66, 1.3], [1.66, .5], [1.66, -.3], [1.66, -1.1], [1.5, -1.62], [1.05, -1.82], [.45, -1.84], [-.3, -1.84], [-.95, -1.84]];
+// After the fork: out to the back edge, down the left side, then the inner lap.
 const rest = [
-  [1.0, -2.36], [.2, -2.38], [-.7, -2.38], [-1.5, -2.36], [-2.1, -2.2], [-2.38, -1.65], [-2.38, -.95], [-2.3, -.25],
-  [-1.85, .22], [-1.1, .3], [-.35, .12],
+  [-1.5, -2.02], [-1.98, -2.0], [-2.32, -1.66], [-2.4, -1.3], [-2.3, -.9], [-2.0, -.65],
+  [-1.55, -.62], [-1.0, -.8], [-.4, -.98], [.1, -1.0], [.55, -.9], [.9, -.4], [.9, .3], [.78, 1.0], [.3, 1.5], [-.5, 1.62], [-1.25, 1.5], [-1.62, 1.0], [-1.58, .4], [-1.05, .08], [-.35, .2],
 ];
 export const routeSketch = [...front, ...right, ...rest];
 // Sketch points where Power Lane leaves and rejoins (the right-hand side).
 export const forkKnots = [front.length - 1, front.length + right.length - 1];
 // Inside the dice tower's exit chute (which reaches x = 2.63), so no tile sits under it.
-const TRAIL_EDGE = 2.3;
+const TRAIL_OFFSET = .7;
 // Top of the inlaid tiles: just proud of the painted path at y = .19.
 export const TILE_TOP = .215;
 
@@ -114,17 +115,21 @@ export function curvedLayout(spaces, fork) {
   const radius = Math.min(0.36, spacing * 0.38);
   // Question Trail: its own smooth arc from the fork out towards the right
   // edge and back to the rejoin point, clear of Power Lane's wiggles.
-  const from = main.getPointAt(uStart), to = main.getPointAt(uRejoin);
+  // Question Trail follows the main lane on its outer side, towards the board edge.
   const bulge = [];
-  for (let k = 0; k <= 16; k++) {
-    const t = k / 16;
-    const x = from.x + (to.x - from.x) * t, z = from.z + (to.z - from.z) * t;
-    bulge.push([x + (TRAIL_EDGE - x) * Math.pow(Math.sin(Math.PI * t), .3), z]);
+  for (let k = 0; k <= 28; k++) {
+    const t = k / 28;
+    const u = uStart + (uRejoin - uStart) * t;
+    const point = main.getPointAt(u), tangent = main.getTangentAt(u);
+    let nx = tangent.z, nz = -tangent.x;
+    if (nx * point.x + nz * point.z < 0) { nx = -nx; nz = -nz; }
+    const out = TRAIL_OFFSET * Math.pow(Math.sin(Math.PI * t), .3);
+    bulge.push([point.x + nx * out, point.z + nz * out]);
   }
   const trail = smoothCurve(bulge);
   const edges = fork.rejoin - fork.start + fork.extra;
   // Trail tiles fit their own (shorter) arc, so they can be a little smaller.
-  const trailRadius = Math.min(radius * .86, trail.getLength() * .84 / edges * .44);
+  const trailRadius = Math.min(radius * .7, trail.getLength() * .84 / edges * .44);
   function position(index, choice = 'power') {
     const finishIndex = choice === 'questions' ? spaces + fork.extra : spaces;
     let point;

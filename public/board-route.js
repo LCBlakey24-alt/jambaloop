@@ -1,7 +1,7 @@
 import { categoryName, boardRollDuration } from './game-config.js';
 
 export const boardLengths = [16, 24, 32, 40];
-export const boardTurnCaps = [12, 18, 24, 36, 48, 60];
+export const boardTurnCaps = [12, 18, 24, 36, 48, 60, 72, 96, 120];
 const genres = ['general', 'history', 'science', 'christmas', 'sports', 'geography', 'entertainment', 'food', 'news', 'art', 'animals', 'space', 'books', 'music', 'technology', 'games'];
 
 export function boardRoute(length, includeChristmas) {
@@ -115,7 +115,9 @@ export function boardStopsAtFork(spaces, from, die, choice) {
 }
 
 export function suggestedTurnCap(spaces, pieces) {
-  return boardTurnCaps.find(cap => cap >= Math.ceil(spaces / 3.5) * pieces) ?? boardTurnCaps.at(-1);
+  // Two spare rolls a side over the average, so the race is nearly always won at the centre
+  // rather than stopped by the turn limit.
+  return boardTurnCaps.find(cap => cap >= (Math.ceil(spaces / 3.5) + 2) * pieces) ?? boardTurnCaps.at(-1);
 }
 
 export function boardDuration({ spaces, pieces, players, cap, seconds, autoReveal }) {
@@ -157,3 +159,13 @@ export function boardDuration({ spaces, pieces, players, cap, seconds, autoRevea
 export function durationLabel({ minMinutes, maxMinutes }) {
   return (minMinutes === maxMinutes ? minMinutes : minMinutes + '–' + maxMinutes) + ' min';
 }
+
+/**
+ * Final order for a Board Race. Furthest round the board wins, then points.
+ * It never ends level: same space and same points goes to the side with more
+ * right answers per player, then the side that answered them faster.
+ */
+export const compareBoardTeams = spaces => (a, b) =>
+  boardMappedPosition(spaces, b.position, b.pathChoice) - boardMappedPosition(spaces, a.position, a.pathChoice)
+  || b.score - a.score || (b.correct ?? 0) - (a.correct ?? 0)
+  || (Number.isFinite(a.pace) ? a.pace : Infinity) - (Number.isFinite(b.pace) ? b.pace : Infinity) || a.id - b.id;

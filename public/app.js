@@ -29,7 +29,8 @@ import { knockoutLadder, phoneHearts, playKnockout, rememberLadder, shatterPhone
 import { boardLengths, boardRoute, boardDuration, durationLabel, suggestedTurnCap, boardRequiresChoice, boardPathChoices } from './board-route.js';
 import {teamPlayModes, defaultPlayStyle} from './team-play.js';
 import { avatarView, partyView } from './party-views.js';
-import { identityVariables } from './game-identities.js';
+import { identityOf, identityVariables } from './game-identities.js';
+import { hideStage, showStage } from './stage-3d.js';
 import { bumpCount, clockTension, lockRail, reactionFor, stageReveal, stageable, updateLockRail } from './show-moments.js';
 import {connectSketchPainter,paintSketchBoard,clearSketch} from './sketch-canvas.js';
 import { openLibrary, savedQuizzes } from './quiz-editor.js';
@@ -266,6 +267,7 @@ function renderModeCards(group = homeFilter) {
     app.querySelector('#mode-pager').hidden = true;
     shell.dataset.homeView = 'carousel';
     themeHome(shell, matches[carouselIndex][0]);
+    stageFor(shell, matches[carouselIndex][0]);
     const count = app.querySelector('#mode-count');
     if (count) count.textContent = 'Every game, one party · ← → to browse';
     return;
@@ -1188,6 +1190,7 @@ function render(s) {
   if (host && s.phase === 'lobby' && s.picker && s.playerCount > 0 && s.captainName && !s.welcome && !welcomedRooms().includes(s.code)) requestWelcome();
   if (welcome && s.phase !== 'lobby') closeWelcome();
   if (s.phase === 'lobby' && s.picker) bindPickerSwipe(app, direction => stepPicker(direction));
+  if (host && s.phase === 'lobby') stageFor(app.querySelector('.game'), shownMode); else hideStage();
   // Hot Potato: the potato arcs from the old holder's seat to the new one.
   animatePotato(host?app:null, s.code+'/'+s.game, matchMedia('(prefers-reduced-motion: reduce)').matches);
   if(s.mode!=='quizrace'&&race3d) disposeRace3d();
@@ -1414,6 +1417,7 @@ function receive(next, current) {
     if (welcome && picker.version !== welcome.version) { welcome.version = picker.version; welcomeAction('end'); }
     // Follow the room, except just after this screen moved it itself.
     if (Date.now() - lastLocalPick > 700) movePicker(app, picker.mode, escape);
+    if (current.host) stageFor(app.querySelector('.game'), picker.mode);
   }
   const responseProgress = document.querySelector('#response-progress');
   if (responseProgress) {
@@ -1543,6 +1547,12 @@ function closeWelcome() {
   if (isWelcomeNarration()) stopNarration();
   welcome?.close();
   welcome = undefined;
+}
+
+/** The live 3D backdrop, tinted for a game. */
+function stageFor(element, mode) {
+  const { accent, accent2, ink } = identityOf(mode);
+  showStage(element, { accent, accent2, ink });
 }
 
 // The game in front of the shelf on this screen (it can be a step ahead of the room).
@@ -2259,6 +2269,7 @@ function stepCarousel(delta, { auto = false } = {}) {
   if (!moveCarousel(carousel, list, carouselIndex, carouselVoice)) carousel.innerHTML = carouselView(list, carouselIndex, carouselVoice);
   const mode = list[carouselIndex][0];
   themeHome(app.querySelector('[data-home-shell]'), mode);
+  stageFor(app.querySelector('[data-home-shell]'), mode);
   stopNarration();
   clearTimeout(carouselTimer);
   // Speak only once the shelf settles, so quick browsing stays quiet.

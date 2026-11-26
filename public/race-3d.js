@@ -387,8 +387,23 @@ export function mountRace3D({ key, track = 'neon', reducedMotion = false }) {
       car.rotation.y = Math.atan2(-t.z, t.x);
       car.rotation.z = Math.asin(THREE.MathUtils.clamp(t.y, -1, 1));
       const boosting = racer.speed > 1.02;
-      const { wheels, flame, flameMaterial } = car.userData;
+      const { wheels, flame, flameMaterial, glowMaterial, paint } = car.userData;
       flame.visible = boosting && racer.finishedAt === undefined;
+      // Power-ups: a rammed car flashes red and fishtails; a boosting car
+      // glows white-hot with a long flame; the rammer lunges forward.
+      const rammed = racer.power === 'rammed';
+      const boosted = racer.power === 'boost';
+      glowMaterial.color.set(rammed ? '#ff2a2a' : boosted ? '#ffffff' : racer.color);
+      glowMaterial.opacity = rammed || boosted ? 0.95 : 0.45;
+      paint.emissive.set(rammed ? '#ff2a2a' : '#000000');
+      paint.emissiveIntensity = rammed ? 0.6 : 0;
+      if (boosted) flame.visible = true;
+      if (!reducedMotion) {
+        const beat = (sim ?? performance.now()) / 45;
+        if (rammed) { car.rotation.y += Math.sin(beat) * 0.32; car.position.y += Math.abs(Math.sin(beat * 1.3)) * 0.07; }
+        if (racer.power === 'ram') car.position.addScaledVector(t, 0.18);
+        flame.scale.y = flame.scale.z = boosted ? 2.2 : 1;
+      }
       if (!reducedMotion) {
         car.position.y += Math.abs(Math.sin((sim ?? performance.now()) / 90 + racer.marker)) * 0.02;
         flame.scale.x = 0.7 + Math.random() * 0.6;
@@ -418,9 +433,10 @@ export function mountRace3D({ key, track = 'neon', reducedMotion = false }) {
     let distance = overviewDistance;
     if (!reducedMotion && Number.isFinite(packMin)) {
       // Fit the pack across (horizontal FOV) and into the screen (vertical FOV).
-      const across = (packMax - packMin) / 2 + 5.5;
-      const into = (packNear - packFar) / 2 * .85 + 3.6;
-      distance = THREE.MathUtils.clamp(Math.max(across / tanH, into / tanV), 8 / tanH, overviewDistance);
+      // Tighter than before so the cars read as cars from the sofa.
+      const across = (packMax - packMin) / 2 + 3.4;
+      const into = (packNear - packFar) / 2 * .85 + 2.4;
+      distance = THREE.MathUtils.clamp(Math.max(across / tanH, into / tanV), 5.2 / tanH, overviewDistance);
       centre = (packMin + packMax) / 2;
       depth = THREE.MathUtils.clamp((packNear + packFar) / 2, -6, 6);
     }

@@ -152,6 +152,11 @@ Closest-number and put-in-order sessions offer five questions when you choose on
 
 **Quiz Race power-ups and cars:** every racer gets **one Boost** (a 3-second burst without answering) and **three Rams** per race. A ram slows the nearest rival for 2.5 seconds, only lands when someone is within range, and a miss costs nothing. The server decides charges, range and timing. Phones show who's in range and what's left, and the victim's phone shakes and names who hit them. Vince calls every hit and boost. The 3D cars are low, wide sports cars with a rear wing, rimmed wheels, a tail-light bar and twin exhausts.
 
+**3D polish:**
+- **Backdrop:** a live 3D backdrop (`public/stage-3d.js`) floats game pieces (dice, stars, hearts, gems, rings and pawns) in depth behind the landing page and the TV lobby, lit in the colours of the game in front. It loads three.js on demand, only on larger screens, pauses when hidden, and is off with reduced motion or data saver.
+- **Transitions:** panels swing in with perspective, the header drops in, dialogs rise, and TV answer pads stand up.
+- **Quiz Race:** a closer camera, and visible power-ups. A rammed car flashes red and fishtails; a boost glows white-hot with a long flame.
+
 **Game stings:** each game has its own short musical sting on its title card (`public/audio/sfx/sting-<game>.mp3`), written in that game's style.
 
 **TV sound (opt-in, phones silent):** original ElevenLabs sound effects (`public/audio/sfx/`: drum-roll, reveal sting, correct chime, lock-in pop, whoosh, wheel, boxing bell, sizzle, fanfare, cheer) and two original instrumental themes (`public/audio/music/`: a looping lobby theme that dips under the hosts, and a winners' theme). They only play when the TV host turns Sound on. Generated with `scripts/generate-sfx.mjs`; made on a paid ElevenLabs plan.

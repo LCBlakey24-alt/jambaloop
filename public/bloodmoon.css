@@ -119,3 +119,6 @@ button.blood-seat:focus-visible { border-color: var(--moon); outline: none; }
 @keyframes blood-news-in { from { transform: scale(.86); opacity: 0; } }
 @keyframes blood-chosen { from { transform: scale(.94); } }
 @keyframes blood-bar { from { transform: scaleX(0); } }
+
+/* Cormorant's default figures are old-style; codes and counts need full-height digits. */
+.game[data-mode="bloodmoon"] { font-variant-numeric: lining-nums; }

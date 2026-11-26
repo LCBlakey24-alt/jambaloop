@@ -243,3 +243,76 @@ test('Board Race power-ups: any teammate can play one at any time, and each does
     assert.equal(s.teams[b].used.halved,true);
   }finally{server.kill();}
 });
+
+test('Board Race power-ups work everyone-against-everyone and with 2, 3 and 4 teams',async()=>{
+  const {spawn}=await import('node:child_process');
+  const {once}=await import('node:events');
+  const server=spawn(process.execPath,['server.js'],{env:{...process.env,PORT:'0',PUBLIC_URL:'',BOARD_START_POWERS:'1',ROOMS_PER_MINUTE:'5000'},stdio:['ignore','pipe','inherit']});
+  try{
+    const [output]=await once(server.stdout,'data');
+    const origin=String(output).match(/http:\/\/localhost:\d+/)[0];
+    const call=async(path,key,data)=>{
+      const response=await fetch(origin+'/api/rooms'+path,{method:data===undefined?'GET':'POST',headers:{...(key&&{'x-game-key':key}),'content-type':'application/json'},body:data===undefined?undefined:JSON.stringify(data)});
+      return {status:response.status,body:response.status===204?undefined:await response.json()};
+    };
+    for(const [playStyle,teamCount,people] of [['individual',4,2],['individual',4,3],['individual',4,4],['teams',2,5],['teams',3,7],['teams',4,9]]){
+      const label=`${playStyle} ${playStyle==='teams'?teamCount+' teams':people+' players'}`;
+      const {body:{code,host}}=await call('',undefined,{mode:'board',category:'mixed',count:12,seconds:0,playStyle,teamCount,boardLength:24,format:'choice'});
+      const path='/'+code;
+      const keys=[];
+      for(let i=0;i<people;i++)keys.push((await call(path+'/join',undefined,{name:'P'+i})).body.key);
+      const state=async key=>(await call(path,key??host)).body;
+      const lobby=await state();
+      assert.equal((await call(path+'/advance',host,{game:lobby.game,phase:'lobby',index:0,lobbyVersion:lobby.lobbyVersion})).status,204,label);
+      let s=await state();
+      const pieces=playStyle==='teams'?teamCount:people;
+      assert.equal(s.teams.length,pieces,label);
+      const sides=await Promise.all(keys.map(async key=>(await state(key)).player.team));
+      const first=id=>keys[sides.indexOf(id)];
+      const play=(key,power,target)=>call(path+'/board-power',key,{game:s.game,power,...(target!==undefined&&{target})});
+      for(const team of s.teams)assert.deepEqual(team.powers,{fifty:1,skip:1,points:1,half:1},label);
+      // Every side halves the next one round: each rival is a valid target, yourself and strangers are not.
+      for(let id=0;id<pieces;id++){
+        assert.equal((await play(first(id),'half',id)).status,400,label+': not yourself');
+        assert.equal((await play(first(id),'half',pieces)).status,400,label+': not a side that does not exist');
+        assert.equal((await play(first(id),'half',(id+1)%pieces)).status,204,label+': any rival');
+      }
+      s=await state();
+      assert.ok(s.teams.every(team=>team.halved&&team.powers.half===0),label);
+      await call(path+'/roll',host,{game:s.game,index:s.index});
+      for(let wait=0;wait<80;wait++){s=await state();if(s.phase==='question')break;await new Promise(done=>setTimeout(done,100));}
+      assert.equal(s.phase,'question',label);
+      // A side that is not on turn refreshes the question; every side then takes its own 50/50.
+      const prompt=s.question.prompt;
+      assert.equal((await play(first((s.activeTeam+1)%pieces),'skip')).status,204,label);
+      s=await state();
+      assert.notEqual(s.question.prompt,prompt,label);
+      for(let id=0;id<pieces;id++)assert.equal((await play(first(id),'fifty')).status,204,label);
+      const views=await Promise.all(keys.map(state));
+      views.forEach((view,i)=>{
+        assert.equal(view.removedOptions.length,2,label);
+        // Teammates share one 50/50; nobody is sent another side's.
+        assert.deepEqual(view.removedOptions,views[sides.indexOf(sides[i])].removedOptions,label);
+      });
+      assert.equal((await state()).removedOptions,undefined,label+': TV');
+      // Double Points for side 0 only; then everyone answers something their 50/50 kept.
+      assert.equal((await play(first(0),'points')).status,204,label);
+      for(const [i,key] of keys.entries())for(const option of [0,1,2,3].filter(o=>!views[i].removedOptions.includes(o)))await call(path+'/answer',key,{game:s.game,index:s.index,option});
+      assert.equal((await play(first(1),'points')).status,409,label+': too late after answering');
+      await call(path+'/advance',host,{game:s.game,phase:'question',index:s.index});
+      s=await state();
+      assert.equal(s.phase,'reveal',label);
+      const base=s.motion.points;
+      const scores=await Promise.all(keys.map(async key=>(await state(key)).player.score));
+      scores.forEach((score,i)=>{
+        if(!score)return;
+        // Side 0 is doubled and halved at once (back to normal); everyone else is halved.
+        if(sides[i]===0)assert.ok(score>=base,label+': doubled then halved');
+      });
+      const right=scores.map((score,i)=>score>0?i:-1).filter(i=>i>=0);
+      const zero=right.find(i=>sides[i]===0), other=right.find(i=>sides[i]!==0);
+      if(zero!==undefined&&other!==undefined)assert.ok(scores[zero]>scores[other],label+': the doubled side out-scores a halved one');
+      assert.ok(s.teams.every(team=>!team.halved&&!team.armed.points),label+': all spent');
+    }
+  }finally{server.kill();}
+});

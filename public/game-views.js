@@ -68,12 +68,13 @@ function powerChips(team) {
 export function powerBar(state, team) {
   if (!team?.powers) return '';
   const held = boardPowers.filter(power => team.powers[power.id]);
-  const notes = `${team.armed?.points ? '<p class="power-note is-good" role="status">Double Points is in play for your team.</p>' : ''}${team.halved ? '<p class="power-note is-bad" role="status">A rival has put your team on half points for the next question.</p>' : ''}`;
+  const solo = state.playStyle === 'individual';
+  const notes = `${team.armed?.points ? `<p class="power-note is-good" role="status">Double Points is in play for ${solo ? 'you' : 'your team'}.</p>` : ''}${team.halved ? `<p class="power-note is-bad" role="status">${safeName(state.teams[team.halved.by]?.name ?? 'A rival')} has put ${solo ? 'you' : 'your team'} on half points for the next question.</p>` : ''}`;
   if (!held.length) return `<section class="game-panel power-bar is-empty"><div class="eyebrow">POWER-UPS</div>${notes}<p>Land exactly on a corner to collect one.</p></section>`;
   const live = state.phase === 'question';
   const fourAnswers = state.question?.type === 'choice' && state.question.options?.length >= 4;
   const answered = state.selection !== undefined;
-  return `<section class="game-panel power-bar"><div class="eyebrow">YOUR TEAM’S POWER-UPS</div>${notes}${held.map(power => {
+  return `<section class="game-panel power-bar"><div class="eyebrow">${solo ? 'YOUR POWER-UPS' : 'YOUR TEAM’S POWER-UPS'}</div>${notes}${held.map(power => {
     const count = team.powers[power.id];
     const title = `<div><strong>${power.name}${count > 1 ? ' ×' + count : ''}</strong><small>${power.detail}</small></div>`;
     if (power.id === 'half') {

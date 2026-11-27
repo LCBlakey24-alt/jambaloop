@@ -225,3 +225,37 @@ test('After Dark is an adults-only deck for the trolley game: off by default, ne
     assert.ok(dealt.length>0&&dealt.every(card=>afterDarkGood.includes(card)),'the first placement deals from the After Dark deck');
   });
 });
+
+test('After Hours covers Punchline, Fill the Blank, Spot the Bluff and Same Page: opt-in, labelled, never mixed',async()=>{
+  const adult=await import('../after-hours.js');
+  const {afterHoursModes}=await import('../public/game-config.js');
+  assert.deepEqual([...afterHoursModes].sort(),['bluff','cards','punchline','samepage','tracks']);
+  const pools={punchline:adult.afterHoursPunchlines,cards:adult.afterHoursBlanks,bluff:adult.afterHoursBluffs,samepage:adult.afterHoursSamePage};
+  for(const [name,pool] of [...Object.entries(pools),['answer cards',adult.afterHoursCards]]){
+    assert.ok(pool.length>=24,name+' size');
+    assert.equal(new Set(pool).size,pool.length,name+' has no repeats');
+    assert.ok(pool.every(text=>typeof text==='string'&&text.length>=4&&text.length<=170),name+' lengths');
+  }
+  for(const blank of adult.afterHoursBlanks)assert.equal(blank.split('____').length,2,blank);
+  for(const card of adult.afterHoursCards)assert.ok(card.length<=60&&!/[.?!]$/.test(card),card);
+  await liveServer(async({request})=>{
+    for(const [mode,pool] of Object.entries(pools))for(const afterDark of [false,true]){
+      const setup=await request('',undefined,{mode,playStyle:'individual',category:'mixed',format:'mixed',count:3,seconds:0,...(afterDark&&{afterDark})},201);
+      const path='/'+setup.code;const keys=[];
+      for(let i=0;i<4;i++)keys.push((await request(path+'/join',undefined,{name:'P'+i},201)).key);
+      let now=await request(path,setup.host);
+      assert.equal(now.afterDark,afterDark||undefined,mode+' lobby flag');
+      await request(path+'/advance',setup.host,{game:now.game,index:now.index,phase:now.phase,lobbyVersion:now.lobbyVersion},204);
+      const views=await Promise.all([setup.host,...keys].map(key=>request(path,key)));
+      const prompts=[...new Set(views.map(view=>view.party?.prompt).filter(Boolean))];
+      assert.ok(prompts.length>=1,mode+' shows a prompt');
+      // Spot the Bluff hides the prompt from the bluffer, so look at everyone who was shown one.
+      for(const prompt of prompts)assert.equal(pool.includes(prompt),afterDark,`${mode}: "${prompt}" ${afterDark?'should be':'must not be'} an After Hours prompt`);
+      if(mode==='cards'){
+        const hands=views.flatMap(view=>view.party?.hand??[]);
+        assert.ok(hands.length>0);
+        assert.ok(hands.every(card=>adult.afterHoursCards.includes(card)===afterDark),'answer cards match the room’s setting');
+      }
+    }
+  });
+});

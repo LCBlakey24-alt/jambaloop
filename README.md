@@ -207,3 +207,11 @@ Run `npm test` to verify room sizes, reconnect behavior, protected avatars and l
 ### Fork in the Tracks: After Dark (27 November 2026)
 
 An adults-only (18+) deck of dark, morbid humour for the trolley game, in `fork-after-dark.js`: 50 things nobody could bear to hit, 50 things the world would not miss, and darker scene and stage prompts. The host switches it on in the game's settings ("After Dark cards · adults only"); it is off by default, labelled 18+ in the lobby and on the TV, and never mixed with the family deck. Other games are unaffected.
+
+### After Hours (27 November 2026)
+
+The adults-only setting now covers five games: Fork in the Tracks, Punchline Party, Fill the Blank, Spot the Bluff and Same Page. The host switches on "After Hours · adults only (18+)" in the game's settings; the lobby and every screen during play show an 18+ tag. Prompts are in `after-hours.js` (36 punchline set-ups, 34 blanks, 60 answer cards, 26 bluff prompts, 26 Same Page prompts) and `fork-after-dark.js`. A room uses either the family set or the After Hours set, never both.
+
+### Selfies as avatars (27 November 2026)
+
+A player's selfie (or their initial) now appears beside their name in every game, including the nine screens that previously showed names only. Views look a player up in the room's roster through `public/player-face.js`.

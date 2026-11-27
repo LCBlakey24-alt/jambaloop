@@ -24,7 +24,7 @@ import { boardQuestionOrder } from './board-questions.js';
 import { boardQuestion, makeQuestions, makeSoCloseQuestions, questionCategories, verifiedSourceFor } from './questions.js';
 import { soCloseSourceFor } from './so-close-bank.js';
 import {questionHistoryId, questionHistoryLimit, validQuestionHistoryId} from './public/question-history.js';
-import { isEstimateShow, maximumTeams, modes, themes, isQuestionFormat, formatTypes, difficulties, teams, socialModes, minimumPlayers, boardRollDuration, defaultTheme, fixedQuestionModes, questionCounts, wheelCategories, scoreIntervals, supportsScoreCheckpoints, maximumPlayers, capacityError } from './public/game-config.js';
+import { isEstimateShow, maximumTeams, afterHoursModes, modes, themes, isQuestionFormat, formatTypes, difficulties, teams, socialModes, minimumPlayers, boardRollDuration, defaultTheme, fixedQuestionModes, questionCounts, wheelCategories, scoreIntervals, supportsScoreCheckpoints, maximumPlayers, capacityError } from './public/game-config.js';
 
 const app = express();
 const rooms = new Map();
@@ -61,8 +61,8 @@ function readSettings(body = {}) {
     try { quiz = validateQuiz(customQuiz); } catch { return; }
   }
   if (!difficulties.some(([id]) => id === difficulty)) return;
-  // The adults-only deck exists for Fork in the Tracks alone and must be asked for explicitly.
-  if (typeof afterDark !== 'boolean' || (afterDark && mode !== 'tracks')) return;
+  // The adults-only prompts exist for a named set of party games and must be asked for explicitly.
+  if (typeof afterDark !== 'boolean' || (afterDark && !afterHoursModes.includes(mode))) return;
   if (difficulty !== 'standard' && (!fixedQuestionModes.includes(mode) || privateTeam || quiz || category !== 'mixed' || format !== 'choice' || includeChristmas)) return;
   const allowedCounts = questionCounts(mode, privateTeam ? 'choice' : format, privateTeam ? 'mixed' : category);
   if (!modes.some(([id]) => id === mode) || !themes.some(([id]) => id === theme)

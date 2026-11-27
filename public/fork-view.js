@@ -87,7 +87,7 @@ export function forkView(state, {host,escape,icons,replayButtons}) {
         `<div><span>#${index+1} ${face(player)}${escape(player.name)}</span><strong>${Math.round(player.score/100)} points</strong></div>`).join('')}</div>
       ${host?replayButtons(state,icons):'<p>Stay here for a rematch or return to the homepage.</p>'}</div>`:'';
   return `<section class="game-panel fork-game ${host?'fork-host':'fork-phone'}" data-fork-phase="${phase}">
-    <div class="fork-intro"><div><div class="eyebrow">FORK IN THE TRACKS${party.afterDark ? ' · <b class="fork-after-dark">AFTER DARK 18+</b>' : ''} · ROUND ${state.index+1} OF ${state.total} ${building||placed?'· PLACEMENT '+(step+1)+'/3':''}</div>
+    <div class="fork-intro"><div><div class="eyebrow">FORK IN THE TRACKS${party.afterDark ? ' · <b class="fork-after-dark">AFTER HOURS 18+</b>' : ''} · ROUND ${state.index+1} OF ${state.total} ${building||placed?'· PLACEMENT '+(step+1)+'/3':''}</div>
       <h1>${title}</h1><p>${scene}</p>${prompt?`<strong class="fork-your-role">${prompt}</strong>`:''}</div>
       <span class="fork-judge-label">${party.driverTurn?'YOU ARE THE DRIVER':'TROLLEY DRIVER: '+face(party.driver)+escape(party.driver.name)}</span></div>
     ${scores(state,escape)}

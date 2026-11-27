@@ -6,6 +6,7 @@ import {v2Punchlines,v2Blanks,v2Cards} from './creative-expansion-v2.js';
 import {punchlineV3,blankV3,cardV3} from './party-content-v3.js';
 import {punchlineV4,blankV4,cardV4} from './creative-expansion-v4.js';
 import {punchlineV5,blankV5,cardV5} from './creative-expansion-v5.js';
+import {afterHoursPunchlines, afterHoursBlanks, afterHoursCards} from './after-hours.js';
 
 const punchlines = [
   'What is the worst name for a very fancy restaurant?',
@@ -81,7 +82,9 @@ function shuffle(items) {
 }
 
 export function startSocialRound(room, publish) {
-  const bank = room.mode === 'punchline' ? punchlines : room.mode === 'cards' ? blanks : dilemmas;
+  // After Hours swaps in the adults-only prompts; the two sets are never mixed.
+  const adult = Boolean(room.afterDark);
+  const bank = room.mode === 'punchline' ? (adult ? afterHoursPunchlines : punchlines) : room.mode === 'cards' ? (adult ? afterHoursBlanks : blanks) : dilemmas;
   const unseen = bank.filter(item => !room.seen.has(Array.isArray(item) ? item[0] : item));
   const item = shuffle(unseen.length ? unseen : bank)[0];
   const [prompt, ...tracks] = Array.isArray(item) ? item : [item];
@@ -90,7 +93,7 @@ export function startSocialRound(room, publish) {
     // The final round matters; this does not change vote eligibility or anonymity.
     votePoints: ['punchline', 'cards'].includes(room.mode) && room.index === room.count - 1 ? 200 : 100 };
   if (room.mode === 'cards') {
-    room.party.hands = new Map([...room.players.keys()].map(key => [key, shuffle(cards).slice(0, 6)]));
+    room.party.hands = new Map([...room.players.keys()].map(key => [key, shuffle(adult ? afterHoursCards : cards).slice(0, 6)]));
     room.party.redrawn = new Set();
   }
   room.phase = tracks.length ? 'party-vote' : 'party-write';
@@ -133,7 +136,7 @@ export function submitSocial(room, key, data, publish) {
     if (party.entries.has(key) || party.redrawn.has(key)) return [409, 'Your hand is already locked or refreshed.'];
     const previous = party.hands.get(key);
     if (!previous) return [403, 'Join the room to choose a card.'];
-    const candidates = cards.filter(card => !previous.includes(card));
+    const candidates = (room.afterDark ? afterHoursCards : cards).filter(card => !previous.includes(card));
     if (candidates.length < 6) return [409, 'No unused cards are available.'];
     party.hands.set(key, shuffle(candidates).slice(0, 6));
     party.redrawn.add(key);

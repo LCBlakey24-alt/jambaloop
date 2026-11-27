@@ -4,6 +4,7 @@ import { questionHistoryId } from './public/question-history.js';
 import {v2Samepage} from './creative-expansion-v2.js';
 import {samepageV4} from './creative-expansion-v4.js';
 import {samepageV5} from './creative-expansion-v5.js';
+import {afterHoursSamePage} from './after-hours.js';
 
 // Original creative prompts. No survey statistics or factual claims are required.
 export const samePagePrompts = Object.freeze([
@@ -78,8 +79,9 @@ export function normaliseSamePageAnswer(value) {
 }
 
 function choosePrompt(room) {
-  const fresh = samePagePrompts.filter(prompt => !room.seen.has('samepage:' + prompt) && !room.seen.has(questionHistoryId(prompt)));
-  const pool = fresh.length ? fresh : samePagePrompts;
+  const bank = room.afterDark ? afterHoursSamePage : samePagePrompts;
+  const fresh = bank.filter(prompt => !room.seen.has('samepage:' + prompt) && !room.seen.has(questionHistoryId(prompt)));
+  const pool = fresh.length ? fresh : bank;
   const prompt = pool[randomInt(pool.length)];
   room.seen.add('samepage:' + prompt);
   return prompt;

@@ -1,6 +1,7 @@
 // Original TV-first matching game. All player-submitted strings are escaped.
 import { partyFinale } from './party-finale.js';
 import {replayButtons} from './game-night.js';
+import { answerWall } from './party-views.js';
 import { face } from './player-face.js';
 
 const results = (party, escape, compact=false) =>
@@ -21,7 +22,7 @@ export function samePageView(state, {host,canControl,escape,icons,reply}) {
   const finished = phase === 'finished';
   const reveal = phase === 'party-reveal';
   const round = `<span class="samepage-round">ROUND ${index+1} OF ${total}</span>`;
-  const stats = `<div class="samepage-submissions"><strong>${party.submissions}</strong><span> / ${party.responseTarget} ANSWERS LOCKED</span></div>`;
+  const stats = host && answerWall(state, escape, 'answers locked') || `<div class="samepage-submissions"><strong>${party.submissions}</strong><span> / ${party.responseTarget} ANSWERS LOCKED</span></div>`;
   let body = '';
   if (finished) {
     const standings = state.players ?? [];

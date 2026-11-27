@@ -1,6 +1,7 @@
 // Original TV-first rarity show. User text must always be escaped before injection into markup.
 import { partyFinale } from './party-finale.js';
 import {replayButtons} from './game-night.js';
+import { answerWall } from './party-views.js';
 import { face } from './player-face.js';
 function revealRows(p,escape){
  const groups=p.results?.groups||[];
@@ -65,7 +66,7 @@ export function rareFindView(s,{host,canControl,escape,icons,reply}){
       'These are the real submissions from your room. Different spellings of accepted answers count together.'}</p></div>`;
   let body='';
   if(write){
-    if(host)body=`<div class="rare-wait"><div class="rare-gem" aria-hidden="true">?</div><strong>${p.submissions} / ${p.responseTarget} responses locked</strong><p>All answers stay private until the host review or reveal.</p></div>`;
+    if(host)body=`<div class="rare-wait">${answerWall(s,escape,'responses locked')||`<div class="rare-gem" aria-hidden="true">?</div><strong>${p.submissions} / ${p.responseTarget} responses locked</strong>`}<p>All answers stay private until the host review or reveal.</p></div>`;
     else if(p.answered)body=`<div class="rare-locked" role="status"><strong>ANSWER LOCKED</strong><span>${escape(p.ownAnswer)}</span><p>Wait for the host to reveal what everyone chose.</p></div>`;
     else body=`<form id="bluff-form" class="rare-entry-form"><label for="rare-answer">Your answer</label>
       <textarea id="rare-answer" name="reply" maxlength="60" rows="2" required placeholder="Type something correct but unexpected">${escape(reply??'')}</textarea>

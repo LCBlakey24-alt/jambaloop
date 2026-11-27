@@ -8,7 +8,7 @@ import { playlistLimit, queuedSettings } from './public/game-night.js';
 import { isConnected, liveConnection, responseTarget, touchPlayer, trackConnection } from './room-presence.js';
 import { boardLengths, boardRoute, boardPath, boardPathChoices, boardFork, boardFinish, boardMappedPosition, boardRequiresChoice, boardStopsAtFork, boardCornerPower, boardPowers, compareBoardTeams } from './public/board-route.js';
 import { teamPlayModes, defaultPlayStyle, validPlayStyle, requiredPlayers, teamAssignments } from './public/team-play.js';
-import { partyModes, startParty, advanceParty, advancePartyWhenReady, expireParty, rescuePotato, submitParty, publicParty } from './party-games.js';
+import { partyModes, startParty, advanceParty, advancePartyWhenReady, expireParty, rescuePotato, submitParty, publicParty, partyWhoIsIn } from './party-games.js';
 import express from 'express';
 import QRCode from 'qrcode';
 import { randomBytes, randomInt } from 'node:crypto';
@@ -282,7 +282,7 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
     } : undefined,
     ceremony: isHost && phase === 'finished' ? room.ceremony : undefined,
     awards: !waiting && phase === 'finished' ? room.awards : undefined,
-    mode: room.mode, playStyle: room.playStyle, privateQuestions: room.privateQuestions, party: waiting ? undefined : publicParty(room, key), race: room.mode === 'quizrace' && room.race ? publicRaceState(room.race, key, isHost) : undefined, raceLength: room.raceLength, raceTrack: room.raceTrack, raceDifficulty: room.raceDifficulty, raceLeague: room.raceLeague || undefined, league: room.mode === 'quizrace' ? publicLeague(room) : undefined, phoneView: room.phoneView, isCaptain: key === room.captain, captainId: captain?.id, captainName: captain?.name,
+    mode: room.mode, playStyle: room.playStyle, privateQuestions: room.privateQuestions, party: waiting ? undefined : publicParty(room, key), whoIsIn: waiting ? undefined : partyWhoIsIn(room), race: room.mode === 'quizrace' && room.race ? publicRaceState(room.race, key, isHost) : undefined, raceLength: room.raceLength, raceTrack: room.raceTrack, raceDifficulty: room.raceDifficulty, raceLeague: room.raceLeague || undefined, league: room.mode === 'quizrace' ? publicLeague(room) : undefined, phoneView: room.phoneView, isCaptain: key === room.captain, captainId: captain?.id, captainName: captain?.name,
     quizTitle: room.customQuiz?.title, quizTypes: room.quizTypes,
     // Names and selfies of everyone playing, so each screen can show a face beside a name.
     // Already visible to the room in the lobby; left out of very large rooms to keep updates small.

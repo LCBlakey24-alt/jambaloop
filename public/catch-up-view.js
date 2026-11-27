@@ -1,7 +1,7 @@
 // Catch Up on the TV and on phones. The TV carries the show: the question,
 // the clock, the count and the chase track. A phone is a remote: four answer
 // buttons when it is your side's turn, and nothing to do when it is not.
-import { avatarView } from './party-views.js';
+import { avatarView, wallColumns } from './party-views.js';
 import { replayButtons } from './game-night.js';
 
 const letters = ['A', 'B', 'C', 'D'];
@@ -17,7 +17,7 @@ function bigSide(side, role, { active = false, crowned = false, rounds = 0, esca
   const pips = rounds ? `<span class="catch-pips" aria-label="${plural(side.wins, 'round')} won">${Array.from({ length: rounds }, (_, n) => `<i class="${n < side.wins ? 'is-won' : ''}"></i>`).join('')}</span>` : '';
   return `<div class="catch-team${active ? ' is-active' : ''}${crowned ? ' is-crowned' : ''}" style="--side:${side.colour}">
     <span class="catch-role">${role}</span><h3>${escape(side.name)}</h3>
-    <ul class="catch-crew" data-size="${side.members.length > 6 ? 'many' : side.members.length > 3 ? 'some' : 'few'}">${side.members.map(member => `<li>${avatarView(member, escape)}<span>${escape(member.name)}</span></li>`).join('')}</ul>${pips}</div>`;
+    <ul class="catch-crew face-wall" style="--cols:${wallColumns(side.members.length)}">${side.members.map(member => `<li>${avatarView(member, escape)}<span>${escape(member.name)}</span></li>`).join('')}</ul>${pips}</div>`;
 }
 
 /** TV: the round as a finish-line picture, the target as a flag and the chase as a runner. */

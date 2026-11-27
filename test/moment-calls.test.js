@@ -112,3 +112,17 @@ test('only questions every player may see are offered for reading aloud', async 
   const narrator = (await import('node:fs')).readFileSync(new URL('../public/narrator.js', import.meta.url), 'utf8');
   assert.doesNotMatch(narrator, /elevenlabs\.io|fetch\(/, 'reading aloud uses the device voice, no network');
 });
+
+test('the TV learns who has answered, never what, and only in the write and vote steps', async () => {
+  const { partyWhoIsIn } = await import('../party-games.js');
+  const players = new Map([['k1', { id: 'p1' }], ['k2', { id: 'p2' }], ['k3', { id: 'p3' }]]);
+  const room = (mode, phase, party) => ({ mode, phase, players, party });
+  assert.deepEqual(partyWhoIsIn(room('punchline', 'party-write', { entries: new Map([['k2', { text: 'secret joke' }]]), votes: new Map() })), ['p2']);
+  assert.deepEqual(partyWhoIsIn(room('punchline', 'party-vote', { entries: new Map([['k2', {}]]), votes: new Map([['k1', 'k2'], ['k3', 'k2']]) })), ['p1', 'p3']);
+  assert.deepEqual(partyWhoIsIn(room('bluff', 'party-write', { replies: new Map([['k1', 'made up'], ['k3', 'real']]), votes: new Map() })), ['p1', 'p3'], 'the bluffer is listed like anyone else');
+  assert.deepEqual(partyWhoIsIn(room('rare', 'rare-write', { entries: new Map([['k3', 'Neptune']]) })), ['p3']);
+  assert.equal(JSON.stringify(partyWhoIsIn(room('punchline', 'party-write', { entries: new Map([['k2', { text: 'secret joke' }]]), votes: new Map() }))).includes('secret'), false);
+  assert.equal(partyWhoIsIn(room('punchline', 'party-reveal', { entries: new Map(), votes: new Map() })), undefined, 'nothing at the reveal');
+  assert.equal(partyWhoIsIn(room('bloodmoon', 'blood-night', { picks: new Map([['k1', 'k2']]) })), undefined, 'never for hidden-role games');
+  assert.equal(partyWhoIsIn(room('classic', 'question', undefined)), undefined);
+});

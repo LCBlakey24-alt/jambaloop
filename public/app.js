@@ -1517,15 +1517,17 @@ function showCommentary(before, next) {
 
 // Vince calls Quiz Race: the start, lead changes, close battles and the flag.
 let raceCalledAt = 0;
-/** Bloodmoon: the hosts call each public beat on the TV. */
+/** Bloodmoon: Count Vesper narrates each public beat on the TV. */
 function bloodmoonCommentary(before, next) {
   if (next.mode !== 'bloodmoon' || !next.party || before.phase === next.phase) return;
   const party = next.party;
-  const kind = { 'blood-night': 'night', 'blood-day': 'day', 'blood-vote': 'vote',
+  // Count Vesper narrates each public beat. Down to one vampire is worth its own warning at nightfall.
+  const kind = { 'blood-roles': 'roles', 'blood-day': 'day', 'blood-vote': 'vote',
+    'blood-night': party.hiding === 1 && party.counts?.vampire > 1 && party.night > 1 ? 'onevampire' : 'night',
     'blood-dawn': party.dawn?.victim ? 'bitten' : 'safe',
     'blood-verdict': party.verdict?.banished ? (party.verdict.banished.role === 'vampire' ? 'caught' : 'wrong') : 'nobody',
     finished: party.winner }[next.phase];
-  if (kind && bloodmoonCalls[kind]) setTimeout(() => sayReaction(`react-blood-${kind}`, bloodmoonCalls[kind]), 700);
+  if (kind && bloodmoonCalls[kind]) setTimeout(() => sayReaction(`react-count-${kind}`, bloodmoonCalls[kind]), 700);
 }
 
 function raceCommentary(before, next) {

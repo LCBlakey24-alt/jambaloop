@@ -17,7 +17,7 @@ function trackBoard(state, escape) {
   const party=state.party;
   return `<div class="fork-junction" ${party.hit===0||party.hit===1?`data-hit="${party.hit}"`:''}>
     <div class="fork-lead" aria-hidden="true">${tram}
-      <svg class="fork-switch" viewBox="0 0 100 200" preserveAspectRatio="none" focusable="false"><path d="M0 100C55 100 45 50 100 50"/><path d="M0 100C55 100 45 150 100 150"/></svg></div>
+      <i class="fork-rail fork-rail-a"></i><i class="fork-rail fork-rail-b"></i><svg class="fork-switch" viewBox="0 0 100 200" preserveAspectRatio="none" focusable="false"><path d="M0 100C55 100 45 50 100 50"/><path d="M0 100C55 100 45 150 100 150"/></svg></div>
     <div class="fork-tracks" aria-label="Two trolley tracks">${state.teams.map((team,index)=>{
     const cards=party.placements[index];
     const text=cards.map(card=>card?escape(card):'a card still to come');

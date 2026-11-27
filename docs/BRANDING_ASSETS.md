@@ -25,9 +25,13 @@ The original application's internal Quiz Club identifiers, README descriptions a
 | `public/icons/kenney/*.svg` (36 icons) | Game icons, recoloured through CSS (`currentColor`) | Kenney Board Game Icons, kenney.nl (owner supplied, 27 November 2026). Converted on import: view box added, white fill replaced by `currentColor`. | CC0; text at `public/icons/kenney/LICENCE-CC0.txt` |
 | `public/models/cars/kart-*.glb` (5 models) and `Textures/colormap.png` | Quiz Race cars on the TV: each racer drives a kart, tinted and badged in their colour | Kenney Car Kit, kenney.nl (owner supplied, 27 November 2026) | CC0; text at `public/models/cars/LICENCE-CC0.txt` |
 | `public/models/sprites/gravestone-*.webp`, `character-vampire.webp` | Bloodmoon TV: gravestones for fallen players and the vampire on the count | Renders of Kenney Graveyard Kit 5.0 models made with `scripts/render-model-sprites.mjs` (owner supplied the kit, 27 November 2026) | CC0; text at `public/models/sprites/LICENCE-graveyard-kit-CC0.txt` |
-| `public/models/sprites/train-tram-round.webp` | The tram in Fork in the Tracks | Render of a Kenney Train Kit model, same script | CC0; text at `public/models/sprites/LICENCE-train-kit-CC0.txt` |
+| `public/models/sprites/train-tram-round.webp`, `track-tile.webp` | The tram and the rails in Fork in the Tracks | Render of a Kenney Train Kit model, same script | CC0; text at `public/models/sprites/LICENCE-train-kit-CC0.txt` |
 | `public/three-addons/*.js` | Loads the 3D models | three.js example modules, import paths adjusted for this site | MIT; text at `public/three-addons/LICENSE-three-MIT.txt` |
 
 Also supplied and not used yet (all CC0): Kenney Playing Cards Pack, Board Game Info, Monster Builder Pack and UI Pack Space Expansion.
 
 The pack's buttons, sliders, stars and fonts are not used: the site's controls are drawn in CSS to match each game's identity.
+
+## Voices
+
+Bloodmoon is narrated by **Count Vesper**, an original character. The voice is the ElevenLabs library voice "Paul – Engaging, Friendly and Mysterious" (a Romanian speaker, tagged Transylvanian accent), used under the account's paid plan. It is not an impression of any actor or film character. A second library voice, "Matthew Schmitz – Ancient Vampire Lord", was auditioned and not used.

@@ -29,11 +29,24 @@ try {
   await tv.locator('.look-game[data-look="ready"]').waitFor({ timeout: 15000 });
   assert.match(await tv.locator('.look-round').innerText(), /ROUND 1[\s\S]*Speaking only/i, 'the first round is announced');
   await tv.waitForTimeout(3500); // let the title sting and wipes finish
+  // The picker reel has landed on the guesser, and the team boxes are walls of pictures.
+  const stage = await tv.evaluate(() => {
+    const reel = document.querySelector('.look-picker-reel'); const windowBox = document.querySelector('.look-picker-window').getBoundingClientRect();
+    const tiles = [...reel.children]; const last = tiles.at(-1).getBoundingClientRect();
+    const box = document.querySelector('.look-team').getBoundingClientRect();
+    const list = document.querySelector('.look-team ul').getBoundingClientRect();
+    return { tiles: tiles.length, landed: Math.abs(last.top - windowBox.top) < 8, name: document.querySelector('.look-picker strong').textContent,
+      fill: (list.width * list.height) / (box.width * box.height), scroll: document.documentElement.scrollHeight <= innerHeight + 2 };
+  });
+  assert.ok(stage.tiles >= 6 && stage.landed, 'the reel runs through the team and stops on the last picture');
+  assert.ok(stage.fill > 0.55, 'the pictures fill most of the team box: ' + stage.fill.toFixed(2));
+  assert.ok(stage.scroll, 'the TV does not scroll');
   await tv.screenshot({ path: 'browser-screenshots/dont-look-tv-ready.png' });
 
   // Who is who this turn.
   const roles = async () => { const out = {}; for (const player of players) { const party = (await call(`/${code}`, player.key)).party; if (party.guessing) out.guesser = player; else if (party.team === party.active) out.describer = player; else out.rival = player; } return out; };
   const { guesser, describer, rival } = await roles();
+  assert.equal(stage.name, guesser.name, 'the reel names the player the server chose');
   assert.ok(guesser && describer && rival, 'two teams of two');
   await guesser.page.locator('[data-action="look-start"]').waitFor({ timeout: 8000 });
   assert.equal(await describer.page.locator('[data-action="look-start"]').count(), 0, 'only the guesser gets the start button');

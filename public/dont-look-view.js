@@ -6,10 +6,32 @@ import { replayButtons } from './game-night.js';
 
 const plural = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
 
+// The turn whose guesser this screen has already "picked", so a room update
+// mid-spin or afterwards does not start the reel again.
+let pickedFor;
+
+/**
+ * TV: who is guessing? A reel of the team's pictures spins and stops on the
+ * guesser. The server has already chosen; this is only the reveal.
+ */
+function picker(party, team, escape) {
+  const members = team.members;
+  const at = Math.max(0, members.findIndex(member => member.id === party.guesser.id));
+  const key = `${party.turn}/${party.guesser.id}`;
+  const spin = pickedFor !== key && members.length > 1;
+  pickedFor = key;
+  // Several laps of the team, ending on the guesser, so the reel has somewhere to run.
+  const laps = Math.max(3, Math.ceil(14 / members.length));
+  const strip = Array.from({ length: laps * members.length + at + 1 }, (_, n) => members[n % members.length]);
+  return `<div class="look-picker${spin ? ' is-spinning' : ''}" style="--team:${team.colour};--stops:${strip.length - 1}" aria-hidden="true">
+    <span class="look-picker-window"><span class="look-picker-reel">${strip.map(member => `<i>${avatarView(member, escape)}</i>`).join('')}</span></span>
+    <strong>${escape(party.guesser.name ?? '')}</strong><small>IS GUESSING</small></div>`;
+}
+
 function scoreboard(party, escape, lit = party.active, showGuesser = true) {
   return `<div class="look-teams" data-teams="${party.teams.length}">${party.teams.map(team => `<div class="look-team${team.id === lit ? ' is-active' : ''}" style="--team:${team.colour}">
       <h3>${escape(team.name)}</h3><b>${team.score}</b><small>${plural(team.passes, 'pass').replace('passs', 'passes')}</small>
-      <ul>${team.members.map(member => `<li class="${showGuesser && member.id === party.guesser.id ? 'is-guesser' : ''}">${avatarView(member, escape)}<span>${escape(member.name)}</span></li>`).join('')}</ul></div>`).join('')}</div>`;
+      <ul data-count="${team.members.length}" style="--cols:${team.members.length <= 2 ? team.members.length : team.members.length <= 4 ? 2 : team.members.length <= 9 ? 3 : team.members.length <= 16 ? 4 : 5}">${team.members.map(member => `<li class="${showGuesser && member.id === party.guesser.id ? 'is-guesser' : ''}">${avatarView(member, escape)}<span>${escape(member.name)}</span></li>`).join('')}</ul></div>`).join('')}</div>`;
 }
 
 export function dontLookView(state, { host, canControl, escape, icons }) {
@@ -39,7 +61,7 @@ export function dontLookView(state, { host, canControl, escape, icons }) {
     if (host) {
       body = `<header class="look-head"><span class="look-kicker">${kicker}</span><h1><em style="color:${team.colour}">${guesser}</em>, turn your back to the TV</h1>
           <p>${solo ? 'Everyone else' : `The ${escape(team.name)}`} will get the word on this screen across to you. ${party.seconds} seconds.</p></header>
-        ${roundBanner}${scoreboard(party, escape)}${next('Start the clock')}`;
+        ${roundBanner}<div class="look-stage">${picker(party, team, escape)}${scoreboard(party, escape)}</div>${next('Start the clock')}`;
     } else if (party.canStart) {
       body = `<header class="look-head"><span class="look-kicker">${kicker} · YOU ARE GUESSING</span><h1>Turn your back to the TV</h1>
           <p>Shout out your guesses. When you are facing away, start the clock.</p></header>${roundBanner}

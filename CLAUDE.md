@@ -20,6 +20,7 @@
 - All art, narration and card/question copy must be original or properly licensed, not replications of another show's branded assets.
 - **Third-party asset packs (owner guidance, 27 November 2026):** use them where they are relevant to that game or screen and genuinely improve it, and nowhere else. Do not spread one pack's look across every game: each game keeps its own identity. Record every pack's source and licence in [docs/BRANDING_ASSETS.md](docs/BRANDING_ASSETS.md) before using it, and prefer CC0.
 - Expand and fact-check content regularly, avoiding immediate repeats; use honest source and answer provenance.
+- **Content update routine (owner direction, 27 November 2026):** every content update re-checks existing questions and answers as well as adding new ones, keeps a spread of easy and hard questions, and deepens the thinnest topics first so a group can play one genre for many rounds without repeats (the aim is 200 or more per topic; a test fails below 80). Players see the date the facts were last checked in each question game's lobby: it is `factsCheckedOn` in `public/content-date.js`, and it only moves when a full review is written up as `docs/QUESTION_FACT_CHECK_<date>.md`. Time-sensitive answers always name their year or season.
 
 ## Voiceover future roadmap (do not implement during current QA sprint)
 

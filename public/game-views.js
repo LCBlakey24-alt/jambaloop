@@ -3,6 +3,7 @@ import { avatarView } from './party-views.js';
 import { categories, categoryName, modes, partyModes, minimumPlayers, wheelCategories, capacityError } from './game-config.js';
 import {requiredPlayers} from './team-play.js';
 import { launcherSteps } from './home-launcher.js';
+import { asksFacts, factsCheckedLabel } from './content-date.js';
 import { showMark } from './show-identity.js';
 
 export function wheelView(state) {
@@ -156,6 +157,7 @@ export function lobbyView(state, { host, escape, icons, modeName }) {
   const summary = `<div class="lobby-game"><span class="lobby-tile" aria-hidden="true">${showMark(state.mode)}</span><div class="lobby-game-copy"><strong>${game}</strong>${state.afterDark ? '<small class="lobby-after-dark">After Hours · adults only (18+)</small>' : ''}${race ? `<small>2–12 racers · ${escape(state.raceLength)} race · ${escape(state.raceTrack)} track</small><small>${escape(state.raceDifficulty)} difficulty · 12 seconds per question · first to finish wins</small>` : party ? `<small>${state.mode === 'rare' ? (state.total + ' unusual answer rounds · 3+ players · host validates unrecognised answers') : state.mode === 'topanswers' ? (state.total + ' live room polls · choose then predict · 3+ players') : state.mode === 'brain' ? (state.total + ' logic levels · two lives each · points increase as you climb') : state.mode === 'potato' ? 'One shared 2-minute countdown' : state.mode === 'bluff' ? 'One secret bluff · private voting' : (state.mode === 'spotlight' ? ((state.playerCount * state.total) + ' contestant rounds · ' + state.total + ' ' + (state.total === 1 ? 'turn' : 'turns') + ' each') : state.mode === 'tracks' ? (state.playerCount + ' rounds · rotating Trolley Driver') : (state.total + ' rounds · private voting'))}</small>` : `<small>${state.total} ${state.mode === 'board' ? 'max turns' : state.total === 1 ? 'question' : 'questions'} · ${state.seconds ? state.seconds + 's each' : 'No timer'}</small><small>${state.privateQuestions ? 'Different questions on each phone' : 'Phones · ' + screens}</small>`}
     ${!race && !party && state.scoreInterval !== undefined ? `<small>${state.scoreInterval === 0 ? 'Leaderboard at the end' : state.scoreInterval === 1 ? 'Leaderboard after every question' : `Leaderboard every ${state.scoreInterval} ${state.mode === 'board' ? 'turns' : 'questions'}`}</small>` : ''}
     ${state.difficulty === 'family' ? '<small>Family mix · ages 8+</small>' : state.difficulty === 'challenge' ? '<small>Challenge mix</small>' : ''}
+    ${asksFacts(state.mode) && !state.quizTitle ? `<small class="facts-checked">${factsCheckedLabel()}</small>` : ''}
     ${!race && state.scoring ? `<small>${state.scoring.base} base pts${state.scoring.bonus ? ' · Up to +' + state.scoring.bonus + ' for speed' : ''}
       ${state.scoring.doubles === 'final' ? ' · Double scheduled finale' : state.scoring.doubles === 'third' ? ' · Double every third question' : ''}</small>` : ''}
     ${boardPlan && state.boardSpeed ? `<small>Up to +${state.boardSpeed}% for speed · Difficulty follows the die</small>` : ''}

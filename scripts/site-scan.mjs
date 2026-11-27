@@ -44,7 +44,7 @@ const measure = (page, tv) => page.evaluate(tv => {
 for (const [mode] of modes) {
   if (only.length && !only.includes(mode)) continue;
   const setup = { mode, format: ['soclose', 'wayoff'].includes(mode) ? 'estimate' : 'choice', category: 'mixed',
-    count: mode === 'board' ? 12 : ['spotlight', 'bloodmoon', 'catchup', 'shade'].includes(mode) ? 1 : ['tracks', 'samepage', 'punchline', 'cards', 'bluff', 'rare', 'sketch', 'topanswers'].includes(mode) ? 3 : 5,
+    count: mode === 'board' ? 12 : ['spotlight', 'bloodmoon', 'catchup', 'shade', 'dontlook'].includes(mode) ? 1 : ['tracks', 'samepage', 'punchline', 'cards', 'bluff', 'rare', 'sketch', 'topanswers'].includes(mode) ? 3 : 5,
     seconds: mode === 'quizrace' || ['tracks', 'samepage'].includes(mode) ? 0 : 20,
     ...(['board', 'tracks', 'showdown'].includes(mode) ? { playStyle: 'teams', teamCount: 2 } : { playStyle: 'individual' }) };
   const pages = {};

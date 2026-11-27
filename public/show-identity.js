@@ -46,6 +46,8 @@ const marks = Object.freeze({
   catchup: '<circle cx="60" cy="34" r="22"/><path d="M60 12V6M52 6h16M60 34V20M60 34l10 8"/><path d="M10 84h70M68 74l12 10-12 10" stroke-width="5"/><path d="M96 96V70l14 6-14 6"/>',
   // A board of colour swatches with one picked out.
   shade: '<rect x="14" y="22" width="92" height="76" rx="8"/><path d="M37 22v76M60 22v76M83 22v76M14 47h92M14 72h92"/><rect x="60" y="47" width="23" height="25" fill="currentColor"/>',
+  // A closed eye above a speech bubble: do not look, just listen.
+  dontlook: '<path d="M14 44c14 16 30 24 46 24s32-8 46-24"/><path d="M30 60l-8 12M48 68l-3 14M72 68l3 14M90 60l8 12"/><rect x="34" y="88" width="52" height="22" rx="10"/>',
   // A pencil finishing a quick sketch line.
   sketch: '<path d="M80 14l16 16-46 46-22 6 6-22z"/><path d="m72 22 16 16M34 60l16 16"/><path d="M12 96c14-14 26 8 40-6s24 6 34-2" stroke-width="2.5"/>',
 });

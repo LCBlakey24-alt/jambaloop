@@ -81,6 +81,8 @@ const scenes = {
   clue: () => solo(`${faces(1)}<span class="guide-speech">“lagoon”</span>${faces(4, 'is-waiting')}`),
   pick: () => pair(tv(`<span class="guide-swatches is-small">${many(60, n => `<i style="--h:${(n % 12) * 30};--l:${82 - Math.floor(n / 12) * 13}%"></i>`)}</span>`), phone(`<span class="guide-swatches is-zoom">${many(9, n => `<i class="${n === 4 ? 'is-picked' : ''}" style="--h:${170 + (n % 3) * 10};--l:${62 - Math.floor(n / 3) * 8}%"></i>`)}</span><span class="guide-button">PLACE GUESS</span>`)),
   rings: () => solo(`<span class="guide-swatches is-rings">${many(25, n => { const d = Math.max(Math.abs(n % 5 - 2), Math.abs(Math.floor(n / 5) - 2)); return `<i style="--h:${160 + (n % 5) * 8};--l:${70 - Math.floor(n / 5) * 7}%"><b>${3 - d}</b></i>`; })}</span>`),
+  turned: () => solo(`<span class="guide-turned">${tv(bar('PENGUIN'))}<i></i></span>`),
+  mark: () => pair(tv(bar('PENGUIN')), phone('<span class="guide-button is-good">✓ CORRECT</span><span class="guide-button is-pass">PASS</span><span class="guide-tap"></span>')),
   draw: () => pair(tv('<svg class="guide-doodle" viewBox="0 0 120 80"><path d="M10 60 Q30 10 50 50 T90 40 Q105 30 110 55"/></svg>'), phone('<svg class="guide-doodle" viewBox="0 0 120 80"><path d="M10 60 Q30 10 50 50 T90 40 Q105 30 110 55"/></svg><span class="guide-tap is-draw"></span>')),
 };
 

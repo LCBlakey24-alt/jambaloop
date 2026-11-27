@@ -48,6 +48,8 @@ export const identities = {
     bg: ['#2327a8', '#0b0d52'], surface: '#0a0b3d', surface2: '#2327a8', ink: '#ffffff', muted: '#d3d6ff', accent: '#c8ff3d', accent2: '#4cc9f0', radius: '18px' },
   shade:      { title: 'Gallery Wall', display: 'Show Shade', weight: 600, question: 'display', upper: false, scheme: 'dark',
     bg: ['#3a3a44', '#16161b'], surface: '#202027', surface2: '#2e2e38', ink: '#ffffff', muted: '#cfcfdc', accent: '#ff5fa2', accent2: '#5fd4ff', radius: '12px' },
+  dontlook:   { title: 'Back to the Telly', display: 'Show DontLook', weight: 400, question: 'display', upper: false, scheme: 'dark',
+    bg: ['#e0257a', '#6d0b38'], surface: '#7d0f45', surface2: '#981454', ink: '#ffffff', muted: '#ffd3e6', accent: '#7ff3ff', accent2: '#fff36b', radius: '20px' },
   sketch:     { title: 'Sketch Pad', display: 'Show Sketch', weight: 700, question: 'display', upper: false, scheme: 'light',
     bg: ['#fdfcf7', '#ebe6d8'], surface: '#ffffff', surface2: '#f4f0e6', ink: '#1d2433', muted: '#545c6e', accent: '#1f5fd0', accent2: '#e0294c', radius: '16px' },
   quizrace:   { title: 'Neon Grand Prix', display: 'Show Race', weight: 700, question: 'body', upper: true, scheme: 'dark',

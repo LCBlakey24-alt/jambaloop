@@ -983,6 +983,9 @@ function phaseCaption(s) {
     'shade-clue2': 'Second word',
     'shade-clue3': 'Third word',
     'shade-reveal': 'The square revealed',
+    'look-ready': 'Guesser, turn around',
+    'look-turn': 'The clock is running',
+    'look-result': 'Turn result',
     'catch-ready': 'Sides get ready',
     'catch-leg': 'The clock is running',
     'catch-result': 'Round result',
@@ -2387,6 +2390,8 @@ document.addEventListener('click', async event => {
     shadeLens(state.party.step, { centre: undefined, picked: undefined });
     return sendParty({ action: 'guess', step: state.party.step, square: picked }, button);
   }
+  if (action === 'look-start') return sendParty({ action: 'start' }, button);
+  if (action === 'look-mark') return sendParty({ action: 'mark', step: state.party?.step, result: button.dataset.result }, button);
   if (action === 'catch-answer') return sendParty({ action: 'answer', step: state.party?.step, option: Number(button.dataset.option) }, button);
   if (action === 'blood-ready') return sendParty({ action: 'ready' }, button);
   if (action === 'blood-pick') return sendParty({ action: 'night', night: state.party?.night, id: button.dataset.id }, button);

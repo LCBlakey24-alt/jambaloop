@@ -562,3 +562,9 @@
   .guide-swatches i { animation:guide-pop .4s ease-out both; animation-delay:calc(var(--h) * .0012s); }
   .guide-speech { animation:guide-pop .6s cubic-bezier(.2,1.5,.4,1) both; }
 }
+
+/* Don't Look!'s guide: a head with its back to the telly, and the two marking buttons. */
+.guide-turned { position:relative; display:grid; justify-items:center; }
+.guide-turned > i { display:block; width:clamp(70px,14dvh,150px); aspect-ratio:1; margin-top:-6%; border-radius:50%; background:radial-gradient(circle at 50% 30%,#6b4a2a,#3a2716); box-shadow:0 10px 24px #000a; z-index:1; }
+.guide-button.is-good { background:#3fe08a; }
+.guide-button.is-pass { background:#ffffff; opacity:.85; }

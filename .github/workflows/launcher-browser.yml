@@ -149,6 +149,7 @@ jobs:
           node scripts/qr-scan-browser.mjs
           node scripts/game-guide-browser.mjs
           node scripts/shade-browser.mjs
+          node scripts/dont-look-browser.mjs
           node scripts/catch-up-browser.mjs
           node scripts/tv-immersive-browser.mjs
           node scripts/tv-all-modes.mjs

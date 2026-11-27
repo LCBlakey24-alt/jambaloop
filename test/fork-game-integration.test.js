@@ -182,3 +182,46 @@ test('invalid configuration, too few players, duplicate choices and premature ju
     assert.equal((await room.state()).party.step,1);
   });
 });
+
+test('After Dark is an adults-only deck for the trolley game: off by default, never mixed with the family deck',async()=>{
+  const {afterDarkGood,afterDarkBad,afterDarkScenes,afterDarkStages}=await import('../fork-after-dark.js');
+  const {forkGoodCards,forkBadCards}=await import('../public/fork-cards.js');
+  const v2=await import('../creative-expansion-v2.js'), v4=await import('../creative-expansion-v4.js'), v5=await import('../creative-expansion-v5.js');
+  const family=new Set([...forkGoodCards,...forkBadCards,...v2.v2ForkGood,...v2.v2ForkBad,...v4.forkGoodV4,...v4.forkBadV4,...v5.forkGoodV5,...v5.forkBadV5]);
+  const adult=new Set([...afterDarkGood,...afterDarkBad]);
+  assert.ok(afterDarkGood.length>=40&&afterDarkBad.length>=40);
+  assert.equal(adult.size,afterDarkGood.length+afterDarkBad.length,'no repeats');
+  for(const card of adult){
+    assert.ok(!family.has(card),'not in the family deck: '+card);
+    assert.ok(card.length>=4&&card.length<=70&&!/[.?!]$/.test(card),'a short phrase that fits the sentence: '+card);
+  }
+  assert.equal(afterDarkStages.length,3);
+  assert.deepEqual(afterDarkStages.map(stage=>stage.kind),['good','bad','good']);
+  assert.ok(afterDarkScenes.length>=5);
+  await liveServer(async({request,makeRoom})=>{
+    const base={playStyle:'teams',teamCount:2,category:'mixed',format:'mixed',count:5,seconds:0};
+    // Only the trolley game may ask for it, and only with a real boolean.
+    await request('',undefined,{...base,mode:'classic',playStyle:'individual',format:'choice',afterDark:true},400);
+    await request('',undefined,{...base,mode:'tracks',afterDark:'yes'},400);
+    // Family by default.
+    const plain=await makeRoom(4,5);
+    assert.equal((await plain.state()).afterDark,undefined);
+    await plain.advance();
+    const hands=[];
+    for(const key of plain.keys){const view=await plain.state(key);assert.equal(view.party.afterDark,false);if(view.party.hand)hands.push(...view.party.hand);}
+    assert.ok(hands.length>0&&hands.every(card=>family.has(card)&&!adult.has(card)),'the family room deals family cards only');
+    // Switched on by the host.
+    const setup=await request('',undefined,{...base,mode:'tracks',afterDark:true},201);
+    const path='/'+setup.code;const keys=[];
+    for(let i=0;i<4;i++)keys.push((await request(path+'/join',undefined,{name:'Adult '+i},201)).key);
+    let now=await request(path,setup.host);
+    assert.equal(now.afterDark,true,'the lobby says so');
+    await request(path+'/advance',setup.host,{game:now.game,index:now.index,phase:now.phase},204);
+    now=await request(path,setup.host);
+    assert.equal(now.party.afterDark,true);
+    assert.ok(afterDarkScenes.includes(now.party.scene));
+    const dealt=[];
+    for(const key of keys){const view=await request(path,key);if(view.party.hand){dealt.push(...view.party.hand);assert.equal(view.party.stage.title,afterDarkStages[0].title);}}
+    assert.ok(dealt.length>0&&dealt.every(card=>afterDarkGood.includes(card)),'the first placement deals from the After Dark deck');
+  });
+});

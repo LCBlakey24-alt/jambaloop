@@ -197,3 +197,6 @@ body.playing .fork-game { display:grid; grid-template-rows:auto auto minmax(0,1f
     .fork-host .fork-rail ~ .fork-switch { display:none; }
   }
 }
+
+.fork-after-dark { padding:.1em .5em; border-radius:6px; background:#7a1626; color:#ffe1e4; letter-spacing:.08em; }
+.after-dark-row small { color:#ffb4b4; }

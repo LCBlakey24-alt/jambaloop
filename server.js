@@ -48,7 +48,7 @@ app.use('/api', (_req, res, next) => {
 });
 
 function readSettings(body = {}) {
-  const { mode = 'classic', theme = defaultTheme, format = isEstimateShow(mode) ? 'estimate' : 'choice', category, count, seconds, autoReveal = false, includeChristmas = false, teamCount = mode === 'tracks' ? 2 : 4, boardLength = 24, playStyle = defaultPlayStyle(mode), privateQuestions = false, phoneView = 'answers', difficulty = 'standard', scoring, boardSpeed = 50, scoreInterval = 1, customQuiz = null, raceLength = 'medium', raceTrack = 'neon', raceDifficulty = 'mixed' } = body ?? {};
+  const { mode = 'classic', theme = defaultTheme, format = isEstimateShow(mode) ? 'estimate' : 'choice', category, count, seconds, autoReveal = false, includeChristmas = false, teamCount = mode === 'tracks' ? 2 : 4, boardLength = 24, playStyle = defaultPlayStyle(mode), privateQuestions = false, phoneView = 'answers', difficulty = 'standard', scoring, boardSpeed = 50, scoreInterval = 1, customQuiz = null, raceLength = 'medium', raceTrack = 'neon', raceDifficulty = 'mixed', afterDark = false } = body ?? {};
   if (typeof privateQuestions !== 'boolean' || !validPlayStyle(mode,playStyle) || (mode === 'tracks' && teamCount !== 2)) return;
   if (mode === 'quizrace' && (!raceLengths[raceLength] || !raceTracks.includes(raceTrack) || !raceDifficulties.includes(raceDifficulty) || format !== 'choice' || customQuiz !== null)) return;
   if (isEstimateShow(mode) && (format !== 'estimate' || privateQuestions || customQuiz !== null || difficulty !== 'standard')) return;
@@ -61,6 +61,8 @@ function readSettings(body = {}) {
     try { quiz = validateQuiz(customQuiz); } catch { return; }
   }
   if (!difficulties.some(([id]) => id === difficulty)) return;
+  // The adults-only deck exists for Fork in the Tracks alone and must be asked for explicitly.
+  if (typeof afterDark !== 'boolean' || (afterDark && mode !== 'tracks')) return;
   if (difficulty !== 'standard' && (!fixedQuestionModes.includes(mode) || privateTeam || quiz || category !== 'mixed' || format !== 'choice' || includeChristmas)) return;
   const allowedCounts = questionCounts(mode, privateTeam ? 'choice' : format, privateTeam ? 'mixed' : category);
   if (!modes.some(([id]) => id === mode) || !themes.some(([id]) => id === theme)
@@ -73,7 +75,7 @@ function readSettings(body = {}) {
     ? { base: scoring.base, bonus: seconds ? scoring.bonus : 0, doubles: scoring.doubles }
     : defaultScoring(seconds)) : undefined;
   return { mode, theme, difficulty, raceLength, raceTrack, raceDifficulty, scoring: scores, boardSpeed: seconds ? boardSpeed : 0, legacyScoring: !isEstimateShow(mode) && scoring === undefined, format: privateTeam ? 'choice' : format, category: fixedQuestionModes.includes(mode) && !privateTeam ? category : 'mixed', count: mode === 'knockout' ? KNOCKOUT_QUESTIONS : ['tracks', 'samepage', 'spotlight', 'brain', 'topanswers', 'rare', 'sketch', 'punchline', 'cards', 'bluff'].includes(mode) ? count : socialModes.includes(mode) ? 3 : partyModes.includes(mode) ? 1 : quiz?.questions.length ?? count,
-    seconds, autoReveal, includeChristmas, phoneView: privateTeam ? 'full' : phoneView, privateQuestions: privateTeam,
+    seconds, autoReveal, includeChristmas, afterDark, phoneView: privateTeam ? 'full' : phoneView, privateQuestions: privateTeam,
     teamCount, boardLength, playStyle, scoreInterval: supportsScoreCheckpoints(mode) ? scoreInterval : 1, customQuiz: quiz };
 }
 
@@ -277,7 +279,7 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
     awards: !waiting && phase === 'finished' ? room.awards : undefined,
     mode: room.mode, playStyle: room.playStyle, privateQuestions: room.privateQuestions, party: waiting ? undefined : publicParty(room, key), race: room.mode === 'quizrace' && room.race ? publicRaceState(room.race, key, isHost) : undefined, raceLength: room.raceLength, raceTrack: room.raceTrack, raceDifficulty: room.raceDifficulty, phoneView: room.phoneView, isCaptain: key === room.captain, captainId: captain?.id, captainName: captain?.name,
     quizTitle: room.customQuiz?.title, quizTypes: room.quizTypes,
-    includeChristmas: room.includeChristmas, autoReveal: room.autoReveal, theme: room.theme, format: room.format, motion: room.motion, activeTeam,
+    includeChristmas: room.includeChristmas, afterDark: room.afterDark || undefined, autoReveal: room.autoReveal, theme: room.theme, format: room.format, motion: room.motion, activeTeam,
     teams: hiddenScores ? room.teams.map(team => ({ ...team, score: room.lastScoreBreak.get(team.id)?.row.score ?? 0, roundPoints: undefined })) : room.teams,
     lastTurn: revealed && finalTurn(room), teamWinners: phase === 'finished' && room.teams.length ? winningTeams(room) : undefined, teamCount: room.teamCount, boardLength: room.boardLength,
     teamPreview: phase === 'lobby' && room.players.size &&

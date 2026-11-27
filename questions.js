@@ -12,6 +12,10 @@ import { levels1 } from './trivia-levels-1.js';
 import { levels2 } from './trivia-levels-2.js';
 import { levels3 } from './trivia-levels-3.js';
 import { levels4 } from './trivia-levels-4.js';
+import { levels5 } from './trivia-levels-5.js';
+import { levels6 } from './trivia-levels-6.js';
+import { levels7 } from './trivia-levels-7.js';
+import { levels8 } from './trivia-levels-8.js';
 import { isSpecialist, formatTypes } from './public/game-config.js';
 
 const banks = {
@@ -510,7 +514,7 @@ for (const pack of [sportChoice, screenChoice, topupChoice]) addPack(banks, pack
 for (const pack of [sportBoolean, screenBoolean, topupBoolean]) addPack(trueFalse, pack);
 // Levelled packs (27 November 2026): every row knows its difficulty, 1 (easy) to 6 (expert).
 // They join the everyday banks, and Board Race and Knockout draw from them by level.
-export const levelled = Object.assign({}, levels1, levels2, levels3, levels4);
+export const levelled = Object.assign({}, levels1, levels2, levels3, levels4, levels5, levels6, levels7, levels8);
 for (const [category, formats] of Object.entries(levelled)) {
   (banks[category] ??= []).push(...Object.values(formats.choice).flat());
   (trueFalse[category] ??= []).push(...Object.values(formats.boolean).flat());

@@ -48,3 +48,7 @@ Each game has a recorded, captioned guide (`public/audio/duo/guide-<mode>.mp3`, 
 ## Shade (added 27 November 2026)
 
 Shade is an original colour-clue game: its name, board (30 by 16 squares generated in code by `public/shade-grid.js`), rules text and look are ours, not a copy of any published game's board, name or artwork. Its typeface is Fredoka (SIL Open Font License, `public/fonts/fredoka-OFL.txt`). Its theme, title sting, intro and guide were made with the same ElevenLabs tools and voices as the other games.
+
+## Don't Look! (added 27 November 2026)
+
+Don't Look! is an original describe-and-guess game: its name, rules text, look and its 256 words (`dont-look-words.js`, written for Jambaloop, no brand names or real people) are ours. Its typeface is Paytone One (SIL Open Font License, `public/fonts/paytoneone-OFL.txt`). Its theme, title sting, intro and guide were made with the same ElevenLabs tools and voices as the other games.

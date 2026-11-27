@@ -37,6 +37,7 @@ export const effects = {
   'sting-wayoff': ['Cheeky game show sting, a rising slide whistle that overshoots, a comedy boing and a bright brass hit, instrumental', 3.5],
   'sting-catchup': ['Fast chase game show sting, galloping drums, urgent brass riff and a whip-crack ending, instrumental', 3.5],
   'sting-shade': ['Bright artistic game show sting, a quick rising xylophone run through a scale, a paint splash and a shimmering chord, instrumental', 3.5],
+  'sting-dontlook': ['Cheeky game show sting, a sneaky tiptoe bass line then a loud brass ta-da and a cymbal, instrumental', 3.5],
   'sting-sketch': ['Playful doodle sting, pencil scribble sound then bouncy pizzicato and a pop, instrumental', 3.5],
   'sting-soclose': ['Precise measuring sting, ticking tape measure, plucked notes stepping up to a ding, instrumental', 3.5],
 };

@@ -13,6 +13,7 @@ import {sketchView} from './sketch-view.js';
 import {bloodmoonView} from './bloodmoon-view.js';
 import {catchUpView} from './catch-up-view.js';
 import {shadeView} from './shade-view.js';
+import {dontLookView} from './dont-look-view.js';
 export function avatarView(player, escape) {
   const photo = player.avatar ? ` data-room-avatar="${escape(player.avatar)}"` : '';
   return `<span class="player-avatar avatar-initial" aria-hidden="true"${photo}>${escape(Array.from(player.name)[0]?.toUpperCase() ?? '?')}</span>`;
@@ -22,6 +23,7 @@ export function partyView(state, { host, canControl, escape, reply, icons }) {
   if(state.mode==='bloodmoon')return bloodmoonView(state,{host,canControl,escape,icons});
   if(state.mode==='catchup')return catchUpView(state,{host,canControl,escape,icons});
   if(state.mode==='shade')return shadeView(state,{host,canControl,escape,icons});
+  if(state.mode==='dontlook')return dontLookView(state,{host,canControl,escape,icons});
   if(state.mode==='sketch')return sketchView(state,{host,canControl,escape,icons});
   if (state.mode === 'rare') return rareFindView(state,{host,canControl,escape,icons,reply});
   if (state.mode === 'topanswers') return topAnswersView(state,{host,canControl,escape,icons});

@@ -239,6 +239,16 @@ const scenes = {
     rect(196, 186, 42, 42, 'none', { rx: 9, stroke: c.ink, 'stroke-width': 5 }),
     ...[[60, 40, 8], [350, 350, 9], [330, 40, 6]].map(([x, y, s]) => sparkle(x, y, s, c.accent, .8)),
   ],
+  dontlook: c => [
+    `<defs>${linear('glow', [[0, c.bg[0]], [1, c.bg[1]]])}</defs>`,
+    rect(0, 0, 400, 400, 'url(#glow)'),
+    // A big telly with a word bar on it, and a head turned away with speech marks flying past.
+    rect(60, 70, 280, 170, c.surface, { rx: 18, stroke: c.ink, 'stroke-width': 6, opacity: .9 }),
+    rect(100, 130, 200, 46, c.accent, { rx: 12 }),
+    rect(180, 240, 40, 26, c.ink, { opacity: .7 }), rect(140, 264, 120, 12, c.ink, { rx: 6, opacity: .7 }),
+    circle(200, 330, 42, c.accent2), path('M172 318c10 8 20 8 28 0M204 318c8 8 18 8 28 0', { fill: 'none', stroke: c.bg[1], 'stroke-width': 6, 'stroke-linecap': 'round' }),
+    ...[[70, 320, 9], [330, 310, 8], [350, 50, 7], [44, 44, 6]].map(([x, y, s]) => sparkle(x, y, s, c.accent, .8)),
+  ],
   catchup: c => [
     `<defs>${linear('sky', [[0, c.bg[0]], [1, c.bg[1]]])}</defs>`,
     rect(0, 0, 400, 400, 'url(#sky)'),

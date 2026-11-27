@@ -1832,5 +1832,25 @@
   "tempo": 1.08,
   "loudness": -15.5,
   "seconds": 65.59
+ },
+ "sfx/sting-dontlook.mp3": {
+  "tempo": 1,
+  "loudness": -14.5,
+  "seconds": 2.61
+ },
+ "music/game-dontlook.mp3": {
+  "tempo": 1,
+  "loudness": -20.5,
+  "seconds": 44.04
+ },
+ "duo/dontlook.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 16.56
+ },
+ "duo/guide-dontlook.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 55.43
  }
 }

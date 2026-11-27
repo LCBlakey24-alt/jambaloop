@@ -28,6 +28,7 @@ export const prompts = {
   wayoff: 'Elimination round tension. Deep timpani hits, heartbeat kick drum, low strings ostinato and a cold synth, dramatic, 92 bpm.',
   catchup: 'Chase scene breakbeat. Fast funky drums, wah guitar, punchy brass hits and a racing bassline, breathless and fun, 138 bpm.',
   shade: 'Colourful dreamy art-pop. Soft electric piano chords, plucky synth arpeggio that shifts key like changing colours, light brushed beat and warm bass, curious and bright, 104 bpm.',
+  dontlook: 'Frantic fun charades music. Fast ska-style offbeat guitar, bouncing bass, bright trumpet riff and a ticking woodblock, excitable and silly, 156 bpm.',
   sketch: 'Playful art studio doodle music. Toy piano, ukulele, shaker, tuba oom-pah and a kazoo-style lead, scribbly and silly, 116 bpm.',
 };
 

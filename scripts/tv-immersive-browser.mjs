@@ -71,7 +71,10 @@ try{
     await tv.waitForTimeout(1500);
     const canvas=await tv.locator('.race-3d-canvas').boundingBox();
     assert.ok(canvas.width>1000&&canvas.height>500,'3D circuit fills the stage: '+JSON.stringify(canvas));
-    assert.equal(await tv.locator('.quiz-race-scene').evaluate(node=>getComputedStyle(node).visibility),'hidden');
+    // The race view re-renders as the karts load, so a node read at a fixed moment can be a detached one
+    // (its computed visibility is then empty). Wait for the scene on the page to be hidden instead.
+    await tv.waitForFunction(()=>{const scene=document.querySelector('.quiz-race-scene');return scene&&getComputedStyle(scene).visibility==='hidden';},null,{timeout:8000})
+      .catch(()=>assert.fail('the flat race scene is hidden once the 3D circuit is showing'));
     await tv.screenshot({path:'browser-screenshots/tv-race-3d-1920x1080.png'});
     await tv.context().close();
     console.log('PASS: 3D Quiz Race circuit on the TV');

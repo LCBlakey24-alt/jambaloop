@@ -16,6 +16,7 @@ import {startBrainGame,advanceBrain,submitBrain,publicBrain} from './brain-ladde
 import {startTopAnswersRound,advanceTopAnswers,submitTopAnswers,publicTopAnswers} from './top-answers.js';
 import {startRareRound,advanceRare,advanceRareWhenReady,submitRare,publicRare} from './rare-find.js';
 import {startShade,advanceShade,advanceShadeWhenReady,submitShade,publicShade} from './shade-game.js';
+import {startLook,advanceLook,expireLook,submitLook,publicLook} from './dont-look.js';
 import {startCatchUp,advanceCatchUp,expireCatchUp,submitCatchUp,publicCatchUp} from './catch-up.js';
 import {startBloodmoon,advanceBloodmoon,expireBloodmoon,submitBloodmoon,publicBloodmoon} from './bloodmoon.js';
 import {startSketchRound,advanceSketch,expireSketch,submitSketch,publicSketch} from './sketch-sprint.js';
@@ -131,6 +132,7 @@ function advanceBluff(room,publish) {
 
 export function startParty(room, publish) {
   if(room.mode==='catchup')return startCatchUp(room,publish);
+  if(room.mode==='dontlook')return startLook(room,publish);
   if(room.mode==='shade')return startShade(room,publish);
   if(room.mode==='bloodmoon')return startBloodmoon(room,publish);
   if(room.mode==='sketch')return startSketchRound(room,publish);
@@ -174,6 +176,7 @@ export function rescuePotato(room, publish) {
 
 export function expireParty(room, publish) {
   if(room.mode==='catchup')return expireCatchUp(room,publish);
+  if(room.mode==='dontlook')return expireLook(room,publish);
   if(room.mode==='bloodmoon')return expireBloodmoon(room,publish);
   if(room.mode==='sketch')return expireSketch(room,publish);
   if (room.phase === 'party-potato' && clockExpired(room)) {
@@ -185,6 +188,7 @@ export function expireParty(room, publish) {
 
 export function advanceParty(room, publish) {
   if(room.mode==='catchup')return advanceCatchUp(room,publish);
+  if(room.mode==='dontlook')return advanceLook(room,publish);
   if(room.mode==='shade')return advanceShade(room,publish);
   if(room.mode==='bloodmoon')return advanceBloodmoon(room,publish);
   if(room.mode==='sketch')return advanceSketch(room,publish);
@@ -200,6 +204,7 @@ export function advanceParty(room, publish) {
 
 export function submitParty(room, key, data, publish) {
   if(room.mode==='catchup')return submitCatchUp(room,key,data,publish);
+  if(room.mode==='dontlook')return submitLook(room,key,data,publish);
   if(room.mode==='shade')return submitShade(room,key,data,publish);
   if(room.mode==='bloodmoon')return submitBloodmoon(room,key,data,publish);
   if(room.mode==='sketch')return submitSketch(room,key,data,publish);
@@ -260,6 +265,7 @@ export function submitParty(room, key, data, publish) {
 
 export function publicParty(room, key) {
   if(room.mode==='catchup')return publicCatchUp(room,key);
+  if(room.mode==='dontlook')return publicLook(room,key);
   if(room.mode==='shade')return publicShade(room,key);
   if(room.mode==='bloodmoon')return publicBloodmoon(room,key);
   if(room.mode==='sketch')return publicSketch(room,key);
@@ -312,6 +318,7 @@ export function publicParty(room, key) {
 
 export function advancePartyWhenReady(room, publish) {
   if (room.mode === 'catchup') return false;
+  if (room.mode === 'dontlook') return false;
   if (room.mode === 'shade') return advanceShadeWhenReady(room, publish);
   if (room.mode === 'bloodmoon') return false;
   if (room.mode === 'rare') return advanceRareWhenReady(room,publish);

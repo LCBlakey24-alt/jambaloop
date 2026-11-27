@@ -240,6 +240,18 @@ export const gameGuides = {
     ['poppy', '[warmly] Everyone takes a turn giving clues. Most points wins.', 'win'],
     ['max', '[excited] Eyes on the board. Off we go!', 'go'],
   ],
+  dontlook: [
+    ['max', '[excited] This is Don\'t Look! The only game where the telly is off limits.', 'title'],
+    ['poppy', '[conversational] With four or more of you, the room splits into two teams. Fewer than that, and you all play together.', 'teams', 2],
+    ['max', '[cheerfully] Each turn, one player is the guesser. Guesser, stand up and turn your back to the TV.', 'turned'],
+    ['poppy', '[playfully] A word appears on the screen behind you. Your team can see it. You cannot.', 'turned'],
+    ['max', '[conversational] There are three rounds. Round one is speaking only. Describe it, but keep your hands still.', 'debate'],
+    ['poppy', '[whispers] Round two is actions only. Act it out in total silence. Not a word.', 'mime'],
+    ['max', '[excited] And round three, anything goes. Speak, act, make the noises. Just never say the word itself.', 'debate'],
+    ['poppy', '[cheerfully] When the guesser gets it, anyone on the team taps Correct on their phone. Stuck? Tap Pass.', 'mark'],
+    ['max', '[fast] Sixty seconds a turn, and the correct answers from all three rounds are added together.', 'timer', '60'],
+    ['poppy', '[excited] Backs to the telly. No peeking. Go!', 'go'],
+  ],
   sketch: [
     ['max', '[cheerfully] This is Sketch Sprint. You do not need to be able to draw. It is funnier if you cannot.', 'title'],
     ['poppy', '[conversational] Each round, one player is the artist. A secret word appears on their phone only.', 'secret'],

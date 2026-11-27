@@ -149,6 +149,12 @@ export const duoIntros = {
     ['poppy', '[playfully] Everyone else hunts for it on the big board. The closer you land, the more you score.'],
     ['max', '[laughs] And no, you cannot just say "blue". Well. You can. Good luck with that.'],
   ],
+  dontlook: [
+    ['max', '[excited] This is Don\'t Look! And we mean it.'],
+    ['poppy', '[cheerfully] One of you turns your back to the TV, and your team describes the word on the screen.'],
+    ['max', '[playfully] Three rounds. Speaking only, then actions only, then anything goes.'],
+    ['poppy', '[laughs] And absolutely no peeking. We will be watching!'],
+  ],
   sketch: [
     ['poppy', '[excited] Welcome to Sketch Sprint!'],
     ['max', '[cheerfully] One player gets a secret prompt, and draws it on their phone.'],

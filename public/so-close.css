@@ -125,9 +125,9 @@
 
 /* ---- Way Off: who is out this round ---- */
 .way-out { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .5rem .9rem; margin: .5rem 0; padding: clamp(.5rem, 1.6vh, 1.1rem) 1rem; border-radius: 14px;
-  background: #2b0a1c; border: 3px solid #ff4f7b; color: #fff; font-size: clamp(1.1rem, 3.2vh, 2.2rem); font-weight: 700; text-align: center; }
+  background: #1b2006; border: 3px solid #ff4f7b; color: #fff; font-size: clamp(1.1rem, 3.2vh, 2.2rem); font-weight: 700; text-align: center; }
 .way-out strong { color: #ffd23f; letter-spacing: .06em; }
-.way-out-player { display: inline-flex; align-items: center; gap: .4rem; padding: .15em .6em .15em .2em; border-radius: 99px; background: #501636; }
+.way-out-player { display: inline-flex; align-items: center; gap: .4rem; padding: .15em .6em .15em .2em; border-radius: 99px; background: #343c10; }
 .way-out-player .player-avatar { width: 1.6em; height: 1.6em; font-size: .7em; }
 @media (prefers-reduced-motion: no-preference) { .way-out { animation: way-out-in .6s cubic-bezier(.2, 1.4, .3, 1) backwards; } .way-out-player { animation: way-out-drop 1s ease-in .8s both; } }
 @keyframes way-out-in { from { transform: scale(.7); opacity: 0; } }

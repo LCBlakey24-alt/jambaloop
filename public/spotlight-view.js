@@ -1,5 +1,6 @@
 import { partyFinale } from './party-finale.js';
 import {replayButtons} from './game-night.js';
+import { face } from './player-face.js';
 
 const choices=['A','B','C','D'];
 const stageTag={
@@ -73,7 +74,7 @@ export function spotlightView(state,{host,canControl,escape,icons}) {
     const headline=winners.length===1?escape(winners[0].name)+' takes the spotlight!':'A shared spotlight!';
     content='<div class="spotlight-final"><span class="spotlight-final-kicker">THE FINAL SPOTLIGHT</span>'+
       '<h1>'+headline+'</h1>'+partyFinale(state,{host,escape})+'<p>Every contestant had their chance to shine.</p>'+
-      '<ol class="spotlight-final-ranking">'+ranks.map((person,i)=>'<li><span><b>'+(i+1)+'</b> '+escape(person.name)+'</span><strong>'+person.score.toLocaleString()+' PTS</strong></li>').join('')+'</ol>'+
+      '<ol class="spotlight-final-ranking">'+ranks.map((person,i)=>'<li><span><b>'+(i+1)+'</b> '+face(person)+escape(person.name)+'</span><strong>'+person.score.toLocaleString()+' PTS</strong></li>').join('')+'</ol>'+
       (!host?'<p class="spotlight-personal-final">Your points: <b>'+(state.player?.score?.toLocaleString()??0)+'</b></p>':'')+
       (canControl?'<div class="actions">'+replayButtons(state,icons)+'</div>':'')+
       '</div>';

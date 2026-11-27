@@ -101,9 +101,9 @@ test('Rare Find finale displays tied contestants at the same rank',()=>{
   const html=rareFindView({phase:'finished',index:2,total:3,party:{type:'rare'},players:[
     {name:'Alex',score:500},{name:'Bailey',score:500},{name:'Casey',score:200},
   ]},{host:true,canControl:false,escape:String,icons:()=>'',reply:''});
-  assert.match(html,/<b>1\.<\/b> Alex/);
-  assert.match(html,/<b>1\.<\/b> Bailey/);
-  assert.match(html,/<b>3\.<\/b> Casey/);
+  assert.match(html,/<b>1\.<\/b> <span[^>]*>A<\/span>Alex/);
+  assert.match(html,/<b>1\.<\/b> <span[^>]*>B<\/span>Bailey/);
+  assert.match(html,/<b>3\.<\/b> <span[^>]*>C<\/span>Casey/);
   assert.doesNotMatch(html,/<b>2\.<\/b>/);
 });
 

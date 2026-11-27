@@ -289,3 +289,6 @@ body.playing .player-only .game-panel { box-shadow: 0 10px 26px #09071551,inset 
   .game .qr, .join-qr-frame, .join-dialog-qr { display: none !important; }
 }
 .join-scan-button[hidden] { display: none; }
+
+/* A face beside a name: small, round, and sized from the text it sits in. */
+.player-avatar.face { display: inline-grid; place-items: center; width: 1.5em; height: 1.5em; min-width: 1.5em; font-size: .78em; margin-right: .4em; vertical-align: middle; border-radius: 50%; flex: none; }

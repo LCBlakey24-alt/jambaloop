@@ -14,6 +14,7 @@ import { awardView, currentFrame, frameView, revealFrames, scoreReveal } from '.
 import { boardSpeedValues, bonusValues, canSetScore, defaultScoring, doubleSchedules, pointValues } from './scoring.js';
 import { gameNightPresets, gameNightView, partySettings, playlistEditor, playlistLimit, queuedSettings, replayButtons } from './game-night.js';
 import { canScan, startScan } from './qr-scan.js';
+import { face, setRoster } from './player-face.js';
 import { clearRoomSession, forgetPlayer, parseRoomCode, recentRooms, rememberPlayer, rememberedPlayer, restoreRoomSession, saveRoomSession } from './room-session.js';
 import {readQuestionHistory, rememberQuestion} from './question-history.js';
 import { modeVariables, sceneBackdrop } from './mode-style.js';
@@ -1005,6 +1006,8 @@ function celebrateMoment(s, host, enter, result, held = 0) {
 }
 
 function render(s) {
+  // Every view can put a face beside a name: the room's roster, or the leaderboard where there is no roster.
+  setRoster(s.roster ?? s.players);
   const { host } = session;
   const showLiveScores = showsScoresEachQuestion(s);
   const won = s.answerCorrect ?? Boolean(s.earned);

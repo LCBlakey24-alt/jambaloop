@@ -279,6 +279,9 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
     awards: !waiting && phase === 'finished' ? room.awards : undefined,
     mode: room.mode, playStyle: room.playStyle, privateQuestions: room.privateQuestions, party: waiting ? undefined : publicParty(room, key), race: room.mode === 'quizrace' && room.race ? publicRaceState(room.race, key, isHost) : undefined, raceLength: room.raceLength, raceTrack: room.raceTrack, raceDifficulty: room.raceDifficulty, phoneView: room.phoneView, isCaptain: key === room.captain, captainId: captain?.id, captainName: captain?.name,
     quizTitle: room.customQuiz?.title, quizTypes: room.quizTypes,
+    // Names and selfies of everyone playing, so each screen can show a face beside a name.
+    // Already visible to the room in the lobby; left out of very large rooms to keep updates small.
+    roster: !waiting && players.size <= 60 ? [...players.values()].map(entry => ({ id: entry.id, name: entry.name, avatar: entry.avatar })) : undefined,
     includeChristmas: room.includeChristmas, afterDark: room.afterDark || undefined, autoReveal: room.autoReveal, theme: room.theme, format: room.format, motion: room.motion, activeTeam,
     teams: hiddenScores ? room.teams.map(team => ({ ...team, score: room.lastScoreBreak.get(team.id)?.row.score ?? 0, roundPoints: undefined })) : room.teams,
     lastTurn: revealed && finalTurn(room), teamWinners: phase === 'finished' && room.teams.length ? winningTeams(room) : undefined, teamCount: room.teamCount, boardLength: room.boardLength,

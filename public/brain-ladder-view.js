@@ -1,5 +1,6 @@
 import { partyFinale } from './party-finale.js';
 import {replayButtons} from './game-night.js';
+import { face } from './player-face.js';
 
 function ladderRail(total,index,ended) {
   const steps=Array.from({length:total},(_,i)=>total-i);
@@ -43,13 +44,13 @@ export function brainLadderView(state,{host,canControl,escape,icons}) {
   const panel='<aside class="brain-rail"><div class="brain-rail-title"><span>THE LADDER</span><strong>'+total+' LEVELS</strong></div>'+
     ladderRail(total,index,finished)+
     '<div class="brain-remaining"><strong>'+party.remaining+'</strong><span>STILL CLIMBING</span></div>'+
-    '<div class="brain-players">'+leaders.slice(0,4).map((p,i)=>'<div><b>'+(i+1)+'</b><span>'+escape(p.name)+'</span><small>'+('♥'.repeat(p.lives)||'OUT')+'</small></div>').join('')+'</div></aside>';
+    '<div class="brain-players">'+leaders.slice(0,4).map((p,i)=>'<div><b>'+(i+1)+'</b><span>'+face(p)+escape(p.name)+'</span><small>'+('♥'.repeat(p.lives)||'OUT')+'</small></div>').join('')+'</div></aside>';
   let body='';
   let next='';
   if(finished) {
     body='<div class="brain-finale"><div class="brain-micro">THE FINAL RUNG</div>'+
       '<h1>'+finalHeadline+'</h1>'+partyFinale(state,{host,escape})+'<p>Two lives. Every decision counted.</p>'+
-      '<ol class="brain-final-leaders">'+leaders.map((p,i)=>'<li><span><b>'+(i+1)+'.</b> '+escape(p.name)+'</span><span>'+('♥'.repeat(p.lives)||'ELIMINATED')+'</span><strong>'+p.score.toLocaleString()+' PTS</strong></li>').join('')+'</ol>'+
+      '<ol class="brain-final-leaders">'+leaders.map((p,i)=>'<li><span><b>'+(i+1)+'.</b> '+face(p)+escape(p.name)+'</span><span>'+('♥'.repeat(p.lives)||'ELIMINATED')+'</span><strong>'+p.score.toLocaleString()+' PTS</strong></li>').join('')+'</ol>'+
       (!host?'<p class="brain-own-final">Your result: <b>'+state.player?.score?.toLocaleString()+' points</b></p>':'')+
       (canControl?'<div class="actions">'+replayButtons(state,icons)+'</div>':'')+'</div>';
   } else {

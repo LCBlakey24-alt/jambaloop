@@ -2,6 +2,7 @@
 // the percentage bars are derived exclusively from votes in this room.
 import { partyFinale } from './party-finale.js';
 import {replayButtons} from './game-night.js';
+import { face } from './player-face.js';
 const letters='ABCD';
 const phaseLabels={'top-poll':'ROOM POLL','top-guess':'YOUR PREDICTION','top-reveal':'THE ANSWERS',finished:'FINAL STANDINGS'};
 const asNumber=value=>Number.isFinite(value)?value.toLocaleString('en-GB'):'0';
@@ -37,7 +38,7 @@ function scores(state,escape,host){
   const headline=winners.length===1?escape(winners[0].name)+' read the room!':'A shared top answer!';
   return '<div class="top-finale"><span class="top-hero-tag">THE FINAL REVEAL</span>'+
     '<h1>'+headline+'</h1>'+partyFinale(state,{host,escape})+'<p>The real votes are in. Here are the final scores.</p>'+
-    '<ol class="top-final-scores">'+scores.map((row,index)=>'<li><span><b>'+(index+1)+'.</b> '+escape(row.name)+'</span><strong>'+asNumber(row.score)+' PTS</strong></li>').join('')+'</ol>'+
+    '<ol class="top-final-scores">'+scores.map((row,index)=>'<li><span><b>'+(index+1)+'.</b> '+face(row)+escape(row.name)+'</span><strong>'+asNumber(row.score)+' PTS</strong></li>').join('')+'</ol>'+
     '</div>';
 }
 

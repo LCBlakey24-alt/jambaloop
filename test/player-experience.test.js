@@ -49,3 +49,20 @@ test('join screen collects only a room code and nickname as required fields', as
   assert.match(section, /class="button primary join-room-submit" type="submit"/);
   assert.match(app, /document\.addEventListener\('paste', event =>/);
 });
+
+test('a player’s selfie follows them: the roster gives every view a face for a name or an id', async () => {
+  const { face, setRoster } = await import('../public/player-face.js');
+  setRoster([{ id: 'p1', name: 'Maya', avatar: '/api/rooms/123456/avatar/p1' }, { id: 'p2', name: 'Bo' }]);
+  // Known by name only, by id only, or already carrying an avatar.
+  assert.match(face('Maya'), /data-room-avatar="\/api\/rooms\/123456\/avatar\/p1"/);
+  assert.match(face({ id: 'p1' }), /data-room-avatar=/);
+  assert.match(face({ name: 'Zed', avatar: '/x' }), /data-room-avatar="\/x"/);
+  // No selfie: the initial, never a broken image.
+  assert.doesNotMatch(face('Bo'), /data-room-avatar/);
+  assert.match(face('Bo'), />B<\/span>$/);
+  assert.match(face('Stranger'), />S<\/span>$/);
+  // Names are escaped.
+  assert.doesNotMatch(face({ name: '<img src=x>' }), /<img/);
+  const views = ['quiz-race-view', 'so-close-view', 'spotlight-view', 'sketch-view', 'fork-view', 'brain-ladder-view', 'rare-find-view', 'same-page-view', 'top-answers-view'];
+  for (const view of views) assert.match(await readFile(new URL(`../public/${view}.js`, import.meta.url), 'utf8'), /face\(/, view + ' shows faces');
+});

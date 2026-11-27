@@ -1,5 +1,5 @@
 import { boardRoute, boardPath, boardPathChoices, boardFinish, boardFork, boardMappedPosition, boardDuration, durationLabel, boardPowers } from './board-route.js';
-import { avatarView } from './party-views.js';
+import { avatarView, wallColumns } from './party-views.js';
 import { categories, categoryName, modes, partyModes, minimumPlayers, wheelCategories, capacityError } from './game-config.js';
 import {requiredPlayers} from './team-play.js';
 import { launcherSteps } from './home-launcher.js';
@@ -211,7 +211,7 @@ export function lobbyView(state, { host, escape, icons, modeName }) {
       <div class="roster-counts"><span class="online-count"><i></i>${state.connected} connected</span>
         ${state.connected < state.playerCount ? `<span>${state.playerCount - state.connected} away</span>` : ''}</div>
       ${state.connected ? `<div class="ready-meter"><strong>${readyText}</strong><progress value="${readyCount}" max="${state.connected}" aria-label="Players ready"></progress></div>` : ''}
-      ${state.players.length ? `<ul class="players">${state.players.map(player => `<li data-connected="${player.connected}" data-ready="${Boolean(player.ready && player.connected)}">${avatarView(player, escape)}${escape(player.name)}${player.id === state.captainId ? '<span aria-label="Captain">★</span>' : ''}${player.connected ? player.ready ? '<small class="ready-badge">Ready</small>' : '' : '<small>Away</small>'}</li>`).join('')}</ul>` : '<p>Waiting for players to join…</p>'}
+      ${state.players.length ? `<ul class="players face-wall is-roster" data-rows="${state.players.length > 10 ? 2 : 1}" style="--cols:${Math.max(4, state.players.length > 10 ? Math.ceil(state.players.length / 2) : state.players.length)}">${state.players.map(player => `<li data-connected="${player.connected}" data-ready="${Boolean(player.ready && player.connected)}">${avatarView(player, escape)}<span class="wall-name">${escape(player.name)}${player.id === state.captainId ? '<span aria-label="Captain"> ★</span>' : ''}</span>${player.connected ? player.ready ? '<small class="ready-badge">Ready</small>' : '' : '<small>Away</small>'}</li>`).join('')}</ul>` : '<p>Waiting for players to join…</p>'}
       ${transfer}${switcher}${summary}${teamPreview}${state.autoReveal ? '<p class="lobby-rule">Auto-reveal is on</p>' : ''}
       <div class="actions">${config}${start}${practice}</div></div></div>`;
 }

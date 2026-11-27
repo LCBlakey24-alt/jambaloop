@@ -7,7 +7,7 @@ import { carouselOffsets, wrapIndex, CAROUSEL_REACH } from './game-carousel.js';
 import { identityOf, identityVariables } from './game-identities.js';
 import { tileArt, launcherCopy } from './home-launcher.js';
 import { modeVariables } from './mode-style.js';
-import { avatarView } from './party-views.js';
+import { avatarView, wallColumns } from './party-views.js';
 
 const ids = modes.map(([id]) => id);
 const info = id => modes.find(([key]) => key === id);
@@ -44,7 +44,7 @@ export function pickerTv(state, { escape, canDrive }) {
         ${state.qr ? `<img class="qr" src="${state.qr}" alt="QR code to join room ${escape(state.code)}">` : ''}</div>
       <div class="picker-centre" aria-live="polite">${centreInfo(state.picker.mode, escape)}</div>
       <div class="game-panel picker-room"><div class="eyebrow">IN THE ROOM · ${state.players.length || state.playerCount || 0}</div>
-        <ul class="players">${(state.players ?? []).slice(0, 18).map(player => `<li>${avatarView(player, escape)}${escape(player.name)}</li>`).join('')}${(state.players?.length ?? 0) > 18 ? `<li class="players-more">+${state.players.length - 18} more</li>` : ''}</ul>
+        <ul class="players face-wall is-strip" style="--cols:${Math.max(3, Math.min(9, (state.players ?? []).length))}">${(state.players ?? []).slice(0, 18).map(player => `<li>${avatarView(player, escape)}<span>${escape(player.name)}</span></li>`).join('')}${(state.players?.length ?? 0) > 18 ? `<li class="players-more">+${state.players.length - 18} more</li>` : ''}</ul>
         <p class="picker-hint">${state.playerCount ? `${captain} is choosing on their phone` : 'Waiting for players to join'}</p>
         ${canDrive ? `<button type="button" class="button primary" data-action="picker-play">Play this game</button>
         <span class="picker-room-actions"><button type="button" class="button outline" data-action="picker-settings">Game settings</button>
@@ -64,7 +64,7 @@ export function gatherTv(state, { escape }) {
       <div class="room-code">${escape(state.code)}</div>
       ${state.qr ? `<img class="qr" src="${state.qr}" alt="QR code to join room ${escape(state.code)}">` : ''}</div>
     <div class="gather-room"><div class="eyebrow">IN THE ROOM · ${count}</div>
-      <ul class="players gather-players">${(state.players ?? []).slice(0, 24).map(player => `<li>${avatarView(player, escape)}<span>${escape(player.name)}</span></li>`).join('')}${(state.players?.length ?? 0) > 24 ? `<li class="players-more">+${state.players.length - 24} more</li>` : ''}</ul>
+      <ul class="players gather-players face-wall" style="--cols:${wallColumns(Math.min((state.players ?? []).length, 48))}">${(state.players ?? []).slice(0, 48).map(player => `<li>${avatarView(player, escape)}<span>${escape(player.name)}</span></li>`).join('')}${(state.players?.length ?? 0) > 48 ? `<li class="players-more">+${state.players.length - 48} more</li>` : ''}</ul>
       ${count ? '' : '<p class="gather-empty">Waiting for the first player…</p>'}
       <div class="gather-actions"><button type="button" class="button primary gather-start" data-action="party-start" ${count ? '' : 'disabled'}>Everyone’s in · Start the party</button>
         <p class="picker-hint">${count ? `${captain || 'The captain'} can also start it from their phone` : 'The first player to join is the captain'}</p>

@@ -14,6 +14,9 @@ import {bloodmoonView} from './bloodmoon-view.js';
 import {catchUpView} from './catch-up-view.js';
 import {shadeView} from './shade-view.js';
 import {dontLookView} from './dont-look-view.js';
+/** How many pictures across a wall of this many players should be. */
+export const wallColumns = count => count <= 1 ? 1 : count <= 4 ? 2 : count <= 9 ? 3 : count <= 16 ? 4 : count <= 25 ? 5 : count <= 36 ? 6 : 8;
+
 export function avatarView(player, escape) {
   const photo = player.avatar ? ` data-room-avatar="${escape(player.avatar)}"` : '';
   return `<span class="player-avatar avatar-initial" aria-hidden="true"${photo}>${escape(Array.from(player.name)[0]?.toUpperCase() ?? '?')}</span>`;

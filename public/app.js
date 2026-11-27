@@ -14,6 +14,7 @@ import { awardView, currentFrame, frameView, revealFrames, scoreReveal } from '.
 import { boardSpeedValues, bonusValues, canSetScore, defaultScoring, doubleSchedules, pointValues } from './scoring.js';
 import { gameNightPresets, gameNightView, partySettings, playlistEditor, playlistLimit, queuedSettings, replayButtons } from './game-night.js';
 import { canScan, startScan } from './qr-scan.js';
+import { face, setRoster } from './player-face.js';
 import { clearRoomSession, forgetPlayer, parseRoomCode, recentRooms, rememberPlayer, rememberedPlayer, restoreRoomSession, saveRoomSession } from './room-session.js';
 import {readQuestionHistory, rememberQuestion} from './question-history.js';
 import { modeVariables, sceneBackdrop } from './mode-style.js';
@@ -37,7 +38,7 @@ import {connectSketchPainter,paintSketchBoard,clearSketch} from './sketch-canvas
 import { openLibrary, savedQuizzes } from './quiz-editor.js';
 import { answerGuide, helpTypes, closestStep, RULER_PITCH, createDraft, formatNumber, orderedItems, setEstimatePrecision, specialAnswer } from './answer-controls.js';
 import { demoView, explainer, hasDemo, practiceView, samples } from './learning.js';
-import { isEstimateShow, maximumTeams, BOARD_PIECES, categories, categoryGroups, categoryName, modes, themes, questionTypes, formatTypes, formatId, difficulties, defaultTheme, partyModes, fixedQuestionModes, minimumPlayers, questionCounts, scoreIntervals, defaultScoreInterval, supportsScoreCheckpoints } from './game-config.js';
+import { isEstimateShow, maximumTeams, BOARD_PIECES, afterHoursModes, categories, categoryGroups, categoryName, modes, themes, questionTypes, formatTypes, formatId, difficulties, defaultTheme, partyModes, fixedQuestionModes, minimumPlayers, questionCounts, scoreIntervals, defaultScoreInterval, supportsScoreCheckpoints } from './game-config.js';
 import { boardView, diceView, lobbyView, powerBar, reviewView, rollRecap, teamList, teamScoreboard, wheelView } from './game-views.js';
 
 const icons = (name, css = '') => `<img class="${css}" src="/icons/${name}.svg" alt="">`;
@@ -439,7 +440,7 @@ function openDialog(mode, value, gameMode, quizId) {
     <label class="switch-row"><input type="checkbox" name="autoReveal" ${configured && state.autoReveal ? 'checked' : ''}><span><strong>Auto-reveal answers</strong><small>Reveal when every eligible player has answered.</small></span></label>
     <label class="switch-row" id="christmas-field"><input type="checkbox" name="includeChristmas" ${configured && state.includeChristmas ? 'checked' : ''}><span>Include Christmas questions</span></label>
     <label class="switch-row after-dark-row" id="after-dark-field" hidden><input type="checkbox" name="afterDark" ${configured && state.afterDark ? 'checked' : ''}>
-      <span><strong>After Dark cards · adults only (18+)</strong><small>Dark, morbid humour instead of the family deck. Off unless you switch it on. Not for children.</small></span></label>
+      <span><strong>After Hours · adults only (18+)</strong><small>Grown-up, darker prompts and cards instead of the family set. Off unless you switch it on. Not for children.</small></span></label>
     <p class="settings-note" id="scoring-note" aria-live="polite"></p>
     <p class="error" role="alert"></p><button class="button primary" type="submit">${rematch ? 'Set up rematch' : configured ? 'Apply to lobby' : 'Create room'} ${icons('arrow-up-right')}</button></form>`;
     const form = content.querySelector('form');
@@ -558,7 +559,7 @@ function openDialog(mode, value, gameMode, quizId) {
       christmasField.hidden = (party && game !== 'potato') || custom || curated || (!categoryField.hidden && form.elements.category.value !== 'mixed');
       form.elements.includeChristmas.disabled = christmasField.hidden;
       const afterDarkField = form.querySelector('#after-dark-field');
-      afterDarkField.hidden = game !== 'tracks';
+      afterDarkField.hidden = !afterHoursModes.includes(game);
       form.elements.afterDark.disabled = afterDarkField.hidden;
       form.querySelector('#count-label').textContent = board ? 'Maximum turns' : rare ? 'Rarity rounds' : topAnswers ? 'Room poll rounds' : brain ? 'Ladder height' : spotlight ? 'Turns per contestant' : trolley || matching || creativeRounds ? 'Rounds' : 'Questions';
       const counts = questionCounts(game, privateQuiz || curated ? 'choice' : form.elements.format.value, privateQuiz || curated ? 'mixed' : form.elements.category.value);
@@ -853,7 +854,7 @@ document.addEventListener('submit', async event => {
     const customQuiz = quiz && quiz !== 'current' ? savedQuizzes().find(entry => entry.id === quiz) : undefined;
     const curated = difficulty && difficulty !== 'standard';
     const scoring = basePoints ? { base: Number(basePoints), bonus: Number(speedPoints), doubles: doublePoints } : undefined;
-    const settings = { mode, playStyle, theme, difficulty, raceLength, raceTrack, raceDifficulty, scoring, scoreInterval: scoreInterval === undefined ? undefined : Number(scoreInterval), boardSpeed: boardSpeed === undefined ? undefined : Number(boardSpeed), format: curated ? 'choice' : format, category: curated ? 'mixed' : category, phoneView, teamCount: Number(teamCount), boardLength: Number(boardLength), customQuiz, useRoomQuiz: quiz === 'current', count: Number(count), privateQuestions: privateQuestions === 'on', seconds: Number(seconds), autoReveal: autoReveal === 'on', includeChristmas: includeChristmas === 'on', afterDark: mode === 'tracks' && afterDark === 'on' };
+    const settings = { mode, playStyle, theme, difficulty, raceLength, raceTrack, raceDifficulty, scoring, scoreInterval: scoreInterval === undefined ? undefined : Number(scoreInterval), boardSpeed: boardSpeed === undefined ? undefined : Number(boardSpeed), format: curated ? 'choice' : format, category: curated ? 'mixed' : category, phoneView, teamCount: Number(teamCount), boardLength: Number(boardLength), customQuiz, useRoomQuiz: quiz === 'current', count: Number(count), privateQuestions: privateQuestions === 'on', seconds: Number(seconds), autoReveal: autoReveal === 'on', includeChristmas: includeChristmas === 'on', afterDark: afterHoursModes.includes(mode) && afterDark === 'on' };
     if (form.id === 'rematch-form' || form.id === 'configure-form') {
       const action = form.id === 'rematch-form' ? 'rematch' : 'configure';
       await api('/' + session.code + '/' + action, { ...settings, game: Number(form.dataset.game), lobbyVersion: Number(form.dataset.lobbyVersion) });
@@ -1005,6 +1006,8 @@ function celebrateMoment(s, host, enter, result, held = 0) {
 }
 
 function render(s) {
+  // Every view can put a face beside a name: the room's roster, or the leaderboard where there is no roster.
+  setRoster(s.roster ?? s.players);
   const { host } = session;
   const showLiveScores = showsScoresEachQuestion(s);
   const won = s.answerCorrect ?? Boolean(s.earned);
@@ -1217,7 +1220,7 @@ function render(s) {
   app.innerHTML = `<section class="game ${host ? 'host-screen' : 'player-only'} ${immersive ? 'immersive' : ''} ${host && tvFocus ? 'tv-focus' : ''} ${enter ? 'phase-enter' : ''}" data-deck-key="${phaseKey}" data-phase="${s.phase}" data-paused="${Boolean(s.pausedAt)}" data-mode="${shownMode}" data-result="${result}" style="${modeVariables(shownMode)}">${sceneBackdrop(shownMode, enter && (s.phase === 'finished' || result === 'win'))}<div class="game-top">
     <div class="screen-identity"><span class="screen-mode-icon" aria-hidden="true">${icons(mode[3])}</span>
       <div><div class="screen-mode-title">${s.phase === 'lobby' && s.picker ? 'Pick a game' : escape(s.quizTitle || (s.mode === 'classic' ? categoryName(s.category) : modeName(s.mode)))}</div>
-      <div class="screen-status">${host && s.phase === 'lobby' && !s.picker && showIdentity(s.mode) ? `<span class="show-studio-label">${showIdentity(s.mode).studio}</span>` : ''}<span class="phase-caption">${caption}</span>
+      <div class="screen-status">${host && s.phase === 'lobby' && !s.picker && showIdentity(s.mode) ? `<span class="show-studio-label">${showIdentity(s.mode).studio}</span>` : ''}<span class="phase-caption">${caption}</span>${s.afterDark && s.phase !== 'lobby' ? '<span class="after-hours-tag">AFTER HOURS 18+</span>' : ''}
       ${s.isCaptain && s.phase !== 'lobby' ? '<span class="captain-tag">★ Captain</span>' : ''}${boost}
       ${host && ['lobby','finished'].includes(s.phase) ? '<span class="studio-publisher">A ROOKIE QUEST GAMES PRODUCTION</span>' : ''}
       ${host && !['lobby','waiting'].includes(s.phase) ? `<span class="tv-live-pill"><i aria-hidden="true"></i>JAMBALOOP LIVE · <span data-tv-connected>${s.connected}</span> PLAYERS</span>` : ''}</div></div></div>${track}

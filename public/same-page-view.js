@@ -1,6 +1,7 @@
 // Original TV-first matching game. All player-submitted strings are escaped.
 import { partyFinale } from './party-finale.js';
 import {replayButtons} from './game-night.js';
+import { face } from './player-face.js';
 
 const results = (party, escape, compact=false) =>
   '<div class="samepage-matches'+(compact?' compact':'')+'">'+
@@ -8,7 +9,7 @@ const results = (party, escape, compact=false) =>
       <article class="samepage-group ${group.count>1?'matched':'single'}">
         <div class="samepage-group-count"><span>${group.count>1?'MATCH':'UNIQUE'}</span><strong>${group.count}</strong></div>
         <div class="samepage-group-main"><strong>${escape(group.answer)}</strong>
-          <span class="samepage-names">${group.members.map(p=>escape(p.name)).join(' · ')}</span></div>
+          <span class="samepage-names">${group.members.map(p=>face(p)+escape(p.name)).join(' · ')}</span></div>
         <div class="samepage-group-points">${group.points ? '+'+group.points : '0'}<small>PTS EACH</small></div>
       </article>`).join('') : '<p>No answers were entered this round.</p>')+
     '</div>';
@@ -31,7 +32,7 @@ export function samePageView(state, {host,canControl,escape,icons,reply}) {
       <div class="samepage-victory-mark" aria-hidden="true">✧ ✧</div>
       <h1>${resultTitle}</h1>${partyFinale(state,{host,escape})}
       <p>Most matching minds across ${total} rounds.</p>
-      <ol class="samepage-final-board">${standings.map((player,i)=>`<li><span><b>#${i+1}</b> ${escape(player.name)}</span><strong>${player.score.toLocaleString()} pts</strong></li>`).join('')}</ol>
+      <ol class="samepage-final-board">${standings.map((player,i)=>`<li><span><b>#${i+1}</b> ${face(player)}${escape(player.name)}</span><strong>${player.score.toLocaleString()} pts</strong></li>`).join('')}</ol>
       ${!host ? `<p>Your final score: <strong>${state.player?.score?.toLocaleString()??0} points</strong></p>` : ''}
       ${canControl ? `<div class="actions">${replayButtons(state,icons)}</div>` : '<p>Stay connected for the next game.</p>'}
     </div>`;

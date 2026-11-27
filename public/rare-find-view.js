@@ -1,6 +1,7 @@
 // Original TV-first rarity show. User text must always be escaped before injection into markup.
 import { partyFinale } from './party-finale.js';
 import {replayButtons} from './game-night.js';
+import { face } from './player-face.js';
 function revealRows(p,escape){
  const groups=p.results?.groups||[];
  const invalid=p.results?.invalid||[];
@@ -8,7 +9,7 @@ function revealRows(p,escape){
    ${groups.length?groups.map(group=>`<article class="rare-answer-row" role="listitem">
      <div class="rare-answer-symbol">${group.points===200?'★':group.points===100?'◆':'●'}</div>
      <div class="rare-answer-name"><strong>${escape(group.answer)}</strong>
-       <span>${group.members.map(member=>escape(member.name)).join(' · ')}${group.reviewed?' · host-approved':''}</span></div>
+       <span>${group.members.map(member=>face(member)+escape(member.name)).join(' · ')}${group.reviewed?' · host-approved':''}</span></div>
      <div class="rare-answer-score"><strong>${group.count}×</strong><span>+${group.points} EACH</span></div>
    </article>`).join(''):'<p class="rare-muted">No valid answers submitted this round.</p>'}
    ${invalid.length?`<div class="rare-invalid-list"><strong>Unaccepted entries · 0 points</strong>
@@ -41,7 +42,7 @@ function finalRows(s,escape,host){
   <h1>${title}</h1>${partyFinale(s,{host,escape})}<p>Correct answers scored best when nobody else thought of them.</p>
   <ol class="rare-final-leaders">${rankings.map(entry=>{
     const rank=rankings.findIndex(candidate=>candidate.score===entry.score)+1;
-    return `<li><span><b>${rank}.</b> ${escape(entry.name)}</span><strong>${entry.score.toLocaleString()} PTS</strong></li>`;
+    return `<li><span><b>${rank}.</b> ${face(entry)}${escape(entry.name)}</span><strong>${entry.score.toLocaleString()} PTS</strong></li>`;
   }).join('')}</ol>
   </div>`;
 }

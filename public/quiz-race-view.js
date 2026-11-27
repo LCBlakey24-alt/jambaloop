@@ -1,4 +1,5 @@
 import {raceTrackMarkup} from './quiz-race-track.js';
+import { face } from './player-face.js';
 const name = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const percent = (distance, total) => Math.min(100, Math.round(100 * distance / Math.max(total,1)));
 
@@ -13,7 +14,7 @@ export function quizRaceView(s, {host,canControl,icons,replayButtons,sending}) {
   const winningTeam = teamRace && s.teamWinners?.length === 1
     ? s.teams.find(team=>team.id===s.teamWinners[0]) : undefined;
   const track = () => `<div class="race-track-wrap" data-track="${r.track}">${raceTrackMarkup()}
-    <div class="quiz-race-standings">${r.racers.map(p=>`<div class="race-rank-row" data-race-rank="${p.id}" style="--racer:${p.color}"><span class="race-position">${p.position}</span><span class="race-rank-name">${name(p.name)}<i class="race-rank-status" aria-hidden="true"></i></span><span class="race-rank-percent">${percent(p.distance,r.length)}%</span><span class="race-mini-track"><i style="width:${percent(p.distance,r.length)}%"></i></span></div>`).join('')}</div></div>`;
+    <div class="quiz-race-standings">${r.racers.map(p=>`<div class="race-rank-row" data-race-rank="${p.id}" style="--racer:${p.color}"><span class="race-position">${p.position}</span><span class="race-rank-name">${face(p)}${name(p.name)}<i class="race-rank-status" aria-hidden="true"></i></span><span class="race-rank-percent">${percent(p.distance,r.length)}%</span><span class="race-mini-track"><i style="width:${percent(p.distance,r.length)}%"></i></span></div>`).join('')}</div></div>`;
   if (finished && !host) {
     const personal = r.racers.find(p => p.id === s.player?.id);
     const placing = personal?.position;
@@ -30,14 +31,14 @@ export function quizRaceView(s, {host,canControl,icons,replayButtons,sending}) {
         <span>${name(result)}</span></div>
       <p>See the full leaderboard on the TV.</p>
       <details class="race-phone-results"><summary>View full results without a TV</summary>
-        <ol>${r.racers.map(p=>`<li><strong>#${p.position} ${name(p.name)}</strong><span>${p.finishedAt===undefined?percent(p.distance,r.length)+'%':((p.finishedAt-3000)/1000).toFixed(2)+'s'}</span></li>`).join('')}</ol>
+        <ol>${r.racers.map(p=>`<li><strong>#${p.position} ${face(p)}${name(p.name)}</strong><span>${p.finishedAt===undefined?percent(p.distance,r.length)+'%':((p.finishedAt-3000)/1000).toFixed(2)+'s'}</span></li>`).join('')}</ol>
       </details>
       <div class="actions">${canControl ? replayButtons(s,icons) : '<button class="button outline" data-action="leave">Back to home</button>'}</div>
     </section>`;
   }
   if(finished) return `<section class="game-panel race-finish-panel"><div class="eyebrow">CHEQUERED FLAG</div><h1>${winningTeam ? 'Team ' + name(winningTeam.name) + ' wins Quiz Race!' : name(leader?.name) + ' wins Quiz Race!'}</h1>
     <p>${winningTeam ? name(leader?.name) + ' crossed first to win it for their team.' : 'First across the finish line wins.'} Final order comes from the server, not the animation.</p>
-    ${track()}${raceTeams}<div class="race-results">${r.racers.map(p=>`<div><strong>#${p.position} · ${name(p.name)}</strong><span>${p.finishedAt === undefined ? percent(p.distance,r.length)+'% completed' : ((p.finishedAt - 3000)/1000).toFixed(2)+'s'}</span></div>`).join('')}</div>
+    ${track()}${raceTeams}<div class="race-results">${r.racers.map(p=>`<div><strong>#${p.position} · ${face(p)}${name(p.name)}</strong><span>${p.finishedAt === undefined ? percent(p.distance,r.length)+'% completed' : ((p.finishedAt - 3000)/1000).toFixed(2)+'s'}</span></div>`).join('')}</div>
     <div class="actions">${canControl? replayButtons(s,icons):'<button class="button outline" data-action="leave">Back to home</button>'}</div></section>`;
   if (host) return `<section class="game-panel race-broadcast" aria-label="Quiz Race broadcast"><div class="race-broadcast-head"><div><div class="eyebrow">QUIZ RACE · ${name(s.categoryName||'GENERAL KNOWLEDGE')}</div><h1>${intro?'Get ready to race!':'Race to the finish!'}</h1></div><div class="race-broadcast-time"><strong data-race-clock>0:00</strong><span>RACE TIME</span></div></div>
     ${intro?'<div class="race-countdown" data-race-countdown aria-live="polite">3</div>':''}

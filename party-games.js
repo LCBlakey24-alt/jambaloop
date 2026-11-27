@@ -5,6 +5,7 @@ import { makeQuestions } from './questions.js';
 import {v2Bluff} from './creative-expansion-v2.js';
 import {bluffV4} from './creative-expansion-v4.js';
 import {bluffV5} from './creative-expansion-v5.js';
+import {afterHoursBluffs} from './after-hours.js';
 
 import { partyModes, socialModes } from './public/game-config.js';
 import { startSocialRound, advanceSocial, submitSocial, publicSocial, advanceSocialWhenReady } from './social-games.js';
@@ -82,8 +83,9 @@ function startBluffRound(room,publish) {
   room.bluffQueue=(room.bluffQueue??[]).filter(key=>keys.includes(key));
   if(!room.bluffQueue.length)room.bluffQueue=shuffleBluffRoles(keys);
   const liar=room.bluffQueue.shift();
-  const available=prompts.filter(prompt=>!room.seen.has(prompt));
-  const prompt=random(available.length?available:prompts);
+  const bank=room.afterDark?afterHoursBluffs:prompts;
+  const available=bank.filter(prompt=>!room.seen.has(prompt));
+  const prompt=random(available.length?available:bank);
   room.seen.add(prompt);
   room.party={liar,prompt,replies:new Map(),votes:new Map(),earned:new Map()};
   room.phase='party-write';

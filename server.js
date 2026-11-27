@@ -24,7 +24,7 @@ import { boardQuestionOrder } from './board-questions.js';
 import { boardQuestion, makeQuestions, makeSoCloseQuestions, questionCategories, verifiedSourceFor } from './questions.js';
 import { soCloseSourceFor } from './so-close-bank.js';
 import {questionHistoryId, questionHistoryLimit, validQuestionHistoryId} from './public/question-history.js';
-import { isEstimateShow, maximumTeams, modes, themes, isQuestionFormat, formatTypes, difficulties, teams, socialModes, minimumPlayers, boardRollDuration, defaultTheme, fixedQuestionModes, questionCounts, wheelCategories, scoreIntervals, supportsScoreCheckpoints, maximumPlayers, capacityError } from './public/game-config.js';
+import { isEstimateShow, maximumTeams, afterHoursModes, modes, themes, isQuestionFormat, formatTypes, difficulties, teams, socialModes, minimumPlayers, boardRollDuration, defaultTheme, fixedQuestionModes, questionCounts, wheelCategories, scoreIntervals, supportsScoreCheckpoints, maximumPlayers, capacityError } from './public/game-config.js';
 
 const app = express();
 const rooms = new Map();
@@ -61,8 +61,8 @@ function readSettings(body = {}) {
     try { quiz = validateQuiz(customQuiz); } catch { return; }
   }
   if (!difficulties.some(([id]) => id === difficulty)) return;
-  // The adults-only deck exists for Fork in the Tracks alone and must be asked for explicitly.
-  if (typeof afterDark !== 'boolean' || (afterDark && mode !== 'tracks')) return;
+  // The adults-only prompts exist for a named set of party games and must be asked for explicitly.
+  if (typeof afterDark !== 'boolean' || (afterDark && !afterHoursModes.includes(mode))) return;
   if (difficulty !== 'standard' && (!fixedQuestionModes.includes(mode) || privateTeam || quiz || category !== 'mixed' || format !== 'choice' || includeChristmas)) return;
   const allowedCounts = questionCounts(mode, privateTeam ? 'choice' : format, privateTeam ? 'mixed' : category);
   if (!modes.some(([id]) => id === mode) || !themes.some(([id]) => id === theme)
@@ -279,6 +279,9 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
     awards: !waiting && phase === 'finished' ? room.awards : undefined,
     mode: room.mode, playStyle: room.playStyle, privateQuestions: room.privateQuestions, party: waiting ? undefined : publicParty(room, key), race: room.mode === 'quizrace' && room.race ? publicRaceState(room.race, key, isHost) : undefined, raceLength: room.raceLength, raceTrack: room.raceTrack, raceDifficulty: room.raceDifficulty, phoneView: room.phoneView, isCaptain: key === room.captain, captainId: captain?.id, captainName: captain?.name,
     quizTitle: room.customQuiz?.title, quizTypes: room.quizTypes,
+    // Names and selfies of everyone playing, so each screen can show a face beside a name.
+    // Already visible to the room in the lobby; left out of very large rooms to keep updates small.
+    roster: !waiting && players.size <= 60 ? [...players.values()].map(entry => ({ id: entry.id, name: entry.name, avatar: entry.avatar })) : undefined,
     includeChristmas: room.includeChristmas, afterDark: room.afterDark || undefined, autoReveal: room.autoReveal, theme: room.theme, format: room.format, motion: room.motion, activeTeam,
     teams: hiddenScores ? room.teams.map(team => ({ ...team, score: room.lastScoreBreak.get(team.id)?.row.score ?? 0, roundPoints: undefined })) : room.teams,
     lastTurn: revealed && finalTurn(room), teamWinners: phase === 'finished' && room.teams.length ? winningTeams(room) : undefined, teamCount: room.teamCount, boardLength: room.boardLength,

@@ -172,6 +172,8 @@ export const minimumPlayers = mode => ['quizrace','soclose'].includes(mode) ? 2 
 // One shared rule for how many players a game supports. `playStyle` matters
 // only for Board Race, where individual racing uses at most four pieces; the
 // room itself can still hold a larger group that switches to Teams.
+// Games with an adults-only After Hours prompt set. The host must switch it on.
+export const afterHoursModes = Object.freeze(['tracks', 'punchline', 'cards', 'bluff', 'samepage']);
 export const roomCapacity = 300;
 export const maximumPlayers = (mode, playStyle) =>
   mode === 'quizrace' ? 12

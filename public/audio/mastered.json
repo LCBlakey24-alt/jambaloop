@@ -1287,5 +1287,530 @@
   "tempo": 1.08,
   "loudness": -15.5,
   "seconds": 32.55
+ },
+ "duo/react-bluff-caught-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 3.21
+ },
+ "duo/react-bluff-caught-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.3,
+  "seconds": 3.89
+ },
+ "duo/react-bluff-escaped-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.7,
+  "seconds": 4.62
+ },
+ "duo/react-bluff-escaped-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 3.76
+ },
+ "duo/react-bluff-vote-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.2,
+  "seconds": 4.31
+ },
+ "duo/react-bluff-vote-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.3,
+  "seconds": 2.87
+ },
+ "duo/react-bluff-write-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 4.05
+ },
+ "duo/react-bluff-write-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.2,
+  "seconds": 4.52
+ },
+ "duo/react-brain-allright-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.6,
+  "seconds": 2.64
+ },
+ "duo/react-brain-allright-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.3,
+  "seconds": 3.11
+ },
+ "duo/react-brain-last-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 2.04
+ },
+ "duo/react-brain-last-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.3,
+  "seconds": 3.32
+ },
+ "duo/react-brain-level-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 5.3
+ },
+ "duo/react-brain-level-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 3
+ },
+ "duo/react-brain-nobody-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 3.74
+ },
+ "duo/react-brain-nobody-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 5.02
+ },
+ "duo/react-brain-out-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 3.97
+ },
+ "duo/react-brain-out-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 4.28
+ },
+ "duo/react-brain-top-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 3.53
+ },
+ "duo/react-brain-top-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 2.85
+ },
+ "duo/react-dice-double-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.3,
+  "seconds": 1.59
+ },
+ "duo/react-dice-double-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 1.91
+ },
+ "duo/react-dice-single-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 2.64
+ },
+ "duo/react-dice-single-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 2.87
+ },
+ "duo/react-dice-triple-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.3,
+  "seconds": 3
+ },
+ "duo/react-dice-triple-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 3.53
+ },
+ "duo/react-funny-final-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 2.85
+ },
+ "duo/react-funny-final-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 3
+ },
+ "duo/react-funny-landslide-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 3.16
+ },
+ "duo/react-funny-landslide-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.6,
+  "seconds": 3.24
+ },
+ "duo/react-funny-tie-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 3
+ },
+ "duo/react-funny-tie-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 4.34
+ },
+ "duo/react-funny-vote-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.3,
+  "seconds": 3
+ },
+ "duo/react-funny-vote-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 4.23
+ },
+ "duo/react-funny-votes-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 2.48
+ },
+ "duo/react-funny-votes-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 2.85
+ },
+ "duo/react-funny-write-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 2.95
+ },
+ "duo/react-funny-write-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 3.97
+ },
+ "duo/react-potato-burned-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 3.97
+ },
+ "duo/react-potato-burned-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 5.3
+ },
+ "duo/react-potato-minute-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.2,
+  "seconds": 2.19
+ },
+ "duo/react-potato-minute-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 3
+ },
+ "duo/react-potato-start-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 3.53
+ },
+ "duo/react-potato-start-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 3.37
+ },
+ "duo/react-potato-twenty-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 2.8
+ },
+ "duo/react-potato-twenty-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 4.13
+ },
+ "duo/react-rare-review-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 3.81
+ },
+ "duo/react-rare-review-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 4.13
+ },
+ "duo/react-rare-shared-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 4.49
+ },
+ "duo/react-rare-shared-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 3
+ },
+ "duo/react-rare-unique-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 3.53
+ },
+ "duo/react-rare-unique-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 2.64
+ },
+ "duo/react-rare-write-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 4.41
+ },
+ "duo/react-rare-write-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 3.24
+ },
+ "duo/react-samepage-all-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 5.02
+ },
+ "duo/react-samepage-all-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 3.97
+ },
+ "duo/react-samepage-big-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 3.32
+ },
+ "duo/react-samepage-big-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 2.48
+ },
+ "duo/react-samepage-none-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 3.97
+ },
+ "duo/react-samepage-none-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 3.53
+ },
+ "duo/react-samepage-write-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.3,
+  "seconds": 3.87
+ },
+ "duo/react-samepage-write-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 3.6
+ },
+ "duo/react-showdown-lead-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.2,
+  "seconds": 2.04
+ },
+ "duo/react-showdown-lead-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.6,
+  "seconds": 3.53
+ },
+ "duo/react-showdown-level-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 2.87
+ },
+ "duo/react-showdown-level-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.3,
+  "seconds": 3
+ },
+ "duo/react-sketch-cracked-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 3.53
+ },
+ "duo/react-sketch-cracked-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 2.27
+ },
+ "duo/react-sketch-draw-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 3
+ },
+ "duo/react-sketch-draw-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 2.35
+ },
+ "duo/react-sketch-first-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 3.37
+ },
+ "duo/react-sketch-first-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 3.45
+ },
+ "duo/react-sketch-nobody-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.2,
+  "seconds": 4.62
+ },
+ "duo/react-sketch-nobody-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.3,
+  "seconds": 4.7
+ },
+ "duo/react-spotlight-contestant-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.3,
+  "seconds": 2.66
+ },
+ "duo/react-spotlight-contestant-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 3.08
+ },
+ "duo/react-spotlight-expert-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.3,
+  "seconds": 3.37
+ },
+ "duo/react-spotlight-expert-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.3,
+  "seconds": 4.49
+ },
+ "duo/react-spotlight-over-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 5.25
+ },
+ "duo/react-spotlight-over-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 3.47
+ },
+ "duo/react-spotlight-right-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 2.72
+ },
+ "duo/react-spotlight-right-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.3,
+  "seconds": 2.48
+ },
+ "duo/react-spotlight-wrong-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 4.47
+ },
+ "duo/react-spotlight-wrong-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 4.49
+ },
+ "duo/react-top-clear-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 2.19
+ },
+ "duo/react-top-clear-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.3,
+  "seconds": 3.03
+ },
+ "duo/react-top-guess-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 4.18
+ },
+ "duo/react-top-guess-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.3,
+  "seconds": 4.62
+ },
+ "duo/react-top-poll-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 3.08
+ },
+ "duo/react-top-poll-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 2.72
+ },
+ "duo/react-top-tie-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.6,
+  "seconds": 3.66
+ },
+ "duo/react-top-tie-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 2.56
+ },
+ "duo/react-top-unanimous-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.6,
+  "seconds": 3.53
+ },
+ "duo/react-top-unanimous-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.2,
+  "seconds": 3.32
+ },
+ "duo/react-tracks-judge-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 4.57
+ },
+ "duo/react-tracks-judge-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 2.72
+ },
+ "duo/react-tracks-lever-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 2.8
+ },
+ "duo/react-tracks-lever-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 4.41
+ },
+ "duo/react-tracks-sabotage-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 4.62
+ },
+ "duo/react-tracks-sabotage-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 3.81
+ },
+ "duo/react-tracks-start-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.3,
+  "seconds": 3.16
+ },
+ "duo/react-tracks-start-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 4.49
+ },
+ "duo/react-wheel-spin-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.1,
+  "seconds": 2.35
+ },
+ "duo/react-wheel-spin-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.2,
+  "seconds": 3.32
+ },
+ "duo/react-wheel-spin-3.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.2,
+  "seconds": 1.83
  }
 }

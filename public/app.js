@@ -22,9 +22,10 @@ import { launcherTile, launcherPreview, launcherModes, launcherSetupArtwork, LAU
 import { carouselView, moveCarousel, themeHome, wrapIndex } from './game-carousel.js';
 import { playSting, stingFor } from './show-sting.js';
 import { isWelcomeNarration, narrationPlaying, playScript, playWelcome, stopNarration, toggleNarration } from './narrator.js';
-import { bloodmoonCalls, boardCalls, catchupCalls, closeCalls, knockoutReactions, raceCalls, reactions, skipQuips, wayoffCalls, welcomeBack } from './duo-scripts.js';
+import { bloodmoonCalls, boardCalls, momentCalls, catchupCalls, closeCalls, knockoutReactions, raceCalls, reactions, skipQuips, wayoffCalls, welcomeBack } from './duo-scripts.js';
 import { openWelcome } from './welcome-show.js';
 import { openGuide } from './guide-show.js';
+import { momentFor, potatoClockCall } from './moment-calls.js';
 import { gameGuides } from './guide-scripts.js';
 import { playChiptune, playCue, playTick, playTowerImpact } from './sound-cues.js';
 import { duckMusic, playMusic, playSfx, preloadSfx, stopMusic } from './sfx.js';
@@ -1396,12 +1397,16 @@ function updateTimer() {
     potatoHeat(app, fraction);
     // A tick each second on the TV (sound is opt-in), quicker in the last ten.
     if (session?.host && soundEnabled && !state.pausedAt && remaining > 0) {
+      const clockCall = potatoClockCall(lastPotatoLeft, remaining);
+      lastPotatoLeft = remaining;
+      if (clockCall) sayReaction(`react-potato-${clockCall}`, momentCalls.potato[clockCall]);
       const beat = remaining < 10000 ? Math.ceil(remaining / 500) : secondsLeft;
       if (beat !== lastPotatoTick) { lastPotatoTick = beat; playTick(sound, remaining < 10000); }
     }
   }
 }
 let lastPotatoTick;
+let lastPotatoLeft;
 let lastQuestionTick;
 
 function boardPrediction(state, host) {
@@ -1561,6 +1566,9 @@ function hostReaction(s, delay) {
 function showCommentary(before, next) {
   const say = (prefix, calls, kind, delay = 600) => calls[kind] && setTimeout(() => sayReaction(`react-${prefix}-${kind}`, calls[kind]), delay);
   const entered = phase => next.phase === phase && before.phase !== phase;
+  // Party games, the wheel and the dice: one line for the moment just reached.
+  const moment = momentFor(before, next);
+  if (moment) { const [game, kind, delay] = moment; return say(game, momentCalls[game], kind, delay); }
   if (next.mode === 'board' && next.game === before.game) {
     if (entered('finished')) return say('board', boardCalls, 'finish', 900);
     if (entered('question')) {

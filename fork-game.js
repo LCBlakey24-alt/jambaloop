@@ -7,11 +7,12 @@ export const FORK_REVEAL_MS = 9000;
 import {forkGoodCards, forkBadCards, forkScenes, forkStages} from './public/fork-cards.js';
 import {v2ForkGood,v2ForkBad} from './creative-expansion-v2.js';
 import {forkGoodV4,forkBadV4} from './creative-expansion-v4.js';
+import {forkGoodV5,forkBadV5} from './creative-expansion-v5.js';
 
 // Each round has a new player Trolley Driver; all other players are
 // randomly dealt into two balanced teams by the authoritative room server.
 function deal(room, kind) {
-  const bank = kind === 'bad' ? [...forkBadCards,...v2ForkBad,...forkBadV4] : [...forkGoodCards,...v2ForkGood,...forkGoodV4];
+  const bank = kind === 'bad' ? [...forkBadCards,...v2ForkBad,...forkBadV4,...forkBadV5] : [...forkGoodCards,...v2ForkGood,...forkGoodV4,...forkGoodV5];
   room.forkUsed ??= {good:new Set(),bad:new Set()};
   const used = room.forkUsed[kind];
   let available = bank.filter(value => !used.has(value));

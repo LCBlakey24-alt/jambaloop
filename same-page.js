@@ -3,6 +3,7 @@ import { isConnected } from './room-presence.js';
 import { questionHistoryId } from './public/question-history.js';
 import {v2Samepage} from './creative-expansion-v2.js';
 import {samepageV4} from './creative-expansion-v4.js';
+import {samepageV5} from './creative-expansion-v5.js';
 
 // Original creative prompts. No survey statistics or factual claims are required.
 export const samePagePrompts = Object.freeze([
@@ -64,6 +65,7 @@ export const samePagePrompts = Object.freeze([
   'Name something that might make a haunted house less frightening.',
   ...v2Samepage,
   ...samepageV4,
+  ...samepageV5,
 ]);
 
 export function normaliseSamePageAnswer(value) {

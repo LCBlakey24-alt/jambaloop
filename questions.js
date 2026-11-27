@@ -8,6 +8,10 @@ import { estimates, orders } from './extra-questions.js';
 import { sportChoice, sportBoolean, sportEstimate, sportOrder } from './trivia-pack-sports.js';
 import { screenChoice, screenBoolean, screenEstimate, screenOrder } from './trivia-pack-screen.js';
 import { topupChoice, topupBoolean } from './trivia-pack-topups.js';
+import { levels1 } from './trivia-levels-1.js';
+import { levels2 } from './trivia-levels-2.js';
+import { levels3 } from './trivia-levels-3.js';
+import { levels4 } from './trivia-levels-4.js';
 import { isSpecialist, formatTypes } from './public/game-config.js';
 
 const banks = {
@@ -504,6 +508,13 @@ const addPack = (target, pack) => {
 };
 for (const pack of [sportChoice, screenChoice, topupChoice]) addPack(banks, pack);
 for (const pack of [sportBoolean, screenBoolean, topupBoolean]) addPack(trueFalse, pack);
+// Levelled packs (27 November 2026): every row knows its difficulty, 1 (easy) to 6 (expert).
+// They join the everyday banks, and Board Race and Knockout draw from them by level.
+export const levelled = Object.assign({}, levels1, levels2, levels3, levels4);
+for (const [category, formats] of Object.entries(levelled)) {
+  (banks[category] ??= []).push(...Object.values(formats.choice).flat());
+  (trueFalse[category] ??= []).push(...Object.values(formats.boolean).flat());
+}
 for (const pack of [sportEstimate, screenEstimate]) addPack(estimates, pack);
 for (const pack of [sportOrder, screenOrder]) addPack(orders, pack);
 for (const [category, items] of Object.entries(verifiedChoiceQuestions)) {
@@ -608,6 +619,7 @@ export function boardQuestion(category, format, level, seen) {
   const candidates = level === 6
     ? [boardExpert[category][format], ...(format === 'choice' ? difficultyQuestions.challenge.filter(([id]) => id === category).map(([, ...row]) => row) : [])]
     : ranks.filter((_, index) => Math.floor(index * 5 / ranks.length) + 1 === level).map(index => bank[index]);
+  candidates.push(...(levelled[category]?.[format]?.[level] ?? []));
   const shuffled = shuffle(candidates);
   const row = shuffled.find(([prompt]) => !hasSeen(seen,prompt)) ?? shuffled[0];
   const question = formatQuestion(category, format, format === 'boolean' ? [row[0], row[1] ? 'True' : 'False'] : row);

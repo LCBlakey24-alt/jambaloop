@@ -130,3 +130,26 @@ html.mobile-deck .game[data-mode="quizrace"] {margin:6px auto 24px}
 .race-power.is-shield { border-color:#58b7ff; box-shadow:0 0 14px #58b7ff55; }
 .race-power small { min-height: 2.2em; }
 .race-rank-status { font-style: normal; margin-left: .2em; letter-spacing: .05em; }
+
+/* League table: points for every place, shown between races and at the end. */
+.race-league em{font-style:normal;font-weight:900;color:#ffd34d;margin-right:.5em}
+.race-league>div{border-left:6px solid var(--racer,#fff)}
+.race-league strong{display:flex;align-items:center;gap:.45em}
+.race-phone-results .race-league{margin:10px 0 0}
+/* On the TV the league table is the whole screen: one big row per racer, read from the sofa. */
+@media (min-width: 900px) {
+  body.playing .host-screen[data-mode="quizrace"] > .race-league-panel { align-items: center; justify-content: center; text-align: center; gap: clamp(8px, 1.6dvh, 20px); }
+  body.playing .host-screen[data-mode="quizrace"] .race-league-panel > h1 { font-size: clamp(40px, 8dvh, 96px); }
+  body.playing .host-screen[data-mode="quizrace"] .race-league-panel > .eyebrow { font-size: clamp(14px, 2.2dvh, 24px); }
+  body.playing .host-screen[data-mode="quizrace"] .race-league-panel > p { font-size: clamp(15px, 2.4dvh, 26px); max-width: 60ch; }
+  body.playing .host-screen[data-mode="quizrace"] .race-league-panel .race-league {
+    grid-template-columns: 1fr; grid-auto-rows: minmax(0, 1fr); width: min(1100px, 82vw); flex: 0 1 auto; max-height: 58dvh; min-height: 0; gap: clamp(4px, .9dvh, 12px); margin: 0; overflow: hidden;
+  }
+  body.playing .host-screen[data-mode="quizrace"] .race-league-panel .race-league:has(> div:nth-child(7)) { grid-template-columns: 1fr 1fr; grid-auto-flow: column; grid-template-rows: repeat(6, minmax(0, 1fr)); width: min(1500px, 92vw); }
+  body.playing .host-screen[data-mode="quizrace"] .race-league-panel .race-league > div {
+    padding: clamp(6px, 1.3dvh, 16px) clamp(14px, 1.6vw, 28px); font-size: clamp(20px, 3.6dvh, 40px); border-left-width: 10px; border-radius: 14px; text-align: left;
+  }
+  body.playing .host-screen[data-mode="quizrace"] .race-league-panel .race-league > div:first-child { background: #33456e; box-shadow: inset 0 0 0 2px #ffd34d; }
+  body.playing .host-screen[data-mode="quizrace"] .race-league-panel .race-league span { color: #fff; font-weight: 800; }
+  body.playing .host-screen[data-mode="quizrace"] .race-league-panel > .actions { margin-top: clamp(6px, 1.4dvh, 18px); }
+}

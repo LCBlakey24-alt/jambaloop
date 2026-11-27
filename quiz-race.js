@@ -1,6 +1,33 @@
 /** Server-authoritative continuous Quiz Race simulation. All times are race-clock ms. */
 import {questionHistoryId} from './public/question-history.js';
 export const raceLengths = Object.freeze({ short: 70, medium: 120, long: 190 });
+// A league is three races, one on each circuit, with points for every placing.
+export const leagueCircuits = Object.freeze(['short', 'medium', 'long']);
+export const leaguePoints = Object.freeze([10, 8, 6, 5, 4, 3, 2, 1]);
+export const leaguePointsFor = position => leaguePoints[position - 1] ?? 1;
+/** A fresh league for these player keys. */
+export const createLeague = keys => ({ races: leagueCircuits.length, round: 0, points: new Map([...keys].map(key => [key, 0])), gained: new Map(), last: undefined });
+/** Score one finished race, given the keys in finishing order. Returns true when the league is over. */
+export function scoreLeagueRace(league, order) {
+  league.last = [...order];
+  league.gained = new Map();
+  order.forEach((key, index) => {
+    const gained = leaguePointsFor(index + 1);
+    league.gained.set(key, gained);
+    league.points.set(key, (league.points.get(key) ?? 0) + gained);
+  });
+  league.round++;
+  return league.round >= league.races;
+}
+/** The table: most points first; level on points, whoever did better in the latest race is ahead. */
+export function leagueStandings(league) {
+  const latest = league.last ?? [];
+  const placed = key => latest.indexOf(key) + 1 || 99;
+  return [...league.points].map(([key, points]) => ({ key, points, gained: league.gained.get(key) ?? 0 }))
+    .sort((a, b) => b.points - a.points || placed(a.key) - placed(b.key));
+}
+/** The track theme for a league race: the chosen theme first, then the others in order. */
+export const leagueTrack = (first, round) => raceTracks[(Math.max(0, raceTracks.indexOf(first)) + round) % raceTracks.length];
 export const raceTracks = Object.freeze(['neon', 'desert', 'snow', 'jungle', 'space']);
 export const raceDifficulties = Object.freeze(['easy', 'medium', 'hard', 'mixed']);
 export const raceQuestionWindow = 12000;
@@ -104,14 +131,14 @@ export function raceMovement(racer, fromMs, toMs) {
   return Math.max(0, distance);
 }
 
-export function createQuizRace(entries, questionPool, { length = 'medium', track = 'neon', difficulty = 'mixed' } = {}, now = 0) {
+export function createQuizRace(entries, questionPool, { length = 'medium', track = 'neon', difficulty = 'mixed', scale = 1 } = {}, now = 0) {
   if (!raceLengths[length] || !raceTracks.includes(track) || !raceDifficulties.includes(difficulty)) throw new Error('Invalid race setup');
   if (entries.length < 2 || entries.length > 12) throw new Error('Quiz Race needs 2 to 12 racers');
   if (!Array.isArray(questionPool) || !questionPool.length || questionPool.some(q => q.type !== 'choice' || !Array.isArray(q.options) || !Number.isInteger(q.correct))) {
     throw new Error('A valid multiple-choice question pool is required');
   }
   return {
-    lastWall: now, time: 0, length: raceLengths[length], track, difficulty, paused: false,
+    lastWall: now, time: 0, length: raceLengths[length] * (scale > 0 ? scale : 1), course: length, track, difficulty, paused: false,
     finished: false, firstFinish: undefined, graceEnd: undefined,
     pool: questionPool, issued: new Set(), results: [],
     racers: new Map(entries.map(([key, player], i) => [key, {
@@ -238,7 +265,7 @@ export function publicRaceState(race, key, isHost) {
   const sorted = racePlacings(race);
   const own = race.racers.get(key);
   return {
-    time: race.time, length: race.length, track: race.track, difficulty: race.difficulty,
+    time: race.time, length: race.length, course: race.course, track: race.track, difficulty: race.difficulty,
     countdown: Math.max(0, 3000 - race.time), paused: race.paused, finished: race.finished,
     // The leader is into the last stretch: right answers are worth more for anyone in it.
     finalSprint: !race.finished && sorted[0]?.distance >= race.length * racePowers.sprintFrom,

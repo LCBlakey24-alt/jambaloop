@@ -15,6 +15,35 @@ export function quizRaceView(s, {host,canControl,icons,replayButtons,sending}) {
     ? s.teams.find(team=>team.id===s.teamWinners[0]) : undefined;
   const track = () => `<div class="race-track-wrap" data-track="${r.track}">${raceTrackMarkup()}
     <div class="quiz-race-standings">${r.racers.map(p=>`<div class="race-rank-row" data-race-rank="${p.id}" style="--racer:${p.color}"><span class="race-position">${p.position}</span><span class="race-rank-name">${face(p)}${name(p.name)}<i class="race-rank-status" aria-hidden="true"></i></span><span class="race-rank-percent">${percent(p.distance,r.length)}%</span><span class="race-mini-track"><i style="width:${percent(p.distance,r.length)}%"></i></span></div>`).join('')}</div></div>`;
+  // League: three races, points for every place. The table comes from the server.
+  const league = s.league;
+  const circuitName = { short: 'short', medium: 'figure-of-eight', long: 'long' };
+  const leagueRows = () => `<div class="race-results race-league" aria-label="League table">${league.table.map(row => {
+    const racer = r.racers.find(p => p.id === row.id);
+    return `<div style="--racer:${racer?.color ?? '#fff'}"><strong>#${row.position} · ${racer ? face(racer) : ''}${name(row.name)}</strong><span>${row.gained ? `<em>+${row.gained}</em> ` : ''}${row.points} pts</span></div>`;
+  }).join('')}</div>`;
+  if (league && (finished || s.phase === 'race-standings')) {
+    const over = finished;
+    const champion = league.table[0];
+    const mine = league.table.find(row => row.id === s.player?.id);
+    const nextButton = canControl && !over ? `<button class="button primary" data-action="advance">Start race ${league.round + 1} ${icons('play')}</button>` : '';
+    const heading = over ? `${name(champion?.name)} wins the league!` : `${name(leader?.name)} wins race ${league.round}!`;
+    const eyebrow = over ? 'CHEQUERED FLAG · LEAGUE CHAMPION' : `LEAGUE · RACE ${league.round} OF ${league.races} DONE`;
+    if (!host) return `<section class="game-panel race-phone race-phone-finish" aria-label="Your league position">
+      <div class="eyebrow">${eyebrow}</div>
+      <h1>${over ? (mine?.position === 1 ? 'You won the league!' : 'League complete!') : `Race ${league.round} done`}</h1>
+      <div class="race-personal-finish"><span>YOUR LEAGUE POSITION</span>
+        <strong>#${mine?.position ?? '-'} <small>of ${league.table.length}</small></strong>
+        <span>${mine ? `${mine.points} points${mine.gained ? ` · +${mine.gained} that race` : ''}` : 'Watching this league'}</span></div>
+      <p>${over ? 'See the final table on the TV.' : `Next: the ${circuitName[league.next]} circuit. Nudges and boosts are topped up for every race.`}</p>
+      <details class="race-phone-results"><summary>View the league table without a TV</summary>${leagueRows()}</details>
+      <div class="actions">${over ? (canControl ? replayButtons(s,icons) : '<button class="button outline" data-action="leave">Back to home</button>') : nextButton}</div>
+    </section>`;
+    return `<section class="game-panel race-finish-panel race-league-panel"><div class="eyebrow">${eyebrow}</div><h1>${heading}</h1>
+      <p>${over ? `Three races, one table. ${name(leader?.name)} took the last race.` : `Points for every place: 10, 8, 6, 5, 4, 3, 2, then 1. Next up: the ${circuitName[league.next]} circuit.`}</p>
+      ${leagueRows()}
+      <div class="actions">${over ? (canControl ? replayButtons(s,icons) : '<button class="button outline" data-action="leave">Back to home</button>') : nextButton}</div></section>`;
+  }
   if (finished && !host) {
     const personal = r.racers.find(p => p.id === s.player?.id);
     const placing = personal?.position;
@@ -40,7 +69,7 @@ export function quizRaceView(s, {host,canControl,icons,replayButtons,sending}) {
     <p>${winningTeam ? name(leader?.name) + ' crossed first to win it for their team.' : 'First across the finish line wins.'} Final order comes from the server, not the animation.</p>
     ${track()}${raceTeams}<div class="race-results">${r.racers.map(p=>`<div><strong>#${p.position} · ${face(p)}${name(p.name)}</strong><span>${p.finishedAt === undefined ? percent(p.distance,r.length)+'% completed' : ((p.finishedAt - 3000)/1000).toFixed(2)+'s'}</span></div>`).join('')}</div>
     <div class="actions">${canControl? replayButtons(s,icons):'<button class="button outline" data-action="leave">Back to home</button>'}</div></section>`;
-  if (host) return `<section class="game-panel race-broadcast" aria-label="Quiz Race broadcast"><div class="race-broadcast-head"><div><div class="eyebrow">QUIZ RACE · ${name(s.categoryName||'GENERAL KNOWLEDGE')}</div><h1>${intro?'Get ready to race!':'Race to the finish!'}</h1></div><div class="race-broadcast-time"><strong data-race-clock>0:00</strong><span>RACE TIME</span></div></div>
+  if (host) return `<section class="game-panel race-broadcast" aria-label="Quiz Race broadcast"><div class="race-broadcast-head"><div><div class="eyebrow">QUIZ RACE · ${league ? `LEAGUE RACE ${league.round + 1} OF ${league.races}` : name(s.categoryName||'GENERAL KNOWLEDGE')}</div><h1>${intro?'Get ready to race!':'Race to the finish!'}</h1></div><div class="race-broadcast-time"><strong data-race-clock>0:00</strong><span>RACE TIME</span></div></div>
     ${intro?'<div class="race-countdown" data-race-countdown aria-live="polite">3</div>':''}
     ${track()}${raceTeams}<div class="race-broadcast-foot"><p>Answer questions on your phone to accelerate. Wrong answers slow you down.</p>
     ${canControl?`<button class="button outline small" data-action="clock">${s.pausedAt?'Resume race':'Pause race'}</button>`:''}</div></section>`;

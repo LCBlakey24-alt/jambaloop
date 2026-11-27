@@ -198,6 +198,7 @@ Run `npm test` to verify room sizes, reconnect behavior, protected avatars and l
 ### Quiz Race additions (27 November 2026)
 
 - **Three circuits**, one per race length: a short oval, the medium figure of eight with its bridge, and a long circuit with four ramps, two hairpins and a chicane. A crowd of little people bobs along both sides of the road, with trees, rocks, tyre stacks, floodlights and trackside boards that change with the track theme.
+- **League** (a setup option): three races, short then medium then long, each on the next track theme. Every place scores (10, 8, 6, 5, 4, 3, 2, then 1), the table is shown on the TV between races, and the most points wins; level on points, the better result in the latest race is ahead. Nudges, boosts and the shield are topped up for every race.
 - **Nudge** (three per race): slows the nearest rival alongside for a moment. Tapped with nobody alongside, it is wasted and does not come back until the next race.
 - **Boost** (two per race, up to three in hand): tap it before your next question. A right answer is worth double speed; a wrong answer, a pass or a timeout wastes it.
 - **On fire**: five right answers in a row and flames pour out of the back of the kart on the TV until the run ends.

@@ -57,7 +57,7 @@ test('three circuits, one per race length: short, the figure of eight, and a lon
       assert.ok(Math.hypot(x - ox, z - oz) > 4.2, `${name}: points ${i} and ${j} are too close`);
     }));
   }
-  assert.match(app, /mountRace3D\(\{key:raceKey,track:s\.raceTrack,course:s\.raceLength,/, 'the TV draws the circuit for the chosen length');
+  assert.match(app, /mountRace3D\(\{key:raceKey,track:s\.race\.track,course:s\.race\.course\?\?s\.raceLength,/, 'the TV draws the circuit of the race being run');
   // The crowd is made of little people, drawn in two instanced meshes, and it bobs unless motion is reduced.
   assert.match(race3d, /new THREE\.InstancedMesh\(new THREE\.CapsuleGeometry/);
   assert.match(race3d, /if \(!reducedMotion\) placeCrowd\(performance\.now\(\)\);/);

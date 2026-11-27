@@ -60,3 +60,20 @@
 .game.host-screen[data-mode="dontlook"] .look-game[data-look="finished"] .look-team .player-avatar,
 .game.host-screen[data-mode="dontlook"] .look-game[data-look="result"] .look-team .player-avatar { width:clamp(40px,7vh,76px); height:clamp(40px,7vh,76px); font-size:clamp(1rem,2.8vh,1.8rem); }
 .look-team li.is-guesser .player-avatar { color:#fff; }
+
+/* The three rounds: a banner that says how this round is played, and a round-by-round table at the end. */
+.look-round { display:grid; grid-template-columns:auto auto 1fr; align-items:center; gap:.4rem 1rem; padding:clamp(.5rem,1.6vh,1rem) clamp(.8rem,1.6vw,1.4rem); border-radius:18px; background:#fff; color:#3a0420; }
+.look-round b { padding:.25em .7em; border-radius:99px; background:#c41e69; color:#fff; font:800 clamp(.75rem,1.8vh,1.1rem)/1.1 'House Sans',sans-serif; letter-spacing:.12em; white-space:nowrap; }
+.look-round strong { font:400 clamp(1.3rem,4.4vh,2.8rem)/1 var(--id-display,'House Sans'),sans-serif; white-space:nowrap; }
+.look-round span { font-weight:700; font-size:clamp(.9rem,2.3vh,1.5rem); }
+.look-round[data-round="act"] b { background:#0f6b3f; } .look-round[data-round="both"] b { background:#5a2bd6; }
+.player-only .look-round { grid-template-columns:auto 1fr; } .player-only .look-round span { grid-column:1 / -1; }
+.look-rule { margin:0; text-align:center; font-weight:800; font-size:clamp(1rem,2.8vh,1.8rem); color:#7ff3ff; }
+.player-only .look-rule { font-size:.95rem; text-align:left; }
+.look-final { display:grid; grid-template-columns:minmax(0,3fr) minmax(0,2fr); gap:clamp(.6rem,1.6vw,1.6rem); align-items:stretch; flex:1; }
+.look-rounds { width:100%; border-collapse:collapse; background:#4a0626; border-radius:18px; overflow:hidden; font-size:clamp(.95rem,2.6vh,1.6rem); }
+.look-rounds th, .look-rounds td { padding:.45em .7em; text-align:center; font-weight:800; }
+.look-rounds tbody th { text-align:left; color:#ffd3e6; }
+.look-rounds tr.is-total { background:#fff; color:#3a0420; font-size:1.25em; }
+.look-rounds tr.is-total th { color:#3a0420; }
+@media (prefers-reduced-motion:no-preference) { .look-round[data-opens] { animation:look-pop .6s cubic-bezier(.2,1.5,.4,1); } }

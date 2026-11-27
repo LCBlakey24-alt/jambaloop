@@ -19,7 +19,12 @@ export function dontLookView(state, { host, canControl, escape, icons }) {
   const team = party.teams[party.active];
   const guesser = party.guesser?.name ? escape(party.guesser.name) : 'The guesser';
   const solo = party.teams.length === 1;
-  const kicker = `DON’T LOOK! · TURN ${party.turn + 1} OF ${party.turns}`;
+  const round = party.round;
+  const kicker = `DON’T LOOK! · ROUND ${round.number} OF ${round.of} · ${round.name.toUpperCase()}`;
+  const roundBanner = `<div class="look-round" data-round="${round.id}"${round.opens ? ' data-opens' : ''}><b>ROUND ${round.number}</b><strong>${escape(round.name)}</strong><span>${escape(round.rule)}</span></div>`;
+  const roundTable = party.teams.length > 1 || party.roundScores.length > 1 ? `<table class="look-rounds"><thead><tr><th></th>${party.teams.map(team => `<th style="color:${team.colour}">${escape(team.name)}</th>`).join('')}</tr></thead>
+      <tbody>${party.roundScores.map((scores, index) => `<tr><th>${escape(party.roundNames[index])}</th>${scores.map(score => `<td>${score}</td>`).join('')}</tr>`).join('')}
+      <tr class="is-total"><th>Total</th>${party.teams.map(team => `<td>${team.score}</td>`).join('')}</tr></tbody></table>` : '';
   const next = label => canControl ? `<div class="actions look-actions"><button type="button" class="button primary" data-action="advance">${label}</button></div>` : '';
   let body = '';
 
@@ -27,21 +32,21 @@ export function dontLookView(state, { host, canControl, escape, icons }) {
     const champion = party.champion === null || party.champion === undefined ? undefined : party.teams[party.champion];
     const title = solo ? `${party.teams[0].score} correct between you!` : champion ? `${escape(champion.name)} win!` : 'It’s a draw!';
     body = `<header class="look-head"><span class="look-kicker">DON’T LOOK! · FULL TIME</span><h1>${title}</h1>
-        ${party.decidedBy === 'passes' ? '<p>Level on correct answers, so it went to the team with fewer passes.</p>' : ''}</header>
+        <p>${party.decidedBy === 'passes' ? 'Level on correct answers, so it went to the team with fewer passes.' : 'All three rounds added together.'}</p></header>
       ${!host && party.earned !== undefined ? `<p class="look-note" role="status">You earned ${party.earned} points.</p>` : ''}
-      ${scoreboard(party, escape, champion?.id ?? -1, false)}<div class="actions">${canControl ? replayButtons(state, icons) : '<p>Stay here if the captain starts another game.</p>'}</div>`;
+      ${host ? `<div class="look-final">${scoreboard(party, escape, champion?.id ?? -1, false)}${roundTable}</div>` : roundTable + scoreboard(party, escape, champion?.id ?? -1, false)}<div class="actions">${canControl ? replayButtons(state, icons) : '<p>Stay here if the captain starts another game.</p>'}</div>`;
   } else if (phase === 'look-ready') {
     if (host) {
       body = `<header class="look-head"><span class="look-kicker">${kicker}</span><h1><em style="color:${team.colour}">${guesser}</em>, turn your back to the TV</h1>
-          <p>${solo ? 'Everyone else' : `The ${escape(team.name)}`} will describe the word on this screen. No saying it, no spelling it. ${party.seconds} seconds.</p></header>
-        ${scoreboard(party, escape)}${next('Start the clock')}`;
+          <p>${solo ? 'Everyone else' : `The ${escape(team.name)}`} will get the word on this screen across to you. ${party.seconds} seconds.</p></header>
+        ${roundBanner}${scoreboard(party, escape)}${next('Start the clock')}`;
     } else if (party.canStart) {
       body = `<header class="look-head"><span class="look-kicker">${kicker} · YOU ARE GUESSING</span><h1>Turn your back to the TV</h1>
-          <p>Your team will describe each word. Shout out your guesses. When you are facing away, start the clock.</p></header>
+          <p>Shout out your guesses. When you are facing away, start the clock.</p></header>${roundBanner}
         <div class="look-buttons"><button type="button" class="look-button is-start" data-action="look-start">I’m not looking · Start</button></div>`;
     } else {
       body = `<header class="look-head"><span class="look-kicker">${kicker}</span><h1>${guesser} is guessing</h1>
-          <p>${party.team === party.active ? 'You are describing. The word will be on the TV. Correct and Pass buttons will appear here.' : `It is the ${escape(team.name)}’ turn. Watch for peeking.`}</p></header>${next('Start the clock')}`;
+          <p>${party.team === party.active ? 'You are helping. The word will be on the TV. Correct and Pass buttons will appear here.' : `It is the ${escape(team.name)}’ turn. Watch for peeking.`}</p></header>${roundBanner}${next('Start the clock')}`;
     }
   } else if (phase === 'look-turn') {
     const last = party.last ? `<p class="look-last" data-got="${party.last.got}" role="status">${party.last.got ? '✓ Correct' : 'Passed'}${party.last.word ? `: ${escape(party.last.word)}` : ''}</p>` : '<p class="look-last" aria-hidden="true">&nbsp;</p>';
@@ -49,12 +54,14 @@ export function dontLookView(state, { host, canControl, escape, icons }) {
         <b class="look-count">${party.count}</b><div class="look-clock"><small>TIME LEFT</small><span id="timer" class="timer"></span></div></div>`;
     if (host) {
       body = `<header class="look-head is-live"><span class="look-kicker">${kicker}</span></header>${strip}
-        <div class="look-card"><small>${escape(party.card.deck)}</small><strong>${escape(party.card.word)}</strong></div>${last}${next('Stop the clock')}`;
+        <div class="look-card"><small>${escape(party.card.deck)}</small><strong>${escape(party.card.word)}</strong></div>
+        <p class="look-rule" data-round="${round.id}">${escape(round.rule)}</p>${last}${next('Stop the clock')}`;
     } else if (party.guessing) {
       body = `<header class="look-head is-live"><span class="look-kicker">${kicker} · YOU ARE GUESSING</span><h1>Don’t look!</h1><p>Listen to your team and shout your guesses.</p></header>
         <div class="look-blind"><b>${party.count}</b><small>correct so far</small><span id="timer" class="timer"></span></div>${last}`;
     } else if (party.canMark) {
       body = `<header class="look-head is-live"><span class="look-kicker">${guesser} is guessing · ${party.count} so far</span></header>
+        <p class="look-rule" data-round="${round.id}"><strong>${escape(round.name)}.</strong> ${escape(round.rule)}</p>
         <p class="look-phone-word"><small>${escape(party.card.deck)}</small>${escape(party.card.word)}</p>
         <div class="look-buttons"><button type="button" class="look-button is-correct" data-action="look-mark" data-result="correct">✓ Correct</button>
           <button type="button" class="look-button is-pass" data-action="look-mark" data-result="pass">Pass</button></div>${last}`;

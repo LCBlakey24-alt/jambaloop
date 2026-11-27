@@ -57,7 +57,7 @@ export const modes = [
   ['wayoff', 'Way Off', 'Guess the number. Each round the guess furthest from the answer is out, until one player is left.', 'target', '#ffd23f'],
   ['catchup', 'Catch Up', 'One side sets a target against the clock. The other side gets the same time to beat it. Then they swap.', 'timer', '#4cc9f0'],
   ['shade', 'Shade', 'One player describes a secret colour in a word. Everyone else hunts for it on a giant colour board.', 'palette', '#ff5fa2'],
-  ['dontlook', 'Don’t Look!', 'Turn your back to the TV. Your team describes the word on the screen and taps Correct or Pass.', 'eye-off', '#ff5fa2'],
+  ['dontlook', 'Don’t Look!', 'Turn your back to the TV. Your team gets the word across in three rounds: speaking only, actions only, then anything goes.', 'eye-off', '#ff5fa2'],
   ['sketch', 'Sketch Sprint', 'One person draws a secret prompt live; everyone else races to guess it.', 'paintbrush', '#a4dcff'],
 ];
 

@@ -1,6 +1,8 @@
 // Don't Look!: an original describe-and-guess game. The guesser turns their
 // back to the TV. A word appears on the TV; their team describes it without
 // saying it, and taps Correct or Pass on their phones. Sixty seconds a turn.
+// The game has three rounds: speaking only, actions only, then anything
+// goes. The total correct across all three rounds decides the winner.
 // With four or more players the room plays as two teams taking turns; with
 // two or three it plays as one group chasing a score together.
 //
@@ -12,7 +14,13 @@ import { clockExpired, stopDeadline, watchDeadline } from './room-clock.js';
 import { lookDecks } from './dont-look-words.js';
 
 export const LOOK_SECONDS = Math.max(5, Number(process.env.DONT_LOOK_SECONDS) || 60);
-export const LOOK_MAX_TURNS = 8;
+export const LOOK_MAX_TURNS = 12;
+/** The three rounds, in order. Actions-only draws from words that can be mimed. */
+export const lookRounds = Object.freeze([
+  { id: 'speak', name: 'Speaking only', rule: 'Describe it out loud. Hands still: no acting, no pointing.' },
+  { id: 'act', name: 'Actions only', rule: 'Act it out in silence. No words and no sound effects.', decks: ['Act it out', 'Animals', 'Jobs', 'Sport and games'] },
+  { id: 'both', name: 'Anything goes', rule: 'Speak, act, make the noises. Just do not say the word.' },
+]);
 const teamNames = ['Owls', 'Foxes'];
 const teamColours = ['#7ff3ff', '#fff36b'];
 
@@ -21,13 +29,21 @@ function shuffle(values) {
   for (let i = copy.length - 1; i > 0; i--) { const j = randomInt(i + 1); [copy[i], copy[j]] = [copy[j], copy[i]]; }
   return copy;
 }
+const current = party => party.turns[party.turn];
 const allWords = () => Object.entries(lookDecks).flatMap(([deck, words]) => words.map(word => ({ deck, word })));
 
 function nextWord(room) {
   const party = room.party;
-  if (!party.pool.length) party.pool = shuffle(allWords().filter(entry => !room.seen?.has('look:' + entry.word)));
-  if (!party.pool.length) party.pool = shuffle(allWords());
-  party.card = party.pool.shift();
+  const decks = lookRounds[current(party).round].decks;
+  const fits = entry => !decks || decks.includes(entry.deck);
+  let at = party.pool.findIndex(fits);
+  if (at < 0) {
+    // Out of fresh words that suit this round: refill, unseen ones first.
+    const fresh = shuffle(allWords().filter(entry => fits(entry) && !room.seen?.has('look:' + entry.word)));
+    party.pool.push(...(fresh.length ? fresh : shuffle(allWords().filter(fits))));
+    at = party.pool.findIndex(fits);
+  }
+  party.card = party.pool.splice(at, 1)[0];
   room.seen?.add('look:' + party.card.word);
   party.step++;
 }
@@ -39,18 +55,22 @@ export function startLook(room, publish) {
   if (keys.length < 2) { room.phase = 'finished'; publish(room); return; }
   const split = keys.length >= 4;
   const teams = (split ? [0, 1] : [0]).map(id => ({ id, name: split ? teamNames[id] : 'Everyone', colour: teamColours[id], keys: split ? keys.filter((_, index) => index % 2 === id) : keys }));
-  // Guessers alternate between the teams, and each team gets the same number of turns.
-  const each = Math.min(Math.max(...teams.map(team => team.keys.length)), Math.floor(LOOK_MAX_TURNS / teams.length));
+  // Three rounds. In each, the teams alternate and get the same number of turns:
+  // one each for small teams, two each once a team has three or more players.
+  // The guesser moves along the team every turn, so the job is shared out.
+  const each = Math.max(...teams.map(team => team.keys.length)) >= 3 && split ? 2 : 1;
   const turns = [];
-  for (let n = 0; n < each; n++) for (const team of teams) turns.push({ team: team.id, guesser: team.keys[n % team.keys.length] });
-  room.party = { type: 'dontlook', teams, turns, turn: 0, step: 0, pool: [], card: undefined, log: [], scores: teams.map(() => 0), passes: teams.map(() => 0), earned: new Map(), result: undefined };
+  const served = teams.map(() => 0);
+  for (let round = 0; round < lookRounds.length; round++) for (let n = 0; n < each; n++) for (const team of teams) {
+    turns.push({ round, team: team.id, guesser: team.keys[served[team.id]++ % team.keys.length] });
+  }
+  room.party = { type: 'dontlook', teams, turns, turn: 0, step: 0, pool: [], card: undefined, log: [], scores: teams.map(() => 0), passes: teams.map(() => 0),
+    roundScores: lookRounds.map(() => teams.map(() => 0)), earned: new Map(), result: undefined };
   room.count = turns.length;
   room.index = 0;
   room.phase = 'look-ready';
   publish(room);
 }
-
-const current = party => party.turns[party.turn];
 
 function startTurn(room, publish) {
   const party = room.party;
@@ -69,7 +89,7 @@ function endTurn(room, publish) {
   stopDeadline(room);
   room.ends = 0;
   const { team } = current(party);
-  party.result = { team, correct: party.log.filter(entry => entry.got).length, passed: party.log.filter(entry => !entry.got).length, words: party.log, missed: party.card?.word };
+  party.result = { team, round: current(party).round, correct: party.log.filter(entry => entry.got).length, passed: party.log.filter(entry => !entry.got).length, words: party.log, missed: party.card?.word };
   party.card = undefined;
   room.phase = 'look-result';
   publish(room);
@@ -114,6 +134,7 @@ export function submitLook(room, key, data, publish) {
   party.log.push({ word: party.card.word, got });
   if (got) {
     party.scores[team]++;
+    party.roundScores[current(party).round][team]++;
     for (const member of side.keys) { const player = room.players.get(member); if (player) { player.score += 10; party.earned.set(member, (party.earned.get(member) ?? 0) + 10); } }
     const hero = room.players.get(guesser);
     if (hero) hero.wins++;
@@ -123,7 +144,7 @@ export function submitLook(room, key, data, publish) {
   return [204];
 }
 
-/** Most correct wins; level on that, fewer passes; otherwise a draw. One group has no winner to name. */
+/** Most correct across all three rounds wins; level on that, fewer passes; otherwise a draw. One group has no winner to name. */
 function champion(party) {
   if (party.teams.length < 2) return { champion: null };
   if (party.scores[0] !== party.scores[1]) return { champion: party.scores[0] > party.scores[1] ? 0 : 1, decidedBy: 'correct' };
@@ -137,10 +158,16 @@ export function publicLook(room, key) {
   const seat = other => { const player = room.players.get(other); return { id: player?.id, name: player?.name, avatar: player?.avatar }; };
   const turn = current(party);
   const playing = room.phase === 'look-turn';
+  const round = lookRounds[turn.round];
+  // A new round is announced on its first turn.
+  const roundOpens = party.turn === 0 || party.turns[party.turn - 1].round !== turn.round;
   const isGuesser = key === turn.guesser;
   const mine = party.teams.find(team => team.keys.includes(key));
   return {
     type: 'dontlook', step: party.step, seconds: LOOK_SECONDS, turn: party.turn, turns: party.turns.length,
+    round: { number: turn.round + 1, of: lookRounds.length, id: round.id, name: round.name, rule: round.rule, opens: roundOpens },
+    roundScores: room.phase === 'finished' ? party.roundScores : party.roundScores.slice(0, turn.round + 1),
+    roundNames: lookRounds.map(entry => entry.name),
     teams: party.teams.map(team => ({ id: team.id, name: team.name, colour: team.colour, score: party.scores[team.id], passes: party.passes[team.id], members: team.keys.filter(other => room.players.has(other)).map(seat) })),
     active: turn.team, guesser: seat(turn.guesser), guessing: isGuesser, team: mine?.id,
     // The word goes to the TV and to everyone except the player guessing it.

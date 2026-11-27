@@ -27,6 +27,7 @@ try {
   const lobby = await call(`/${code}`, host);
   await call(`/${code}/advance`, host, { game: lobby.game, phase: 'lobby', index: lobby.index, lobbyVersion: lobby.lobbyVersion });
   await tv.locator('.look-game[data-look="ready"]').waitFor({ timeout: 15000 });
+  assert.match(await tv.locator('.look-round').innerText(), /ROUND 1[\s\S]*Speaking only/i, 'the first round is announced');
   await tv.waitForTimeout(3500); // let the title sting and wipes finish
   await tv.screenshot({ path: 'browser-screenshots/dont-look-tv-ready.png' });
 
@@ -74,11 +75,12 @@ try {
   assert.equal(await tv.locator('.look-words li[data-got="true"]').count(), 1);
   await tv.waitForTimeout(1800); // let the title sting and wipes finish
   await tv.screenshot({ path: 'browser-screenshots/dont-look-tv-result.png' });
-  for (let guard = 0; guard < 12 && (await call(`/${code}`, host)).phase !== 'finished'; guard++) {
+  for (let guard = 0; guard < 40 && (await call(`/${code}`, host)).phase !== 'finished'; guard++) {
     await tv.locator('[data-action="advance"]').first().click();
     await tv.waitForTimeout(350);
   }
   await tv.locator('.look-game[data-look="finished"]').waitFor({ timeout: 8000 });
+  assert.equal(await tv.locator('.look-rounds tbody tr').count(), 4, 'three rounds and a total');
   await tv.waitForTimeout(2500); // let the title sting and wipes finish
   await tv.screenshot({ path: 'browser-screenshots/dont-look-tv-final.png' });
   const final = (await call(`/${code}`, host)).party;

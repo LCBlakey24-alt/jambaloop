@@ -152,8 +152,8 @@ export const duoIntros = {
   dontlook: [
     ['max', '[excited] This is Don\'t Look! And we mean it.'],
     ['poppy', '[cheerfully] One of you turns your back to the TV, and your team describes the word on the screen.'],
-    ['max', '[playfully] No saying the word, no spelling it, and absolutely no peeking.'],
-    ['poppy', '[laughs] We will be watching. Sixty seconds on the clock!'],
+    ['max', '[playfully] Three rounds. Speaking only, then actions only, then anything goes.'],
+    ['poppy', '[laughs] And absolutely no peeking. We will be watching!'],
   ],
   sketch: [
     ['poppy', '[excited] Welcome to Sketch Sprint!'],

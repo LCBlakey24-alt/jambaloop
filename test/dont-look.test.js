@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { advanceLook, expireLook, publicLook, startLook, submitLook, LOOK_MAX_TURNS } from '../dont-look.js';
+import { advanceLook, expireLook, lookRounds, publicLook, startLook, submitLook, LOOK_MAX_TURNS } from '../dont-look.js';
 import { lookDecks } from '../dont-look-words.js';
 
 function table(size) {
@@ -33,7 +33,8 @@ test('four or more play as two even teams with equal turns; two or three play as
   stop();
   const small = table(3);
   assert.equal(small.room.party.teams.length, 1);
-  assert.equal(small.room.party.turns.length, 3, 'everyone guesses once');
+  assert.equal(small.room.party.turns.length, 3, 'one turn a round');
+  assert.equal(new Set(small.room.party.turns.map(turn => turn.guesser)).size, 3, 'everyone guesses once');
   small.stop();
   const big = table(20);
   assert.ok(big.room.count <= LOOK_MAX_TURNS);
@@ -54,7 +55,9 @@ test('the word reaches the TV and the describers, never the guesser', () => {
   assert.equal(publicLook(room, describer()).card.word, word);
   const guesserView = publicLook(room, guesser);
   assert.equal(guesserView.card, undefined);
-  assert.equal(JSON.stringify(guesserView).includes(word), false, 'the word is nowhere in the guesser’s state');
+  // Checked as whole values: a team is called the Owls and "Owl" is also a word.
+  const values = []; JSON.stringify(guesserView, (_, value) => { if (typeof value === 'string') values.push(value); return value; });
+  assert.equal(values.includes(word), false, 'the word is nowhere in the guesser’s state');
   assert.equal(guesserView.canMark, false);
   assert.equal(publicLook(room, describer()).canMark, true);
   stop();
@@ -107,5 +110,32 @@ test('the clock ends the turn, the result lists the words, and the game ends wit
   assert.equal(final.champion, room.party.turns[0].team);
   assert.equal(final.decidedBy, 'correct');
   assert.equal(typeof publicLook(room, 'k0').earned, 'number');
+  stop();
+});
+
+test('three rounds: speaking only, actions only, then anything goes, with the totals added together', () => {
+  assert.deepEqual(lookRounds.map(round => round.id), ['speak', 'act', 'both']);
+  const { room, mark, describer, go, stop } = table(6);
+  const { turns, teams } = room.party;
+  assert.equal(turns.length, 12, 'two turns per team per round once teams have three players');
+  assert.deepEqual([0, 1, 2].map(round => turns.filter(turn => turn.round === round).length), [4, 4, 4]);
+  for (const team of teams) assert.equal(new Set(turns.filter(turn => turn.team === team.id).map(turn => turn.guesser)).size, 3, 'the guessing is shared round the team');
+  const seenDecks = [new Set(), new Set(), new Set()];
+  for (let turn = 0; turn < turns.length; turn++) {
+    const view = publicLook(room, 'host');
+    assert.equal(view.round.number, turns[turn].round + 1);
+    assert.equal(view.round.opens, turn % 4 === 0, 'a round is announced on its first turn only');
+    assert.equal(view.round.name, lookRounds[turns[turn].round].name);
+    go();
+    for (let n = 0; n < 6; n++) { seenDecks[turns[turn].round].add(room.party.card.deck); mark(describer(), n === 0 ? 'correct' : 'pass'); }
+    go(); go();
+  }
+  assert.equal(room.phase, 'finished');
+  assert.ok([...seenDecks[1]].every(deck => lookRounds[1].decks.includes(deck)), 'the actions round only uses words that can be mimed: ' + [...seenDecks[1]].join(', '));
+  assert.ok(seenDecks[0].size > 4, 'the speaking round draws from every deck');
+  const final = publicLook(room, 'host');
+  assert.deepEqual(final.roundScores, [[2, 2], [2, 2], [2, 2]], 'one correct per turn, kept by round');
+  assert.deepEqual(final.teams.map(team => team.score), [6, 6], 'the total is all three rounds combined');
+  assert.equal(final.champion, null, 'level on correct and on passes is a draw');
   stop();
 });

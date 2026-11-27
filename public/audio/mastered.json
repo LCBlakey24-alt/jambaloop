@@ -908,5 +908,23 @@
   "tempo": 1.08,
   "loudness": -15.5,
   "seconds": 3.29
+ },
+ "sfx/ui-tap.mp3": {
+  "tempo": 1,
+  "loudness": null,
+  "seconds": 0.1,
+  "note": "Kenney UI Pack click, left at source level"
+ },
+ "sfx/ui-click.mp3": {
+  "tempo": 1,
+  "loudness": null,
+  "seconds": 0.1,
+  "note": "Kenney UI Pack click, left at source level"
+ },
+ "sfx/ui-switch.mp3": {
+  "tempo": 1,
+  "loudness": null,
+  "seconds": 0.1,
+  "note": "Kenney UI Pack click, left at source level"
  }
 }

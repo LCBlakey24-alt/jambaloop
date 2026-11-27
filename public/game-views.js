@@ -131,7 +131,7 @@ export function diceView(state) {
 export function lobbyView(state, { host, escape, icons, modeName }) {
   const canControl = host || state.isCaptain;
   const config = `<button class="button outline" data-action="configure">${icons('settings')} Choose game</button>`
-    + (state.quizTitle ? '' : `<button class="button outline" data-action="guide-play">${icons('play')} How to play</button>`);
+    + (state.quizTitle || !host ? '' : `<button class="button outline" data-action="guide-play">${icons('play')} How to play</button>`);
   // While the hosts explain the game on the TV, phones say so and the captain can skip.
   const briefing = state.briefing && !host ? `<div class="guide-phone-note" role="status"><p><strong>Watch the TV.</strong> The hosts are explaining how to play.</p>
     ${state.isCaptain ? '<button type="button" class="button outline" data-action="guide-skip">Skip · we know this one</button>' : ''}</div>` : '';
@@ -181,6 +181,7 @@ export function lobbyView(state, { host, escape, icons, modeName }) {
     <summary><span class="player-game-guide-label">How to play <strong>${game}</strong></span><span class="player-game-guide-count">${steps.length} steps <span aria-hidden="true">⌄</span></span></summary>
     <ol>${steps.map(step => `<li>${escape(step)}</li>`).join('')}</ol>
     <p>Keep this phone open. The game will start when the captain is ready.</p>
+    ${state.isCaptain && !state.briefing ? '<button type="button" class="button outline" data-action="guide-play">▶ Play the guide on the TV</button>' : ''}
   </details>` : '';
   if (!host) return `<div class="game-panel phone-lobby">
     <div class="lobby-eyebrow"><span class="eyebrow">ROOM ${state.code}</span>${state.isCaptain ? '<span class="captain-tag">★ Captain</span>' : ''}</div>

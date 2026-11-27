@@ -878,5 +878,35 @@
   "tempo": 1.08,
   "loudness": -15.5,
   "seconds": 4.34
+ },
+ "duo/react-race-blocked-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 3.4
+ },
+ "duo/react-race-blocked-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -16.1,
+  "seconds": 3.76
+ },
+ "duo/react-race-sprint-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 4.57
+ },
+ "duo/react-race-sprint-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 3.21
+ },
+ "duo/react-race-turbo-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 2.87
+ },
+ "duo/react-race-turbo-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 3.29
  }
 }

@@ -23,7 +23,7 @@ const rows = [
   ['general', 'How tall is the Christ the Redeemer statue in Rio de Janeiro, excluding its pedestal, in metres?', 30, 'metres', 5, 90, 'https://www.britannica.com/topic/Christ-the-Redeemer'],
   ['general', 'How long is the main span of the Golden Gate Bridge, to the nearest metre?', 1280, 'metres', 300, 3000, 'https://www.goldengate.org/bridge/history-research/statistics-data/design-construction-stats/'],
   ['general', 'How long is the main span of the Humber Bridge, to the nearest metre?', 1410, 'metres', 400, 3000, 'https://www.humberbridge.co.uk/about-the-bridge/'],
-  ['general', 'How long is the Channel Tunnel between England and France, to the nearest kilometre?', 50, 'km', 10, 150, 'https://www.getlinkgroup.com/en/our-group/eurotunnel/'],
+  ['general', 'How long is the Channel Tunnel between England and France, to the nearest ten kilometres?', 50, 'km', 10, 150, 'https://www.getlinkgroup.com/en/our-group/eurotunnel/'],
   ['general', 'How tall is the Statue of Liberty from the ground to the tip of the torch, to the nearest metre?', 93, 'metres', 20, 200, 'https://www.nps.gov/stli/learn/historyculture/statue-statistics.htm'],
 
   // Geography
@@ -43,7 +43,7 @@ const rows = [
   ['animals', 'An African elephant pregnancy lasts about how many months?', 22, 'months', 3, 36, 'https://www.worldwildlife.org/species/african-elephant'],
 
   // Space
-  ['space', 'What is the average distance from the Earth to the Moon, to the nearest kilometre?', 384400, 'km', 100000, 900000, 'https://science.nasa.gov/moon/facts/'],
+  ['space', 'What is the average distance from the Earth to the Moon, to the nearest hundred kilometres?', 384400, 'km', 100000, 900000, 'https://science.nasa.gov/moon/facts/'],
   ['space', 'What is the Moon’s diameter, to the nearest kilometre?', 3475, 'km', 500, 9000, 'https://science.nasa.gov/moon/facts/'],
   ['space', 'How many Earth days does Mars take to orbit the Sun once, to the nearest day?', 687, 'days', 200, 1500, 'https://science.nasa.gov/mars/facts/'],
   ['space', 'How many Earth days does Jupiter take to orbit the Sun once, to the nearest day?', 4333, 'days', 1000, 9000, 'https://science.nasa.gov/jupiter/facts/'],
@@ -70,13 +70,13 @@ const rows = [
   ['sports', 'How high is a regulation basketball hoop from the floor, in centimetres?', 305, 'cm', 150, 500, 'https://www.fiba.basketball/documents'],
   ['sports', 'How long is a cricket pitch between the stumps, in yards?', 22, 'yards', 5, 50, 'https://www.lords.org/mcc/the-laws-of-cricket'],
   ['sports', 'How high is a tennis net at the centre, in millimetres?', 914, 'mm', 300, 2000, 'https://www.itftennis.com/en/about-us/governance/rules-and-regulations/'],
-  ['sports', 'What is the highest possible single break in standard snooker?', 147, 'points', 50, 300, 'https://www.wst.tv/'],
+  ['sports', 'What is a maximum break in snooker worth, made without the help of a free ball?', 147, 'points', 50, 300, 'https://www.wst.tv/'],
   ['sports', 'What is the highest score possible with three darts in standard darts?', 180, 'points', 60, 400, 'https://www.britannica.com/sports/darts'],
   ['sports', 'How heavy is the shot used in men’s senior shot put, in grams?', 7260, 'g', 2000, 15000, 'https://worldathletics.org/about-iaaf/documents/book-of-rules'],
 
   // Science and measurement
   ['science', 'How fast does sound travel through dry air at 20 °C, to the nearest metre per second?', 343, 'm/s', 100, 900, 'https://www.britannica.com/science/sound-physics/The-speed-of-sound'],
-  ['science', 'How many chemical elements are named in the periodic table?', 118, 'elements', 50, 250, 'https://iupac.org/what-we-do/periodic-table-of-elements/'],
+  ['science', 'As of 2026, how many chemical elements are named in the periodic table?', 118, 'elements', 50, 250, 'https://iupac.org/what-we-do/periodic-table-of-elements/'],
   ['science', 'How many metres are in one mile, to the nearest metre?', 1609, 'metres', 500, 3000, 'https://www.britannica.com/science/mile'],
   ['science', 'How many feet are in one mile?', 5280, 'feet', 1000, 10000, 'https://www.britannica.com/science/mile'],
   ['science', 'How many yards are in one mile?', 1760, 'yards', 500, 4000, 'https://www.britannica.com/science/mile'],
@@ -103,7 +103,7 @@ const rows = [
   ['sports', 'What is the capacity of Wembley Stadium, to the nearest thousand?', 90000, 'seats', 30000, 150000, 'https://en.wikipedia.org/wiki/Wembley_Stadium'],
   ['games', 'How many coloured stickers are on a standard 3×3 Rubik’s Cube?', 54, 'stickers', 10, 120, 'https://en.wikipedia.org/wiki/Rubik%27s_Cube'],
   ['language', 'How many letters are in the modern Greek alphabet?', 24, 'letters', 10, 50, 'https://www.britannica.com/topic/Greek-alphabet'],
-  ['general', 'What is the national speed limit for cars on UK motorways, in miles per hour?', 70, 'mph', 30, 130, 'https://www.gov.uk/speed-limits'],
+  ['general', 'What is the national speed limit for a car that is not towing on a UK motorway, in miles per hour?', 70, 'mph', 30, 130, 'https://www.gov.uk/speed-limits'],
 ];
 
 export const soCloseBank = Object.freeze(rows.map(([category, prompt, answer, unit, min, max, source]) =>

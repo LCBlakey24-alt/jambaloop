@@ -204,8 +204,8 @@
 /* Spotlight Wheel: the names on the wheel and its hub read from the sofa. */
 @media (min-width: 900px) {
   body.playing .immersive .spotlight-wheel-label { font-size: clamp(17px, 2.7dvh, 30px); font-weight: 900; width: 26%; }
-  body.playing .immersive .spotlight-wheel-core span { font-size: clamp(13px, 2dvh, 22px); }
-  body.playing .immersive .spotlight-wheel-core small { font-size: clamp(12px, 1.7dvh, 18px); }
+  body.playing .immersive .spotlight-wheel-core span { font-size: clamp(14px, 2.3dvh, 22px); }
+  body.playing .immersive .spotlight-wheel-core small { font-size: clamp(14px, 2.1dvh, 18px); }
 }
 
 /* So Close reveal: the question and each guess read from the sofa. */

@@ -88,7 +88,7 @@ export const verifiedChoiceQuestions = Object.freeze({
       "status": "verified"
     },
     {
-      "prompt": "Which of these planets has a very slow rotation and a day longer than its year?",
+      "prompt": "Which of these planets spins so slowly that one full rotation takes longer than its year?",
       "answer": "Venus",
       "distractors": [
         "Earth",

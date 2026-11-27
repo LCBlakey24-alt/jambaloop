@@ -241,10 +241,14 @@ export function publicBloodmoon(room, key) {
     seats: [...party.roles.keys()].map(other => ({
       ...seat(other), alive: party.alive.has(other), connected: isConnected(room, other),
       how: fallen.get(other)?.how,
+      // When they fell, for the village chronicle on the TV: public the moment it happens.
+      fellNight: fallen.get(other)?.night, fellOrder: fallen.has(other) ? party.fallen.findIndex(row => row.key === other) + 1 : undefined,
       // A role is public only once its owner is out, or the game is over.
       role: fallen.has(other) || over ? party.roles.get(other) : undefined,
     })),
     aliveCount: party.alive.size,
+    // Vampires not yet caught. Roles are revealed as players fall, so this is already public arithmetic.
+    hiding: party.counts.vampire - party.fallen.filter(row => party.roles.get(row.key) === 'vampire').length,
     // Totals only: never which role has or has not acted.
     done: done ? [...done.keys()].filter(other => expected.includes(other)).length : undefined,
     expected: done ? expected.filter(other => done.has(other) || isConnected(room, other)).length : undefined,

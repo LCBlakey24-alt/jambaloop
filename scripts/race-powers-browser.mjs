@@ -28,9 +28,17 @@ try{
   await tv.waitForFunction(()=>document.querySelector('.duo-caption')?.dataset.host==='vince',null,{timeout:12000});
   console.log('PASS: Ada rams Bo from her phone; Bo is slowed and told; Vince is on commentary');
   await boost.click();
-  await phone.waitForFunction(()=>document.querySelector('.race-power.is-boost')?.disabled&&/Used/.test(document.querySelector('.race-power.is-boost').innerText),null,{timeout:8000});
+  await phone.waitForFunction(()=>document.querySelector('.race-power.is-boost')?.disabled&&/in a row for a turbo/.test(document.querySelector('.race-power.is-boost').innerText),null,{timeout:8000});
   assert.equal((await snap(players[0].key)).race.own.boosts,0);
-  console.log('PASS: the boost works once, then shows Used');
+  console.log('PASS: the boost works once, then says how to earn a turbo');
+  // Shield: once per race, and it counts down on the button.
+  const shield=phone.locator('.race-power.is-shield');
+  assert.match(await shield.innerText(),/Blocks rams for 6s/);
+  await shield.click();
+  await phone.waitForFunction(()=>/Up · \d+s/.test(document.querySelector('.race-power.is-shield')?.innerText??''),null,{timeout:8000});
+  assert.equal((await snap(players[0].key)).race.own.shields,0);
+  await tv.waitForFunction(()=>[...document.querySelectorAll('.race-rank-status')].some(node=>node.textContent.includes('🛡')),null,{timeout:8000});
+  console.log('PASS: the shield goes up from the phone and shows on the TV standings');
   const size=await phone.evaluate(()=>({doc:document.documentElement.scrollWidth,view:innerWidth}));assert.ok(size.doc<=size.view+1,'no sideways scroll');
   assert.deepEqual(errors,[],'no page errors');
 }finally{await browser.close();}

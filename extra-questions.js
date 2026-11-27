@@ -48,7 +48,7 @@ export const estimates = {
     ['What is the elevation of Mount Everest, rounded to the nearest metre using the 2020 survey?', 8849, 'metres', 6000, 11000],
     ['How many US states are there?', 50, 'states', 0, 100],
     ['How many provinces does Canada have, excluding its territories?', 10, 'provinces', 0, 30],
-    ['How many metres tall is the Burj Khalifa?', 828, 'metres', 300, 1300],
+    ['What is the official architectural height of the Burj Khalifa, in metres?', 828, 'metres', 300, 1300],
   ],
   science: [
     ['Enter the usual number of bones in an adult human skeleton.', 206, 'bones', 50, 350],
@@ -94,7 +94,7 @@ export const estimates = {
   ],
   games: [
     ["How many stickers or visible coloured squares are on the outside of a standard 3 × 3 Rubik’s Cube?", 54, "squares", 0, 120],
-    ["How many digits are used as clues or entries in a standard 9 × 9 Sudoku?", 9, "digits", 0, 25],
+    ["How many different digits are used in a standard 9 × 9 Sudoku?", 9, "digits", 0, 25],
     ["How many cards does each player get at the start of a standard game of bridge?", 13, "cards", 0, 30],
     ["In what year was the original Nintendo Entertainment System first released in Japan as the Famicom?", 1983, "year", 1950, 2020],
     ["How many spaces are on a standard English-language Monopoly board?", 40, "spaces", 10, 90],
@@ -144,16 +144,16 @@ export const orders = {
   ],
   history: [
     ['Put these events in order from earliest to latest.', 'Battle of Hastings', 'Magna Carta issued', 'Great Fire of London', 'Berlin Wall falls'],
-    ['Put these British monarchs in order by when their reign began.', 'Henry VIII', 'Elizabeth I', 'Victoria', 'Elizabeth II'],
+    ['Put these English and British monarchs in order by when their reign began.', 'Henry VIII', 'Elizabeth I', 'Victoria', 'Elizabeth II'],
     ['Put these US and world milestones in order from earliest to latest.', 'US Declaration of Independence adopted', 'First modern Olympics', 'Titanic sinks', 'First Moon landing'],
     ['Put these 20th-century events in order from earliest to latest.', 'First successful Wright brothers flight', 'World War I begins', 'World War II ends', 'Sputnik 1 launches'],
     ['Put these people in order from earliest to latest birth.', 'William Shakespeare', 'Isaac Newton', 'Ludwig van Beethoven', 'Charles Darwin'],
   ],
   news: [
-    ['Put these Summer Olympics host cities in order from earliest to latest Games.', 'London', 'Rio de Janeiro', 'Tokyo', 'Paris'],
-    ['Put these recent headlines in order from earliest to latest.', 'Croatia adopts the euro', 'Sweden joins NATO', 'Expo 2025 opens in Osaka', 'Bulgaria adopts the euro'],
+    ['Put these Summer Olympics host cities in order of their most recent Games, earliest first.', 'London', 'Rio de Janeiro', 'Tokyo', 'Paris'],
+    ['Put these events of 2023–2026 in order from earliest to latest.', 'Croatia adopts the euro', 'Sweden joins NATO', 'Expo 2025 opens in Osaka', 'Bulgaria adopts the euro'],
     ['Put these men’s FIFA World Cup hosts in order from earliest to latest tournament.', 'Brazil', 'Russia', 'Qatar', 'Canada, Mexico and the US'],
-    ['Put these Eurovision host cities in order from earliest to latest contest.', 'Turin', 'Liverpool', 'Malmö', 'Basel'],
+    ['Put these Eurovision host cities in order from the 2022 contest to the 2025 contest.', 'Turin', 'Liverpool', 'Malmö', 'Basel'],
     ['Put these UN climate summit host cities in order from earliest to latest.', 'Glasgow', 'Sharm el-Sheikh', 'Dubai', 'Belém'],
   ],
   christmas: [

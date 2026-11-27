@@ -40,6 +40,8 @@ function seats(party, escape, { pickable, action, chosen, barred, mates = [], se
 }
 
 const kicon = name => `<i class="k-icon" style="--icon:url(/icons/kenney/${name}.svg)" aria-hidden="true"></i>`;
+// Renders of Kenney Graveyard Kit models (CC0), made by scripts/render-model-sprites.mjs.
+const graves = ['gravestone-round', 'gravestone-cross', 'gravestone-bevel', 'gravestone-decorative'];
 const talkingPoints = [
   'Who has been very quiet?', 'Who changed their story?', 'Who is steering the vote?', 'Who seems far too relaxed?',
   'Who accused first, and why?', 'Who has not been suspected yet?',
@@ -56,7 +58,7 @@ function village(party, escape, centre) {
     const angle = (index / count) * Math.PI * 2 - Math.PI / 2;
     const out = !seat.alive;
     return `<li style="left:${(50 + 43 * Math.cos(angle)).toFixed(2)}%;top:${(50 + 39 * Math.sin(angle)).toFixed(2)}%"${out ? ' data-out' : ''}${seat.connected === false && !out ? ' data-away' : ''}>
-      <span class="blood-home">${kicon(out ? 'skull' : 'structure-house')}<span class="blood-face">${avatarView(seat, escape)}</span></span>
+      <span class="blood-home">${out ? `<img class="blood-grave" src="/models/sprites/${graves[index % graves.length]}.webp" alt="">` : kicon('structure-house')}<span class="blood-face">${avatarView(seat, escape)}</span></span>
       <strong>${escape(seat.name)}</strong>${out && seat.role ? `<b class="blood-tag" data-role="${seat.role}">${roleNames[seat.role]}</b>` : ''}</li>`;
   }).join('');
   return `<div class="blood-village" data-size="${count > 10 ? 'large' : count > 7 ? 'medium' : 'small'}"><ul>${homes}</ul>
@@ -69,7 +71,7 @@ function chronicle(party, escape) {
   const events = fallen.map(seat => `<li data-how="${seat.how}">${kicon(seat.how === 'bitten' ? 'fire' : 'flag-triangle')}<span><small>${seat.how === 'bitten' ? 'Night' : 'Day'} ${seat.fellNight ?? ''}</small>
     <strong>${escape(seat.name)}</strong> ${seat.how === 'bitten' ? 'was bitten' : 'was banished'}${seat.role ? ` · <b class="blood-tag" data-role="${seat.role}">${roleNames[seat.role]}</b>` : ''}</span></li>`).join('');
   return `<aside class="blood-chronicle" aria-label="The story so far">
-    <div class="blood-stats"><div data-kind="vampires">${kicon('skull')}<strong>${party.hiding ?? party.counts.vampire}</strong><span>${(party.hiding ?? party.counts.vampire) === 1 ? 'vampire' : 'vampires'} still hiding</span></div>
+    <div class="blood-stats"><div data-kind="vampires"><img class="blood-vampire" src="/models/sprites/character-vampire.webp" alt=""><strong>${party.hiding ?? party.counts.vampire}</strong><span>${(party.hiding ?? party.counts.vampire) === 1 ? 'vampire' : 'vampires'} still hiding</span></div>
       <div data-kind="village">${kicon('structure-house')}<strong>${party.aliveCount}</strong><span>still in the village</span></div></div>
     <h2>The story so far</h2>
     ${events ? `<ol>${events}</ol>` : '<p class="blood-quiet">Nobody has fallen yet.</p>'}</aside>`;

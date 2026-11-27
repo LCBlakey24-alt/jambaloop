@@ -276,3 +276,78 @@
   body.playing .host-screen[data-phase="lobby"] .roster-panel .lobby-game-copy small:nth-of-type(n+3) { display: none; }
   body.playing .host-screen[data-phase="lobby"] .roster-panel :is(.captain-form label > span, .captain-form label) { font-size: clamp(11px, 1.6dvh, 15px); }
 }
+
+/* Final results on a TV: the winner, the awards and "what's next" share one
+   screen with no scrolling. The awards become a single row of compact cards
+   and the game-night panel a slim strip, as in the lobby. */
+@media (min-width: 1000px) and (min-height: 560px) {
+  body.playing .host-screen[data-phase="finished"] > #post-ceremony:not([hidden]) { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: clamp(7px, 1vh, 13px); }
+  body.playing .host-screen[data-phase="finished"] :is(#post-ceremony, .results-stack) > .game-panel:not(.night-panel):not(.score-ceremony) { min-height: 0; }
+  body.playing .host-screen[data-phase="finished"] > .game-panel:not(.night-panel):not(.score-ceremony) { min-height: 0; }
+  body.playing .host-screen[data-phase="finished"] :is(#post-ceremony, .results-stack) > .results { flex: 1 1 auto; }
+  body.playing .host-screen[data-phase="finished"] > .results { flex: 1 1 auto; }
+  body.playing .host-screen[data-phase="finished"] :is(#post-ceremony, .results-stack) > .awards-panel { flex: none; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 6px clamp(10px, 1.4vw, 24px); padding: clamp(6px, 1.1dvh, 14px) clamp(12px, 1.6vw, 26px); margin: 0; }
+  body.playing .host-screen[data-phase="finished"] > .awards-panel { flex: none; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 6px clamp(10px, 1.4vw, 24px); padding: clamp(6px, 1.1dvh, 14px) clamp(12px, 1.6vw, 26px); margin: 0; }
+  body.playing .host-screen[data-phase="finished"] :is(#post-ceremony, .results-stack) > .awards-panel > h2 { display: none; }
+  body.playing .host-screen[data-phase="finished"] > .awards-panel > h2 { display: none; }
+  body.playing .host-screen[data-phase="finished"] :is(#post-ceremony, .results-stack) > .awards-panel > .eyebrow { font-size: clamp(10px, 1.45dvh, 16px); max-width: 7em; line-height: 1.2; margin: 0; }
+  body.playing .host-screen[data-phase="finished"] > .awards-panel > .eyebrow { font-size: clamp(10px, 1.45dvh, 16px); max-width: 7em; line-height: 1.2; margin: 0; }
+  body.playing .host-screen[data-phase="finished"] :is(#post-ceremony, .results-stack) > .awards-panel .award-grid { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); grid-template-columns: none; gap: clamp(6px, .8vw, 14px); margin: 0; }
+  body.playing .host-screen[data-phase="finished"] > .awards-panel .award-grid { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); grid-template-columns: none; gap: clamp(6px, .8vw, 14px); margin: 0; }
+  body.playing .host-screen[data-phase="finished"] :is(#post-ceremony, .results-stack) > .awards-panel .award-card { display: flex; align-items: center; gap: 8px; min-width: 0; padding: clamp(5px, .9dvh, 10px) clamp(7px, .8vw, 12px); margin: 0; }
+  body.playing .host-screen[data-phase="finished"] > .awards-panel .award-card { display: flex; align-items: center; gap: 8px; min-width: 0; padding: clamp(5px, .9dvh, 10px) clamp(7px, .8vw, 12px); margin: 0; }
+  body.playing .host-screen[data-phase="finished"] :is(#post-ceremony, .results-stack) > .awards-panel .award-card > div { min-width: 0; }
+  body.playing .host-screen[data-phase="finished"] > .awards-panel .award-card > div { min-width: 0; }
+  body.playing .host-screen[data-phase="finished"] :is(#post-ceremony, .results-stack) > .awards-panel .award-icon { flex: none; width: clamp(24px, 3.6dvh, 40px); height: clamp(24px, 3.6dvh, 40px); }
+  body.playing .host-screen[data-phase="finished"] > .awards-panel .award-icon { flex: none; width: clamp(24px, 3.6dvh, 40px); height: clamp(24px, 3.6dvh, 40px); }
+  body.playing .host-screen[data-phase="finished"] :is(#post-ceremony, .results-stack) > .awards-panel h3 { font-size: clamp(12px, 1.9dvh, 21px); margin: 0; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  body.playing .host-screen[data-phase="finished"] > .awards-panel h3 { font-size: clamp(12px, 1.9dvh, 21px); margin: 0; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  body.playing .host-screen[data-phase="finished"] :is(#post-ceremony, .results-stack) > .awards-panel small { display: block; font-size: clamp(10px, 1.35dvh, 15px); line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  body.playing .host-screen[data-phase="finished"] > .awards-panel small { display: block; font-size: clamp(10px, 1.35dvh, 15px); line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  body.playing .host-screen[data-phase="finished"] :is(#post-ceremony, .results-stack) > .awards-panel strong { display: block; font-size: clamp(12px, 1.8dvh, 20px); line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  body.playing .host-screen[data-phase="finished"] > .awards-panel strong { display: block; font-size: clamp(12px, 1.8dvh, 20px); line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  body.playing .host-screen[data-phase="finished"] :is(#post-ceremony, .results-stack) > .night-panel { flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 18px; padding: clamp(6px, 1.1dvh, 14px) clamp(12px, 1.6vw, 26px); margin: 0; min-height: 0; }
+  body.playing .host-screen[data-phase="finished"] > .night-panel { flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 18px; padding: clamp(6px, 1.1dvh, 14px) clamp(12px, 1.6vw, 26px); margin: 0; min-height: 0; }
+  body.playing .host-screen[data-phase="finished"] :is(#post-ceremony, .results-stack) > .night-panel .night-main { gap: 12px; align-items: center; margin: 0; }
+  body.playing .host-screen[data-phase="finished"] > .night-panel .night-main { gap: 12px; align-items: center; margin: 0; }
+  body.playing .host-screen[data-phase="finished"] :is(#post-ceremony, .results-stack) > .night-panel .night-icon { width: clamp(30px, 4.6dvh, 50px); height: clamp(30px, 4.6dvh, 50px); }
+  body.playing .host-screen[data-phase="finished"] > .night-panel .night-icon { width: clamp(30px, 4.6dvh, 50px); height: clamp(30px, 4.6dvh, 50px); }
+  body.playing .host-screen[data-phase="finished"] :is(#post-ceremony, .results-stack) > .night-panel h2 { font-size: clamp(18px, 3.1dvh, 34px); margin: 0; line-height: 1.05; }
+  body.playing .host-screen[data-phase="finished"] > .night-panel h2 { font-size: clamp(18px, 3.1dvh, 34px); margin: 0; line-height: 1.05; }
+  body.playing .host-screen[data-phase="finished"] :is(#post-ceremony, .results-stack) > .night-panel .eyebrow { font-size: clamp(10px, 1.45dvh, 16px); }
+  body.playing .host-screen[data-phase="finished"] > .night-panel .eyebrow { font-size: clamp(10px, 1.45dvh, 16px); }
+  body.playing .host-screen[data-phase="finished"] :is(#post-ceremony, .results-stack) > .night-panel p { font-size: clamp(12px, 1.7dvh, 19px); margin: 0; }
+  body.playing .host-screen[data-phase="finished"] > .night-panel p { font-size: clamp(12px, 1.7dvh, 19px); margin: 0; }
+  body.playing .host-screen[data-phase="finished"] :is(#post-ceremony, .results-stack) > .night-panel .actions { margin: 0; }
+  body.playing .host-screen[data-phase="finished"] > .night-panel .actions { margin: 0; }
+  body.playing .host-screen[data-phase="finished"] :is(#post-ceremony, .results-stack) > .night-panel .night-standings { display: none; }
+  body.playing .host-screen[data-phase="finished"] > .night-panel .night-standings { display: none; }
+  /* The podium cards repeat the top of the ranking beside them; the TV keeps the ranking. */
+  body.playing .host-screen[data-phase="finished"] .results .podium { display: none; }
+  body.playing .host-screen[data-phase="finished"] .results { overflow: hidden; align-content: start; }
+  .game.host-screen[data-phase="finished"] .results h1 { font-size: clamp(2rem, 7.4vh, 4.6rem); margin-block: .1em .25em; }
+  .game.host-screen[data-phase="finished"] .results > .ranking { max-height: 100%; overflow: auto; scrollbar-width: thin; }
+}
+
+/* Bluff and Sketch build their own final screens; on a TV they use the same
+   two columns as every other game so nothing runs off the bottom. */
+@media (min-width: 1000px) and (min-height: 560px) {
+  .game.host-screen[data-phase="finished"] .results > .bluff-show-stage { display: contents; }
+  .game.host-screen[data-phase="finished"] .results > .bluff-show-stage > .bluff-show-finale { display: contents; }
+  .game.host-screen[data-phase="finished"] .results > .bluff-show-stage > .bluff-show-finale > * { grid-column: 1; min-width: 0; }
+  .game.host-screen[data-phase="finished"] .results > .bluff-show-stage > .bluff-show-finale > p { display: none; }
+  .game.host-screen[data-phase="finished"] .results > .bluff-show-stage > .bluff-show-finale > .ranking { grid-column: 2; grid-row: 1 / span 12; align-self: stretch; margin: 0; max-height: 100%; overflow: auto; display: grid; align-content: start; gap: clamp(.3rem, .8vh, .6rem); }
+  .game.host-screen[data-phase="finished"] .results > .bluff-show-stage > .bluff-show-finale > .ranking > li { font-size: clamp(1.05rem, 2.4vh, 1.6rem); padding-block: clamp(.4rem, 1.1vh, .8rem); }
+  body.playing .host-screen[data-phase="finished"] .sketch-finished { flex: 1 1 auto; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto auto; max-height: 100%; gap: clamp(.4rem, 1.2vh, .9rem) clamp(1rem, 2.6vw, 3rem); align-content: start; overflow: hidden; }
+  body.playing .host-screen[data-phase="finished"] .sketch-finished > * { grid-column: 1; min-width: 0; min-height: 0; }
+  body.playing .host-screen[data-phase="finished"] .sketch-finished > .sketch-head { grid-column: 1 / -1; }
+  body.playing .host-screen[data-phase="finished"] .sketch-finished > .sketch-frame { display: grid; place-items: center; }
+  body.playing .host-screen[data-phase="finished"] .sketch-finished > .sketch-frame canvas { max-height: 100%; width: auto; max-width: 100%; }
+  body.playing .host-screen[data-phase="finished"] .sketch-finished > .sketch-end { grid-column: 2; grid-row: 2 / span 3; overflow: auto; margin: 0; }
+  body.playing .host-screen[data-phase="finished"] .sketch-finished { min-height: 0; padding-block: clamp(8px, 1.4dvh, 18px); }
+  body.playing .host-screen[data-phase="finished"] .sketch-finished .sketch-end .ranking { max-height: none; overflow: visible; }
+  body.playing .host-screen[data-phase="finished"] .sketch-finished .sketch-head h1 { margin: 0; }
+  body.playing .host-screen[data-phase="finished"] .sketch-finished .sketch-head p { display: none; }
+  body.playing .host-screen[data-phase="finished"] .sketch-finished > .sketch-frame { overflow: hidden; }
+  body.playing .host-screen[data-phase="finished"] .sketch-finished > .sketch-frame canvas { max-height: 36dvh; }
+}

@@ -1,5 +1,6 @@
 import { partyFinale } from './party-finale.js';
 import {replayButtons} from './game-night.js';
+import { answerWall } from './party-views.js';
 
 // TV/phone view for original Spot the Bluff, with no secret prompt in TV markup.
 export function bluffView(s,{host,canControl,escape,reply,icons}){
@@ -20,7 +21,7 @@ export function bluffView(s,{host,canControl,escape,reply,icons}){
       <p>${host?'Everyone writes privately. Exactly one player has to improvise without knowing the question.':
         party.bluffing?'Invent something plausible. You need to blend in with the answers of players who saw the real prompt.':escape(party.prompt)}</p></div>`;
     if(host){
-      body+=`<div class="bluff-show-progress" role="status"><strong>${party.submissions} / ${party.responseTarget}</strong><span>replies received</span></div>`;
+      body+=answerWall(s,escape,'replies in')||`<div class="bluff-show-progress" role="status"><strong>${party.submissions} / ${party.responseTarget}</strong><span>replies received</span></div>`;
     }else if(party.wrote){
       body+='<p class="bluff-show-locked" role="status">Your reply is locked. Wait for the voting round.</p>';
     }else{
@@ -48,7 +49,7 @@ export function bluffView(s,{host,canControl,escape,reply,icons}){
           !host&&!party.voted?`<button type="button" class="button outline small party-vote-button" data-action="bluff-vote" data-id="${escape(entry.id)}" aria-label="Vote for ${escape(entry.name)}">Vote for ${escape(entry.name)}</button>`:''}
       </article>`).join(''):'<p class="bluff-show-empty">No player replies were submitted for this round.</p>'}
     </div>
-    ${!showTruth&&host?`<p class="bluff-show-progress" role="status">${party.submissions} / ${party.responseTarget} votes submitted</p>`:''}
+    ${!showTruth&&host?answerWall(s,escape,'votes in')||`<p class="bluff-show-progress" role="status">${party.submissions} / ${party.responseTarget} votes submitted</p>`:''}
     ${!showTruth&&!host&&party.voted?'<div class="bluff-show-locked party-vote-confirmation" role="status"><strong>Vote locked in</strong><span>Your choice is saved. Watch the TV for the reveal.</span></div>':''}
     ${showTruth&&!host?`<p class="bluff-show-earned" role="status">You earned <strong>+${party.ownEarned??0} points</strong> this round.</p>`:''}`;
     if(canControl)actions=`<button type="button" class="button primary" data-action="advance">${

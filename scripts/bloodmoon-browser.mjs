@@ -43,7 +43,7 @@ try {
   const shot = async (page, name) => { await page.waitForTimeout(900); await page.screenshot({ path: `${out}/${name}.png` }); };
   const secret = /\b(Vampire|Oracle|Warden|Villager)\b/;
   const tvIsNeutral = async label => {
-    const text = await tv.locator('.blood-seats').innerText();
+    const text = await tv.locator('.blood-village').innerText();
     assert.ok(!secret.test(text), `${label}: the TV roster names no living role (${text.replace(/\s+/g, ' ').slice(0, 120)})`);
     assert.equal(await tv.locator('.blood-role-card').count(), 0, `${label}: no role card on the TV`);
   };
@@ -77,7 +77,7 @@ try {
   await phase(vampirePhone, 'blood-night');
   await phase(villagerPhone, 'blood-night');
   await tvIsNeutral('night');
-  assert.equal(await tv.locator('.blood-seats button').count(), 0, 'nothing to tap on the TV');
+  assert.equal(await tv.locator('.blood-village button').count(), 0, 'nothing to tap on the TV');
   assert.equal(await vampirePhone.locator('.blood-seat[data-action="blood-pick"]').count(), 5, 'the vampire can pick any of the five others');
   assert.equal(await villagerPhone.locator('.blood-seat[data-action="blood-pick"]').count(), 5, 'a villager\'s phone looks just as busy');
   // At a glance the two phones look alike: same heading, same closed role card.

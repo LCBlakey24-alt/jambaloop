@@ -1394,6 +1394,7 @@ function receive(next, current) {
   if (state?.game !== next.game || state?.index !== next.index || next.phase === 'lobby') partyReply = '';
   // A game chosen from the lobby carousel: the TV introduces it out loud.
   const introduce = current.host && state?.phase === 'lobby' && state.picker && !next.picker && next.phase === 'lobby';
+  const browsed = Boolean(state?.picker && next.picker && state.picker.mode !== next.picker.mode);
   const welcomeMoved = current.host && (state?.welcome ?? null) !== (next.welcome ?? null);
   if (!current.host && (['playing', 'skipping'].includes(next.welcome) || next.phase === 'finished')) markReturning();
   state = next;
@@ -1444,6 +1445,8 @@ function receive(next, current) {
     // The captain has started browsing: the welcome steps aside.
     if (welcome && picker.version !== welcome.version) { welcome.version = picker.version; welcomeAction('end'); }
     // Follow the room, except just after this screen moved it itself.
+    // The TV ticks softly as the captain browses the games (sound on only).
+    if (current.host && soundEnabled && browsed) playSfx(sound, 'ui-tap', { volume: 0.5 });
     if (Date.now() - lastLocalPick > 700) movePicker(app, picker.mode, escape);
     if (current.host) stageFor(app.querySelector('.game'), picker.mode);
   }
@@ -1566,6 +1569,14 @@ function soundMoments(before, next) {
   // Warm the next game's sting while everyone is still in the lobby.
   if (next.phase === 'lobby') preloadSfx(sound, ['sting-' + (next.picker?.mode ?? next.mode)]);
   if (next.phase === 'rolling' && next.mode === 'wheel') playSfx(sound, 'wheel', { volume: 0.5 });
+  // Real dice on the table: a shake as the roll starts, then the dice landing.
+  if (next.phase === 'rolling' && ['board', 'dice'].includes(next.mode)) {
+    playSfx(sound, 'dice-shake', { volume: 0.6 });
+    playSfx(sound, 'dice-throw-' + (1 + next.index % 2), { volume: 0.7, at: next.mode === 'board' ? 2.2 : 0.9 });
+  }
+  // Cards going down: the trolley's track cards, and party answers being turned over.
+  if (next.phase === 'party-placed') playSfx(sound, 'card-place-1', { volume: 0.7 });
+  if (next.phase === 'party-reveal' && ['cards', 'punchline', 'tracks'].includes(next.mode)) playSfx(sound, 'card-slide', { volume: 0.6 });
   if (next.mode === 'potato' && before.phase === 'party-potato' && next.phase !== 'party-potato') playSfx(sound, 'sizzle', { volume: 0.6 });
 }
 
@@ -2311,7 +2322,8 @@ document.addEventListener('click', async event => {
         sound ??= new AudioContext();
         await sound.resume();
         playCue(sound, state.mode, 'preview');
-        preloadSfx(sound, ['whoosh', 'lockin', 'drumroll', 'reveal', 'correct', 'fanfare', 'cheer', 'bell', 'wheel', 'sizzle']);
+        playSfx(sound, 'ui-switch', { volume: 0.5 });
+        preloadSfx(sound, ['whoosh', 'lockin', 'drumroll', 'reveal', 'correct', 'fanfare', 'cheer', 'bell', 'wheel', 'sizzle', 'ui-tap', 'dice-shake', 'dice-throw-1', 'dice-throw-2', 'card-place-1', 'card-slide']);
         if (state.phase === 'lobby') playMusic('lobby');
       } else stopMusic();
       render(state);

@@ -39,6 +39,44 @@ function seats(party, escape, { pickable, action, chosen, barred, mates = [], se
   }).join('')}</ul>`;
 }
 
+const kicon = name => `<i class="k-icon" style="--icon:url(/icons/kenney/${name}.svg)" aria-hidden="true"></i>`;
+const talkingPoints = [
+  'Who has been very quiet?', 'Who changed their story?', 'Who is steering the vote?', 'Who seems far too relaxed?',
+  'Who accused first, and why?', 'Who has not been suspected yet?',
+];
+
+/**
+ * The TV's village: everyone sits round the fire. A house is a player still in;
+ * a skull marks one who has fallen, with the role they turned out to be. It
+ * shows only what is already public.
+ */
+function village(party, escape, centre) {
+  const count = party.seats.length;
+  const homes = party.seats.map((seat, index) => {
+    const angle = (index / count) * Math.PI * 2 - Math.PI / 2;
+    const out = !seat.alive;
+    return `<li style="left:${(50 + 43 * Math.cos(angle)).toFixed(2)}%;top:${(50 + 39 * Math.sin(angle)).toFixed(2)}%"${out ? ' data-out' : ''}${seat.connected === false && !out ? ' data-away' : ''}>
+      <span class="blood-home">${kicon(out ? 'skull' : 'structure-house')}<span class="blood-face">${avatarView(seat, escape)}</span></span>
+      <strong>${escape(seat.name)}</strong>${out && seat.role ? `<b class="blood-tag" data-role="${seat.role}">${roleNames[seat.role]}</b>` : ''}</li>`;
+  }).join('');
+  return `<div class="blood-village" data-size="${count > 10 ? 'large' : count > 7 ? 'medium' : 'small'}"><ul>${homes}</ul>
+    <div class="blood-green">${kicon('campfire')}${centre ?? ''}</div></div>`;
+}
+
+/** What the whole room already knows, kept in view: who is left and how each player fell. */
+function chronicle(party, escape) {
+  const fallen = party.seats.filter(seat => !seat.alive).sort((a, b) => (b.fellOrder ?? 0) - (a.fellOrder ?? 0)); // newest first, so the latest news is always in view
+  const events = fallen.map(seat => `<li data-how="${seat.how}">${kicon(seat.how === 'bitten' ? 'fire' : 'flag-triangle')}<span><small>${seat.how === 'bitten' ? 'Night' : 'Day'} ${seat.fellNight ?? ''}</small>
+    <strong>${escape(seat.name)}</strong> ${seat.how === 'bitten' ? 'was bitten' : 'was banished'}${seat.role ? ` · <b class="blood-tag" data-role="${seat.role}">${roleNames[seat.role]}</b>` : ''}</span></li>`).join('');
+  return `<aside class="blood-chronicle" aria-label="The story so far">
+    <div class="blood-stats"><div data-kind="vampires">${kicon('skull')}<strong>${party.hiding ?? party.counts.vampire}</strong><span>${(party.hiding ?? party.counts.vampire) === 1 ? 'vampire' : 'vampires'} still hiding</span></div>
+      <div data-kind="village">${kicon('structure-house')}<strong>${party.aliveCount}</strong><span>still in the village</span></div></div>
+    <h2>The story so far</h2>
+    ${events ? `<ol>${events}</ol>` : '<p class="blood-quiet">Nobody has fallen yet.</p>'}</aside>`;
+}
+
+const tvStage = (party, escape, centre) => `<div class="blood-stage">${village(party, escape, centre)}${chronicle(party, escape)}</div>`;
+
 const progress = (party, label) => party.expected ? `<p class="blood-progress" role="status"><strong>${party.done} / ${party.expected}</strong><span>${label}</span></p>` : '';
 const clock = state => state.ends ? '<div class="blood-timer"><small>TIME LEFT</small><span id="timer" class="timer"></span></div>' : '';
 
@@ -84,12 +122,12 @@ export function bloodmoonView(state, { host, canControl, escape, icons }) {
 
   if (phase === 'roles') {
     body = host
-      ? `${head('Check your phone for your secret role', `Hiding in this room: ${mix}. Keep your screen to yourself.`)}${moon}${progress(party, 'players ready')}${seats(party, escape)}${next('Start the first night')}`
+      ? `${head('Check your phone for your secret role', `Hiding in this room: ${mix}. Keep your screen to yourself.`)}${tvStage(party, escape, progress(party, 'players ready'))}${next('Start the first night')}`
       : you ? `${head('Your secret role', 'Do not show anyone. Tap ready when you have read it.')}${roleCard(you, escape, { open: true })}
           ${you.ready ? '<p class="blood-locked" role="status">Ready. Night falls when everyone is in.</p>' : '<div class="actions"><button type="button" class="button primary" data-action="blood-ready">I’m ready</button></div>'}${next('Start the first night')}`
         : `${head('Roles are being dealt', 'You joined after the deal, so watch this one and play the next.')}`;
   } else if (phase === 'night') {
-    if (host) body = `${head('Night falls on the village', 'Everyone: eyes on your own phone and make your choice.')}${moon}${progress(party, 'choices made')}${seats(party, escape)}${next('End the night')}`;
+    if (host) body = `${head('Night falls on the village', 'Everyone: eyes on your own phone and make your choice.')}${tvStage(party, escape, progress(party, 'choices made'))}${next('End the night')}`;
     else if (!you) body = `${head('Night falls', 'You are watching this game.')}${moon}`;
     else if (!you.alive) body = `${head('Night falls', 'You are out of the game. Watch quietly: no hints.')}${moon}`;
     else {
@@ -111,12 +149,13 @@ export function bloodmoonView(state, { host, canControl, escape, icons }) {
       : '<div class="blood-news" data-kind="safe"><h2>Everyone survived the night</h2><p>No one was bitten.</p></div>';
     const latest = you?.findings?.at(-1);
     const vision = latest && latest.night === party.night ? `<p class="blood-vision" data-vampire="${latest.vampire}" role="status">Your vision: <strong>${escape(latest.name)}</strong> is ${latest.vampire ? 'a VAMPIRE' : 'not a vampire'}.</p>` : '';
-    body = `${head('Dawn breaks', '')}${news}${vision}${host ? seats(party, escape) : you ? roleCard(you, escape) : ''}${next('Start the day')}`;
+    body = host ? `${head('Dawn breaks', '')}${tvStage(party, escape, news)}${next('Start the day')}`
+      : `${head('Dawn breaks', '')}${news}${vision}${you ? roleCard(you, escape) : ''}${next('Start the day')}`;
   } else if (phase === 'day') {
     body = `${head('Who is a vampire?', host ? 'Talk it over out loud. Accuse, defend, bluff. Then the village votes.' : you?.alive === false ? 'You are out. Watch quietly: no hints.' : 'Talk it over out loud, then vote on your phone.')}
-      ${seats(party, escape, { selfId: state.player?.id, mates: you?.mates })}${you ? roleCard(you, escape) : ''}${next('Open the vote')}`;
+      ${host ? tvStage(party, escape, `<p class="blood-talk">${talkingPoints[(party.night - 1) % talkingPoints.length]}</p>`) : seats(party, escape, { selfId: state.player?.id, mates: you?.mates })}${you ? roleCard(you, escape) : ''}${next('Open the vote')}`;
   } else if (phase === 'vote') {
-    if (host) body = `${head('The village votes', 'Choose on your phone: banish a suspect, or abstain. A tie banishes nobody.')}${progress(party, 'votes in')}${seats(party, escape)}${next('Close the vote')}`;
+    if (host) body = `${head('The village votes', 'Choose on your phone: banish a suspect, or abstain. A tie banishes nobody.')}${tvStage(party, escape, progress(party, 'votes in'))}${next('Close the vote')}`;
     else if (!you?.alive) body = `${head('The village votes', you ? 'You are out, so you have no vote. Watch quietly.' : 'You are watching this game.')}`;
     else body = `${head(you.voted ? 'Vote locked' : 'Who should be banished?', you.voted ? 'Wait for the count on the TV.' : 'Pick one suspect, or abstain. A tie banishes nobody.')}
       ${seats(party, escape, { action: you.voted ? undefined : 'blood-vote', chosen: you.ballot, mates: you.mates, selfId: state.player?.id, pickable: seat => seat.id !== state.player?.id })}

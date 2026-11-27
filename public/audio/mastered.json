@@ -908,5 +908,59 @@
   "tempo": 1.08,
   "loudness": -15.5,
   "seconds": 3.29
+ },
+ "sfx/ui-tap.mp3": {
+  "tempo": 1,
+  "loudness": null,
+  "seconds": 0.1,
+  "note": "Kenney UI Pack click, left at source level"
+ },
+ "sfx/ui-click.mp3": {
+  "tempo": 1,
+  "loudness": null,
+  "seconds": 0.1,
+  "note": "Kenney UI Pack click, left at source level"
+ },
+ "sfx/ui-switch.mp3": {
+  "tempo": 1,
+  "loudness": null,
+  "seconds": 0.1,
+  "note": "Kenney UI Pack click, left at source level"
+ },
+ "sfx/dice-throw-1.mp3": {
+  "tempo": 1,
+  "loudness": null,
+  "seconds": 0.3,
+  "note": "Kenney Boardgame Pack, left at source level"
+ },
+ "sfx/dice-throw-2.mp3": {
+  "tempo": 1,
+  "loudness": null,
+  "seconds": 0.3,
+  "note": "Kenney Boardgame Pack, left at source level"
+ },
+ "sfx/dice-shake.mp3": {
+  "tempo": 1,
+  "loudness": null,
+  "seconds": 0.3,
+  "note": "Kenney Boardgame Pack, left at source level"
+ },
+ "sfx/card-place-1.mp3": {
+  "tempo": 1,
+  "loudness": null,
+  "seconds": 0.3,
+  "note": "Kenney Boardgame Pack, left at source level"
+ },
+ "sfx/card-place-2.mp3": {
+  "tempo": 1,
+  "loudness": null,
+  "seconds": 0.3,
+  "note": "Kenney Boardgame Pack, left at source level"
+ },
+ "sfx/card-slide.mp3": {
+  "tempo": 1,
+  "loudness": null,
+  "seconds": 0.3,
+  "note": "Kenney Boardgame Pack, left at source level"
  }
 }

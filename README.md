@@ -194,3 +194,12 @@ The server pushes live updates and batches lobby and answer counts. The host can
 Set base points, a maximum time bonus, and a double-points schedule for Classic Quiz, Spin the Wheel, Dice Rally, Knockout, and Team Showdown. The bonus decreases linearly as the timer runs down. Closest-number questions award equal base points to tied guesses. Double points multiply the base and its bonus. In Dice Rally, the roll multiplier also applies.
 
 Run `npm test` to verify room sizes, reconnect behavior, protected avatars and live streams, playlists and normalized standings, scoring, awards, readiness, pause and replay, newer game-show rules, Board Race difficulty, and dice-tower clearances. The reconnect test waits for the server’s actual grace period. Automated passes are not a substitute for a real multi-phone group playtest; see `docs/RELEASE_READINESS_2026-11-23.md` for the current evidence and blockers.
+
+### Quiz Race additions (27 November 2026)
+
+- **Shield** (one per race): blocks rams for six seconds; the attacker's ram is still spent.
+- **Turbo**: three right answers in a row earn one more boost, with at most two in hand.
+- **Slipstream**: a car tucked 0.4–3 track units behind a rival runs 12% faster.
+- **Final sprint**: over the last 15% of the track a right answer's speed boost is worth half as much again.
+- The TV standings show a shield, a fresh turbo and a slipstream beside each name; Vince calls a blocked ram, a turbo and the final sprint.
+- Not playtested with people; the numbers are provisional.

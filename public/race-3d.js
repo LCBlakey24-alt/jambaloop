@@ -393,8 +393,9 @@ export function mountRace3D({ key, track = 'neon', reducedMotion = false }) {
       // glows white-hot with a long flame; the rammer lunges forward.
       const rammed = racer.power === 'rammed';
       const boosted = racer.power === 'boost';
-      glowMaterial.color.set(rammed ? '#ff2a2a' : boosted ? '#ffffff' : racer.color);
-      glowMaterial.opacity = rammed || boosted ? 0.95 : 0.45;
+      // A raised shield glows blue round the car.
+      glowMaterial.color.set(rammed ? '#ff2a2a' : boosted ? '#ffffff' : racer.shield ? '#58b7ff' : racer.color);
+      glowMaterial.opacity = rammed || boosted || racer.shield ? 0.95 : 0.45;
       paint.emissive.set(rammed ? '#ff2a2a' : '#000000');
       paint.emissiveIntensity = rammed ? 0.6 : 0;
       if (boosted) flame.visible = true;

@@ -124,3 +124,9 @@ html.mobile-deck .game[data-mode="quizrace"] {margin:6px auto 24px}
 .race-power-alert { margin:0; min-height:1.3em; text-align:center; font-weight:800; color:#ff8fd8; }
 @media (prefers-reduced-motion:no-preference) { .race-phone[data-rammed] { animation:race-rammed .4s steps(5) 2; } }
 @keyframes race-rammed { 0%,100% { translate:0; } 25% { translate:-6px 0; } 75% { translate:6px 0; } }
+
+/* Three power-ups on the phone remote. */
+.race-powers { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.race-power.is-shield { border-color:#58b7ff; box-shadow:0 0 14px #58b7ff55; }
+.race-power small { min-height: 2.2em; }
+.race-rank-status { font-style: normal; margin-left: .2em; letter-spacing: .05em; }

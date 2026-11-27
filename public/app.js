@@ -176,7 +176,7 @@ function updateQuizRaceVisuals() {
     set('[data-race-progress-text]',Math.min(100,ratio)+'%');
     set('[data-race-speed-value]',(current?.speed??1).toFixed(2)+'×');
     set('[data-race-position]',own.position+' / '+state.playerCount);
-    set('[data-race-speed]',(current?.speed??1)>1.04?'BOOSTING':(current?.speed??1)<.96?'SLOWED':'CRUISING');
+    set('[data-race-speed]',(current?.speed??1)>1.04?'BOOSTING':(current?.speed??1)<.96?'SLOWED':current?.slip?'SLIPSTREAM':'CRUISING');
     if(own.question)set('[data-race-deadline]',Math.max(0,Math.ceil((own.question.deadline-sim)/1000))+'s');
   }
   snapshot.racers.forEach(r=>{const row=[...app.querySelectorAll('[data-race-rank]')].find(node=>node.dataset.raceRank===r.id);if(!row)return;
@@ -184,7 +184,12 @@ function updateQuizRaceVisuals() {
     const percent=Math.min(100,Math.round(100*r.distance/snapshot.length));
     const text=row.querySelector('.race-rank-percent');if(text)text.textContent=percent+'%';
     const meter=row.querySelector('.race-mini-track i');if(meter)meter.style.width=percent+'%';
+    // Shield up, turbo just earned, tucked in a slipstream.
+    const status=row.querySelector('.race-rank-status'),badges=(r.shield?' 🛡':'')+(r.turbo?' 🚀':'')+(r.slip?' ≋':'');
+    if(status&&status.textContent!==badges)status.textContent=badges;
   });
+  const headline=app.querySelector('.race-broadcast-head h1');
+  if(headline&&snapshot.finalSprint&&!headline.dataset.sprint){headline.dataset.sprint='1';headline.textContent='Final sprint!';}
   raceAnimationFrame=requestAnimationFrame(updateQuizRaceVisuals);
 }
 
@@ -1534,6 +1539,9 @@ function raceCommentary(before, next) {
   const fresh = kind => next.race.racers.some(racer => racer.power === kind && before.race?.racers?.find(old => old.id === racer.id)?.power !== kind);
   if (fresh('rammed')) { if (soundEnabled) playSfx(sound, 'wrong', { volume: 0.4 }); return call('ram', 5000); }
   if (fresh('boost')) { if (soundEnabled) playSfx(sound, 'whoosh', { volume: 0.5 }); return call('boost', 5000); }
+  if (fresh('blocked')) return call('blocked', 5000);
+  if (next.race.finalSprint && !before.race?.finalSprint) return call('sprint');
+  if (next.race.racers.some(racer => racer.turbo && !before.race?.racers?.find(old => old.id === racer.id)?.turbo)) return call('turbo', 8000);
   const [first, second] = next.race.racers;
   const leaderBefore = before.race?.racers?.[0]?.id;
   const length = next.race.length || 1;

@@ -8,7 +8,13 @@ export const raceColors = ['#1dd9be', '#ffbd43', '#ff6b71', '#8954ff', '#65aaff'
 const wait = 700;
 // Power-ups: one boost and three rams per racer, per race. A ram only lands
 // on a rival within ramRange track units; a miss costs nothing.
-export const racePowers = Object.freeze({ boosts: 1, rams: 3, ramRange: 4,
+export const racePowers = Object.freeze({ boosts: 1, rams: 3, ramRange: 4, shields: 1, shieldTime: 6000,
+  // Three right answers in a row earn a turbo: one more boost, up to maxBoosts in hand.
+  turboStreak: 3, maxBoosts: 2,
+  // Slipstream: tucked in close behind a rival, a car gains a little speed.
+  slipFrom: .4, slipTo: 3, slipSpeed: .12,
+  // Final sprint: over the last stretch of track a right answer is worth half as much again.
+  sprintFrom: .85, sprintBonus: 1.5,
   boost: Object.freeze({ amount: .9, duration: 3000 }), rammed: Object.freeze({ amount: -.5, duration: 2500 }) });
 
 /** The rival this racer would hit right now: the nearest one within range. */
@@ -39,10 +45,22 @@ export function useRacePower(race, key, kind, at = race.time) {
     const target = ramTarget(race, racer);
     if (!target) return { status: 409, error: 'Nobody is close enough to ram.' };
     racer.rams--;
+    racer.power = { kind: 'ram', at };
+    // A raised shield soaks up the hit; the ram is still spent.
+    if (target.shieldUntil > at) {
+      target.power = { kind: 'blocked', at, by: racer.name };
+      return { status: 204, target: target.id, blocked: true };
+    }
     target.effect = { ...racePowers.rammed, start: at };
     target.power = { kind: 'rammed', at, by: racer.name };
-    racer.power = { kind: 'ram', at };
     return { status: 204, target: target.id };
+  }
+  if (kind === 'shield') {
+    if (racer.shields < 1) return { status: 409, error: 'You have used your shield.' };
+    racer.shields--;
+    racer.shieldUntil = at + racePowers.shieldTime;
+    racer.power = { kind: 'shield', at };
+    return { status: 204 };
   }
   return { status: 400, error: 'Unknown power-up.' };
 }
@@ -92,7 +110,8 @@ export function createQuizRace(entries, questionPool, { length = 'medium', track
       id: player.id, name: player.name, color: raceColors[i % raceColors.length], marker: i + 1,
       distance: 0, effect: null, speed: 1, questionIndex: 0, question: null, nextAt: 3000,
       feedback: null, finishedAt: undefined, correct: 0, wrong: 0, passed: 0, timeouts: 0,
-      boosts: racePowers.boosts, rams: racePowers.rams, power: null,
+      boosts: racePowers.boosts, rams: racePowers.rams, shields: racePowers.shields, shieldUntil: 0, power: null,
+      streak: 0, turbos: 0, turboAt: undefined, slip: false,
     }])),
   };
 }
@@ -116,6 +135,14 @@ export function submitRaceAnswer(race, key, { questionId, option, pass = false }
   const outcome = pass ? 'pass' : option === racer.question.item.correct ? 'correct' : 'wrong';
   const seconds = Math.max(0, at - racer.question.started) / 1000;
   const effect = boostEffect(outcome, seconds);
+  const sprint = outcome === 'correct' && racer.distance >= race.length * racePowers.sprintFrom;
+  if (sprint) effect.amount *= racePowers.sprintBonus;
+  racer.streak = outcome === 'correct' ? racer.streak + 1 : 0;
+  if (racer.streak && racer.streak % racePowers.turboStreak === 0 && racer.boosts < racePowers.maxBoosts) {
+    racer.boosts++;
+    racer.turbos++;
+    racer.turboAt = at;
+  }
   racer.effect = { ...effect, start: at };
   racer.speed = raceSpeed(racer, at);
   racer[outcome === 'correct' ? 'correct' : outcome === 'wrong' ? 'wrong' : 'passed']++;
@@ -127,6 +154,7 @@ export function submitRaceAnswer(race, key, { questionId, option, pass = false }
 
 function timeoutQuestion(race, racer, at) {
   racer.effect = { ...boostEffect('timeout'), start: at };
+  racer.streak = 0;
   racer.timeouts++;
   racer.feedback = { outcome: 'timeout', at, answer: racer.question.item.options[racer.question.item.correct] };
   racer.question = null;
@@ -142,14 +170,17 @@ export function advanceQuizRace(race, wall = race.lastWall) {
   while (race.time < end) {
     const a = race.time;
     const b = Math.min(end, a + 50);
+    // Positions at the start of the tick decide who is in whose slipstream.
+    const running = [...race.racers.values()].filter(racer => racer.finishedAt === undefined).map(racer => racer.distance);
     for (const racer of race.racers.values()) {
       if (racer.finishedAt !== undefined) continue;
+      racer.slip = a >= 3000 && running.some(ahead => ahead - racer.distance >= racePowers.slipFrom && ahead - racer.distance <= racePowers.slipTo);
       if (racer.question && racer.question.deadline <= a) { timeoutQuestion(race, racer, racer.question.deadline); changed = true; }
       if (issueQuestion(race, racer, a)) changed = true;
       if (b <= 3000) continue;
       const from = Math.max(a, 3000);
       const old = racer.distance;
-      racer.distance += raceMovement(racer, from, b);
+      racer.distance += raceMovement(racer, from, b) + (racer.slip ? racePowers.slipSpeed * (b - from) / 1000 : 0);
       racer.speed = raceSpeed(racer, b);
       if (old < race.length && racer.distance >= race.length) {
         const fraction = between((race.length - old) / Math.max(racer.distance - old, 1e-9), 0, 1);
@@ -196,18 +227,26 @@ export function publicRaceState(race, key, isHost) {
   return {
     time: race.time, length: race.length, track: race.track, difficulty: race.difficulty,
     countdown: Math.max(0, 3000 - race.time), paused: race.paused, finished: race.finished,
+    // The leader is into the last stretch: right answers are worth more for anyone in it.
+    finalSprint: !race.finished && sorted[0]?.distance >= race.length * racePowers.sprintFrom,
     winner: race.results[0]?.id,
     racers: sorted.map((r, i) => ({
       id: r.id, name: r.name, color: r.color, marker: r.marker, distance: +r.distance.toFixed(3), speed: +r.speed.toFixed(3),
       position: i + 1, finishedAt: r.finishedAt, trail: r.feedback?.outcome ?? 'normal',
       power: r.power && race.time < r.power.at + 1800 ? r.power.kind : undefined,
+      shield: r.shieldUntil > race.time || undefined, slip: (r.slip && r.finishedAt === undefined) || undefined,
+      turbo: (r.turboAt !== undefined && race.time < r.turboAt + 2500) || undefined,
       connected: true,
     })),
     own: own && !isHost ? {
       question: own.question ? { id: own.question.id, historyId:questionHistoryId(own.question.item.prompt), prompt: own.question.item.prompt, options: own.question.item.options, category: own.question.item.category, deadline: own.question.deadline } : undefined,
       feedback: own.feedback && race.time < own.feedback.at + 1400 ? { ...own.feedback } : undefined,
       correct: own.correct, wrong: own.wrong, passed: own.passed, timeouts: own.timeouts,
-      boosts: own.boosts, rams: own.rams, ramTarget: own.finishedAt === undefined && race.time >= 3000 ? ramTarget(race, own)?.name : undefined,
+      boosts: own.boosts, rams: own.rams, shields: own.shields, shieldLeft: Math.max(0, own.shieldUntil - race.time),
+      streak: own.streak, turboEarned: own.turboAt !== undefined && race.time < own.turboAt + 3000,
+      blocked: own.power?.kind === 'blocked' && race.time < own.power.at + 2500 ? own.power.by : undefined,
+      sprint: own.finishedAt === undefined && own.distance >= race.length * racePowers.sprintFrom,
+      ramTarget: own.finishedAt === undefined && race.time >= 3000 ? ramTarget(race, own)?.name : undefined,
       rammedBy: own.power?.kind === 'rammed' && race.time < own.power.at + 2500 ? own.power.by : undefined,
       nextAt: own.nextAt, position: sorted.indexOf(own) + 1, distance: +own.distance.toFixed(3),
     } : undefined,

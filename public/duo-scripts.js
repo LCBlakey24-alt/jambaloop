@@ -322,6 +322,18 @@ export const raceCalls = {
     ['vince', '[shouting] They\'ve hit the boost! Look at them go!'],
     ['vince', '[fast, excited] Boost deployed! That is a rocket ship!'],
   ],
+  blocked: [
+    ['vince', "[shouting] Shield up! That ram bounces straight off!"],
+    ['vince', "[laughs] Denied! Nothing gets through that shield."],
+  ],
+  turbo: [
+    ['vince', "[fast, excited] Three in a row! That is a turbo earned!"],
+    ['vince', "[excited] Somebody knows their stuff. Extra boost in the tank!"],
+  ],
+  sprint: [
+    ['vince', "[shouting] Final sprint! Every right answer counts double... well, nearly!"],
+    ['vince', "[fast, excited] Into the last stretch we go! This is where it's won!"],
+  ],
   finish: [
     ['vince', '[shouting] The chequered flag! What a race!'],
     ['vince', '[shouting] They take the win! Absolutely sensational!'],

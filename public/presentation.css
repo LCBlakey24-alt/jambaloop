@@ -263,3 +263,29 @@ body.playing .player-only .game-panel { box-shadow: 0 10px 26px #09071551,inset 
 .board-fallback .fallback-center { grid-area: 2/2/var(--center-end,5)/var(--center-end,5); }
 .board-fallback .fallback-tile { z-index: 1; }
 .board-fallback[style*="--board-grid:11"] .fallback-tile small { display: none; }
+
+/* "Made for a TV" advice shown when a phone tries to host. */
+.bigscreen-steps { margin: .6rem 0 1rem; padding-left: 1.2rem; display: grid; gap: .55rem; }
+.bigscreen-steps li { line-height: 1.35; }
+.bigscreen-actions { display: grid; gap: .6rem; }
+.bigscreen-actions .button { width: 100%; justify-content: center; }
+/* If someone hosts on a phone anyway, the lobby keeps reminding them gently. */
+.small-host-note { display: none; }
+@media (max-width: 760px) {
+  .host-screen[data-phase="lobby"] .small-host-note { display: block; grid-column: 1 / -1; margin: .4rem 0 0; padding: .4rem .6rem; border-radius: 10px; border: 1px solid #ffd27a66; background: #ffd27a1f; font-size: .85rem; line-height: 1.3; }
+}
+
+/* Scan the room's QR code from the join screen. */
+.join-scan { display: grid; gap: .5rem; margin: .2rem 0 .6rem; }
+.join-scan-button { width: 100%; justify-content: center; min-height: 48px; }
+.join-scan-or { margin: 0; text-align: center; font-size: .85rem; opacity: .8; }
+.join-scan.is-done .join-scan-or { opacity: 1; font-weight: 700; color: #7fe7c4; }
+.qr-scanner { display: grid; gap: .5rem; justify-items: center; }
+.qr-scanner[hidden] { display: none; }
+.qr-scanner video { width: 100%; max-height: 46dvh; aspect-ratio: 1; object-fit: cover; border-radius: 16px; background: #000; outline: 3px solid #ffffff55; outline-offset: -14px; }
+.qr-scanner p { margin: 0; text-align: center; font-weight: 700; }
+/* A QR code is for scanning with a phone, so a phone-sized screen never shows one. */
+@media (max-width: 760px) {
+  .game .qr, .join-qr-frame, .join-dialog-qr { display: none !important; }
+}
+.join-scan-button[hidden] { display: none; }

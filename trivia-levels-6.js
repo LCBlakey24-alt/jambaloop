@@ -5,7 +5,7 @@ export const levels6 = {
       1: [
         ['How many quarters is an NFL game divided into?', 'Four', 'Two', 'Three', 'Six'],
         ['What do American football players wear on their heads for protection?', 'A helmet', 'A cap', 'A headband', 'A hood'],
-        ['In which country are all 32 NFL teams based?', 'The United States', 'Canada', 'Mexico', 'Australia'],
+        ['In the 2026 season, all 32 NFL teams are based in which country?', 'The United States', 'Canada', 'Mexico', 'Australia'],
         ['Which of these best describes the shape of an American football?', 'An oval with pointed ends', 'A perfect sphere', 'A flat disc', 'A cube'],
         ['The NFL team called the Cowboys comes from which city in Texas?', 'Dallas', 'Houston', 'Austin', 'San Antonio'],
         ['Which sea animal gives Miami’s NFL team its name?', 'Dolphin', 'Shark', 'Whale', 'Seal'],
@@ -34,7 +34,7 @@ export const levels6 = {
         ['What two-word name is given to the part of the field inside the opponent’s 20-yard line?', 'Red zone', 'Danger area', 'Hot corner', 'Gold zone'],
         ['What is the NFL’s annual all-star event called?', 'The Pro Bowl', 'The Rose Bowl', 'The Senior Bowl', 'The Cotton Bowl'],
         ['In which US state do the NFL’s Buccaneers play their home games?', 'Florida', 'Texas', 'Georgia', 'Louisiana'],
-        ['How many teams are in each of the NFL’s eight divisions?', 'Four', 'Three', 'Five', 'Six'],
+        ['In the 2026 season, how many teams are in each of the NFL’s eight divisions?', 'Four', 'Three', 'Five', 'Six'],
         ['In American football, what is a “blitz”?', 'Extra defenders rushing the quarterback', 'A very long field goal attempt', 'A kick-off returned for a touchdown', 'A run by the quarterback'],
         ['Which head coach won six Super Bowls with the New England Patriots between the 2001 and 2018 seasons?', 'Bill Belichick', 'Andy Reid', 'Pete Carroll', 'Bill Parcells'],
       ],
@@ -92,7 +92,7 @@ export const levels6 = {
       ],
       3: [
         ['The line of scrimmage is the imaginary line where each play begins.', true],
-        ['The New York Giants and New York Jets both play their home games in the state of New Jersey.', true],
+        ['In the 2026 season, the New York Giants and New York Jets both play their home games in the state of New Jersey.', true],
         ['The Jacksonville Jaguars are based in Texas.', false],
         ['The Cleveland Browns have a picture of a bear on their helmets.', false],
         ['The Pittsburgh Steelers have their logo on only one side of their helmets.', true],
@@ -192,7 +192,7 @@ export const levels6 = {
         ['Which defenceman won the Norris Trophy seven times between 1955 and 1962?', 'Doug Harvey', 'Red Kelly', 'Pierre Pilote', 'Tim Horton'],
         ['The franchise that began as the Kansas City Scouts in 1974 has played under which name since 1982?', 'New Jersey Devils', 'Colorado Avalanche', 'Dallas Stars', 'Calgary Flames'],
         ['Willie O’Ree became the NHL’s first Black player in 1958 with which team?', 'Boston Bruins', 'Detroit Red Wings', 'Chicago Black Hawks', 'New York Rangers'],
-        ['Which Philadelphia Flyers goaltender in 1987 became the first in NHL history to score by shooting the puck into the net?', 'Ron Hextall', 'Pelle Lindbergh', 'Bernie Parent', 'Billy Smith'],
+        ['Which Philadelphia Flyers goaltender in December 1987 became the first NHL goaltender to score by shooting the puck into the opposing net?', 'Ron Hextall', 'Pelle Lindbergh', 'Bernie Parent', 'Billy Smith'],
       ],
     },
     boolean: {

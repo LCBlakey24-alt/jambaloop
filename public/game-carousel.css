@@ -605,3 +605,36 @@ body.playing .host-screen[data-phase="lobby"] .roster-panel ul.players.face-wall
 body.playing .host-screen[data-phase="lobby"] .roster-panel ul.players.face-wall > li > .player-avatar { position:absolute; inset:0; width:100%; height:100%; border-radius:0; border:0; font-size:clamp(1.2rem,4.6dvh,3rem); }
 body.playing .host-screen[data-phase="lobby"] .roster-panel ul.players.face-wall > li[data-ready="true"] { outline:3px solid #7ee8ae; outline-offset:-3px; }
 body.playing .host-screen[data-phase="lobby"] .roster-panel ul.players.face-wall > li > .wall-name > span { color:#ffd166; }
+
+/* Catch Up's round result: the team tiles stay full pictures (an older rule shrank the avatars there). */
+.host-screen .catch-versus ul.catch-crew.face-wall > li > .player-avatar { width:100%; height:100%; }
+/* TV results: Replay and Choose another game sit on one row. Change settings stays on phones and in the
+   carousel's Game settings, because a third button wrapped over the question review and the team scores. */
+body.playing .host-screen[data-phase="finished"] .results .actions [data-action="again"] { display:none; }
+
+/* The answer wall: while the room is writing or voting, everyone's picture, lit as they send theirs in. */
+.answer-wall { display:grid; gap:clamp(.4rem,1.4vh,1rem); justify-items:center; width:100%; margin-block:clamp(.4rem,1.6vh,1.2rem); }
+.host-screen .answer-wall ul.face-wall { width:min(100%,1500px); height:clamp(130px,30dvh,360px); }
+.host-screen .answer-wall ul.face-wall > li { border-radius:18px; transition:filter .3s, scale .3s, box-shadow .3s; }
+.host-screen .answer-wall ul.face-wall > li.is-waiting { filter:grayscale(.85) brightness(.55); }
+.host-screen .answer-wall ul.face-wall > li.is-in { box-shadow:inset 0 0 0 4px #7ee8ae; }
+.host-screen .answer-wall ul.face-wall > li > b { position:absolute; top:6px; right:6px; display:grid; place-items:center; width:1.7em; aspect-ratio:1; border-radius:50%; font:900 clamp(.8rem,2.2vh,1.4rem)/1 'House Sans',sans-serif; background:#0008; color:#fff; }
+.host-screen .answer-wall ul.face-wall > li.is-in > b { background:#0f8a52; }
+.answer-wall p { margin:0; font-size:clamp(1rem,2.8vh,1.8rem); font-weight:700; }
+.answer-wall p strong { font-size:1.5em; }
+@media (prefers-reduced-motion:no-preference) { .host-screen .answer-wall ul.face-wall > li.is-in { animation:answer-in .45s cubic-bezier(.2,1.5,.4,1); } }
+@keyframes answer-in { from { scale:.85; filter:brightness(1.6); } }
+
+/* TV results: the buttons used to stick to the bottom of the left column and sit on top of whatever
+   overflowed underneath (the team scores in Team Showdown, the question review elsewhere). They now
+   come straight after the winner, with the team scores and the review below them, so nothing overlaps. */
+@media (min-width: 1000px) and (min-height: 560px) {
+  .game.host-screen[data-phase="finished"] .results > .actions { position: static; order: 1; margin-block: clamp(.3rem, 1.2vh, .9rem); }
+  .game.host-screen[data-phase="finished"] .results > :is(.team-scoreboard, .team-list, .review-details, .personal-scorecard) { order: 2; }
+}
+.host-screen .answer-wall ul.face-wall > li.is-waiting { filter:grayscale(.7) brightness(.8); }
+/* Team results on the TV: the heading already names the winning team, so the banner that repeats it
+   gives way to the team scores, which were being cut off at the bottom. */
+@media (min-width: 1000px) and (min-height: 560px) {
+  .game.host-screen[data-phase="finished"] .results:has(> .team-scoreboard) > .results-winner-banner { display: none; }
+}

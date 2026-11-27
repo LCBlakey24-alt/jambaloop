@@ -17,6 +17,20 @@ import {dontLookView} from './dont-look-view.js';
 /** How many pictures across a wall of this many players should be. */
 export const wallColumns = count => count <= 1 ? 1 : count <= 4 ? 2 : count <= 9 ? 3 : count <= 16 ? 4 : count <= 25 ? 5 : count <= 36 ? 6 : 8;
 
+/**
+ * TV: everyone in the room as a wall of pictures that light up as each player
+ * sends in an answer or vote. Shown while the room waits, in place of a bare count.
+ */
+export function answerWall(state, escape, label = 'in') {
+  const roster = state.roster ?? [];
+  if (!Array.isArray(state.whoIsIn) || !roster.length) return '';
+  const done = new Set(state.whoIsIn);
+  return `<div class="answer-wall" role="status" aria-label="${done.size} of ${roster.length} ${label}">
+    <ul class="face-wall" style="--cols:${Math.min(roster.length, Math.max(4, Math.ceil(roster.length / (roster.length > 12 ? 2 : 1))))}">${roster.map(player =>
+      `<li class="${done.has(player.id) ? 'is-in' : 'is-waiting'}">${avatarView(player, escape)}<span>${escape(player.name)}</span><b aria-hidden="true">${done.has(player.id) ? '✓' : '…'}</b></li>`).join('')}</ul>
+    <p><strong>${done.size}</strong> of ${roster.length} ${label}</p></div>`;
+}
+
 export function avatarView(player, escape) {
   const photo = player.avatar ? ` data-room-avatar="${escape(player.avatar)}"` : '';
   return `<span class="player-avatar avatar-initial" aria-hidden="true"${photo}>${escape(Array.from(player.name)[0]?.toUpperCase() ?? '?')}</span>`;
@@ -126,7 +140,7 @@ function socialView(state, { host, canControl, escape, reply, icons }) {
         <div class="party-hand-options">${party.redrawAvailable ? '<button class="button outline" type="button" data-action="social-redraw">Refresh my six cards</button><small>One free hand refresh each round, before you lock in.</small>' : '<small>Hand refresh already used for this round.</small>'}</div>`
       : `<form id="bluff-form"><label>Your reply<textarea name="reply" rows="3" maxlength="100" required>${escape(reply ?? '')}</textarea></label><button class="button primary">Lock in reply</button></form>`;
     body = `<h1>${mode === 'cards' ? 'Complete the sentence' : 'Write a punchline'}</h1>${party.votePoints === 200 ? '<p class="party-final-bonus" role="status">Final round · Every vote earns double points</p>' : ''}${prompt}
-      ${host ? `<p role="status">${party.submissions} of ${party.responseTarget} entered</p>` : waiting || editor}
+      ${host ? answerWall(state, escape, 'answers in') || `<p role="status">${party.submissions} of ${party.responseTarget} entered</p>` : waiting || editor}
       ${next('Open voting')}`;
   } else {
     const votes = party.trackVotes;

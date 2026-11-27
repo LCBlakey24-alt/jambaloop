@@ -263,6 +263,21 @@ export function submitParty(room, key, data, publish) {
   return [409, 'This action is no longer available.'];
 }
 
+/**
+ * Who has sent in their answer or vote this step, as public player ids. The TV
+ * lights up their picture. It says who has answered, never what they answered,
+ * and in Spot the Bluff the bluffer writes too, so it gives no role away.
+ */
+export function partyWhoIsIn(room) {
+  const party = room.party;
+  if (!party || !['bluff', 'punchline', 'cards', 'samepage', 'rare'].includes(room.mode)) return undefined;
+  const writing = ['party-write', 'rare-write'].includes(room.phase);
+  const voting = room.phase === 'party-vote';
+  const sent = writing ? party.entries ?? party.replies : voting ? party.votes : undefined;
+  if (!(sent instanceof Map)) return undefined;
+  return [...sent.keys()].map(key => room.players.get(key)?.id).filter(Boolean);
+}
+
 export function publicParty(room, key) {
   if(room.mode==='catchup')return publicCatchUp(room,key);
   if(room.mode==='dontlook')return publicLook(room,key);

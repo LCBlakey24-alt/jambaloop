@@ -21,7 +21,7 @@ try{
   assert.deepEqual(await setupPage.locator('.game-tile').evaluateAll(tiles=>tiles.map(tile=>tile.dataset.mode)),[...releasedGameIds],'All released games should appear on desktop');
   await setupPage.locator('.game-tile[data-mode="spotlight"]').click();
   await setupPage.locator('#game-preview [data-action="party"]').click();
-  await setupPage.locator('[data-picker-tv] [data-action="picker-settings"]').click();
+  await setupPage.locator('[data-action="party-skip"]').click(); await setupPage.locator('[data-picker-tv] [data-action="picker-settings"]').click();
   const setupForm=setupPage.locator('#configure-form');
   assert.equal(await setupForm.locator('input[name="mode"]:checked').inputValue(),'spotlight');
   assert.equal(await setupForm.locator('select[name="count"]').isVisible(),true);

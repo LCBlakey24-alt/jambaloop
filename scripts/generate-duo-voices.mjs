@@ -10,6 +10,7 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { duoIntros, hosts, reactionTakes, skipQuips, welcomeBack, welcomeScript } from '../public/duo-scripts.js';
 import { duoRecordings } from '../public/duo-recordings.js';
+import { gameGuides } from '../public/guide-scripts.js';
 
 const api = 'https://api.elevenlabs.io/v1';
 const headers = { 'xi-api-key': process.env.XI_API_KEY || 'proxy-injected', 'content-type': 'application/json' };
@@ -18,7 +19,8 @@ const dry = args.includes('--dry-run');
 const redo = args.includes('--redo');
 const scripts = { ...duoIntros, welcome: welcomeScript, 'welcome-back': welcomeBack,
   ...Object.fromEntries(skipQuips.map((lines, index) => [`skip-${index + 1}`, lines])),
-  ...reactionTakes };
+  ...reactionTakes,
+  ...Object.fromEntries(Object.entries(gameGuides).map(([mode, lines]) => [`guide-${mode}`, lines])) };
 const wanted = args.filter(arg => !arg.startsWith('--'));
 const keys = wanted.length ? wanted : Object.keys(scripts);
 const folder = new URL('../public/audio/duo/', import.meta.url);

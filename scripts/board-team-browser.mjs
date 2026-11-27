@@ -23,7 +23,7 @@ try {
     if(await page.locator('[data-action="carousel-view"]').isVisible())await page.locator('[data-action="carousel-view"]').click();
     await page.locator('[data-action="preview-mode"][data-mode="board"]').click();
     await page.locator('#game-preview [data-action="party"]').click();
-  await page.locator('[data-picker-tv] [data-action="picker-settings"]').click();
+  await page.locator('[data-action="party-skip"]').click(); await page.locator('[data-picker-tv] [data-action="picker-settings"]').click();
     const form=page.locator('#configure-form');
     await form.locator('input[name="playStyle"][value="'+style+'"]').check();
     if(style==='teams')await form.locator('select[name="teamCount"]').selectOption(String(groups));

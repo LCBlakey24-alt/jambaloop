@@ -28,7 +28,7 @@ try{
   if(await setup.locator('[data-action="carousel-view"]').isVisible())await setup.locator('[data-action="carousel-view"]').click();
   await setup.locator('.game-tile[data-mode="classic"]').click();
   await setup.locator('#game-preview [data-action="party"]').click();
-  await setup.locator('[data-picker-tv] [data-action="picker-settings"]').click();
+  await setup.locator('[data-action="party-skip"]').click(); await setup.locator('[data-picker-tv] [data-action="picker-settings"]').click();
   const form=setup.locator('#configure-form');
   assert.deepEqual(await ticked(form),['choice','boolean','estimate','order'],'every type starts ticked');
   assert.equal(await form.locator('input[name="format"]').inputValue(),'mixed');

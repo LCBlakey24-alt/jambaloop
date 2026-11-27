@@ -34,7 +34,7 @@ try{
   await launcher.locator('.game-tile[data-mode="topanswers"]').click();
   assert.match(await launcher.locator('#game-preview').innerText(),/Top Answers/);
   await launcher.locator('#game-preview [data-action="party"]').click();
-  await launcher.locator('[data-picker-tv] [data-action="picker-settings"]').click();
+  await launcher.locator('[data-action="party-skip"]').click(); await launcher.locator('[data-picker-tv] [data-action="picker-settings"]').click();
   assert.equal(await launcher.locator('#configure-form input[name="mode"]:checked').inputValue(),'topanswers');
   assert.deepEqual(await launcher.locator('#configure-form select[name="count"] option')
     .evaluateAll(options=>options.map(option=>option.value)),['3','5','7']);

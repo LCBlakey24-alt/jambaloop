@@ -16,6 +16,9 @@ try{
   const tv=await tvContext.newPage(); watch(tv);
   await tv.goto(site,{waitUntil:'domcontentloaded'});
   await tv.locator('[data-action="party"]').first().click();
+  // It opens as a waiting room; this script skips the intro to reach the carousel.
+  await tv.locator('[data-gather-tv]').waitFor({timeout:15000});
+  await tv.locator('[data-action="party-skip"]').click();
   await tv.locator('[data-picker-tv]').waitFor({timeout:15000});
   const {code,key:host}=JSON.parse(await tv.evaluate(()=>sessionStorage.getItem('quizmas-session')));
   assert.equal(await tv.locator('.screen-mode-title').innerText(),'Pick a game');

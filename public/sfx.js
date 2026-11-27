@@ -35,14 +35,24 @@ let musicName;
 const musicLevel = { lobby: 0.22, finale: 0.5, decider: 0.4 };
 
 /** Start (or keep) a music bed; looping tracks repeat until stopped. */
-export function playMusic(name, { loop = true } = {}) {
-  if (musicName === name && music && !music.paused) return;
+let musicQuiet = false;
+const levelNow = () => (musicLevel[musicName] ?? 0.24) * (musicQuiet ? 0.5 : 1);
+export function playMusic(name, { loop = true, quiet = false, fallback } = {}) {
+  if (musicName === name && music && !music.paused) {
+    // Same tune, different moment: glide between browsing and in-game volume.
+    if (musicQuiet !== quiet) { musicQuiet = quiet; music.volume = levelNow(); }
+    return;
+  }
   stopMusic();
-  music = new Audio(`/audio/music/${name}.mp3`);
+  const track = new Audio(`/audio/music/${name}.mp3`);
+  music = track;
   musicName = name;
-  music.loop = loop;
-  music.volume = musicLevel[name] ?? 0.3;
-  music.play()?.catch(() => { musicName = undefined; });
+  musicQuiet = quiet;
+  track.loop = loop;
+  track.volume = levelNow();
+  // A game without its own theme yet falls back to the house music.
+  if (fallback) track.addEventListener('error', () => { if (music === track) { music = undefined; musicName = undefined; playMusic(fallback, { loop, quiet }); } }, { once: true });
+  track.play()?.catch(() => { if (music === track) musicName = undefined; });
 }
 
 export function stopMusic() {
@@ -59,5 +69,5 @@ export function stopMusic() {
 
 /** Dip the music while Max and Poppy are talking. */
 export function duckMusic(down) {
-  if (music) music.volume = down ? 0.06 : musicLevel[musicName] ?? 0.3;
+  if (music) music.volume = down ? 0.05 : levelNow();
 }

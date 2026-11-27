@@ -24,9 +24,11 @@ import { playSting, stingFor } from './show-sting.js';
 import { isWelcomeNarration, narrationPlaying, playScript, playWelcome, stopNarration, toggleNarration } from './narrator.js';
 import { bloodmoonCalls, boardCalls, catchupCalls, closeCalls, knockoutReactions, raceCalls, reactions, skipQuips, wayoffCalls, welcomeBack } from './duo-scripts.js';
 import { openWelcome } from './welcome-show.js';
+import { openGuide } from './guide-show.js';
+import { gameGuides } from './guide-scripts.js';
 import { playChiptune, playCue, playTick, playTowerImpact } from './sound-cues.js';
 import { duckMusic, playMusic, playSfx, preloadSfx, stopMusic } from './sfx.js';
-import { bindPickerSwipe, movePicker, pickerPhone, pickerTv, stepMode } from './lobby-picker.js';
+import { bindPickerSwipe, gatherPhone, gatherTv, movePicker, pickerPhone, pickerTv, stepMode } from './lobby-picker.js';
 import { knockoutLadder, phoneHearts, playKnockout, rememberLadder, shatterPhoneHeart } from './knockout-ladder.js';
 import { boardLengths, boardRoute, boardDuration, durationLabel, suggestedTurnCap, boardRequiresChoice, boardPathChoices } from './board-route.js';
 import {teamPlayModes, defaultPlayStyle} from './team-play.js';
@@ -771,6 +773,7 @@ function startSession(next) {
 
 function leave() {
   closeWelcome();
+  closeGuide();
   stopMusic();
   stream?.abort();
   stream = undefined;
@@ -1044,6 +1047,8 @@ function render(s) {
     body = partyView(s, { host, canControl, escape, icons, reply: partyReply });
     if (s.phase === 'party-potato' && pauseButton) body = `<div class="round-pace">${pauseButton}</div>` + body;
     if (s.phase === 'party-potato' && !host) timer = '<span class="timer potato-timer" id="timer"></span>';
+  } else if (s.phase === 'lobby' && s.picker && s.gathering) {
+    body = host ? gatherTv(s, { escape }) : gatherPhone(s, { escape, canDrive: s.isCaptain });
   } else if (s.phase === 'lobby' && s.picker) {
     body = host ? pickerTv(s, { escape, canDrive: true }) : pickerPhone(s, { escape, canDrive: s.isCaptain });
   } else if (s.phase === 'lobby') {
@@ -1219,7 +1224,7 @@ function render(s) {
   const shownMode = s.phase === 'lobby' && s.picker ? s.picker.mode : s.mode;
   app.innerHTML = `<section class="game ${host ? 'host-screen' : 'player-only'} ${immersive ? 'immersive' : ''} ${host && tvFocus ? 'tv-focus' : ''} ${enter ? 'phase-enter' : ''}" data-deck-key="${phaseKey}" data-phase="${s.phase}" data-paused="${Boolean(s.pausedAt)}" data-mode="${shownMode}" data-result="${result}" style="${modeVariables(shownMode)}">${sceneBackdrop(shownMode, enter && (s.phase === 'finished' || result === 'win'))}<div class="game-top">
     <div class="screen-identity"><span class="screen-mode-icon" aria-hidden="true">${icons(mode[3])}</span>
-      <div><div class="screen-mode-title">${s.phase === 'lobby' && s.picker ? 'Pick a game' : escape(s.quizTitle || (s.mode === 'classic' ? categoryName(s.category) : modeName(s.mode)))}</div>
+      <div><div class="screen-mode-title">${s.phase === 'lobby' && s.picker ? (s.gathering ? 'Join the party' : 'Pick a game') : escape(s.quizTitle || (s.mode === 'classic' ? categoryName(s.category) : modeName(s.mode)))}</div>
       <div class="screen-status">${host && s.phase === 'lobby' && !s.picker && showIdentity(s.mode) ? `<span class="show-studio-label">${showIdentity(s.mode).studio}</span>` : ''}<span class="phase-caption">${caption}</span>${s.afterDark && s.phase !== 'lobby' ? '<span class="after-hours-tag">AFTER HOURS 18+</span>' : ''}
       ${s.isCaptain && s.phase !== 'lobby' ? '<span class="captain-tag">★ Captain</span>' : ''}${boost}
       ${host && ['lobby','finished'].includes(s.phase) ? '<span class="studio-publisher">A ROOKIE QUEST GAMES PRODUCTION</span>' : ''}
@@ -1276,9 +1281,9 @@ function render(s) {
   // Catch Up: a frozen side's buttons come back by themselves when the freeze ends.
   if (s.mode === 'catchup' && s.party?.frozenFor > 0) setTimeout(() => app.querySelectorAll('.catch-button[disabled]').forEach(button => { button.disabled = false; }), s.party.frozenFor + 60);
   if(s.mode==='sketch')paintSketchBoard(s.party);
-  // The welcome plays once the room has players and a captain to hand over to.
-  if (host && s.phase === 'lobby' && s.picker && s.playerCount > 0 && s.captainName && !s.welcome && !welcomedRooms().includes(s.code)) requestWelcome();
+  // The welcome plays when the TV or the captain presses "Start the party".
   if (welcome && s.phase !== 'lobby') closeWelcome();
+  if (guide && (s.phase !== 'lobby' || !s.briefing)) closeGuide();
   if (s.phase === 'lobby' && s.picker) bindPickerSwipe(app, direction => stepPicker(direction));
   if (host && s.phase === 'lobby') stageFor(app.querySelector('.game'), shownMode); else hideStage();
   // Hot Potato: the potato arcs from the old holder's seat to the new one.
@@ -1461,6 +1466,7 @@ function receive(next, current) {
   const introduce = current.host && state?.phase === 'lobby' && state.picker && !next.picker && next.phase === 'lobby';
   const browsed = Boolean(state?.picker && next.picker && state.picker.mode !== next.picker.mode);
   const welcomeMoved = current.host && (state?.welcome ?? null) !== (next.welcome ?? null);
+  const briefingMoved = current.host && ((state?.briefing ?? null) !== (next.briefing ?? null) || (next.briefing && state?.mode !== next.mode));
   if (!current.host && (['playing', 'skipping'].includes(next.welcome) || next.phase === 'finished')) markReturning();
   state = next;
   // Store only opaque question IDs, never answer keys or other players' data.
@@ -1503,9 +1509,10 @@ function receive(next, current) {
     updateLiveGuesses(app, next);
     if (soundEnabled && app.querySelectorAll('.lock-stamp').length > before) playSfx(sound, 'lockin', { volume: 0.5 });
   }
-  if (introduce) toggleNarration(next.mode);
+  if (introduce && !next.briefing) toggleNarration(next.mode);
   if (!current.host && next.mode === 'quizrace') updateRacePowers(app, next);
   if (welcomeMoved) showWelcome(next.welcome);
+  if (briefingMoved) showGuide(next);
   if (picker) {
     // The captain has started browsing: the welcome steps aside.
     if (welcome && picker.version !== welcome.version) { welcome.version = picker.version; welcomeAction('end'); }
@@ -1619,17 +1626,27 @@ function raceCommentary(before, next) {
   if (first && second && first.distance > length * 0.4 && first.distance - second.distance < length * 0.015) call('close', 20000);
 }
 
+/** The waiting room has the house music; after that, the game in view has its own. */
+function roomMusic(s) {
+  if (s.phase === 'finished') return;
+  if (s.phase !== 'lobby') return playMusic('game-' + s.mode, { quiet: true, fallback: 'lobby' });
+  if (s.gathering) return playMusic('lobby');
+  playMusic('game-' + (s.picker?.mode ?? s.mode), { fallback: 'lobby' });
+}
+
 /** The TV's recorded effects and music for each moment of the show. */
 function soundMoments(before, next) {
   const moved = before.phase !== next.phase || before.index !== next.index;
   // Music: the lobby theme under the lobby and carousel, the winners' theme at the end.
-  if (next.phase === 'lobby') playMusic('lobby');
+  // Each game has its own theme: it plays as the carousel lands on that game,
+  // and carries on quietly underneath the whole game.
+  if (next.phase === 'lobby') roomMusic(next);
   else if (next.phase === 'finished' && before.phase !== 'finished') {
     playMusic('finale', { loop: false });
     playSfx(sound, 'fanfare', { volume: 0.5 });
     playSfx(sound, 'cheer', { volume: 0.45, at: 0.6 });
   } else if (next.decider && next.phase === 'question') playMusic('decider');
-  else if (next.phase !== 'finished') stopMusic();
+  else if (next.phase !== 'finished') roomMusic(next);
   if (!moved) return;
   // The first question arrives under the title sting, so no whoosh there.
   if (next.phase === 'question' && next.index > 0) playSfx(sound, 'whoosh', { volume: 0.4 });
@@ -1655,8 +1672,6 @@ function showGameError(error) {
 // Max and Poppy's welcome to Jambaloop. The room holds its state (playing,
 // asking or skipping) so the TV, the captain's phone and everyone else agree.
 let welcome;
-const welcomedKey = 'jambaloop-welcomed';
-const welcomedRooms = () => { try { return JSON.parse(sessionStorage.getItem(welcomedKey) ?? '[]'); } catch { return []; } };
 // A phone that has seen the welcome or played a game is a returning player.
 const returningKey = 'jambaloop-returning';
 const isReturning = () => { try { return localStorage.getItem(returningKey) === '1'; } catch { return false; } };
@@ -1665,13 +1680,6 @@ const markReturning = () => { try { localStorage.setItem(returningKey, '1'); } c
 function welcomeAction(action) {
   if (!session || !state) return Promise.resolve();
   return api('/' + session.code + '/welcome', { action, game: state.game }).catch(() => {});
-}
-
-/** TV: start the welcome once per room (or offer a skip if everyone's been before). */
-function requestWelcome() {
-  if (!session?.host || !state) return;
-  try { sessionStorage.setItem(welcomedKey, JSON.stringify([...welcomedRooms(), state.code].slice(-20))); } catch {}
-  welcomeAction(state.everyoneReturning ? 'ask' : 'start');
 }
 
 function welcomeOverlay() {
@@ -1692,6 +1700,24 @@ function showWelcome(to) {
     const pick = Math.floor(Math.random() * skipQuips.length);
     playScript(`skip-${pick + 1}`, skipQuips[pick], { onDone: () => welcomeAction('end') });
   }
+}
+
+// The chosen game's "how to play" guide, on the TV. The room holds its state.
+let guide;
+const briefingAction = action => session && state ? api('/' + session.code + '/briefing', { action, game: state.game }).catch(() => {}) : Promise.resolve();
+function showGuide(s) {
+  closeGuide();
+  if (!s.briefing || !gameGuides[s.mode]) { if (s.briefing) briefingAction('end'); return; }
+  const mode = s.mode;
+  guide = openGuide(document.body, mode, { onSkip: () => briefingAction('skip') });
+  guide.line(0);
+  playScript('guide-' + mode, gameGuides[mode], { onLine: index => guide?.line(index), onDone: () => briefingAction('end') });
+}
+function closeGuide() {
+  if (!guide) return;
+  if (/^guide-/.test(narrationPlaying() ?? '')) stopNarration();
+  guide.close();
+  guide = undefined;
 }
 
 function closeWelcome() {
@@ -2378,6 +2404,10 @@ document.addEventListener('click', async event => {
   if (action === 'close') return dialog.close();
   if (action === 'night' && session && state) return openDialog('night');
   if (action === 'leave') return leave();
+  if (action === 'party-start' && session && state?.gathering) { button.disabled = true; return api('/' + session.code + '/welcome', { action: 'party', game: state.game }).catch(error => { button.disabled = false; showGameError(error); }); }
+  if (action === 'party-skip' && session && state?.gathering) { button.disabled = true; return api('/' + session.code + '/browse', { open: true, skipIntro: true, game: state.game }).catch(error => { button.disabled = false; showGameError(error); }); }
+  if (action === 'guide-play' && session && state?.phase === 'lobby' && !state.briefing) return briefingAction('play');
+  if (action === 'guide-skip' && session && state?.briefing) return briefingAction('skip');
   if (action === 'welcome-play' && session?.host && !state?.welcome) return welcomeAction('start');
   if (action === 'welcome-skip' && session) return welcomeAction('skip');
   if (action === 'welcome-tour' && session) return welcomeAction('tour');
@@ -2451,7 +2481,7 @@ document.addEventListener('click', async event => {
         playCue(sound, state.mode, 'preview');
         playSfx(sound, 'ui-switch', { volume: 0.5 });
         preloadSfx(sound, ['whoosh', 'lockin', 'drumroll', 'reveal', 'correct', 'fanfare', 'cheer', 'bell', 'wheel', 'sizzle', 'ui-tap', 'dice-shake', 'dice-throw-1', 'dice-throw-2', 'card-place-1', 'card-slide']);
-        if (state.phase === 'lobby') playMusic('lobby');
+        roomMusic(state);
       } else stopMusic();
       render(state);
       updateTimer();
@@ -2489,6 +2519,10 @@ document.addEventListener('click', async event => {
       await refresh();
     } else if (action === 'quick-replay') {
       await api('/' + current.code + '/rematch', { game: state.game, sameGame: true });
+      await refresh();
+    } else if (action === 'choose-game') {
+      // Back to the carousel with the same group; the scores of the night carry on.
+      await api('/' + current.code + '/rematch', { game: state.game, sameGame: true, picker: true });
       await refresh();
     } else if (action === 'potato-rescue') {
       await api('/' + current.code + '/potato-rescue', { game: state.game, step: state.party.step });

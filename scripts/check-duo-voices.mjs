@@ -4,10 +4,12 @@
 import { readFileSync } from 'node:fs';
 import { duoIntros, reactionTakes, skipQuips, spoken, welcomeBack, welcomeScript } from '../public/duo-scripts.js';
 import { duoRecordings, duoTake } from '../public/duo-recordings.js';
+import { gameGuides } from '../public/guide-scripts.js';
 
 const scripts = { ...duoIntros, welcome: welcomeScript, 'welcome-back': welcomeBack,
   ...Object.fromEntries(skipQuips.map((lines, index) => [`skip-${index + 1}`, lines])),
-  ...reactionTakes };
+  ...reactionTakes,
+  ...Object.fromEntries(Object.entries(gameGuides).map(([mode, lines]) => [`guide-${mode}`, lines])) };
 const words = text => text.toLowerCase().replace(/[^a-z0-9' ]+/g, ' ').split(/\s+/).filter(Boolean);
 // Share of the script's words found, in order, in the transcript.
 function match(expected, heard) {

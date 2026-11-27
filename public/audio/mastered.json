@@ -1067,5 +1067,225 @@
   "tempo": 1.08,
   "loudness": -15.6,
   "seconds": 5.02
+ },
+ "music/game-bloodmoon.mp3": {
+  "tempo": 1,
+  "loudness": -20.4,
+  "seconds": 45.04
+ },
+ "music/game-bluff.mp3": {
+  "tempo": 1,
+  "loudness": -20.4,
+  "seconds": 45.04
+ },
+ "music/game-board.mp3": {
+  "tempo": 1,
+  "loudness": -20.4,
+  "seconds": 45.09
+ },
+ "music/game-brain.mp3": {
+  "tempo": 1,
+  "loudness": -20.4,
+  "seconds": 42.95
+ },
+ "music/game-cards.mp3": {
+  "tempo": 1,
+  "loudness": -20.4,
+  "seconds": 43.91
+ },
+ "music/game-catchup.mp3": {
+  "tempo": 1,
+  "loudness": -20.3,
+  "seconds": 45.09
+ },
+ "music/game-classic.mp3": {
+  "tempo": 1,
+  "loudness": -20.5,
+  "seconds": 45.09
+ },
+ "music/game-dice.mp3": {
+  "tempo": 1,
+  "loudness": -20.4,
+  "seconds": 45.09
+ },
+ "music/game-knockout.mp3": {
+  "tempo": 1,
+  "loudness": -20.4,
+  "seconds": 44.72
+ },
+ "music/game-potato.mp3": {
+  "tempo": 1,
+  "loudness": -20.4,
+  "seconds": 45.09
+ },
+ "music/game-punchline.mp3": {
+  "tempo": 1,
+  "loudness": -20.4,
+  "seconds": 45.04
+ },
+ "music/game-quizrace.mp3": {
+  "tempo": 1,
+  "loudness": -20.3,
+  "seconds": 45.04
+ },
+ "music/game-rare.mp3": {
+  "tempo": 1,
+  "loudness": -20.4,
+  "seconds": 45.09
+ },
+ "music/game-samepage.mp3": {
+  "tempo": 1,
+  "loudness": -20.4,
+  "seconds": 45.04
+ },
+ "music/game-showdown.mp3": {
+  "tempo": 1,
+  "loudness": -20.3,
+  "seconds": 45.04
+ },
+ "music/game-sketch.mp3": {
+  "tempo": 1,
+  "loudness": -20.4,
+  "seconds": 45.04
+ },
+ "music/game-soclose.mp3": {
+  "tempo": 1,
+  "loudness": -20.4,
+  "seconds": 45.04
+ },
+ "music/game-spotlight.mp3": {
+  "tempo": 1,
+  "loudness": -20.4,
+  "seconds": 45.09
+ },
+ "music/game-topanswers.mp3": {
+  "tempo": 1,
+  "loudness": -20.3,
+  "seconds": 45.09
+ },
+ "music/game-tracks.mp3": {
+  "tempo": 1,
+  "loudness": -20.4,
+  "seconds": 45.09
+ },
+ "music/game-wayoff.mp3": {
+  "tempo": 1,
+  "loudness": -20.5,
+  "seconds": 45.09
+ },
+ "music/game-wheel.mp3": {
+  "tempo": 1,
+  "loudness": -20.4,
+  "seconds": 45.09
+ },
+ "duo/guide-bloodmoon.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.8,
+  "seconds": 69.59
+ },
+ "duo/guide-bluff.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 48.14
+ },
+ "duo/guide-board.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 44.51
+ },
+ "duo/guide-brain.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 36.78
+ },
+ "duo/guide-cards.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 35.89
+ },
+ "duo/guide-catchup.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 42.84
+ },
+ "duo/guide-classic.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 40.72
+ },
+ "duo/guide-dice.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 32.34
+ },
+ "duo/guide-knockout.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.6,
+  "seconds": 42.95
+ },
+ "duo/guide-potato.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 37.96
+ },
+ "duo/guide-punchline.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 37.67
+ },
+ "duo/guide-quizrace.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.9,
+  "seconds": 45.69
+ },
+ "duo/guide-rare.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 40.28
+ },
+ "duo/guide-samepage.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 41.17
+ },
+ "duo/guide-showdown.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 39.37
+ },
+ "duo/guide-sketch.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 45.9
+ },
+ "duo/guide-soclose.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 35.21
+ },
+ "duo/guide-spotlight.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 40.18
+ },
+ "duo/guide-topanswers.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 32.34
+ },
+ "duo/guide-tracks.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 50.78
+ },
+ "duo/guide-wayoff.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 38.43
+ },
+ "duo/guide-wheel.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 32.55
  }
 }

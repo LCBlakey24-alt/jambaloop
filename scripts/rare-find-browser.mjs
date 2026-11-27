@@ -32,7 +32,7 @@ try{
   await page.locator('.game-tile[data-mode="rare"]').click();
   assert.match(await page.locator('#game-preview').innerText(),/Rare Find/);
   await page.locator('#game-preview [data-action="party"]').click();
-  await page.locator('[data-picker-tv] [data-action="picker-settings"]').click();
+  await page.locator('[data-action="party-skip"]').click(); await page.locator('[data-picker-tv] [data-action="picker-settings"]').click();
   assert.equal(await page.locator('#configure-form input[name="mode"]:checked').inputValue(),'rare');
   assert.deepEqual(await page.locator('#configure-form select[name="count"] option')
     .evaluateAll(options=>options.map(option=>option.value)),['3','5','7']);

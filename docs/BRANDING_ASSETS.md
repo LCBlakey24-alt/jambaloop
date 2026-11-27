@@ -36,3 +36,11 @@ The pack's buttons, sliders, stars and fonts are not used: the site's controls a
 ## Voices
 
 Bloodmoon is narrated by **Count Vesper**, an original character. The voice is the ElevenLabs library voice "Paul – Engaging, Friendly and Mysterious" (a Romanian speaker, tagged Transylvanian accent), used under the account's paid plan. It is not an impression of any actor or film character. A second library voice, "Matthew Schmitz – Ancient Vampire Lord", was auditioned and not used.
+
+## Music
+
+Every game has its own 45-second looping theme (`public/audio/music/game-<mode>.mp3`), made on 27 November 2026 with ElevenLabs Music on the owner's paid plan from the prompts in `scripts/generate-game-music.mjs`. Each prompt describes a mood and instruments only; none names a song, an artist or a show. The theme plays on the TV when the carousel lands on that game and carries on quietly during the game. `lobby.mp3` is the waiting-room music and the fallback. Nobody has listened to these on a real TV yet.
+
+## How-to-play guides
+
+Each game has a recorded, captioned guide (`public/audio/duo/guide-<mode>.mp3`, scripts in `public/guide-scripts.js`, animated scenes in `public/guide-show.js`), recorded on 27 November 2026 with the same ElevenLabs voices as the rest of the show. Max and Poppy hand over to Baz and Clive (Knockout), Vince (Quiz Race) and Count Vesper (Bloodmoon). Every rule in the scripts was checked against the game code, and every recording's transcript was checked against its script. Nobody has listened to them or watched them on a real TV yet.

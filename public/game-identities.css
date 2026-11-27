@@ -279,4 +279,9 @@ body.playing .game.player-only :is([data-action="advance"], [data-action="clock"
   body.playing .game.player-only[data-phase="reveal"] .question-panel .round-status { display: none; }
   /* The dice or board roll is on the TV; the smallest phones need the room for answers. */
   body.playing .game.player-only .question-panel .roll-recap { display: none; }
+  /* A question shown on the phone itself (Team Showdown) can run to three lines:
+     keep it compact so the last answer is never under the captain's button. */
+  body.playing .game.player-only[data-phase="question"] .question-panel > h2 { font-size: 15px; line-height: 1.2; margin-block: 4px; }
+  body.playing .game.player-only[data-phase="question"] .question-panel .answers { grid-auto-rows: minmax(36px, 1fr); gap: 4px; }
+  body.playing .game.player-only[data-phase="question"] .question-panel .answers .answer { min-height: 36px; padding-block: 2px; }
 }

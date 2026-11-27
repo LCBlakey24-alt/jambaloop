@@ -6,7 +6,7 @@ import { after, before, test } from 'node:test';
 let server;
 let origin;
 before(async () => {
-  server = spawn(process.execPath, ['server.js'], { env: { ...process.env, PORT: '0', PUBLIC_URL: '', WELCOME_LIMIT_MS: '400' }, stdio: ['ignore', 'pipe', 'inherit'] });
+  server = spawn(process.execPath, ['server.js'], { env: { ...process.env, PORT: '0', PUBLIC_URL: '', WELCOME_LIMIT_MS: '400', BRIEFING_LIMIT_MS: '500' }, stdio: ['ignore', 'pipe', 'inherit'] });
   const [output] = await once(server.stdout, 'data');
   origin = String(output).match(/http:\/\/localhost:\d+/)[0];
 });
@@ -26,6 +26,17 @@ test('a lobby-first room: the captain browses, everyone follows, playing a game 
   const state = async key => (await call(path, key)).data;
   const { game } = await state(room.host);
   assert.deepEqual((await state(guest.key)).picker, { mode: 'classic', version: 0 }, 'everyone sees the carousel');
+
+  // The room opens as a waiting room: no browsing until someone starts the party.
+  assert.equal((await state(guest.key)).gathering, true, 'phones know the party has not started');
+  assert.equal((await call(path + '/browse', captain.key, { mode: 'knockout', game })).status, 409, 'no browsing in the waiting room');
+  assert.equal((await call(path + '/welcome', guest.key, { action: 'party', game })).status, 403, 'only the captain or TV starts the party');
+  assert.equal((await call(path + '/welcome', captain.key, { action: 'party', game })).status, 204);
+  const started = await state(guest.key);
+  assert.equal(started.gathering, undefined, 'the waiting room is over');
+  assert.equal(started.welcome, 'playing', 'starting the party plays the welcome');
+  assert.equal((await call(path + '/welcome', room.host, { action: 'party', game })).status, 409, 'it only starts once');
+  assert.equal((await call(path + '/welcome', room.host, { action: 'end', game })).status, 204);
 
   assert.equal((await call(path + '/browse', guest.key, { mode: 'wheel', game })).status, 403, 'only the captain or TV drives');
   assert.equal((await call(path + '/browse', captain.key, { mode: 'nope', game })).status, 400);
@@ -47,6 +58,65 @@ test('a lobby-first room: the captain browses, everyone follows, playing a game 
   assert.equal((await call(path + '/browse', captain.key, { mode: 'wheel', game })).status, 409, 'browsing needs the carousel open');
   assert.equal((await call(path + '/browse', captain.key, { open: true, game })).status, 204);
   assert.equal((await state(guest.key)).picker.mode, 'potato', 'reopening starts on the current game');
+});
+
+test('the party cannot start in an empty room, a returning room is asked, and the intro can be skipped', async () => {
+  const { data: room } = await call('', undefined, { mode: 'classic', category: 'mixed', count: 5, seconds: 0, picker: true });
+  const path = '/' + room.code;
+  const { game } = (await call(path, room.host)).data;
+  assert.equal((await call(path + '/welcome', room.host, { action: 'party', game })).status, 409, 'nobody is here yet');
+  await call(path + '/join', undefined, { name: 'Ada', returning: true });
+  assert.equal((await call(path + '/welcome', room.host, { action: 'party', game })).status, 204);
+  assert.equal((await call(path, room.host)).data.welcome, 'asking', 'everyone has played before, so the room is asked');
+
+  const { data: quick } = await call('', undefined, { mode: 'classic', category: 'mixed', count: 5, seconds: 0, picker: true });
+  const quickGame = (await call('/' + quick.code, quick.host)).data.game;
+  assert.equal((await call('/' + quick.code + '/browse', quick.host, { open: true, skipIntro: true, game: quickGame })).status, 204);
+  const open = (await call('/' + quick.code, quick.host)).data;
+  assert.equal(open.gathering, undefined);
+  assert.equal(open.welcome, undefined, 'straight to the carousel, no welcome');
+});
+
+test('picking a game plays its guide once: the captain can skip or replay it, and it never blocks the start', async () => {
+  const { data: room } = await call('', undefined, { mode: 'classic', category: 'mixed', count: 5, seconds: 0, picker: true });
+  const path = '/' + room.code;
+  const { data: captain } = await call(path + '/join', undefined, { name: 'Ada' });
+  const { data: guest } = await call(path + '/join', undefined, { name: 'Bo' });
+  const state = async key => (await call(path, key)).data;
+  const { game } = await state(room.host);
+  await call(path + '/welcome', captain.key, { action: 'party', game });
+  await call(path + '/welcome', room.host, { action: 'end', game });
+  const pick = async mode => { const lobby = await state(room.host);
+    return call(path + '/configure', captain.key, { mode, category: 'mixed', count: 5, seconds: 0, format: 'choice', game, lobbyVersion: lobby.lobbyVersion }); };
+  assert.equal((await pick('knockout')).status, 204);
+  assert.equal((await state(guest.key)).briefing, 'playing', 'every screen knows the guide is on');
+  assert.equal((await call(path + '/briefing', guest.key, { action: 'skip', game })).status, 403, 'only the captain or TV can skip');
+  assert.equal((await call(path + '/briefing', captain.key, { action: 'end', game })).status, 403, 'only the TV says it finished');
+  assert.equal((await call(path + '/briefing', captain.key, { action: 'skip', game })).status, 204);
+  assert.equal((await state(guest.key)).briefing, undefined);
+  assert.equal((await call(path + '/briefing', captain.key, { action: 'play', game })).status, 204, 'it can be replayed');
+  assert.equal((await call(path + '/briefing', room.host, { action: 'play', game })).status, 409);
+  assert.equal((await call(path + '/briefing', room.host, { action: 'end', game })).status, 204);
+
+  // Back to the carousel and pick the same game: already explained in this room.
+  assert.equal((await call(path + '/browse', captain.key, { open: true, game })).status, 204);
+  assert.equal((await pick('knockout')).status, 204);
+  assert.equal((await state(room.host)).briefing, undefined, 'a game is only explained once per room');
+  assert.equal((await call(path + '/browse', captain.key, { open: true, game })).status, 204);
+  assert.equal((await pick('classic')).status, 204);
+  assert.equal((await state(room.host)).briefing, 'playing', 'a different game gets its own guide');
+  await new Promise(done => setTimeout(done, 700));
+  assert.equal((await state(guest.key)).briefing, undefined, 'a guide the TV never ends times out');
+
+  // A room that skipped the intros is not shown guides unless it asks.
+  const { data: quick } = await call('', undefined, { mode: 'classic', category: 'mixed', count: 5, seconds: 0, picker: true });
+  const quickPath = '/' + quick.code;
+  await call(quickPath + '/join', undefined, { name: 'Cy' });
+  const quickLobby = (await call(quickPath, quick.host)).data;
+  await call(quickPath + '/browse', quick.host, { open: true, skipIntro: true, game: quickLobby.game });
+  await call(quickPath + '/configure', quick.host, { mode: 'potato', category: 'mixed', count: 5, seconds: 0, format: 'choice', game: quickLobby.game, lobbyVersion: (await call(quickPath, quick.host)).data.lobbyVersion });
+  assert.equal((await call(quickPath, quick.host)).data.briefing, undefined);
+  assert.equal((await call(quickPath + '/briefing', quick.host, { action: 'play', game: quickLobby.game })).status, 204, 'but it is there on request');
 });
 
 test('rooms made without the carousel behave as before', async () => {

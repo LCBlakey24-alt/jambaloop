@@ -154,11 +154,49 @@ function makeCar(racer) {
   badge.position.set(0, 0.98, 0);
   badge.scale.setScalar(0.44);
   car.add(glow, flame, badge);
-  car.userData = { wheels, flame, paint, glowMaterial, flameMaterial, badgeTexture, badge };
+  car.userData = { wheels, flame, glow, paint, glowMaterial, flameMaterial, badgeTexture, badge };
+  dressCar(car, racer).catch(() => { /* keep the drawn car */ });
   return car;
 }
 
+// Kenney Car Kit go-karts (CC0): five drivers shared round the grid, told apart by colour and number. The drawn car above
+// stays as the fallback until a model has loaded, and for good if it fails.
+const carModels = ['kart-oobi', 'kart-oodi', 'kart-ooli', 'kart-oopi', 'kart-oozi'];
+const modelCache = new Map();
+function loadCarModel(name) {
+  if (!modelCache.has(name)) modelCache.set(name, import('/three-addons/GLTFLoader.js')
+    .then(({ GLTFLoader }) => new GLTFLoader().loadAsync(`/models/cars/${name}.glb`)).then(gltf => gltf.scene));
+  return modelCache.get(name);
+}
+
+/** Swap the drawn body for a model, keeping the racer's glow, flame and number. */
+async function dressCar(car, racer) {
+  const source = await loadCarModel(carModels[(racer.marker - 1) % carModels.length]);
+  if (!car.parent) return; // the race was torn down while loading
+  const model = source.clone(true);
+  const size = new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3());
+  // The kit's cars point along +z; the track drives cars along +x.
+  model.rotation.y = Math.PI / 2;
+  // Sized to its lane: no longer than the drawn car and no wider than a lane.
+  model.scale.setScalar(Math.min(1.35 / Math.max(size.z, .001), .6 / Math.max(size.x, .001)));
+  const tint = new THREE.Color('#ffffff').lerp(new THREE.Color(racer.color), .45);
+  const paints = [], wheels = [];
+  model.traverse(node => {
+    if (node.isMesh) {
+      node.material = node.material.clone();
+      node.material.color.copy(tint);
+      paints.push(node.material);
+    }
+    if (/^wheel/.test(node.name)) wheels.push(node);
+  });
+  const { glow, flame, badge } = car.userData;
+  for (const child of [...car.children]) if (![glow, flame, badge].includes(child)) car.remove(child);
+  car.add(model);
+  Object.assign(car.userData, { modelPaints: paints, modelWheels: wheels, wheels: [] });
+}
+
 function disposeCar(car) {
+  for (const material of car.userData.modelPaints ?? []) material.dispose();
   const { paint, glowMaterial, flameMaterial, badgeTexture, badge } = car.userData;
   paint.dispose(); glowMaterial.dispose(); flameMaterial.dispose(); badgeTexture.dispose(); badge.material.dispose();
 }
@@ -398,6 +436,7 @@ export function mountRace3D({ key, track = 'neon', reducedMotion = false }) {
       glowMaterial.opacity = rammed || boosted || racer.shield ? 0.95 : 0.45;
       paint.emissive.set(rammed ? '#ff2a2a' : '#000000');
       paint.emissiveIntensity = rammed ? 0.6 : 0;
+      for (const material of car.userData.modelPaints ?? []) { material.emissive.set(rammed ? '#ff2a2a' : '#000000'); material.emissiveIntensity = rammed ? 0.6 : 0; }
       if (boosted) flame.visible = true;
       if (!reducedMotion) {
         const beat = (sim ?? performance.now()) / 45;
@@ -410,6 +449,7 @@ export function mountRace3D({ key, track = 'neon', reducedMotion = false }) {
         flame.scale.x = 0.7 + Math.random() * 0.6;
         flameMaterial.opacity = 0.6 + Math.random() * 0.4;
         for (const wheel of wheels) wheel.rotation.z = -u * 260;
+        for (const wheel of car.userData.modelWheels ?? []) wheel.rotation.x = u * 260;
       }
       if (!leader || progress > leader.progress) leader = { progress, p };
       packMin = Math.min(packMin, car.position.x);

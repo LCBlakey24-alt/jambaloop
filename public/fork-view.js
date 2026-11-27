@@ -8,16 +8,8 @@ const slotNames=['DEFEND','SABOTAGE','DEFEND'];
 const revealTitles=['FIRST CARDS ON THE TRACKS','THE SABOTAGE IS REVEALED','THE LAST CARDS ARE DOWN'];
 const trackLetters=['A','B'];
 
-const tram = `<svg class="fork-tram" viewBox="0 0 120 84" aria-hidden="true" focusable="false">
-  <path d="M60 4v10M44 4h32" fill="none" stroke="#c9d6ea" stroke-width="3" stroke-linecap="round"/>
-  <rect x="8" y="14" width="104" height="50" rx="12" fill="#f5b942" stroke="#17223d" stroke-width="3"/>
-  <rect x="8" y="46" width="104" height="18" rx="6" fill="#e2573f" stroke="#17223d" stroke-width="3"/>
-  <rect x="18" y="22" width="22" height="18" rx="4" fill="#bfe9ff" stroke="#17223d" stroke-width="2.5"/>
-  <rect x="49" y="22" width="22" height="18" rx="4" fill="#bfe9ff" stroke="#17223d" stroke-width="2.5"/>
-  <rect x="80" y="22" width="22" height="18" rx="4" fill="#bfe9ff" stroke="#17223d" stroke-width="2.5"/>
-  <circle cx="108" cy="54" r="4" fill="#fff6c9" stroke="#17223d" stroke-width="2"/>
-  <circle cx="32" cy="70" r="9" fill="#17223d" stroke="#c9d6ea" stroke-width="3"/><circle cx="88" cy="70" r="9" fill="#17223d" stroke="#c9d6ea" stroke-width="3"/>
-</svg>`;
+// The tram is a render of the Kenney Train Kit's round tram (CC0), made by scripts/render-model-sprites.mjs.
+const tram = '<img class="fork-tram" src="/models/sprites/train-tram-round.webp" alt="" width="320" height="320">';
 
 // The junction: a trolley on one rail that forks to Track A and Track B. Each
 // track has three square slots, filled one placement at a time.

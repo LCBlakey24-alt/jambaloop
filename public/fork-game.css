@@ -177,3 +177,6 @@ body.playing .fork-game { display:grid; grid-template-rows:auto auto minmax(0,1f
 .fork-phone .fork-hand { overflow:visible; grid-template-rows:none; }
 .fork-phone .fork-hand-options { overflow:visible; }
 @media (min-width:900px) { .fork-host .fork-slot.fork-tile strong { font-size:clamp(15px,3.2dvh,34px); } }
+
+/* The tram is now an image: keep its box square and let it sit on the rail. */
+.fork-host img.fork-tram { height: auto; aspect-ratio: 1; object-fit: contain; translate: 0 -58%; }

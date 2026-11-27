@@ -185,3 +185,8 @@ button.blood-seat:focus-visible { border-color: var(--moon); outline: none; }
 .blood-home { font-size: clamp(3.2rem, 10.5dvh, 6.6rem); }
 .game.host-screen[data-mode="bloodmoon"] .blood-home .blood-face .player-avatar { width: .5em; height: .5em; font-size: .22em; background: #1b1230; }
 .blood-village[data-size="large"] li .blood-tag { display: none; }
+
+/* Gravestones for the fallen and the vampire on the count: renders of Kenney Graveyard Kit models. */
+.blood-grave { width: 1.15em; height: 1.15em; object-fit: contain; display: block; filter: saturate(.8) brightness(.95); }
+.blood-vampire { width: clamp(2.6rem, 8dvh, 4.6rem); height: clamp(2.6rem, 8dvh, 4.6rem); object-fit: contain; margin-bottom: -.2rem; }
+.blood-game[data-blood="night"] .blood-grave { filter: saturate(.5) brightness(.7); }

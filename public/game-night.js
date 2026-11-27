@@ -30,7 +30,8 @@ export function partySettings(mode, theme) {
 
 export function replayButtons(state, icons) {
   return `${state.night.queue.length ? '' : `<button class="button primary" data-action="quick-replay">${icons('rotate-ccw')} Replay this game</button>`}
-    <button class="button outline" data-action="again">Play again with this group</button>`;
+    <button class="button ${state.night.queue.length ? 'primary' : 'outline'}" data-action="choose-game">${icons('layout-grid')} Choose another game</button>
+    <button class="button outline" data-action="again">Change settings</button>`;
 }
 
 export function gameNightView(state, { canControl, escape, icons }) {

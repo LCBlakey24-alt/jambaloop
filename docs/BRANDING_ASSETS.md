@@ -40,3 +40,7 @@ Bloodmoon is narrated by **Count Vesper**, an original character. The voice is t
 ## Music
 
 Every game has its own 45-second looping theme (`public/audio/music/game-<mode>.mp3`), made on 27 November 2026 with ElevenLabs Music on the owner's paid plan from the prompts in `scripts/generate-game-music.mjs`. Each prompt describes a mood and instruments only; none names a song, an artist or a show. The theme plays on the TV when the carousel lands on that game and carries on quietly during the game. `lobby.mp3` is the waiting-room music and the fallback. Nobody has listened to these on a real TV yet.
+
+## How-to-play guides
+
+Each game has a recorded, captioned guide (`public/audio/duo/guide-<mode>.mp3`, scripts in `public/guide-scripts.js`, animated scenes in `public/guide-show.js`), recorded on 27 November 2026 with the same ElevenLabs voices as the rest of the show. Max and Poppy hand over to Baz and Clive (Knockout), Vince (Quiz Race) and Count Vesper (Bloodmoon). Every rule in the scripts was checked against the game code, and every recording's transcript was checked against its script. Nobody has listened to them or watched them on a real TV yet.

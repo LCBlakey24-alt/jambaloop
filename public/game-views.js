@@ -130,7 +130,11 @@ export function diceView(state) {
 
 export function lobbyView(state, { host, escape, icons, modeName }) {
   const canControl = host || state.isCaptain;
-  const config = `<button class="button outline" data-action="configure">${icons('settings')} Choose game</button>`;
+  const config = `<button class="button outline" data-action="configure">${icons('settings')} Choose game</button>`
+    + (state.quizTitle ? '' : `<button class="button outline" data-action="guide-play">${icons('play')} How to play</button>`);
+  // While the hosts explain the game on the TV, phones say so and the captain can skip.
+  const briefing = state.briefing && !host ? `<div class="guide-phone-note" role="status"><p><strong>Watch the TV.</strong> The hosts are explaining how to play.</p>
+    ${state.isCaptain ? '<button type="button" class="button outline" data-action="guide-skip">Skip · we know this one</button>' : ''}</div>` : '';
   // Flick between games from the captain's phone (or the TV): the TV lobby
   // re-themes to each show as it arrives. Saved quizzes keep their own setup.
   const order = modes.map(([id]) => id);
@@ -182,6 +186,7 @@ export function lobbyView(state, { host, escape, icons, modeName }) {
     <div class="lobby-eyebrow"><span class="eyebrow">ROOM ${state.code}</span>${state.isCaptain ? '<span class="captain-tag">★ Captain</span>' : ''}</div>
     <h2 class="phone-welcome">${avatarView(state.player, escape)}<span>${state.game > 1 ? 'Rematch ready, ' : 'You’re in, '}${escape(state.player.name)}!</span></h2>
     <p>${state.isCaptain ? 'Choose a game for the room and start when everyone is ready.' : 'Stay here while the captain sets up the game.'}</p>
+    ${briefing}
     ${switcher}${summary}${teamPreview}${playerGuide}
     <div class="ready-actions"><button class="button outline" data-action="ready-toggle" aria-label="I’m ready" aria-pressed="${Boolean(state.player.ready)}">
       ${icons(state.player.ready ? 'circle-check' : 'circle')}${state.player.ready ? 'Ready' : 'I’m ready'}</button><span role="status">${readyText}</span></div>

@@ -4,6 +4,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { modes } from '../public/game-config.js';
 import { duoIntros, hosts, presenters, reactionTakes, skipQuips, spoken, welcomeBack, welcomeScript } from '../public/duo-scripts.js';
 import { duoRecordings, duoTake } from '../public/duo-recordings.js';
+import { gameGuides } from '../public/guide-scripts.js';
 
 test('every game has a short Double Act intro where both hosts take turns', () => {
   assert.deepEqual(Object.keys(duoIntros).sort(), modes.map(([id]) => id).sort());
@@ -19,7 +20,8 @@ test('every game has a short Double Act intro where both hosts take turns', () =
 test('every recording is committed and has one timing per scripted line', () => {
   const scripts = { ...duoIntros, welcome: welcomeScript, 'welcome-back': welcomeBack,
     ...Object.fromEntries(skipQuips.map((lines, index) => [`skip-${index + 1}`, lines])),
-  ...reactionTakes };
+  ...reactionTakes,
+  ...Object.fromEntries(Object.entries(gameGuides).map(([mode, lines]) => [`guide-${mode}`, lines])) };
   for (const [key, timings] of Object.entries(duoRecordings)) {
     assert.ok(scripts[key], `${key} is a known script`);
     assert.ok(existsSync(new URL('../public' + duoTake(key), import.meta.url)), `${key}.mp3 is committed`);
@@ -60,4 +62,24 @@ test('every game has its own music theme, with the house music as the fallback',
   const app = readFileSync(new URL('../public/app.js', import.meta.url), 'utf8');
   assert.match(app, /playMusic\('game-' \+ \(s\.picker\?\.mode \?\? s\.mode\), \{ fallback: 'lobby' \}\)/, 'the carousel plays the theme of the game in view');
   assert.match(app, /playMusic\('game-' \+ s\.mode, \{ quiet: true, fallback: 'lobby' \}\)/, 'the theme carries on quietly during play');
+});
+
+test('every game has a detailed how-to-play guide, each line paired with a drawn scene', () => {
+  const show = readFileSync(new URL('../public/guide-show.js', import.meta.url), 'utf8');
+  assert.deepEqual(Object.keys(gameGuides).sort(), modes.map(([id]) => id).sort());
+  for (const [mode, lines] of Object.entries(gameGuides)) {
+    assert.ok(lines.length >= 7 && lines.length <= 10, `${mode}: detailed but not endless`);
+    assert.ok(presenters.includes(lines[0][0]), `${mode}: a regular host opens`);
+    assert.equal(lines[0][2], 'title', `${mode}: opens on the title card`);
+    assert.equal(lines.at(-1)[2], 'go', `${mode}: ends on the send-off`);
+    assert.ok(/phone/i.test(lines.map(([, text]) => text).join(' ')), `${mode}: says what to do on the phone`);
+    const guests = new Set(lines.map(([host]) => host).filter(host => !presenters.includes(host)));
+    if (guests.size) assert.ok(lines.some(([host, , scene]) => presenters.includes(host) && scene === 'handover'), `${mode}: the regular hosts hand over to the guest`);
+    for (const [host, text, scene] of lines) {
+      assert.ok(hosts[host], `${mode}: ${host} is a known voice`);
+      assert.ok(spoken(text).length > 0 && spoken(text).length <= 150, `${mode}: captionable line`);
+      assert.doesNotMatch(spoken(text), /[\[\]—]/, `${mode}: clean caption`);
+      assert.match(show, new RegExp(`\\n  ${scene}: `), `${mode}: scene ${scene} is drawn`);
+    }
+  }
 });

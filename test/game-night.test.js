@@ -568,3 +568,21 @@ test('level on points in a quiz is settled by who answered faster, and resets fo
   await request(room.path + '/rematch', room.host, { game: done.game, sameGame: true }, 204);
   assert.ok((await room.state()).players.every(player => player.pace === undefined), 'the tie-break starts fresh');
 });
+
+test('after a game, "Choose another game" returns the room to the carousel without a new waiting room', async () => {
+  const room = await roomWith('classic', 2, { customQuiz: checkpointQuiz(1) });
+  await room.advance();
+  const { game, index } = await room.state();
+  await request(room.path + '/answer', room.players[0].key, { game, index, option: 0 }, 204);
+  await request(room.path + '/answer', room.players[1].key, { game, index, option: 1 }, 204);
+  await room.advance();
+  await room.advance();
+  const done = await room.state();
+  assert.equal(done.phase, 'finished');
+  await request(room.path + '/rematch', room.players[1].key, { game: done.game, sameGame: true, picker: true }, 403);
+  await request(room.path + '/rematch', room.host, { game: done.game, sameGame: true, picker: true }, 204);
+  const lobby = await room.state();
+  assert.equal(lobby.phase, 'lobby');
+  assert.equal(lobby.picker?.mode, 'classic', 'the carousel opens on the game just played');
+  assert.equal(lobby.gathering, undefined, 'the party is already under way');
+});

@@ -24,6 +24,8 @@ import { playSting, stingFor } from './show-sting.js';
 import { isWelcomeNarration, narrationPlaying, playScript, playWelcome, stopNarration, toggleNarration } from './narrator.js';
 import { bloodmoonCalls, boardCalls, catchupCalls, closeCalls, knockoutReactions, raceCalls, reactions, skipQuips, wayoffCalls, welcomeBack } from './duo-scripts.js';
 import { openWelcome } from './welcome-show.js';
+import { openGuide } from './guide-show.js';
+import { gameGuides } from './guide-scripts.js';
 import { playChiptune, playCue, playTick, playTowerImpact } from './sound-cues.js';
 import { duckMusic, playMusic, playSfx, preloadSfx, stopMusic } from './sfx.js';
 import { bindPickerSwipe, gatherPhone, gatherTv, movePicker, pickerPhone, pickerTv, stepMode } from './lobby-picker.js';
@@ -771,6 +773,7 @@ function startSession(next) {
 
 function leave() {
   closeWelcome();
+  closeGuide();
   stopMusic();
   stream?.abort();
   stream = undefined;
@@ -1280,6 +1283,7 @@ function render(s) {
   if(s.mode==='sketch')paintSketchBoard(s.party);
   // The welcome plays when the TV or the captain presses "Start the party".
   if (welcome && s.phase !== 'lobby') closeWelcome();
+  if (guide && (s.phase !== 'lobby' || !s.briefing)) closeGuide();
   if (s.phase === 'lobby' && s.picker) bindPickerSwipe(app, direction => stepPicker(direction));
   if (host && s.phase === 'lobby') stageFor(app.querySelector('.game'), shownMode); else hideStage();
   // Hot Potato: the potato arcs from the old holder's seat to the new one.
@@ -1462,6 +1466,7 @@ function receive(next, current) {
   const introduce = current.host && state?.phase === 'lobby' && state.picker && !next.picker && next.phase === 'lobby';
   const browsed = Boolean(state?.picker && next.picker && state.picker.mode !== next.picker.mode);
   const welcomeMoved = current.host && (state?.welcome ?? null) !== (next.welcome ?? null);
+  const briefingMoved = current.host && ((state?.briefing ?? null) !== (next.briefing ?? null) || (next.briefing && state?.mode !== next.mode));
   if (!current.host && (['playing', 'skipping'].includes(next.welcome) || next.phase === 'finished')) markReturning();
   state = next;
   // Store only opaque question IDs, never answer keys or other players' data.
@@ -1504,9 +1509,10 @@ function receive(next, current) {
     updateLiveGuesses(app, next);
     if (soundEnabled && app.querySelectorAll('.lock-stamp').length > before) playSfx(sound, 'lockin', { volume: 0.5 });
   }
-  if (introduce) toggleNarration(next.mode);
+  if (introduce && !next.briefing) toggleNarration(next.mode);
   if (!current.host && next.mode === 'quizrace') updateRacePowers(app, next);
   if (welcomeMoved) showWelcome(next.welcome);
+  if (briefingMoved) showGuide(next);
   if (picker) {
     // The captain has started browsing: the welcome steps aside.
     if (welcome && picker.version !== welcome.version) { welcome.version = picker.version; welcomeAction('end'); }
@@ -1694,6 +1700,24 @@ function showWelcome(to) {
     const pick = Math.floor(Math.random() * skipQuips.length);
     playScript(`skip-${pick + 1}`, skipQuips[pick], { onDone: () => welcomeAction('end') });
   }
+}
+
+// The chosen game's "how to play" guide, on the TV. The room holds its state.
+let guide;
+const briefingAction = action => session && state ? api('/' + session.code + '/briefing', { action, game: state.game }).catch(() => {}) : Promise.resolve();
+function showGuide(s) {
+  closeGuide();
+  if (!s.briefing || !gameGuides[s.mode]) { if (s.briefing) briefingAction('end'); return; }
+  const mode = s.mode;
+  guide = openGuide(document.body, mode, { onSkip: () => briefingAction('skip') });
+  guide.line(0);
+  playScript('guide-' + mode, gameGuides[mode], { onLine: index => guide?.line(index), onDone: () => briefingAction('end') });
+}
+function closeGuide() {
+  if (!guide) return;
+  if (/^guide-/.test(narrationPlaying() ?? '')) stopNarration();
+  guide.close();
+  guide = undefined;
 }
 
 function closeWelcome() {
@@ -2382,6 +2406,8 @@ document.addEventListener('click', async event => {
   if (action === 'leave') return leave();
   if (action === 'party-start' && session && state?.gathering) { button.disabled = true; return api('/' + session.code + '/welcome', { action: 'party', game: state.game }).catch(error => { button.disabled = false; showGameError(error); }); }
   if (action === 'party-skip' && session && state?.gathering) { button.disabled = true; return api('/' + session.code + '/browse', { open: true, skipIntro: true, game: state.game }).catch(error => { button.disabled = false; showGameError(error); }); }
+  if (action === 'guide-play' && session && state?.phase === 'lobby' && !state.briefing) return briefingAction('play');
+  if (action === 'guide-skip' && session && state?.briefing) return briefingAction('skip');
   if (action === 'welcome-play' && session?.host && !state?.welcome) return welcomeAction('start');
   if (action === 'welcome-skip' && session) return welcomeAction('skip');
   if (action === 'welcome-tour' && session) return welcomeAction('tour');
@@ -2493,6 +2519,10 @@ document.addEventListener('click', async event => {
       await refresh();
     } else if (action === 'quick-replay') {
       await api('/' + current.code + '/rematch', { game: state.game, sameGame: true });
+      await refresh();
+    } else if (action === 'choose-game') {
+      // Back to the carousel with the same group; the scores of the night carry on.
+      await api('/' + current.code + '/rematch', { game: state.game, sameGame: true, picker: true });
       await refresh();
     } else if (action === 'potato-rescue') {
       await api('/' + current.code + '/potato-rescue', { game: state.game, step: state.party.step });

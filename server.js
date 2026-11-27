@@ -265,6 +265,8 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
     welcome: phase === 'lobby' && !waiting ? room.welcome : undefined,
     // The waiting room before "Start the party": join, but no carousel yet.
     gathering: phase === 'lobby' && !waiting && room.picker && room.gathering ? true : undefined,
+    // The chosen game's "how to play" guide is on the TV.
+    briefing: phase === 'lobby' && !waiting && !room.picker ? room.briefing : undefined,
     // TV only: everyone here has played or seen the welcome before.
     everyoneReturning: isHost && players.size > 0 && [...players.values()].every(entry => entry.returning) || undefined,
     connected: counts.connected, waitingCount: room.waiting.size, responseTarget: counts.target,
@@ -1132,6 +1134,7 @@ app.post('/api/rooms/:code/advance', (req, res) => {
   if (room.phase === 'lobby') {
     if (room.picker) return res.status(409).json({ error: 'Choose a game from the carousel first.' });
     room.welcome = undefined;
+    setBriefing(room, undefined);
     const minimum = requiredPlayers(room.mode,room.playStyle,room.teamCount,minimumPlayers(room.mode));
     if (liveCounts(room).connected < minimum) return res.status(409).json({ error: `You need at least ${minimum} connected ${minimum === 1 ? 'player' : 'players'} to start.` });
     const tooMany = capacityError(room.mode, room.playStyle, room.players.size);
@@ -1329,9 +1332,43 @@ app.post('/api/rooms/:code/configure', (req, res) => {
   if (!settings) return res.status(400).json({ error: 'Check the game settings or saved quiz.' });
   const tooMany = capacityError(settings.mode, settings.playStyle, groupSize(room));
   if (tooMany) return res.status(409).json({ error: tooMany });
+  const picked = Boolean(room.picker);
   resetGame(room, settings);
   // Choosing a game closes the lobby's game carousel.
   room.picker = undefined;
+  // A game picked from the carousel is explained on the TV first, once per
+  // game per room, unless the room chose to skip the intros.
+  room.briefed ??= new Set();
+  if (picked && room.guides && !room.briefed.has(settings.mode)) setBriefing(room, 'playing');
+  else setBriefing(room, undefined);
+  publish(room);
+  res.sendStatus(204);
+});
+
+// The "how to play" guide for the chosen game: the TV plays it, phones are
+// told to watch, and it never holds the room up if the TV goes away.
+function setBriefing(room, to) {
+  clearTimeout(room.briefingTimer);
+  room.briefing = to;
+  if (!to) return;
+  room.briefed?.add(room.mode);
+  room.briefingTimer = setTimeout(() => roomTask(room, 'briefing', () => {
+    if (!room.briefing) return;
+    room.briefing = undefined;
+    publish(room);
+  }), Number(process.env.BRIEFING_LIMIT_MS) || 240_000);
+  room.briefingTimer.unref?.();
+}
+// 'play' (re)starts it and 'skip' ends it: the captain or the TV. 'end' is the
+// TV saying the guide has finished.
+app.post('/api/rooms/:code/briefing', (req, res) => {
+  const { room, key } = res.locals;
+  const action = req.body?.action;
+  if (!['play', 'skip', 'end'].includes(action)) return res.status(400).json({ error: 'Unknown guide action.' });
+  if (action === 'end' ? key !== room.host : !controlsRoom(room, key)) return res.status(403).json({ error: 'Only the captain or TV host can do that.' });
+  if (room.phase !== 'lobby' || req.body?.game !== room.game || room.picker) return res.status(409).json({ error: 'The lobby has moved on.' });
+  if (action === 'play' && room.briefing) return res.status(409).json({ error: 'The guide is already playing.' });
+  setBriefing(room, action === 'play' ? 'playing' : undefined);
   publish(room);
   res.sendStatus(204);
 });
@@ -1360,6 +1397,8 @@ app.post('/api/rooms/:code/welcome', (req, res) => {
   if (!allowed) return res.status(409).json({ error: 'The welcome has moved on.' });
   room.welcome = to;
   room.gathering = false;
+  // Starting the party properly means the hosts explain each game too.
+  if (action === 'party') room.guides = true;
   // The TV normally ends the welcome. If it has gone away, the room moves on
   // by itself so phones are never left waiting on it.
   clearTimeout(room.welcomeTimer);
@@ -1420,6 +1459,8 @@ app.post('/api/rooms/:code/rematch', (req, res) => {
   if (tooMany) return res.status(409).json({ error: tooMany });
   room.game++;
   resetGame(room, settings);
+  // "Choose another game": straight back to the carousel, on the game just played.
+  if (req.body?.picker === true) room.picker = { mode: settings.mode, version: 0 };
   publish(room);
   res.sendStatus(204);
 });

@@ -1812,5 +1812,25 @@
   "tempo": 1.08,
   "loudness": -15.2,
   "seconds": 1.83
+ },
+ "duo/shade.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 19.23
+ },
+ "sfx/sting-shade.mp3": {
+  "tempo": 1,
+  "loudness": -14.4,
+  "seconds": 2.8
+ },
+ "music/game-shade.mp3": {
+  "tempo": 1,
+  "loudness": -20.5,
+  "seconds": 45.04
+ },
+ "duo/guide-shade.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 65.59
  }
 }

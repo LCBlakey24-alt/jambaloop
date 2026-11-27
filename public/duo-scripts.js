@@ -143,6 +143,12 @@ export const duoIntros = {
     ['max', '[playfully] Then the other side gets sixty seconds to beat that number.'],
     ['poppy', '[laughs] And a wrong answer freezes your whole side. So no wild guessing, Max.'],
   ],
+  shade: [
+    ['poppy', '[excited] Welcome to Shade, the game of colourful language!'],
+    ['max', '[cheerfully] One of you gets a secret colour, and describes it in a single word.'],
+    ['poppy', '[playfully] Everyone else hunts for it on the big board. The closer you land, the more you score.'],
+    ['max', '[laughs] And no, you cannot just say "blue". Well. You can. Good luck with that.'],
+  ],
   sketch: [
     ['poppy', '[excited] Welcome to Sketch Sprint!'],
     ['max', '[cheerfully] One player gets a secret prompt, and draws it on their phone.'],

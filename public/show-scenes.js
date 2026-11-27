@@ -231,6 +231,14 @@ const scenes = {
     path('M318 108c-30 24-60 50-96 70', { fill: 'none', stroke: c.ink, 'stroke-width': 3, 'stroke-dasharray': '6 9', opacity: .5 }),
     ...[[340, 300, 9], [60, 60, 7], [300, 360, 6]].map(([x, y, s]) => sparkle(x, y, s, c.accent, .8)),
   ],
+  shade: c => [
+    `<defs>${linear('wall', [[0, c.bg[0]], [1, c.bg[1]]])}</defs>`,
+    rect(0, 0, 400, 400, 'url(#wall)'),
+    // A wall of paint swatches fanning through the spectrum, one ringed as the target.
+    ...range(8).flatMap(col => range(6).map(row => rect(40 + col * 40, 70 + row * 40, 34, 34, `hsl(${col * 45} ${70 + row * 4}% ${78 - row * 10}%)`, { rx: 6, opacity: .9 }))),
+    rect(196, 186, 42, 42, 'none', { rx: 9, stroke: c.ink, 'stroke-width': 5 }),
+    ...[[60, 40, 8], [350, 350, 9], [330, 40, 6]].map(([x, y, s]) => sparkle(x, y, s, c.accent, .8)),
+  ],
   catchup: c => [
     `<defs>${linear('sky', [[0, c.bg[0]], [1, c.bg[1]]])}</defs>`,
     rect(0, 0, 400, 400, 'url(#sky)'),

@@ -1,0 +1,59 @@
+/* Shade: a gallery wall. Neutral charcoal so the colours on the board are the show. */
+.game[data-mode="shade"] .shade-game { display:grid; gap:clamp(.5rem,1.4vh,1rem); align-content:start; color:#fff; background:linear-gradient(165deg,#34343d,#17171c 75%); border:2px solid #4a4a58; border-radius:18px; padding:clamp(.7rem,2vh,1.4rem) clamp(.8rem,1.8vw,1.6rem); }
+.shade-kicker { font:800 clamp(.75rem,1.7vh,1.05rem)/1.2 'House Sans',sans-serif; letter-spacing:.16em; color:#ff8fbd; }
+.shade-head h1 { margin:.15em 0 .2em; font-size:clamp(1.6rem,5vh,3.2rem); line-height:1.05; color:#fff; }
+.shade-head p { margin:0; color:#cfcfdc; font-size:clamp(1rem,2.3vh,1.4rem); }
+.shade-note { margin:0; padding:.6rem .9rem; border-radius:12px; background:#101014; border:2px solid #4a4a58; font-weight:700; text-align:center; }
+
+/* TV: the board fills the stage with a narrow panel beside it. */
+.game.host-screen[data-mode="shade"] .shade-game { min-height:80vh; grid-template-rows:auto 1fr; }
+.shade-stage { display:grid; grid-template-columns:minmax(0,1fr) clamp(200px,19vw,360px); gap:clamp(.6rem,1.4vw,1.4rem); align-items:center; min-height:0; }
+.shade-board { display:grid; grid-template-columns:auto repeat(var(--cols),minmax(0,1fr)); gap:2px; align-self:center; }
+.shade-board > span { display:grid; place-items:center; font:800 clamp(.5rem,1.25vh,.85rem)/1 'House Sans',sans-serif; color:#b9b9c8; padding:0 .25em; }
+.shade-board > i { position:relative; aspect-ratio:1; border-radius:3px; }
+.shade-board > i.is-ring-2 { outline:2px solid #fff8; outline-offset:-1px; z-index:1; }
+.shade-board > i.is-ring-1 { outline:3px solid #fff; outline-offset:-1px; z-index:2; }
+.shade-board > i.is-target { outline:4px solid #fff; outline-offset:2px; box-shadow:0 0 0 8px #111,0 0 30px 14px #fff; z-index:2; border-radius:4px; }
+.shade-pin { position:absolute; inset:-12%; display:grid; place-items:center; z-index:3; pointer-events:none; overflow:visible; }
+.shade-game[data-shade="reveal"] .shade-pin { inset:-6%; }
+.shade-pin .player-avatar { width:100%; height:100%; min-width:0; min-height:0; max-width:100%; max-height:100%; padding:0; flex:none; font-size:clamp(.45rem,1.2vh,.8rem); border:2px solid #fff; box-shadow:0 2px 6px #000c; }
+.shade-pin b { position:absolute; right:-10%; top:-10%; min-width:1.5em; padding:.1em .3em; border-radius:99px; background:#111; color:#fff; font:800 clamp(.45rem,1.1vh,.7rem)/1.3 'House Sans',sans-serif; text-align:center; }
+.shade-side { display:grid; gap:clamp(.4rem,1.4vh,1rem); align-content:center; justify-items:start; padding:clamp(.6rem,1.6vh,1.2rem); border-radius:16px; background:#101014; border:2px solid #4a4a58; }
+.shade-side h2 { margin:0; font-size:clamp(1.5rem,4.6vh,3rem); line-height:1.05; color:#fff; overflow-wrap:anywhere; }
+.shade-side p { margin:0; color:#cfcfdc; font-size:clamp(.9rem,2.1vh,1.3rem); }
+.shade-badge { padding:.35em .9em; border-radius:99px; background:#ff5fa2; color:#17171c; font:800 clamp(.75rem,1.9vh,1.15rem)/1.1 'House Sans',sans-serif; letter-spacing:.12em; }
+.shade-progress b { font-size:1.8em; color:#fff; }
+.shade-rule b, .shade-giver b { color:#ff8fbd; font-size:1.2em; }
+.shade-swatch { display:block; width:clamp(60px,12vh,130px); aspect-ratio:1; border-radius:14px; border:4px solid #fff; box-shadow:0 10px 24px #000a; }
+.shade-swatch.is-big { width:min(46vw,200px); }
+.shade-scores, .shade-final { list-style:none; margin:0; padding:0; display:grid; gap:.3rem; width:100%; }
+.shade-scores li, .shade-final li { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:.5rem; font-size:clamp(.9rem,2.2vh,1.4rem); font-weight:700; }
+.shade-scores li span, .shade-final li span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.shade-scores b, .shade-final b { color:#ff8fbd; }
+.shade-scores .player-avatar, .shade-final .player-avatar { width:1.8em; height:1.8em; font-size:.8em; }
+.shade-final { max-width:720px; font-size:1.2em; }
+
+/* Phone: aim on the small board, choose on the magnified patch. */
+.shade-hint { margin:0; color:#cfcfdc; }
+.shade-mini { display:grid; grid-template-columns:repeat(var(--cols),minmax(0,1fr)); gap:1px; padding:4px; border-radius:10px; background:#101014; touch-action:manipulation; }
+.shade-mini button { aspect-ratio:1; border:0; padding:0; border-radius:1px; min-height:0; cursor:pointer; }
+.shade-mini button.is-mine { outline:2px solid #fff; z-index:1; }
+.shade-zoom { display:grid; grid-template-columns:repeat(var(--cols),minmax(0,1fr)); gap:4px; }
+.shade-zoom button { position:relative; aspect-ratio:1; border:0; padding:0; border-radius:8px; cursor:pointer; min-height:0; }
+.shade-zoom button span { position:absolute; left:3px; bottom:2px; font:800 10px/1 'House Sans',sans-serif; color:#000a; }
+.shade-zoom button.is-picked { outline:4px solid #fff; box-shadow:0 0 0 7px #111; z-index:2; }
+.shade-zoom button.is-mine { opacity:.35; }
+.shade-actions { display:grid; grid-template-columns:auto 1fr; gap:.5rem; }
+.shade-secret { display:grid; justify-items:center; gap:.5rem; }
+.shade-secret strong { font-size:1.6rem; }
+.shade-context { display:grid; grid-template-columns:repeat(var(--cols),1fr); gap:3px; width:min(60vw,240px); }
+.shade-context i { aspect-ratio:1; border-radius:5px; }
+.shade-context i.is-target { outline:3px solid #fff; z-index:1; }
+@media (prefers-reduced-motion:no-preference) {
+  .shade-pin { animation:shade-drop .35s cubic-bezier(.2,1.5,.4,1); }
+  .shade-board > i.is-target { animation:shade-found .8s cubic-bezier(.2,1.4,.3,1); }
+  .shade-zoom { animation:shade-in .25s ease-out; }
+}
+@keyframes shade-drop { from { translate:0 -120%; opacity:0; } }
+@keyframes shade-found { from { scale:4; opacity:0; } }
+@keyframes shade-in { from { scale:.85; opacity:0; } }

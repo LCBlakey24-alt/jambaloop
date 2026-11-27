@@ -21,6 +21,7 @@ const styles = {
   rare: {font:'Club Classic',weight:900,accent:'#a2f4cd',backdrop:'#0f2630',panel:'#1b3c47',edge:'#428078',motif:'glints',notes:[392,523,659],wave:'sine'},
   bloodmoon: {font:'Club Classic',weight:850,accent:'#ff8a8f',backdrop:'#150b26',panel:'#2a1846',edge:'#6e3a66',motif:'glints',notes:[294,349,440],wave:'triangle'},
   wayoff: {font:'Club Classic',weight:850,accent:'#ffd23f',backdrop:'#1b2006',panel:'#343c10',edge:'#8a9a2e',motif:'glints',notes:[392,494,587],wave:'square'},
+  shade: {font:'Club Classic',weight:800,accent:'#ff5fa2',backdrop:'#16161b',panel:'#2e2e38',edge:'#5a5a6a',motif:'glints',notes:[523,659,784],wave:'triangle'},
   catchup: {font:'Club Classic',weight:850,accent:'#c8ff3d',backdrop:'#0b0d52',panel:'#2327a8',edge:'#5a60e0',motif:'glints',notes:[440,554,659],wave:'sawtooth'},
   sketch: {font:'Club Classic',weight:850,accent:'#a4dcff',backdrop:'#101d34',panel:'#203857',edge:'#567b98',motif:'bubbles',notes:[523,659,784],wave:'sine'},
 };

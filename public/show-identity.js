@@ -44,6 +44,8 @@ const marks = Object.freeze({
   wayoff: '<circle cx="48" cy="56" r="34"/><circle cx="48" cy="56" r="21"/><circle cx="48" cy="56" r="8" fill="currentColor"/><path d="M96 14l14 6-10 6zM100 20 84 34"/><path d="M88 82l8 8m0-8-8 8" stroke-width="3"/>',
   // A runner's flag ahead of a chasing arrow, under a stopwatch.
   catchup: '<circle cx="60" cy="34" r="22"/><path d="M60 12V6M52 6h16M60 34V20M60 34l10 8"/><path d="M10 84h70M68 74l12 10-12 10" stroke-width="5"/><path d="M96 96V70l14 6-14 6"/>',
+  // A board of colour swatches with one picked out.
+  shade: '<rect x="14" y="22" width="92" height="76" rx="8"/><path d="M37 22v76M60 22v76M83 22v76M14 47h92M14 72h92"/><rect x="60" y="47" width="23" height="25" fill="currentColor"/>',
   // A pencil finishing a quick sketch line.
   sketch: '<path d="M80 14l16 16-46 46-22 6 6-22z"/><path d="m72 22 16 16M34 60l16 16"/><path d="M12 96c14-14 26 8 40-6s24 6 34-2" stroke-width="2.5"/>',
 });

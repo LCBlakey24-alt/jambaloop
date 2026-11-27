@@ -146,6 +146,7 @@ jobs:
           node scripts/bloodmoon-browser.mjs
           node scripts/live-guesses-browser.mjs
           node scripts/short-phone-browser.mjs
+          node scripts/qr-scan-browser.mjs
           node scripts/catch-up-browser.mjs
           node scripts/tv-immersive-browser.mjs
           node scripts/tv-all-modes.mjs

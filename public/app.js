@@ -13,6 +13,7 @@ import { mobileDeck } from './mobile-deck.js';
 import { awardView, currentFrame, frameView, revealFrames, scoreReveal } from './ceremony.js';
 import { boardSpeedValues, bonusValues, canSetScore, defaultScoring, doubleSchedules, pointValues } from './scoring.js';
 import { gameNightPresets, gameNightView, partySettings, playlistEditor, playlistLimit, queuedSettings, replayButtons } from './game-night.js';
+import { canScan, startScan } from './qr-scan.js';
 import { clearRoomSession, forgetPlayer, parseRoomCode, recentRooms, rememberPlayer, rememberedPlayer, restoreRoomSession, saveRoomSession } from './room-session.js';
 import {readQuestionHistory, rememberQuestion} from './question-history.js';
 import { modeVariables, sceneBackdrop } from './mode-style.js';
@@ -113,6 +114,40 @@ let homeTab = 'games';
 let tvFocus = false;
 let partyReply = '';
 let joinAvatar;
+// The plain selfie, kept so the cartoon version can be switched on and off; and the running QR scan, if any.
+let joinPhoto;
+let stopScan;
+
+/**
+ * A drawn version of a selfie: colours flattened into a few bands, a touch more
+ * saturation, and dark ink lines where the picture has strong edges. All done
+ * on the phone; only the finished avatar is ever sent.
+ */
+function cartoonAvatar(source) {
+  const size = source.width;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const context = canvas.getContext('2d');
+  context.filter = 'blur(0.6px) saturate(1.5) contrast(1.1)';
+  context.drawImage(source, 0, 0);
+  context.filter = 'none';
+  const image = context.getImageData(0, 0, size, size);
+  const pixels = image.data;
+  const grey = new Float32Array(size * size);
+  for (let i = 0; i < size * size; i++) grey[i] = .299 * pixels[i * 4] + .587 * pixels[i * 4 + 1] + .114 * pixels[i * 4 + 2];
+  const bands = 5, step = 255 / (bands - 1);
+  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+    const i = y * size + x, at = i * 4;
+    for (let channel = 0; channel < 3; channel++) pixels[at + channel] = Math.round(pixels[at + channel] / step) * step;
+    if (x && y && x < size - 1 && y < size - 1) {
+      const across = grey[i + 1] - grey[i - 1], down = grey[i + size] - grey[i - size];
+      const edge = Math.hypot(across, down);
+      if (edge > 46) { const ink = Math.max(.15, 1 - (edge - 46) / 60); pixels[at] *= ink; pixels[at + 1] *= ink; pixels[at + 2] *= ink; }
+    }
+  }
+  context.putImageData(image, 0, 0);
+  return canvas;
+}
 let playlistDraft;
 let reconnecting = false;
 let lastPoll = 0;
@@ -595,6 +630,7 @@ function openDialog(mode, value, gameMode, quizId) {
       <button class="button outline" data-action="join">Join another room</button>`;
   } else if (mode === 'join') {
     joinAvatar = undefined;
+    joinPhoto = undefined;
     const roomCode = parseRoomCode(String(value ?? ''));
     content.innerHTML = `<div class="join-intro">
       <div class="eyebrow">YOUR PHONE IS THE CONTROLLER</div>
@@ -606,6 +642,11 @@ function openDialog(mode, value, gameMode, quizId) {
       <span class="join-card-copy"><small>PLAYER</small><strong data-join-name>Your name here</strong><small data-join-room>${roomCode ? 'Room ' + escape(roomCode) : 'Room ——————'}</small></span>
       <span class="join-card-stamp">${roomCode ? 'TICKET READY' : 'NEW PLAYER'}</span>
     </div>
+    ${canScan() ? `<div class="join-scan"><button type="button" class="button primary join-scan-button" data-action="scan-start">${icons('camera')} Scan the QR code on the TV</button>
+      <div class="qr-scanner" data-scanner hidden><video data-scan-video playsinline muted aria-label="Camera view for scanning the room’s QR code"></video>
+        <p role="status" data-scan-status>Point your camera at the QR code on the TV.</p>
+        <button type="button" class="button outline small" data-action="scan-stop">Cancel and type the code</button></div>
+      <p class="join-scan-or" aria-hidden="true">or type it in</p></div>` : ''}
     <form id="join-form" autocomplete="on">
       <label class="join-room-field" for="join-room-code">Room code
         <input id="join-room-code" name="code" value="${escape(roomCode)}" placeholder="123456"
@@ -617,11 +658,12 @@ function openDialog(mode, value, gameMode, quizId) {
         <input id="join-player-name" name="name" placeholder="What should we call you?" autocomplete="nickname"
           maxlength="24" enterkeyhint="go" required>
       </label>
-      <details class="join-photo-option">
-        <summary>Choose a player photo <span>(optional)</span></summary>
+      <details class="join-photo-option"${roomCode ? ' open' : ''}>
+        <summary>Add a selfie as your avatar <span>(optional)</span></summary>
         <div class="selfie-picker"><img id="selfie-preview" class="player-avatar" alt="Your avatar preview" hidden>
           <label class="button outline small file-button">Take a selfie<input data-selfie type="file" accept="image/*" capture="user" aria-label="Take a selfie"></label>
           <label class="button outline small file-button">Choose photo<input data-selfie type="file" accept="image/*" aria-label="Choose photo"></label>
+          <button type="button" class="button outline small" data-action="cartoon-selfie" aria-pressed="false" hidden>Draw me as a cartoon</button>
           <button type="button" class="button outline small" data-action="clear-selfie" hidden>Remove photo</button>
         </div>
         <small class="photo-privacy">Your photo is optional and only visible to players who have joined the same room.</small>
@@ -1184,9 +1226,8 @@ function render(s) {
     ${host && s.phase !== 'lobby' ? `<button class="button outline small room-link" data-action="show-join" aria-label="Room ${s.code}">${icons('qr-code')} <span>Room ${s.code}</span></button>` : ''}
     ${host && window.AudioContext ? `<button class="button outline small" data-action="sound" aria-pressed="${soundEnabled}" aria-label="Sound ${soundEnabled ? 'on' : 'off'}">${icons(soundEnabled ? 'volume-2' : 'volume-x')} <span>Sound ${soundEnabled ? 'on' : 'off'}</span></button>` : ''}
     ${host && document.fullscreenEnabled ? `<button class="button outline small" data-action="fullscreen" aria-label="Fullscreen">${icons('maximize', 'host-compact-icon')} <span>Fullscreen</span></button>` : ''}
-    <button class="button outline small" data-action="leave" aria-label="Home">${host ? icons('house', 'host-compact-icon') : ''}<span>Home</span></button></div></div>
+    <button class="button outline small" data-action="leave" aria-label="Home">${host ? icons('house', 'host-compact-icon') : ''}<span>Home</span></button></div>${host ? '<p class="small-host-note" role="note"><strong>This phone is acting as the TV.</strong> For a group, host on a laptop plugged into your TV instead.</p>' : ''}</div>
     <div class="connection-strip" id="reconnect-status" role="status" ${reconnecting ? '' : 'hidden'}>Reconnecting to this room…</div>
-    ${host ? '<p class="small-host-note" role="note"><strong>This phone is acting as the TV.</strong> For a group, open this site on a laptop plugged into your TV, or in the TV’s browser, and host there.</p>' : ''}
     ${host && !['lobby', 'finished'].includes(s.phase) ? '<p class="stage-presence" id="stage-presence"></p>' : ''}
     ${(host || s.isCaptain) && !['lobby', 'finished', 'waiting'].includes(s.phase) && s.night.queue.length ? `<p class="live-lineup">Up next <strong>${modeName(s.night.queue[0])}</strong>
       ${canControl ? '<button class="button outline small" data-action="night">Edit playlist</button>' : ''}</p>` : ''}
@@ -1984,10 +2025,13 @@ document.addEventListener('change', async event => {
     canvas.getContext('2d').drawImage(bitmap, (bitmap.width - size) / 2, (bitmap.height - size) / 2, size, size, 0, 0, 96, 96);
     bitmap.close();
     if (!form.isConnected) return;
-    joinAvatar = canvas.toDataURL('image/jpeg', .72);
+    joinPhoto = canvas;
+    const cartoon = form.querySelector('[data-action="cartoon-selfie"]');
+    joinAvatar = (cartoon.getAttribute('aria-pressed') === 'true' ? cartoonAvatar(canvas) : canvas).toDataURL('image/jpeg', .72);
     const preview = form.querySelector('#selfie-preview');
     preview.src = joinAvatar;
     preview.hidden = false;
+    cartoon.hidden = false;
     form.querySelector('[data-action="clear-selfie"]').hidden = false;
     updateJoinCard(form);
     message.textContent = '';
@@ -2089,7 +2133,61 @@ document.addEventListener('click', async event => {
     toggleNarration(button.dataset.mode);
     return;
   }
+  if (action === 'cartoon-selfie') {
+    // Redraw the same photo as a flat-colour cartoon with ink outlines, or put the photo back.
+    const on = button.getAttribute('aria-pressed') !== 'true';
+    button.setAttribute('aria-pressed', String(on));
+    button.textContent = on ? 'Use my real photo' : 'Draw me as a cartoon';
+    if (joinPhoto) {
+      joinAvatar = (on ? cartoonAvatar(joinPhoto) : joinPhoto).toDataURL('image/jpeg', .72);
+      content.querySelector('#selfie-preview').src = joinAvatar;
+      updateJoinCard();
+    }
+    return;
+  }
+  if (action === 'scan-start' || action === 'scan-stop') {
+    const scanner = content.querySelector('[data-scanner]');
+    const status = content.querySelector('[data-scan-status]');
+    stopScan?.(); stopScan = undefined;
+    scanner.hidden = action === 'scan-stop';
+    content.querySelector('.join-scan-button').hidden = action === 'scan-start';
+    if (action === 'scan-stop') return content.querySelector('#join-room-code')?.focus();
+    status.textContent = 'Starting your camera…';
+    try {
+      stopScan = await startScan(content.querySelector('[data-scan-video]'), text => {
+        const code = parseRoomCode(text);
+        // Only a Jambaloop room link or a six-digit code is accepted; anything else is ignored.
+        if (!code) { status.textContent = 'That is not a Jambaloop room code. Point at the QR code on the TV.'; return false; }
+        const form = content.querySelector('#join-form');
+        if (!form) return true;
+        form.elements.code.value = code;
+        scanner.hidden = true;
+        content.querySelector('.join-scan').classList.add('is-done');
+        content.querySelector('.join-scan-or').textContent = 'Room ' + code + ' found. Add your name below.';
+        form.querySelector('.join-photo-option').open = true;
+        updateJoinCard(form);
+        stopScan = undefined;
+        // On a phone the join screen is paged: turn to the page with the name and selfie.
+        // (after the paged layout has re-measured the changed screen, or it would flip back)
+        setTimeout(() => {
+          if (!form.isConnected) return;
+          if (form.elements.name.closest('[data-deck-hidden]')) dialog.querySelector('[data-deck-next]')?.click();
+          form.elements.name.focus();
+        }, 450);
+        return true;
+      });
+      if (!scanner.hidden) status.textContent = 'Point your camera at the QR code on the TV.';
+    } catch (error) {
+      scanner.hidden = true;
+      content.querySelector('.join-scan-button').hidden = false;
+      content.querySelector('.join-scan-or').textContent = error?.name === 'NotAllowedError' ? 'Camera access was not allowed. Type the code instead.' : 'The camera could not start. Type the code instead.';
+    }
+    return;
+  }
   if (action === 'clear-selfie') {
+    joinPhoto = undefined;
+    const cartoon = content.querySelector('[data-action="cartoon-selfie"]');
+    if (cartoon) { cartoon.hidden = true; cartoon.setAttribute('aria-pressed', 'false'); cartoon.textContent = 'Draw me as a cartoon'; }
     joinAvatar = undefined;
     const preview = content.querySelector('#selfie-preview');
     preview.removeAttribute('src');
@@ -2442,7 +2540,7 @@ connectSketchPainter(async data=>{
   await api('/'+session.code+'/party',{...data,game,index});
 });
 
-dialog.addEventListener('close', () => content.querySelector('video')?.pause());
+dialog.addEventListener('close', () => { stopScan?.(); stopScan = undefined; content.querySelector('video')?.pause(); });
 document.addEventListener('keydown', event => {
   if (event.key !== 'Escape' || dialog.open || session || !homeSelected) return;
   const id = homeSelected;

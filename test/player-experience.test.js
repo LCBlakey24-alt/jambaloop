@@ -41,7 +41,11 @@ test('join screen collects only a room code and nickname as required fields', as
   assert.match(section, /id="join-room-code"/);
   assert.match(section, /pattern="\[0-9\]\{6\}"/);
   assert.match(section, /id="join-player-name"/);
-  assert.match(section, /<details class="join-photo-option">/);
+  assert.match(section, /<details class="join-photo-option"/);
+  // The camera scanner is an extra way to fill in the code, never a requirement.
+  assert.match(section, /data-action="scan-start"/);
+  assert.match(section, /canScan\(\) \?/, 'the scan button only appears where a camera can be used');
+  assert.match(app, /if \(!code\) \{ status\.textContent = 'That is not a Jambaloop room code/, 'anything that is not a room code is ignored');
   assert.match(section, /class="button primary join-room-submit" type="submit"/);
   assert.match(app, /document\.addEventListener\('paste', event =>/);
 });

@@ -26,6 +26,7 @@ The original application's internal Quiz Club identifiers, README descriptions a
 | `public/models/cars/kart-*.glb` (5 models) and `Textures/colormap.png` | Quiz Race cars on the TV: each racer drives a kart, tinted and badged in their colour | Kenney Car Kit, kenney.nl (owner supplied, 27 November 2026) | CC0; text at `public/models/cars/LICENCE-CC0.txt` |
 | `public/models/sprites/gravestone-*.webp`, `character-vampire.webp` | Bloodmoon TV: gravestones for fallen players and the vampire on the count | Renders of Kenney Graveyard Kit 5.0 models made with `scripts/render-model-sprites.mjs` (owner supplied the kit, 27 November 2026) | CC0; text at `public/models/sprites/LICENCE-graveyard-kit-CC0.txt` |
 | `public/models/sprites/train-tram-round.webp`, `track-tile.webp` | The tram and the rails in Fork in the Tracks | Render of a Kenney Train Kit model, same script | CC0; text at `public/models/sprites/LICENCE-train-kit-CC0.txt` |
+| `public/qr/jsQR.js` | Reads a room's QR code from the phone camera where the browser has no built-in reader (iPhones) | jsQR 1.4.0 from npm, unmodified | Apache-2.0; text at `public/qr/LICENSE-jsQR-Apache-2.0.txt` |
 | `public/three-addons/*.js` | Loads the 3D models | three.js example modules, import paths adjusted for this site | MIT; text at `public/three-addons/LICENSE-three-MIT.txt` |
 
 Also supplied and not used yet (all CC0): Kenney Playing Cards Pack, Board Game Info, Monster Builder Pack and UI Pack Space Expansion.

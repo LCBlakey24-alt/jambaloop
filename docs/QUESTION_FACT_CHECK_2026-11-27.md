@@ -32,3 +32,20 @@ set now accepts Square, Rectangle and other four-sided shapes.
 - General: 118 named elements; UK motorway limit 70 mph; India the most populous country.
 
 World News questions date fastest and should be reviewed before each season of play.
+
+## Addendum, same day: specialist levelled packs (`trivia-levels-5.js` to `-8.js`)
+
+720 new questions for the eight specialist topics (football, NBA, NFL, NHL, F1, Olympics, superheroes, Disney): 60 multiple-choice and 30 true/false per topic, 10 and 5 at each of six levels. Each topic goes from about 81 questions to 171 or more.
+
+How they were checked: each pack was written by one writer and then reviewed row by row by a separate checker who had not written it.
+
+| Pack | Rows | Confirmed against a source by the checker | Accepted from knowledge | Wrong answers found | Rows reworded |
+|---|---|---|---|---|---|
+| Football and NBA | 180 | 112 | 68 | 0 | 4 |
+| NFL and NHL | 180 | about 105 | about 75 | 0 | 4 |
+| F1 and Olympics | 180 | about 105 | about 75 | 0 | 4 |
+| Superheroes and Disney | 180 | about 62 | about 118 | 0 | 12 |
+
+The rows accepted from knowledge are almost all level 1 to 3 basics (rules, team cities, nicknames, famous characters). They are **not** source-verified and the packs are not labelled as such. Rewording was mostly to name a season on anything that can change, and to state comic dates as cover dates where on-sale dates differ.
+
+Recheck first next time: Trischa Zorn's medal total (55 is the commonly cited figure; one table sums to 52); Ray Ewry's "eight golds" (ten if the 1906 Games are counted); the Formula 1 points scale "2010 to 2025"; stadium-name questions (Etihad, Selhurst Park), which date fastest; and the "In the 2026 season" NFL rows, which need a new season each year.

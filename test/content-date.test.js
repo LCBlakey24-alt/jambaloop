@@ -21,6 +21,6 @@ test('every topic has enough questions to play several rounds without repeats', 
   for (const [id, name] of categories) {
     if (id === 'mixed' || id === 'news') continue; // news is deliberately small and dated
     const prompts = new Set(makeQuestions(id, 5000, new Set(), 'mixed', true).map(question => question.prompt));
-    assert.ok(prompts.size >= 80, `${name} has only ${prompts.size} questions`);
+    assert.ok(prompts.size >= 100, `${name} has only ${prompts.size} questions`);
   }
 });

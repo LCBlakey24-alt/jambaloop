@@ -1233,11 +1233,6 @@
   "loudness": -15.4,
   "seconds": 37.67
  },
- "duo/guide-quizrace.mp3": {
-  "tempo": 1.08,
-  "loudness": -15.9,
-  "seconds": 45.69
- },
  "duo/guide-rare.mp3": {
   "tempo": 1.08,
   "loudness": -15.5,
@@ -1852,5 +1847,30 @@
   "tempo": 1.08,
   "loudness": -15.4,
   "seconds": 55.43
+ },
+ "duo/guide-quizrace.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.9,
+  "seconds": 55.46
+ },
+ "duo/react-race-fire-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.7,
+  "seconds": 3.24
+ },
+ "duo/react-race-fire-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 3.16
+ },
+ "duo/react-race-miss-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.8,
+  "seconds": 4.73
+ },
+ "duo/react-race-miss-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.7,
+  "seconds": 3.66
  }
 }

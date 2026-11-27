@@ -335,6 +335,14 @@ export const raceCalls = {
     ['vince', '[shouting] They\'ve hit the boost! Look at them go!'],
     ['vince', '[fast, excited] Boost deployed! That is a rocket ship!'],
   ],
+  miss: [
+    ['vince', "[laughs] A swing and a miss! Nobody there, and that nudge is gone for good."],
+    ['vince', "[amused] They have nudged nobody at all! What a waste."],
+  ],
+  fire: [
+    ['vince', "[shouting] Five in a row! That kart is on fire!"],
+    ['vince', "[fast, excited] Flames out of the back! Somebody is on a serious run!"],
+  ],
   blocked: [
     ['vince', "[shouting] Shield up! That ram bounces straight off!"],
     ['vince', "[laughs] Denied! Nothing gets through that shield."],

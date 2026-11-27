@@ -1310,7 +1310,7 @@ function render(s) {
       race3dLoading=raceKey;
       import('./race-3d.js').then(({mountRace3D})=>{
         if(race3dLoading!==raceKey||race3d)return;
-        race3d=mountRace3D({key:raceKey,track:s.raceTrack,reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches});
+        race3d=mountRace3D({key:raceKey,track:s.raceTrack,course:s.raceLength,reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches});
         race3d.attach(app.querySelector('.race-track-wrap'));
       }).catch(()=>{ race3dLoading=undefined; /* No WebGL: the SVG track remains. */ });
     }
@@ -1636,6 +1636,9 @@ function raceCommentary(before, next) {
   if (fresh('rammed')) { if (soundEnabled) playSfx(sound, 'wrong', { volume: 0.4 }); return call('ram', 5000); }
   if (fresh('boost')) { if (soundEnabled) playSfx(sound, 'whoosh', { volume: 0.5 }); return call('boost', 5000); }
   if (fresh('blocked')) return call('blocked', 5000);
+  if (fresh('miss')) return call('miss', 6000);
+  // Five right in a row: flames on the TV, and Vince notices.
+  if (next.race.racers.some(racer => racer.fire && !before.race?.racers?.find(old => old.id === racer.id)?.fire)) return call('fire', 8000);
   if (next.race.finalSprint && !before.race?.finalSprint) return call('sprint');
   if (next.race.racers.some(racer => racer.turbo && !before.race?.racers?.find(old => old.id === racer.id)?.turbo)) return call('turbo', 8000);
   const [first, second] = next.race.racers;

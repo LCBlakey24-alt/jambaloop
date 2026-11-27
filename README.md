@@ -197,11 +197,15 @@ Run `npm test` to verify room sizes, reconnect behavior, protected avatars and l
 
 ### Quiz Race additions (27 November 2026)
 
-- **Shield** (one per race): blocks rams for six seconds; the attacker's ram is still spent.
-- **Turbo**: three right answers in a row earn one more boost, with at most two in hand.
+- **Three circuits**, one per race length: a short oval, the medium figure of eight with its bridge, and a long circuit with four ramps, two hairpins and a chicane. A crowd of little people bobs along both sides of the road, with trees, rocks, tyre stacks, floodlights and trackside boards that change with the track theme.
+- **Nudge** (three per race): slows the nearest rival alongside for a moment. Tapped with nobody alongside, it is wasted and does not come back until the next race.
+- **Boost** (two per race, up to three in hand): tap it before your next question. A right answer is worth double speed; a wrong answer, a pass or a timeout wastes it.
+- **On fire**: five right answers in a row and flames pour out of the back of the kart on the TV until the run ends.
+- **Shield** (one per race): blocks nudges for six seconds; the attacker's nudge is still spent.
+- **Turbo**: three right answers in a row earn one more boost.
 - **Slipstream**: a car tucked 0.4–3 track units behind a rival runs 12% faster.
 - **Final sprint**: over the last 15% of the track a right answer's speed boost is worth half as much again.
-- The TV standings show a shield, a fresh turbo and a slipstream beside each name; Vince calls a blocked ram, a turbo and the final sprint.
+- The TV standings show a shield, a fresh turbo and a slipstream beside each name; Vince calls a nudge, a wasted nudge, a boost, a blocked nudge, a turbo, a kart on fire and the final sprint.
 - Not playtested with people; the numbers are provisional.
 
 ### Fork in the Tracks: After Dark (27 November 2026)

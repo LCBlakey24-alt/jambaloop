@@ -53,7 +53,7 @@ export function quizRaceView(s, {host,canControl,icons,replayButtons,sending}) {
     <div class="race-phone-progress" aria-label="Race progress"><i data-race-progress style="width:${percent(own?.distance||0,r.length)}%;background:${player?.color||'#1dd9be'}"></i></div>
     ${intro?'<div class="race-phone-intro"><h1>Ready, set…</h1><p>Quick, correct answers give you a bigger boost.</p><strong data-race-countdown>3</strong></div>':s.pausedAt?'<div class="race-phone-intro"><h1>Race paused</h1><p>Waiting for the host or captain to resume.</p></div>':q?`<div class="race-question" data-question-id="${q.id}"><div class="race-question-label"><span>QUESTION ${q.id}</span><span data-race-deadline>12s</span></div><h2>${name(q.prompt)}</h2><div class="race-options">${q.options.map((opt,index)=>`<button class="race-answer" data-action="race-answer" data-race-option="${index}" ${sending?'disabled':''}><span>${'ABCD'[index]}</span>${name(opt)}</button>`).join('')}</div><button class="button outline race-pass" data-action="race-pass" ${sending?'disabled':''}>Pass question · small slowdown</button></div>`:`<div class="race-phone-intro"><h2>${feedback?.outcome==='correct'?'Correct! Speed boost!':feedback?.outcome==='wrong'?'Not quite — slowing down':feedback?.outcome==='timeout'?'Time is up!':feedback?.outcome==='pass'?'Question passed':'Next question coming…'}</h2><p>${feedback?.answer?'Correct answer: '+name(feedback.answer):'Keep racing!'}</p></div>`}
     ${intro?'':`<div class="race-powers" data-race-powers><button type="button" class="race-power is-boost" data-action="race-power" data-kind="boost"><b>🚀 Boost</b><small data-power-note></small></button>
-      <button type="button" class="race-power is-ram" data-action="race-power" data-kind="ram"><b>💥 Ram</b><small data-power-note></small></button>
+      <button type="button" class="race-power is-ram" data-action="race-power" data-kind="ram"><b>💥 Nudge</b><small data-power-note></small></button>
       <button type="button" class="race-power is-shield" data-action="race-power" data-kind="shield"><b>🛡 Shield</b><small data-power-note></small></button></div>
       <p class="race-power-alert" data-race-alert role="status"></p>`}
     <div class="race-phone-foot"><div><small>YOUR PROGRESS</small><strong data-race-progress-text>${percent(own?.distance||0,r.length)}%</strong></div><div><small>CURRENT SPEED</small><strong data-race-speed-value>${player?.speed?.toFixed(2)||'1.00'}×</strong></div></div>
@@ -72,11 +72,15 @@ export function updateRacePowers(root, state) {
     button.querySelector('[data-power-note]').textContent = note;
   };
   const toTurbo = 3 - (own.streak ?? 0) % 3;
-  set('boost', live && own.boosts > 0, own.boosts > 1 ? '2 ready' : own.boosts > 0 ? 'Ready' : `${toTurbo} right in a row for a turbo`);
-  set('shield', live && own.shields > 0 && !own.shieldLeft, own.shieldLeft ? `Up · ${Math.ceil(own.shieldLeft / 1000)}s` : own.shields > 0 ? 'Blocks rams for 6s' : 'Used');
-  set('ram', live && own.rams > 0 && Boolean(own.ramTarget), own.rams < 1 ? 'None left' : own.ramTarget ? `Hit ${own.ramTarget} · ${own.rams} left` : `Nobody in range · ${own.rams} left`);
+  set('boost', live && own.boosts > 0 && !own.armed, own.armed ? 'ARMED · get the next one right!' : own.boosts > 0 ? `Tap, then answer right · ${own.boosts} left` : `${toTurbo} right in a row earns one`);
+  bar.querySelector('[data-kind="boost"]').toggleAttribute('data-armed', Boolean(own.armed));
+  set('shield', live && own.shields > 0 && !own.shieldLeft, own.shieldLeft ? `Up · ${Math.ceil(own.shieldLeft / 1000)}s` : own.shields > 0 ? 'Blocks nudges for 6s' : 'Used');
+  // A nudge can always be thrown while you have one: at nobody, it is wasted.
+  set('ram', live && own.rams > 0, own.rams < 1 ? 'None left' : own.ramTarget ? `${own.ramTarget} is alongside · ${own.rams} left` : `Nobody alongside · ${own.rams} left`);
+  bar.querySelector('[data-kind="ram"]').toggleAttribute('data-target', Boolean(own.ramTarget));
   const alert = root.querySelector('[data-race-alert]');
-  const text = own.rammedBy ? `💥 Rammed by ${own.rammedBy}!` : own.blocked ? `🛡 Your shield stopped ${own.blocked}!` : own.turboEarned ? '🚀 Three in a row: turbo earned!' : own.sprint ? '🏁 Final sprint: right answers count extra!' : '';
+  const text = own.rammedBy ? `💥 Nudged by ${own.rammedBy}!` : own.blocked ? `🛡 Your shield stopped ${own.blocked}!` : own.missed ? '💨 Nobody there. Nudge wasted.' : own.fizzled ? '💨 Boost wasted: that answer was not right.'
+    : own.turboEarned ? '🚀 Three in a row: boost earned!' : own.onFire ? `🔥 On fire! ${own.streak} in a row` : own.sprint ? '🏁 Final sprint: right answers count extra!' : '';
   if (alert && alert.textContent !== text) alert.textContent = text;
   root.querySelector('.race-phone')?.toggleAttribute('data-rammed', Boolean(own.rammedBy));
 }

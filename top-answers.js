@@ -3,6 +3,7 @@ import {isConnected} from './room-presence.js';
 import {questionHistoryId} from './public/question-history.js';
 import {v2Topanswers} from './creative-expansion-v2.js';
 import {topanswersV4} from './creative-expansion-v4.js';
+import {topanswersV5} from './creative-expansion-v5.js';
 
 // Original, subjective questions. Popularity is only measured from this room's actual choices.
 // No external audience, prior poll percentages or fabricated survey scores are implied.
@@ -90,6 +91,7 @@ export const topAnswersPrompts=Object.freeze([
   ask('Which food should never be a pizza topping?','Jelly beans','Banana','Marshmallows','Pickles'),
   ...v2Topanswers.map(row=>ask(...row)),
   ...topanswersV4.map(row=>ask(...row)),
+  ...topanswersV5.map(row=>ask(...row)),
 ]);
 
 export function chooseTopAnswersPrompt(seen=new Set()) {

@@ -203,36 +203,52 @@ export const reactions = {
     ['max', '[surprised] Ooh. Nobody got that one!'],
     ['poppy', '[laughs] Not a single one of you! Moving swiftly on.'],
     ['max', '[sighs] A clean sweep... of wrong answers.'],
+    ['poppy', '[gasps] Oh! That one fooled the lot of you.'],
+    ['max', "[chuckles] Zero. Nil. Nothing. We'll say no more about it."],
   ],
   everybody: [
     ['poppy', '[impressed] Everybody got that one! Too easy?'],
     ['max', '[delighted] A full house! Well done, all of you.'],
     ['poppy', '[excited] Every single one of you! Show-offs.'],
+    ['max', "[laughs] All correct! Right, they're getting harder."],
+    ['poppy', '[proudly] Top marks all round. Look at you all!'],
   ],
   onlyone: [
     ['max', '[impressed] Only one of you got that. Take a bow!'],
     ['poppy', '[whispers] Just one correct answer. [normal] Somebody\'s been revising.'],
     ['max', '[chuckles] One of you knew it. The rest of you... did not.'],
+    ['poppy', '[impressed] One lonely correct answer. Well played, you.'],
+    ['max', '[amused] A single right answer. Everyone else, have a quiet word with yourselves.'],
   ],
   streak: [
     ['poppy', '[excited] Somebody is on a roll! That\'s three in a row.'],
     ['max', '[impressed] Three in a row for someone. Can anybody stop them?'],
+    ['max', "[excited] Somebody's flying! That's another one in a row."],
+    ['poppy', '[playfully] We have a hot streak. Somebody stop them, please.'],
   ],
   noanswers: [
     ['max', '[curious] Hello? Anyone there? Nobody answered that one.'],
     ['poppy', '[laughs] No answers at all. Were you all making tea?'],
+    ['poppy', '[curious] Nothing? Not even a guess? A guess costs nothing!'],
+    ['max', "[chuckles] Complete silence. I'll take that as a no, then."],
   ],
   final: [
     ['poppy', '[dramatic] Last question! It all comes down to this.'],
     ['max', '[excited] Final question, everybody. Make it count!'],
+    ['max', '[dramatic] This is it. One question left.'],
+    ['poppy', '[excited] Last one! Everything to play for.'],
   ],
   knockedout: [
     ['max', '[dramatic] And down they go! We have a knockout.'],
     ['poppy', '[mock sad] Oh no! Somebody is out of hearts.'],
+    ['poppy', "[gasps] And that's a knockout! Thank you for playing."],
+    ['max', '[sighs] Out of hearts. It happens to the best of us.'],
   ],
   halfway: [
     ['poppy', '[cheerfully] That\'s the halfway point. Still anybody\'s game!'],
     ['max', '[warmly] Halfway there. Plenty of time to catch up.'],
+    ['max', "[cheerfully] Half-time! No oranges, I'm afraid."],
+    ['poppy', "[warmly] Halfway. If you're behind, now's the moment."],
   ],
 };
 
@@ -351,9 +367,88 @@ export const bloodmoonCalls = {
   ],
 };
 
+/**
+ * Board Race: Max and Poppy call the public moments on the board. They never
+ * say what a 50/50 removed. Recorded as react-board-<kind>-<n>.
+ */
+export const boardCalls = {
+  corner: [
+    ['poppy', "[excited] Bang on the corner! That's a power-up in the bag."],
+    ['max', "[impressed] Landed right on the corner. Lovely. Collect your power-up."],
+    ['poppy', "[delighted] A perfect landing! One shiny power-up for you."],
+  ],
+  junction: [
+    ['max', "[curious] The junction. Power Lane, or the Question Trail? Choose wisely."],
+    ['poppy', "[playfully] Decision time. Short and risky, or the long way round?"],
+  ],
+  fifty: [
+    ['poppy', "[whispers] Fifty-fifty played. [normal] Somebody's got an easier job now."],
+    ['max', "[amused] A fifty-fifty! Two wrong answers have just left the building."],
+  ],
+  skip: [
+    ['max', "[surprised] New question! That one's gone in the bin."],
+    ['poppy', "[laughs] Didn't fancy that one? Fair enough. Here's another."],
+  ],
+  points: [
+    ['poppy', "[excited] Double points are in play! This one really counts."],
+    ['max', "[dramatic] Double or... well, double or nothing. Double points!"],
+  ],
+  half: [
+    ['max', "[mock shocked] Ooh! Half points for a rival. That's not very friendly."],
+    ['poppy', "[gasps] Half points! Somebody has just made an enemy."],
+  ],
+  finish: [
+    ['poppy', "[excited] Into the centre! We have a winner!"],
+    ['max', "[delighted] Home! That is the race, ladies and gentlemen."],
+  ],
+};
+
+/** Way Off: the furthest guess goes. Recorded as react-wayoff-<kind>-<n>. */
+export const wayoffCalls = {
+  out: [
+    ['max', "[sympathetic] Furthest away, I'm afraid. Off you go."],
+    ['poppy', "[mock sad] Way off! And that means you're out."],
+    ['max', "[chuckles] Not even close. Thanks for coming."],
+  ],
+  finaltwo: [
+    ['poppy', "[dramatic] Just two left. One more miss and it's over."],
+    ['max', "[excited] We are down to the final two. Nerves of steel, please."],
+  ],
+  winner: [
+    ['poppy', "[excited] Last one standing! That is how you guess a number."],
+    ['max', "[delighted] Everyone else was way off. We have our winner!"],
+  ],
+};
+
+/** Catch Up: the chase. Recorded as react-catch-<kind>-<n>. */
+export const catchupCalls = {
+  target: [
+    ['max', "[excited] The target is set. Chasers, you're up!"],
+    ['poppy', "[playfully] That's the score to beat. No pressure at all."],
+  ],
+  caught: [
+    ['poppy', "[excited] Caught! The chasers have done it!"],
+    ['max', "[impressed] Reeled in and overtaken. What a chase!"],
+  ],
+  escaped: [
+    ['max', "[relieved] Time's up, and they got away with it!"],
+    ['poppy', "[laughs] Not caught! The runners survive."],
+  ],
+};
+
+/** Closest-number games: somebody guessed it exactly. Recorded as react-close-exact-<n>. */
+export const closeCalls = {
+  exact: [
+    ['poppy', "[amazed] Spot on! Somebody got it exactly right!"],
+    ['max', "[astonished] Bang on the number. I am genuinely impressed."],
+  ],
+};
+
 export const reactionTakes = Object.fromEntries([
   ...Object.entries(reactions).flatMap(([kind, lines]) => lines.map((line, index) => [`react-${kind}-${index + 1}`, [line]])),
   ...Object.entries(knockoutReactions).flatMap(([kind, takes]) => takes.map((lines, index) => [`react-ko-${kind}-${index + 1}`, lines])),
   ...Object.entries(raceCalls).flatMap(([kind, lines]) => lines.map((line, index) => [`react-race-${kind}-${index + 1}`, [line]])),
   ...Object.entries(bloodmoonCalls).flatMap(([kind, takes]) => takes.map((lines, index) => [`react-blood-${kind}-${index + 1}`, lines])),
+  ...[['board', boardCalls], ['wayoff', wayoffCalls], ['catch', catchupCalls], ['close', closeCalls]].flatMap(([prefix, calls]) =>
+    Object.entries(calls).flatMap(([kind, lines]) => lines.map((line, index) => [`react-${prefix}-${kind}-${index + 1}`, [line]]))),
 ]);

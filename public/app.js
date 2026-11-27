@@ -20,7 +20,7 @@ import { launcherTile, launcherPreview, launcherModes, launcherSetupArtwork, LAU
 import { carouselView, moveCarousel, themeHome, wrapIndex } from './game-carousel.js';
 import { playSting, stingFor } from './show-sting.js';
 import { isWelcomeNarration, narrationPlaying, playScript, playWelcome, stopNarration, toggleNarration } from './narrator.js';
-import { bloodmoonCalls, knockoutReactions, raceCalls, reactions, skipQuips, welcomeBack } from './duo-scripts.js';
+import { bloodmoonCalls, boardCalls, catchupCalls, closeCalls, knockoutReactions, raceCalls, reactions, skipQuips, wayoffCalls, welcomeBack } from './duo-scripts.js';
 import { openWelcome } from './welcome-show.js';
 import { playChiptune, playCue, playTick, playTowerImpact } from './sound-cues.js';
 import { duckMusic, playMusic, playSfx, preloadSfx, stopMusic } from './sfx.js';
@@ -1383,6 +1383,7 @@ function receive(next, current) {
     soundMoments(state, next);
     raceCommentary(state, next);
     bloodmoonCommentary(state, next);
+    showCommentary(state, next);
   }
   if (dialog.open && state && (state.game !== next.game || state.phase === 'lobby' && next.phase !== 'lobby')) dialog.close();
   if (state?.game !== next.game || state?.index !== next.index || next.phase === 'lobby') partyReply = '';
@@ -1474,6 +1475,36 @@ function hostReaction(s, delay) {
     if (state?.game !== s.game || state?.index !== s.index || state?.phase !== s.phase) return;
     if (ringside) sayReaction(`react-ko-${kind}`, ringside); else sayReaction(`react-${kind}`, reactions[kind]);
   }, delay);
+}
+
+/** Board Race, Way Off, Catch Up and closest-number games: one call per public moment. */
+function showCommentary(before, next) {
+  const say = (prefix, calls, kind, delay = 600) => calls[kind] && setTimeout(() => sayReaction(`react-${prefix}-${kind}`, calls[kind]), delay);
+  const entered = phase => next.phase === phase && before.phase !== phase;
+  if (next.mode === 'board' && next.game === before.game) {
+    if (entered('finished')) return say('board', boardCalls, 'finish', 900);
+    if (entered('question')) {
+      if (next.motion?.reward) return say('board', boardCalls, 'corner');
+      if (next.motion?.junction) return say('board', boardCalls, 'junction');
+    }
+    // A power-up played since the last update. What a 50/50 removed is never sent here.
+    const was = id => before.teams?.[id];
+    if (next.questionRefreshed && !before.questionRefreshed) return say('board', boardCalls, 'skip', 200);
+    for (const team of next.teams ?? []) {
+      if (team.halved && !was(team.id)?.halved) return say('board', boardCalls, 'half', 200);
+      if (team.armed?.points && !was(team.id)?.armed?.points) return say('board', boardCalls, 'points', 200);
+      if (team.powers?.fifty < was(team.id)?.powers?.fifty) return say('board', boardCalls, 'fifty', 200);
+    }
+  }
+  if (next.mode === 'wayoff') {
+    if (entered('finished')) return say('wayoff', wayoffCalls, 'winner', 900);
+    if (next.wayOut && !before.wayOut) return say('wayoff', wayoffCalls, next.stillIn === 2 ? 'finaltwo' : 'out');
+  }
+  if (next.mode === 'catchup' && next.party) {
+    if (entered('catch-result')) return say('catch', catchupCalls, next.party.result?.caught ? 'caught' : 'escaped');
+    if (entered('catch-ready') && before.phase === 'catch-leg' && next.party.chasing) return say('catch', catchupCalls, 'target');
+  }
+  if (isEstimateShow(next.mode) && next.closest?.distance === 0 && !before.closest) say('close', closeCalls, 'exact', 900);
 }
 
 // Vince calls Quiz Race: the start, lead changes, close battles and the flag.

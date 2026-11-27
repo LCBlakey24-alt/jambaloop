@@ -648,5 +648,235 @@
   "tempo": 1,
   "loudness": -14.4,
   "seconds": 2.85
+ },
+ "duo/react-board-corner-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 2.72
+ },
+ "duo/react-board-corner-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 4.41
+ },
+ "duo/react-board-corner-3.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.3,
+  "seconds": 3.29
+ },
+ "duo/react-board-fifty-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.3,
+  "seconds": 4.13
+ },
+ "duo/react-board-fifty-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 3.97
+ },
+ "duo/react-board-finish-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 2.35
+ },
+ "duo/react-board-finish-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 3.45
+ },
+ "duo/react-board-half-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 4.34
+ },
+ "duo/react-board-half-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 3.53
+ },
+ "duo/react-board-junction-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.7,
+  "seconds": 5.98
+ },
+ "duo/react-board-junction-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 3.97
+ },
+ "duo/react-board-points-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 3.29
+ },
+ "duo/react-board-points-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 3.89
+ },
+ "duo/react-board-skip-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 2.48
+ },
+ "duo/react-board-skip-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 3.6
+ },
+ "duo/react-catch-caught-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.3,
+  "seconds": 2.19
+ },
+ "duo/react-catch-caught-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 3.16
+ },
+ "duo/react-catch-escaped-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 2.32
+ },
+ "duo/react-catch-escaped-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 4.1
+ },
+ "duo/react-catch-target-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.6,
+  "seconds": 2.8
+ },
+ "duo/react-catch-target-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 2.85
+ },
+ "duo/react-close-exact-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.3,
+  "seconds": 3.24
+ },
+ "duo/react-close-exact-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.6,
+  "seconds": 3.58
+ },
+ "duo/react-everybody-4.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 3.68
+ },
+ "duo/react-everybody-5.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 2.77
+ },
+ "duo/react-final-3.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.2,
+  "seconds": 2.85
+ },
+ "duo/react-final-4.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 2.8
+ },
+ "duo/react-halfway-3.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 2.32
+ },
+ "duo/react-halfway-4.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.3,
+  "seconds": 3.45
+ },
+ "duo/react-knockedout-3.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 3.24
+ },
+ "duo/react-knockedout-4.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.6,
+  "seconds": 3.76
+ },
+ "duo/react-noanswers-3.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 3.6
+ },
+ "duo/react-noanswers-4.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.3,
+  "seconds": 2.56
+ },
+ "duo/react-nobody-4.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 3.29
+ },
+ "duo/react-nobody-5.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.2,
+  "seconds": 4.62
+ },
+ "duo/react-onlyone-4.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.6,
+  "seconds": 4.21
+ },
+ "duo/react-onlyone-5.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 5.02
+ },
+ "duo/react-streak-3.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 3.37
+ },
+ "duo/react-streak-4.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 3.92
+ },
+ "duo/react-wayoff-finaltwo-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.3,
+  "seconds": 3.29
+ },
+ "duo/react-wayoff-finaltwo-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 4.73
+ },
+ "duo/react-wayoff-out-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 2.35
+ },
+ "duo/react-wayoff-out-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 2.8
+ },
+ "duo/react-wayoff-out-3.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.6,
+  "seconds": 3.24
+ },
+ "duo/react-wayoff-winner-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 3.45
+ },
+ "duo/react-wayoff-winner-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.5,
+  "seconds": 4.34
  }
 }

@@ -27,6 +27,7 @@ export const prompts = {
   soclose: 'Tense precision game. Light ticking percussion, pulsing synth bass, pizzicato strings and a rising shimmer, careful and suspenseful, 110 bpm.',
   wayoff: 'Elimination round tension. Deep timpani hits, heartbeat kick drum, low strings ostinato and a cold synth, dramatic, 92 bpm.',
   catchup: 'Chase scene breakbeat. Fast funky drums, wah guitar, punchy brass hits and a racing bassline, breathless and fun, 138 bpm.',
+  shade: 'Colourful dreamy art-pop. Soft electric piano chords, plucky synth arpeggio that shifts key like changing colours, light brushed beat and warm bass, curious and bright, 104 bpm.',
   sketch: 'Playful art studio doodle music. Toy piano, ukulele, shaker, tuba oom-pah and a kazoo-style lead, scribbly and silly, 116 bpm.',
 };
 

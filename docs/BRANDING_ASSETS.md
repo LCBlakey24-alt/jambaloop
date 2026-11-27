@@ -44,3 +44,7 @@ Every game has its own 45-second looping theme (`public/audio/music/game-<mode>.
 ## How-to-play guides
 
 Each game has a recorded, captioned guide (`public/audio/duo/guide-<mode>.mp3`, scripts in `public/guide-scripts.js`, animated scenes in `public/guide-show.js`), recorded on 27 November 2026 with the same ElevenLabs voices as the rest of the show. Max and Poppy hand over to Baz and Clive (Knockout), Vince (Quiz Race) and Count Vesper (Bloodmoon). Every rule in the scripts was checked against the game code, and every recording's transcript was checked against its script. Nobody has listened to them or watched them on a real TV yet.
+
+## Shade (added 27 November 2026)
+
+Shade is an original colour-clue game: its name, board (30 by 16 squares generated in code by `public/shade-grid.js`), rules text and look are ours, not a copy of any published game's board, name or artwork. Its typeface is Fredoka (SIL Open Font License, `public/fonts/fredoka-OFL.txt`). Its theme, title sting, intro and guide were made with the same ElevenLabs tools and voices as the other games.

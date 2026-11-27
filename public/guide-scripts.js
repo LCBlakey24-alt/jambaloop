@@ -228,6 +228,18 @@ export const gameGuides = {
     ['max', '[warmly] Set a target nobody beats, or beat the one you were set, and you win the round. Level is not enough.', 'win'],
     ['poppy', '[excited] Sixty seconds on the clock. Go!', 'go'],
   ],
+  shade: [
+    ['poppy', '[excited] This is Shade. Hundreds of colours, and you have to find exactly one.', 'title'],
+    ['max', '[conversational] Up on the TV is a giant board of colours. Every square has a letter and a number.', 'palette'],
+    ['poppy', '[cheerfully] Each round, one player is the clue-giver. A secret square appears on their phone only.', 'secret'],
+    ['max', '[playfully] They say one word out loud to describe it. Lagoon. Custard. Sunburn. No pointing, and no coordinates.', 'clue'],
+    ['poppy', '[conversational] Everyone else taps the board on their phone to zoom in, picks the exact square, and places one guess.', 'pick'],
+    ['max', '[cheerfully] Then a second word, and a second guess. Then a third. Three single words, three guesses.', 'clue'],
+    ['poppy', '[excited] Hit the exact square for three points. One square away scores two, and two away scores one.', 'rings'],
+    ['max', '[conversational] The clue-giver scores a point for every guess on the target or right beside it. So good clues pay.', 'scores'],
+    ['poppy', '[warmly] Everyone takes a turn giving clues. Most points wins.', 'win'],
+    ['max', '[excited] Eyes on the board. Off we go!', 'go'],
+  ],
   sketch: [
     ['max', '[cheerfully] This is Sketch Sprint. You do not need to be able to draw. It is funnier if you cannot.', 'title'],
     ['poppy', '[conversational] Each round, one player is the artist. A secret word appears on their phone only.', 'secret'],

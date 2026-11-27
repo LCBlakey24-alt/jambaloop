@@ -25,6 +25,7 @@ import { canReadAloud, isWelcomeNarration, narrationPlaying, playScript, playWel
 import { bloodmoonCalls, boardCalls, momentCalls, catchupCalls, closeCalls, knockoutReactions, raceCalls, reactions, skipQuips, wayoffCalls, welcomeBack } from './duo-scripts.js';
 import { openWelcome } from './welcome-show.js';
 import { openGuide } from './guide-show.js';
+import { shadeLens } from './shade-view.js';
 import { momentFor, potatoClockCall, publicPrompt } from './moment-calls.js';
 import { gameGuides } from './guide-scripts.js';
 import { playChiptune, playCue, playTick, playTowerImpact } from './sound-cues.js';
@@ -978,6 +979,10 @@ function phaseCaption(s) {
     'rare-review': 'Host reviewing unusual Rare Find answers',
     'rare-reveal': 'Real Rare Find answer reveal',
     'party-potato': 'Potato in play',
+    'shade-clue': 'First word',
+    'shade-clue2': 'Second word',
+    'shade-clue3': 'Third word',
+    'shade-reveal': 'The square revealed',
     'catch-ready': 'Sides get ready',
     'catch-leg': 'The clock is running',
     'catch-result': 'Round result',
@@ -2370,6 +2375,17 @@ document.addEventListener('click', async event => {
     try { await api('/' + session.code + '/board-power', { game: state.game, power: button.dataset.power, ...(button.dataset.target !== undefined && { target: Number(button.dataset.target) }) }); await refresh(); }
     catch (error) { await refresh(); const note = document.querySelector('#game-error'); if (note) note.textContent = error.message; }
     return;
+  }
+  if (action === 'shade-zoom' || action === 'shade-select' || action === 'shade-back') {
+    const square = [Number(button.dataset.c), Number(button.dataset.r)];
+    shadeLens(state.party?.step, action === 'shade-zoom' ? { centre: square, picked: undefined } : action === 'shade-select' ? { picked: square } : { centre: undefined, picked: undefined });
+    return render(state);
+  }
+  if (action === 'shade-place') {
+    const { picked } = shadeLens(state.party?.step);
+    if (!picked) return;
+    shadeLens(state.party.step, { centre: undefined, picked: undefined });
+    return sendParty({ action: 'guess', step: state.party.step, square: picked }, button);
   }
   if (action === 'catch-answer') return sendParty({ action: 'answer', step: state.party?.step, option: Number(button.dataset.option) }, button);
   if (action === 'blood-ready') return sendParty({ action: 'ready' }, button);

@@ -46,6 +46,8 @@ export const identities = {
     bg: ['#4f5a12', '#1b2006'], surface: '#262c0a', surface2: '#343c10', ink: '#ffffff', muted: '#e6edc0', accent: '#ffd23f', accent2: '#5ee6ff', radius: '18px' },
   catchup:    { title: 'Floodlit Track', display: 'Show CatchUp', weight: 700, question: 'body', upper: false, scheme: 'dark',
     bg: ['#2327a8', '#0b0d52'], surface: '#0a0b3d', surface2: '#2327a8', ink: '#ffffff', muted: '#d3d6ff', accent: '#c8ff3d', accent2: '#4cc9f0', radius: '18px' },
+  shade:      { title: 'Gallery Wall', display: 'Show Shade', weight: 600, question: 'display', upper: false, scheme: 'dark',
+    bg: ['#3a3a44', '#16161b'], surface: '#202027', surface2: '#2e2e38', ink: '#ffffff', muted: '#cfcfdc', accent: '#ff5fa2', accent2: '#5fd4ff', radius: '12px' },
   sketch:     { title: 'Sketch Pad', display: 'Show Sketch', weight: 700, question: 'display', upper: false, scheme: 'light',
     bg: ['#fdfcf7', '#ebe6d8'], surface: '#ffffff', surface2: '#f4f0e6', ink: '#1d2433', muted: '#545c6e', accent: '#1f5fd0', accent2: '#e0294c', radius: '16px' },
   quizrace:   { title: 'Neon Grand Prix', display: 'Show Race', weight: 700, question: 'body', upper: true, scheme: 'dark',

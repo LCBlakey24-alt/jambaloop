@@ -59,6 +59,8 @@ function bindImmersiveChrome() {
 }
 const home = app.innerHTML;
 const dialog = document.querySelector('#dialog');
+/** A phone or small tablet: fine as a controller, too small to be the room's main screen. */
+const smallScreen = () => matchMedia('(max-width: 760px)').matches || (matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) < 700);
 const content = document.querySelector('#dialog-content');
 const footer = document.querySelector('footer');
 const announcement = document.querySelector('#phase-announcement');
@@ -628,6 +630,19 @@ function openDialog(mode, value, gameMode, quizId) {
       <button class="button primary join-room-submit" type="submit">Join the room ${icons('arrow-up-right')}</button>
     </form>
     ${recentRooms().length ? '<button class="text-button join-resume-link" data-action="recent-rooms">Resume a recent room</button>' : ''}`;
+  } else if (mode === 'bigscreen') {
+    // A phone or small tablet tried to host: say what the game is built for, then let them choose.
+    content.innerHTML = `<div class="eyebrow">BEST ON A BIG SCREEN</div><h2>Jambaloop is made for a TV</h2>
+    <p>Everyone watches one big screen together and plays on their own phone. Hosting on this phone would make it the main screen, which is hard for a group to see.</p>
+    <ol class="bigscreen-steps">
+      <li><strong>Open this site on a laptop</strong> plugged into your TV with an HDMI cable, or in your smart TV’s web browser.</li>
+      <li><strong>Tap Host a party there.</strong> The TV shows a room code and a QR code.</li>
+      <li><strong>Everyone joins on their phone.</strong> This phone becomes your controller.</li>
+    </ol>
+    <div class="actions bigscreen-actions">
+      <button class="button primary" data-action="join">Join a game on this phone</button>
+      <button class="button outline" data-action="party" data-anyway="1"${gameMode ? ` data-mode="${escape(gameMode)}"` : ''}>Host on this phone anyway</button>
+    </div>`;
   } else {
     content.innerHTML = `<div class="eyebrow">QUIZ NIGHT</div><h2>How to play</h2><ol>
     <li>Host a game in the TV browser or connect a laptop to the TV. Choose a game mode and create a room.</li>
@@ -1171,6 +1186,7 @@ function render(s) {
     ${host && document.fullscreenEnabled ? `<button class="button outline small" data-action="fullscreen" aria-label="Fullscreen">${icons('maximize', 'host-compact-icon')} <span>Fullscreen</span></button>` : ''}
     <button class="button outline small" data-action="leave" aria-label="Home">${host ? icons('house', 'host-compact-icon') : ''}<span>Home</span></button></div></div>
     <div class="connection-strip" id="reconnect-status" role="status" ${reconnecting ? '' : 'hidden'}>Reconnecting to this room…</div>
+    ${host ? '<p class="small-host-note" role="note"><strong>This phone is acting as the TV.</strong> For a group, open this site on a laptop plugged into your TV, or in the TV’s browser, and host there.</p>' : ''}
     ${host && !['lobby', 'finished'].includes(s.phase) ? '<p class="stage-presence" id="stage-presence"></p>' : ''}
     ${(host || s.isCaptain) && !['lobby', 'finished', 'waiting'].includes(s.phase) && s.night.queue.length ? `<p class="live-lineup">Up next <strong>${modeName(s.night.queue[0])}</strong>
       ${canControl ? '<button class="button outline small" data-action="night">Edit playlist</button>' : ''}</p>` : ''}
@@ -2293,6 +2309,9 @@ document.addEventListener('click', async event => {
   }
   if (action === 'again' || action === 'configure') return openDialog(action === 'again' ? 'rematch' : 'configure', state.category);
   if (action === 'party') {
+    // Phones and small tablets are controllers: recommend a TV before turning one into the main screen.
+    if (smallScreen() && !button.dataset.anyway) return openDialog('bigscreen', undefined, button.dataset.mode);
+    if (dialog.open) dialog.close();
     button.disabled = true;
     const message = document.querySelector('#home-error');
     try {

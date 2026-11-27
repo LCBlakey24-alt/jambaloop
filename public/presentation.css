@@ -263,3 +263,14 @@ body.playing .player-only .game-panel { box-shadow: 0 10px 26px #09071551,inset 
 .board-fallback .fallback-center { grid-area: 2/2/var(--center-end,5)/var(--center-end,5); }
 .board-fallback .fallback-tile { z-index: 1; }
 .board-fallback[style*="--board-grid:11"] .fallback-tile small { display: none; }
+
+/* "Made for a TV" advice shown when a phone tries to host. */
+.bigscreen-steps { margin: .6rem 0 1rem; padding-left: 1.2rem; display: grid; gap: .55rem; }
+.bigscreen-steps li { line-height: 1.35; }
+.bigscreen-actions { display: grid; gap: .6rem; }
+.bigscreen-actions .button { width: 100%; justify-content: center; }
+/* If someone hosts on a phone anyway, the lobby keeps reminding them gently. */
+.small-host-note { display: none; }
+@media (max-width: 760px) {
+  .host-screen[data-phase="lobby"] .small-host-note { display: block; margin: 0 0 .5rem; padding: .5rem .7rem; border-radius: 10px; border: 1px solid #ffd27a66; background: #ffd27a1f; font-size: .85rem; line-height: 1.3; }
+}

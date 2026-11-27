@@ -401,6 +401,8 @@ function openDialog(mode, value, gameMode, quizId) {
     <label>Visual style<select name="theme">${selected(themes, configured ? state.theme : previewTheme)}</select></label>
     <label class="switch-row"><input type="checkbox" name="autoReveal" ${configured && state.autoReveal ? 'checked' : ''}><span><strong>Auto-reveal answers</strong><small>Reveal when every eligible player has answered.</small></span></label>
     <label class="switch-row" id="christmas-field"><input type="checkbox" name="includeChristmas" ${configured && state.includeChristmas ? 'checked' : ''}><span>Include Christmas questions</span></label>
+    <label class="switch-row after-dark-row" id="after-dark-field" hidden><input type="checkbox" name="afterDark" ${configured && state.afterDark ? 'checked' : ''}>
+      <span><strong>After Dark cards · adults only (18+)</strong><small>Dark, morbid humour instead of the family deck. Off unless you switch it on. Not for children.</small></span></label>
     <p class="settings-note" id="scoring-note" aria-live="polite"></p>
     <p class="error" role="alert"></p><button class="button primary" type="submit">${rematch ? 'Set up rematch' : configured ? 'Apply to lobby' : 'Create room'} ${icons('arrow-up-right')}</button></form>`;
     const form = content.querySelector('form');
@@ -518,6 +520,9 @@ function openDialog(mode, value, gameMode, quizId) {
       const christmasField = form.querySelector('#christmas-field');
       christmasField.hidden = (party && game !== 'potato') || custom || curated || (!categoryField.hidden && form.elements.category.value !== 'mixed');
       form.elements.includeChristmas.disabled = christmasField.hidden;
+      const afterDarkField = form.querySelector('#after-dark-field');
+      afterDarkField.hidden = game !== 'tracks';
+      form.elements.afterDark.disabled = afterDarkField.hidden;
       form.querySelector('#count-label').textContent = board ? 'Maximum turns' : rare ? 'Rarity rounds' : topAnswers ? 'Room poll rounds' : brain ? 'Ladder height' : spotlight ? 'Turns per contestant' : trolley || matching || creativeRounds ? 'Rounds' : 'Questions';
       const counts = questionCounts(game, privateQuiz || curated ? 'choice' : form.elements.format.value, privateQuiz || curated ? 'mixed' : form.elements.category.value);
       const previous = Number(form.elements.count.value) || (configured ? state.total : 0);
@@ -786,12 +791,12 @@ document.addEventListener('submit', async event => {
   event.preventDefault();
   const button = form.querySelector('button:not([type="button"])');
   button.disabled = true;
-  const { mode, theme, format, category, count, seconds, code, name, autoReveal, includeChristmas, phoneView, quiz, teamCount, boardLength, playStyle, privateQuestions, difficulty, basePoints, speedPoints, doublePoints, boardSpeed, scoreInterval, raceLength, raceTrack, raceDifficulty } = Object.fromEntries(new FormData(form));
+  const { mode, theme, format, category, count, seconds, code, name, autoReveal, includeChristmas, afterDark, phoneView, quiz, teamCount, boardLength, playStyle, privateQuestions, difficulty, basePoints, speedPoints, doublePoints, boardSpeed, scoreInterval, raceLength, raceTrack, raceDifficulty } = Object.fromEntries(new FormData(form));
   try {
     const customQuiz = quiz && quiz !== 'current' ? savedQuizzes().find(entry => entry.id === quiz) : undefined;
     const curated = difficulty && difficulty !== 'standard';
     const scoring = basePoints ? { base: Number(basePoints), bonus: Number(speedPoints), doubles: doublePoints } : undefined;
-    const settings = { mode, playStyle, theme, difficulty, raceLength, raceTrack, raceDifficulty, scoring, scoreInterval: scoreInterval === undefined ? undefined : Number(scoreInterval), boardSpeed: boardSpeed === undefined ? undefined : Number(boardSpeed), format: curated ? 'choice' : format, category: curated ? 'mixed' : category, phoneView, teamCount: Number(teamCount), boardLength: Number(boardLength), customQuiz, useRoomQuiz: quiz === 'current', count: Number(count), privateQuestions: privateQuestions === 'on', seconds: Number(seconds), autoReveal: autoReveal === 'on', includeChristmas: includeChristmas === 'on' };
+    const settings = { mode, playStyle, theme, difficulty, raceLength, raceTrack, raceDifficulty, scoring, scoreInterval: scoreInterval === undefined ? undefined : Number(scoreInterval), boardSpeed: boardSpeed === undefined ? undefined : Number(boardSpeed), format: curated ? 'choice' : format, category: curated ? 'mixed' : category, phoneView, teamCount: Number(teamCount), boardLength: Number(boardLength), customQuiz, useRoomQuiz: quiz === 'current', count: Number(count), privateQuestions: privateQuestions === 'on', seconds: Number(seconds), autoReveal: autoReveal === 'on', includeChristmas: includeChristmas === 'on', afterDark: mode === 'tracks' && afterDark === 'on' };
     if (form.id === 'rematch-form' || form.id === 'configure-form') {
       const action = form.id === 'rematch-form' ? 'rematch' : 'configure';
       await api('/' + session.code + '/' + action, { ...settings, game: Number(form.dataset.game), lobbyVersion: Number(form.dataset.lobbyVersion) });

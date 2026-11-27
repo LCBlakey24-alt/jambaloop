@@ -8,11 +8,17 @@ import {forkGoodCards, forkBadCards, forkScenes, forkStages} from './public/fork
 import {v2ForkGood,v2ForkBad} from './creative-expansion-v2.js';
 import {forkGoodV4,forkBadV4} from './creative-expansion-v4.js';
 import {forkGoodV5,forkBadV5} from './creative-expansion-v5.js';
+import {afterDarkGood, afterDarkBad, afterDarkScenes, afterDarkStages} from './fork-after-dark.js';
+
+// The adults-only After Dark deck replaces the family deck when the host has switched it on.
+const stagesFor = room => room.afterDark ? afterDarkStages : forkStages;
+const scenesFor = room => room.afterDark ? afterDarkScenes : forkScenes;
 
 // Each round has a new player Trolley Driver; all other players are
 // randomly dealt into two balanced teams by the authoritative room server.
 function deal(room, kind) {
-  const bank = kind === 'bad' ? [...forkBadCards,...v2ForkBad,...forkBadV4,...forkBadV5] : [...forkGoodCards,...v2ForkGood,...forkGoodV4,...forkGoodV5];
+  const bank = room.afterDark ? (kind === 'bad' ? afterDarkBad : afterDarkGood)
+    : kind === 'bad' ? [...forkBadCards,...v2ForkBad,...forkBadV4,...forkBadV5] : [...forkGoodCards,...v2ForkGood,...forkGoodV4,...forkGoodV5];
   room.forkUsed ??= {good:new Set(),bad:new Set()};
   const used = room.forkUsed[kind];
   let available = bank.filter(value => !used.has(value));
@@ -72,7 +78,7 @@ export function startForkRound(room, publish) {
     type:'fork', driverKey, driver:{id:driverPlayer.id,name:driverPlayer.name},
     step:0, placements:[[null,null,null],[null,null,null]],
     hands:deal(room,'good'), votes:new Map(), judgeChoice:null, winner:null,
-    scene:forkScenes[room.index % forkScenes.length],
+    scene:scenesFor(room)[room.index % scenesFor(room).length],
   };
   room.phase='party-build';
   publish(room);
@@ -126,7 +132,7 @@ function continuePlacement(room, publish) {
     room.phase='party-judge';
   }else {
     party.step++;
-    party.hands=deal(room,forkStages[party.step].kind);
+    party.hands=deal(room,stagesFor(room)[party.step].kind);
     room.phase='party-build';
   }
   publish(room);
@@ -213,7 +219,8 @@ export function publicFork(room,key) {
     scene:party.scene,
     step:party.step,
     placed:room.phase==='party-placed' ? party.placedSlot : undefined,
-    stage:room.phase==='party-build' ? forkStages[party.step] : null,
+    stage:room.phase==='party-build' ? stagesFor(room)[party.step] : null,
+    afterDark:Boolean(room.afterDark),
     placements:party.placements.map(arr=>[...arr]),
     hand:room.phase==='party-build' && [0,1].includes(team) ? [...party.hands[team]] : undefined,
     voted:party.votes.has(key),

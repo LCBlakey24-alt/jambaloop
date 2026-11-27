@@ -203,3 +203,7 @@ Run `npm test` to verify room sizes, reconnect behavior, protected avatars and l
 - **Final sprint**: over the last 15% of the track a right answer's speed boost is worth half as much again.
 - The TV standings show a shield, a fresh turbo and a slipstream beside each name; Vince calls a blocked ram, a turbo and the final sprint.
 - Not playtested with people; the numbers are provisional.
+
+### Fork in the Tracks: After Dark (27 November 2026)
+
+An adults-only (18+) deck of dark, morbid humour for the trolley game, in `fork-after-dark.js`: 50 things nobody could bear to hit, 50 things the world would not miss, and darker scene and stage prompts. The host switches it on in the game's settings ("After Dark cards · adults only"); it is off by default, labelled 18+ in the lobby and on the TV, and never mixed with the family deck. Other games are unaffected.

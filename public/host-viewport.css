@@ -320,8 +320,13 @@
   body.playing .host-screen[data-phase="finished"] > .night-panel p { font-size: clamp(12px, 1.7dvh, 19px); margin: 0; }
   body.playing .host-screen[data-phase="finished"] :is(#post-ceremony, .results-stack) > .night-panel .actions { margin: 0; }
   body.playing .host-screen[data-phase="finished"] > .night-panel .actions { margin: 0; }
-  body.playing .host-screen[data-phase="finished"] :is(#post-ceremony, .results-stack) > .night-panel .night-standings { display: none; }
-  body.playing .host-screen[data-phase="finished"] > .night-panel .night-standings { display: none; }
+  /* The night's standings stay on screen as one compact row of names and stars. */
+  body.playing .host-screen[data-phase="finished"] .night-panel .night-standings { display: flex; align-items: center; gap: clamp(8px, 1vw, 16px); margin: 0; padding: 0; border: 0; background: none; flex: 1 1 auto; min-width: 0; }
+  body.playing .host-screen[data-phase="finished"] .night-panel .night-standings > div small { display: none; }
+  body.playing .host-screen[data-phase="finished"] .night-panel .night-standings > div .eyebrow { font-size: clamp(10px, 1.35dvh, 15px); max-width: 7em; display: block; line-height: 1.15; }
+  body.playing .host-screen[data-phase="finished"] .night-panel .night-standings ol { display: flex; flex-wrap: nowrap; gap: clamp(6px, .8vw, 12px); margin: 0; padding: 0; list-style: none; min-width: 0; overflow: hidden; }
+  body.playing .host-screen[data-phase="finished"] .night-panel .night-standings li { display: flex; align-items: baseline; gap: .35em; padding: .25em .6em; margin: 0; white-space: nowrap; font-size: clamp(12px, 1.8dvh, 20px); border-radius: 999px; }
+  body.playing .host-screen[data-phase="finished"] .night-panel .night-standings li small { display: none; }
   /* The podium cards repeat the top of the ranking beside them; the TV keeps the ranking. */
   body.playing .host-screen[data-phase="finished"] .results .podium { display: none; }
   body.playing .host-screen[data-phase="finished"] .results { overflow: hidden; align-content: start; }

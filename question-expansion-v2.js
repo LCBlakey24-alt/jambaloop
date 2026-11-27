@@ -645,7 +645,7 @@ export const extraChoiceQuestions = Object.freeze({
       "Central Print Unit"
     ],
     [
-      "Which storage unit is larger?",
+      "Which of these storage units is the largest?",
       "Gigabyte",
       "Megabyte",
       "Kilobyte",
@@ -1100,7 +1100,7 @@ export const extraOrderQuestions = Object.freeze({
   ],
   "maths": [
     [
-      "Put these whole numbers in order from smallest to largest.",
+      "Put these integers in order from smallest to largest.",
       "-5",
       "-1",
       "0",

@@ -27,7 +27,7 @@ export const levels4 = {
         ['In snooker, which colour ball is worth five points?', 'Blue', 'Pink', 'Brown', 'Green'],
         ['How many events make up the heptathlon?', 'Seven', 'Five', 'Eight', 'Ten'],
         ['In curling, what is the circular target area that teams aim their stones at called?', 'The house', 'The nest', 'The crease', 'The den'],
-        ['In cricket, what is an over called when no runs are scored off the bat from it?', 'A maiden over', 'A clean over', 'A duck over', 'A golden over'],
+        ['In cricket, what is an over called when the bowler concedes no runs from it?', 'A maiden over', 'A clean over', 'A duck over', 'A golden over'],
         ['In rowing, what is the name for the crew member who steers the boat and calls instructions?', 'Cox', 'Stroke', 'Skipper', 'Pilot'],
       ],
       5: [
@@ -91,7 +91,7 @@ export const levels4 = {
         ['Which vegetable is shredded to make the main part of a traditional coleslaw?', 'Cabbage', 'Lettuce', 'Celery', 'Leek'],
         ['Which grain is slowly cooked in stock to make a risotto?', 'Rice', 'Barley', 'Oats', 'Wheat'],
         ['Which nut is ground up to make marzipan?', 'Almond', 'Hazelnut', 'Walnut', 'Cashew'],
-        ['Which country did sushi come from?', 'Japan', 'China', 'Thailand', 'India'],
+        ['Which country is most closely associated with sushi?', 'Japan', 'China', 'Thailand', 'India'],
         ['Which pulse is the main ingredient of hummus?', 'Chickpeas', 'Lentils', 'Butter beans', 'Split peas'],
       ],
       3: [
@@ -251,7 +251,7 @@ export const levels4 = {
         ['In the Nativity story, the wise men bring gold, frankincense and which other gift?', 'Myrrh', 'Silver', 'Silk', 'Amber'],
       ],
       3: [
-        ['Which country has sent a Christmas tree to stand in Trafalgar Square each year since 1947?', 'Norway', 'Sweden', 'Denmark', 'Finland'],
+        ['Which country began sending a Christmas tree to Trafalgar Square in 1947 as thanks for wartime support?', 'Norway', 'Sweden', 'Denmark', 'Finland'],
         ['In A Christmas Carol, how many spirits visit Scrooge after the ghost of Jacob Marley?', 'Three', 'Two', 'Four', 'Five'],
         ['Which red-leaved plant from Mexico is a popular Christmas decoration?', 'Poinsettia', 'Cyclamen', 'Amaryllis', 'Begonia'],
         ['Which German Christmas fruit bread is dusted thickly with icing sugar?', 'Stollen', 'Panettone', 'Lebkuchen', 'Strudel'],

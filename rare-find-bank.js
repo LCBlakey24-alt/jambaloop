@@ -67,7 +67,7 @@ add('months-ber','General','Name a month whose name ends with the letters “ber
 add('weekdays-ts','General','Name a weekday or weekend day starting with T or S.',['Tuesday','Thursday','Saturday','Sunday']);
 add('cardinal-points','General','Name a cardinal compass direction.',['North','East','South','West'],null,{North:['N'],East:['E'],South:['S'],West:['W']});
 add('matter-basic','Science','Name a state of matter from the three-state school model.',['Solid','Liquid','Gas']);
-add('polygons-three-eight','Maths','Name a common polygon with between three and eight sides (inclusive).',['Triangle','Quadrilateral','Pentagon','Hexagon','Heptagon','Octagon'],null,{Quadrilateral:['Four-sided polygon']});
+add('polygons-three-eight','Maths','Name a common polygon with between three and eight sides (inclusive).',['Triangle','Quadrilateral','Pentagon','Hexagon','Heptagon','Octagon'],null,{Quadrilateral:['Four-sided polygon','Square','Rectangle','Rhombus','Parallelogram','Trapezium','Trapezoid','Kite'],Heptagon:['Septagon']});
 add('rainbow-colours','General','Name a colour in the traditional seven-colour rainbow mnemonic.',['Red','Orange','Yellow','Green','Blue','Indigo','Violet']);
 export const rareFindBank=Object.freeze(catalog);
 export function answerMapFor(prompt){

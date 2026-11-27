@@ -166,7 +166,7 @@ export const levels2 = {
         ['Which animal has a long trunk that it uses like a hand?', 'Elephant', 'Giraffe', 'Rhino', 'Horse'],
       ],
       2: [
-        ['Which is the largest animal known ever to have lived?', 'Blue whale', 'African elephant', 'Whale shark', 'Giraffe'],
+        ['What do honey bees collect from flowers to make honey?', 'Nectar', 'Sap', 'Dew', 'Resin'],
         ['What is a family group of lions called?', 'A pride', 'A pack', 'A herd', 'A flock'],
         ['Which is the tallest animal on land?', 'Giraffe', 'Elephant', 'Ostrich', 'Camel'],
         ['What type of animal is a frog?', 'Amphibian', 'Reptile', 'Fish', 'Mammal'],

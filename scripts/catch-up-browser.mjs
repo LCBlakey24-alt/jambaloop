@@ -67,7 +67,7 @@ try {
   assert.equal(await tv.locator('.catch-target').count(), 1);
   await tv.screenshot({ path: 'browser-screenshots/catch-up-chase-tv.png' });
   await advance();
-  await tv.locator('.catch-game[data-catch="result"] .catch-result').waitFor({ timeout: 15000 });
+  await tv.locator('.catch-game[data-catch="result"] .catch-finish').waitFor({ timeout: 15000 });
   await tv.screenshot({ path: 'browser-screenshots/catch-up-result-tv.png' });
   // Round two and the end.
   for (const phase of ['ready', 'leg', 'ready', 'leg', 'result']) { await advance(); await tv.locator(`.catch-game[data-catch="${phase}"]`).waitFor({ timeout: 15000 }); }

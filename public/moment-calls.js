@@ -131,3 +131,20 @@ export function potatoClockCall(previousMs, remainingMs) {
   if (previousMs > 20000 && remainingMs <= 20000) return 'twenty';
   return undefined;
 }
+
+/**
+ * The public question now on the TV, as [key, text], for reading aloud. Only
+ * prompts every player may already see: never a private question, a prompt
+ * hidden from someone, an answer or anything a player typed.
+ */
+export function publicPrompt(state) {
+  if (!state) return undefined;
+  const party = state.party ?? {};
+  let prompt;
+  if (state.phase === 'question' && !state.privateQuestions) prompt = state.question?.prompt;
+  else if (['spotlight-expert', 'brain-question'].includes(state.phase)) prompt = party.question?.prompt;
+  else if (['rare-write', 'top-poll'].includes(state.phase)) prompt = party.prompt;
+  else if (state.phase === 'party-write' && ['punchline', 'cards', 'samepage'].includes(state.mode)) prompt = party.prompt;
+  if (typeof prompt !== 'string' || !prompt.trim()) return undefined;
+  return [`${state.game}/${state.index}/${state.phase}/${prompt}`, prompt.replace(/_{2,}/g, 'blank')];
+}

@@ -95,3 +95,20 @@ test('Hot Potato: start, the clock marks once each, and the burn', () => {
   assert.equal(potatoClockCall(undefined, 19900), undefined, 'a reload mid-game does not shout');
   assert.equal(potatoClockCall(400, 0), undefined);
 });
+
+test('only questions every player may see are offered for reading aloud', async () => {
+  const { publicPrompt } = await import('../public/moment-calls.js');
+  const text = s => publicPrompt(s)?.[1];
+  assert.equal(text(state('classic', 'question', { question: { prompt: 'What is the capital of France?' } })), 'What is the capital of France?');
+  assert.equal(text(state('showdown', 'question', { privateQuestions: true, question: { prompt: 'Private' } })), undefined, 'private questions are never read');
+  assert.equal(text(state('classic', 'reveal', { question: { prompt: 'Q', correct: 1 } })), undefined, 'nothing is read at the reveal');
+  assert.equal(text(state('bluff', 'party-write', { party: { prompt: 'The secret prompt' } })), undefined, 'the bluffer must not hear the prompt');
+  assert.equal(text(state('potato', 'party-potato', { party: { question: { prompt: 'Holder only' } } })), undefined);
+  assert.equal(text(state('cards', 'party-write', { party: { prompt: 'The vicar blamed ____.' } })), 'The vicar blamed blank.');
+  assert.equal(text(state('brain', 'brain-question', { party: { question: { prompt: 'What comes next?' } } })), 'What comes next?');
+  const a = publicPrompt(state('classic', 'question', { question: { prompt: 'Same' } }));
+  const b = publicPrompt(state('classic', 'question', { index: 1, question: { prompt: 'Same' } }));
+  assert.notEqual(a[0], b[0], 'each question is read once, keyed by where it is asked');
+  const narrator = (await import('node:fs')).readFileSync(new URL('../public/narrator.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(narrator, /elevenlabs\.io|fetch\(/, 'reading aloud uses the device voice, no network');
+});

@@ -122,3 +122,66 @@ button.blood-seat:focus-visible { border-color: var(--moon); outline: none; }
 
 /* Cormorant's default figures are old-style; codes and counts need full-height digits. */
 .game[data-mode="bloodmoon"] { font-variant-numeric: lining-nums; }
+
+/* ---- The TV village ---- */
+.k-icon { display: inline-block; width: 1em; height: 1em; background: currentColor; -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat; flex: none; }
+.blood-stage { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(15rem, 1fr); gap: clamp(.8rem, 2vw, 2rem); flex: 1 1 auto; min-height: 0; align-items: stretch; }
+.blood-village { position: relative; min-height: clamp(16rem, 52dvh, 40rem); }
+.blood-village ul { list-style: none; margin: 0; padding: 0; position: absolute; inset: 0; }
+.blood-village li { position: absolute; transform: translate(-50%, -50%); display: grid; justify-items: center; gap: .15rem; text-align: center; width: clamp(5rem, 11vw, 9.5rem); }
+.blood-home { position: relative; display: grid; place-items: center; font-size: clamp(3rem, 9dvh, 6rem); color: #e9c98d; line-height: 1; filter: drop-shadow(0 6px 10px #0008); }
+.blood-home .blood-face { position: absolute; left: 50%; bottom: -8%; transform: translateX(-50%); font-size: clamp(.8rem, 2.1dvh, 1.3rem); }
+.blood-home .blood-face { left: auto; right: -12%; bottom: -6%; transform: none; }
+.game.host-screen[data-mode="bloodmoon"] .blood-home .blood-face .player-avatar { width: .46em; height: .46em; font-size: .2em; border: 2px solid #1b1230; }
+.blood-home .blood-face { font-size: inherit; line-height: 0; }
+.blood-village li strong { font-size: clamp(.95rem, 2.3dvh, 1.5rem); color: #fff; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: .5em; }
+.blood-village li[data-out] .blood-home { color: #7d7391; }
+.blood-village li[data-out] strong { color: #a99fbd; text-decoration: line-through; }
+.blood-village li[data-away] { opacity: .55; }
+.blood-village[data-size="medium"] li { width: clamp(4.4rem, 9vw, 8rem); }
+.blood-village[data-size="medium"] .blood-home { font-size: clamp(2.5rem, 7.4dvh, 4.8rem); }
+.blood-village[data-size="large"] li { width: clamp(3.8rem, 7.4vw, 6.6rem); }
+.blood-village[data-size="large"] .blood-home { font-size: clamp(2rem, 5.8dvh, 3.8rem); }
+.blood-village[data-size="large"] li strong { font-size: clamp(.8rem, 1.8dvh, 1.15rem); }
+.blood-green { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: grid; justify-items: center; gap: .3rem; text-align: center; width: 46%; }
+.blood-green > .k-icon { font-size: clamp(2.6rem, 9dvh, 5.6rem); color: #ff9d4d; filter: drop-shadow(0 0 22px #ff7a2f88); }
+.blood-green .blood-progress { margin: 0; }
+.blood-talk { margin: 0; font-size: clamp(1.1rem, 3dvh, 2rem); font-weight: 700; color: #ffe2b8; text-wrap: balance; }
+@media (prefers-reduced-motion: no-preference) {
+  .blood-green > .k-icon { animation: blood-flicker 2.4s ease-in-out infinite alternate; }
+  @keyframes blood-flicker { from { transform: scale(1); opacity: .9; } to { transform: scale(1.06); opacity: 1; } }
+}
+/* Night: the fire burns low and the houses go dark. */
+.blood-game[data-blood="night"] .blood-home { color: #6f6a9c; }
+.blood-game[data-blood="night"] .blood-green > .k-icon { color: #b45a3a; filter: none; }
+.blood-chronicle { display: flex; flex-direction: column; gap: clamp(.5rem, 1.4dvh, 1rem); min-height: 0; padding: clamp(.7rem, 2dvh, 1.3rem); border: 1px solid #ffffff22; border-radius: 16px; background: #120b22cc; }
+.blood-stats { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+.blood-stats > div { display: grid; justify-items: center; gap: .1rem; padding: .5rem; border-radius: 12px; background: #ffffff0d; text-align: center; }
+.blood-stats .k-icon { font-size: clamp(1.4rem, 3.6dvh, 2.2rem); }
+.blood-stats strong { font-size: clamp(1.8rem, 5.4dvh, 3.4rem); line-height: 1; color: #fff; }
+.blood-stats span { font-size: clamp(.8rem, 1.9dvh, 1.15rem); color: #cfc3e6; }
+.blood-stats [data-kind="vampires"] { color: #ff8c93; }
+.blood-stats [data-kind="village"] { color: #e9c98d; }
+.blood-chronicle h2 { margin: 0; font-size: clamp(1rem, 2.4dvh, 1.5rem); color: #ffe2b8; }
+.blood-chronicle ol { list-style: none; margin: 0; padding: 0; display: grid; gap: .45rem; overflow: auto; scrollbar-width: thin; }
+.blood-chronicle li { display: flex; gap: .6rem; align-items: center; padding: .45rem .6rem; border-radius: 10px; background: #ffffff0d; font-size: clamp(.9rem, 2.1dvh, 1.3rem); color: #efe8ff; }
+.blood-chronicle li .k-icon { font-size: 1.5em; color: #ff8c93; }
+.blood-chronicle li[data-how="banished"] .k-icon { color: #9fe3c0; }
+.blood-chronicle li small { display: block; font-size: .72em; letter-spacing: .08em; text-transform: uppercase; color: #b6a9d1; }
+.blood-quiet { margin: 0; color: #b6a9d1; font-size: clamp(.9rem, 2.1dvh, 1.3rem); }
+
+/* Dawn and verdict news sit by the fire on the TV, so the village stays in view. */
+.blood-green .blood-news { margin: 0; padding: clamp(.5rem, 1.6dvh, 1rem) clamp(.7rem, 1.6vw, 1.4rem); width: max-content; max-width: 150%; }
+.blood-green .blood-news h2 { font-size: clamp(1.2rem, 3.6dvh, 2.3rem); margin: 0; }
+.blood-green .blood-news p { font-size: clamp(.95rem, 2.3dvh, 1.4rem); margin: .2em 0 0; }
+.blood-green .blood-news .blood-face { display: none; }
+.blood-green:has(.blood-news) > .k-icon { font-size: clamp(1.8rem, 5dvh, 3.2rem); }
+
+/* The stage has one fixed height so the host's button never leaves the TV; a long story scrolls inside its panel. */
+.blood-stage { height: clamp(16rem, 55dvh, 44rem); flex: none; }
+.blood-village { min-height: 0; height: 100%; }
+.blood-chronicle { height: 100%; overflow: hidden; box-sizing: border-box; }
+.blood-chronicle ol { flex: 1 1 auto; min-height: 0; align-content: start; }
+.blood-home { font-size: clamp(3.2rem, 10.5dvh, 6.6rem); }
+.game.host-screen[data-mode="bloodmoon"] .blood-home .blood-face .player-avatar { width: .5em; height: .5em; font-size: .22em; background: #1b1230; }
+.blood-village[data-size="large"] li .blood-tag { display: none; }

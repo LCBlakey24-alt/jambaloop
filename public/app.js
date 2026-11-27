@@ -1620,17 +1620,27 @@ function raceCommentary(before, next) {
   if (first && second && first.distance > length * 0.4 && first.distance - second.distance < length * 0.015) call('close', 20000);
 }
 
+/** The waiting room has the house music; after that, the game in view has its own. */
+function roomMusic(s) {
+  if (s.phase === 'finished') return;
+  if (s.phase !== 'lobby') return playMusic('game-' + s.mode, { quiet: true, fallback: 'lobby' });
+  if (s.gathering) return playMusic('lobby');
+  playMusic('game-' + (s.picker?.mode ?? s.mode), { fallback: 'lobby' });
+}
+
 /** The TV's recorded effects and music for each moment of the show. */
 function soundMoments(before, next) {
   const moved = before.phase !== next.phase || before.index !== next.index;
   // Music: the lobby theme under the lobby and carousel, the winners' theme at the end.
-  if (next.phase === 'lobby') playMusic('lobby');
+  // Each game has its own theme: it plays as the carousel lands on that game,
+  // and carries on quietly underneath the whole game.
+  if (next.phase === 'lobby') roomMusic(next);
   else if (next.phase === 'finished' && before.phase !== 'finished') {
     playMusic('finale', { loop: false });
     playSfx(sound, 'fanfare', { volume: 0.5 });
     playSfx(sound, 'cheer', { volume: 0.45, at: 0.6 });
   } else if (next.decider && next.phase === 'question') playMusic('decider');
-  else if (next.phase !== 'finished') stopMusic();
+  else if (next.phase !== 'finished') roomMusic(next);
   if (!moved) return;
   // The first question arrives under the title sting, so no whoosh there.
   if (next.phase === 'question' && next.index > 0) playSfx(sound, 'whoosh', { volume: 0.4 });
@@ -2445,7 +2455,7 @@ document.addEventListener('click', async event => {
         playCue(sound, state.mode, 'preview');
         playSfx(sound, 'ui-switch', { volume: 0.5 });
         preloadSfx(sound, ['whoosh', 'lockin', 'drumroll', 'reveal', 'correct', 'fanfare', 'cheer', 'bell', 'wheel', 'sizzle', 'ui-tap', 'dice-shake', 'dice-throw-1', 'dice-throw-2', 'card-place-1', 'card-slide']);
-        if (state.phase === 'lobby') playMusic('lobby');
+        roomMusic(state);
       } else stopMusic();
       render(state);
       updateTimer();

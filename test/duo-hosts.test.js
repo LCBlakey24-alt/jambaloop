@@ -54,3 +54,10 @@ test('the Jambaloop welcome: both hosts, alternating, each line paired with a TV
   assert.ok(/phone/i.test(welcomeScript.map(([, text]) => text).join(' ')), 'explains phones as controllers');
   assert.ok(/captain/i.test(welcomeScript.map(([, text]) => text).join(' ')), 'explains the captain');
 });
+
+test('every game has its own music theme, with the house music as the fallback', () => {
+  for (const [id] of modes) assert.ok(existsSync(new URL(`../public/audio/music/game-${id}.mp3`, import.meta.url)), `${id} has a theme`);
+  const app = readFileSync(new URL('../public/app.js', import.meta.url), 'utf8');
+  assert.match(app, /playMusic\('game-' \+ \(s\.picker\?\.mode \?\? s\.mode\), \{ fallback: 'lobby' \}\)/, 'the carousel plays the theme of the game in view');
+  assert.match(app, /playMusic\('game-' \+ s\.mode, \{ quiet: true, fallback: 'lobby' \}\)/, 'the theme carries on quietly during play');
+});

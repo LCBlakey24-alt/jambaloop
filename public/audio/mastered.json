@@ -1,9 +1,4 @@
 {
- "duo/bloodmoon.mp3": {
-  "tempo": 1.08,
-  "loudness": -15.4,
-  "seconds": 27.17
- },
  "duo/bluff.mp3": {
   "tempo": 1.08,
   "loudness": -15.5,
@@ -58,71 +53,6 @@
   "tempo": 1.08,
   "loudness": -15.5,
   "seconds": 12.04
- },
- "duo/react-blood-bitten-1.mp3": {
-  "tempo": 1.08,
-  "loudness": -15.5,
-  "seconds": 5.93
- },
- "duo/react-blood-bitten-2.mp3": {
-  "tempo": 1.08,
-  "loudness": -15.5,
-  "seconds": 7.5
- },
- "duo/react-blood-caught-1.mp3": {
-  "tempo": 1.08,
-  "loudness": -15.4,
-  "seconds": 5.09
- },
- "duo/react-blood-day-1.mp3": {
-  "tempo": 1.08,
-  "loudness": -15.4,
-  "seconds": 7.68
- },
- "duo/react-blood-day-2.mp3": {
-  "tempo": 1.08,
-  "loudness": -15.5,
-  "seconds": 5.67
- },
- "duo/react-blood-night-1.mp3": {
-  "tempo": 1.08,
-  "loudness": -15.5,
-  "seconds": 5.09
- },
- "duo/react-blood-night-2.mp3": {
-  "tempo": 1.08,
-  "loudness": -15.5,
-  "seconds": 6.03
- },
- "duo/react-blood-nobody-1.mp3": {
-  "tempo": 1.08,
-  "loudness": -15.5,
-  "seconds": 5.04
- },
- "duo/react-blood-safe-1.mp3": {
-  "tempo": 1.08,
-  "loudness": -15.4,
-  "seconds": 5.46
- },
- "duo/react-blood-vampires-1.mp3": {
-  "tempo": 1.08,
-  "loudness": -15.6,
-  "seconds": 6.48
- },
- "duo/react-blood-village-1.mp3": {
-  "tempo": 1.08,
-  "loudness": -15.5,
-  "seconds": 7.97
- },
- "duo/react-blood-vote-1.mp3": {
-  "tempo": 1.08,
-  "loudness": -15.4,
-  "seconds": 8.12
- },
- "duo/react-blood-wrong-1.mp3": {
-  "tempo": 1.08,
-  "loudness": -15.5,
-  "seconds": 7.44
  },
  "duo/react-everybody-1.mp3": {
   "tempo": 1.08,
@@ -962,5 +892,180 @@
   "loudness": null,
   "seconds": 0.3,
   "note": "Kenney Boardgame Pack, left at source level"
+ },
+ "duo/bloodmoon.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.6,
+  "seconds": 27.45
+ },
+ "duo/react-count-bitten-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -16.8,
+  "seconds": 4.86
+ },
+ "duo/react-count-bitten-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -16.2,
+  "seconds": 4.13
+ },
+ "duo/react-count-bitten-3.mp3": {
+  "tempo": 1.08,
+  "loudness": -16,
+  "seconds": 5.25
+ },
+ "duo/react-count-bitten-4.mp3": {
+  "tempo": 1.08,
+  "loudness": -16,
+  "seconds": 2.72
+ },
+ "duo/react-count-caught-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -16,
+  "seconds": 4.75
+ },
+ "duo/react-count-caught-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -16,
+  "seconds": 4.44
+ },
+ "duo/react-count-caught-3.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.9,
+  "seconds": 5.17
+ },
+ "duo/react-count-day-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -16.2,
+  "seconds": 4.28
+ },
+ "duo/react-count-day-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -16.9,
+  "seconds": 7.16
+ },
+ "duo/react-count-day-3.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.6,
+  "seconds": 5.54
+ },
+ "duo/react-count-day-4.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.7,
+  "seconds": 4.13
+ },
+ "duo/react-count-night-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.8,
+  "seconds": 4.21
+ },
+ "duo/react-count-night-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -16.1,
+  "seconds": 3.53
+ },
+ "duo/react-count-night-3.mp3": {
+  "tempo": 1.08,
+  "loudness": -16.2,
+  "seconds": 3.45
+ },
+ "duo/react-count-night-4.mp3": {
+  "tempo": 1.08,
+  "loudness": -16,
+  "seconds": 5.62
+ },
+ "duo/react-count-night-5.mp3": {
+  "tempo": 1.08,
+  "loudness": -16.3,
+  "seconds": 4.94
+ },
+ "duo/react-count-nobody-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.7,
+  "seconds": 3.76
+ },
+ "duo/react-count-nobody-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 3.47
+ },
+ "duo/react-count-onevampire-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -16,
+  "seconds": 5.09
+ },
+ "duo/react-count-roles-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -16.3,
+  "seconds": 5.17
+ },
+ "duo/react-count-roles-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -16.8,
+  "seconds": 3.4
+ },
+ "duo/react-count-safe-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -16.2,
+  "seconds": 5.59
+ },
+ "duo/react-count-safe-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -16.2,
+  "seconds": 4.65
+ },
+ "duo/react-count-safe-3.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.7,
+  "seconds": 5.69
+ },
+ "duo/react-count-vampires-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -16.1,
+  "seconds": 6.64
+ },
+ "duo/react-count-vampires-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -16.6,
+  "seconds": 4.78
+ },
+ "duo/react-count-village-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.9,
+  "seconds": 6.87
+ },
+ "duo/react-count-village-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.8,
+  "seconds": 5.54
+ },
+ "duo/react-count-vote-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.6,
+  "seconds": 4.28
+ },
+ "duo/react-count-vote-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -16.2,
+  "seconds": 4.94
+ },
+ "duo/react-count-vote-3.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.8,
+  "seconds": 3.32
+ },
+ "duo/react-count-wrong-1.mp3": {
+  "tempo": 1.08,
+  "loudness": -16.3,
+  "seconds": 4.6
+ },
+ "duo/react-count-wrong-2.mp3": {
+  "tempo": 1.08,
+  "loudness": -16.3,
+  "seconds": 4.21
+ },
+ "duo/react-count-wrong-3.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.6,
+  "seconds": 5.02
  }
 }

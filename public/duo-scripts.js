@@ -11,6 +11,8 @@ export const hosts = {
   baz: { name: 'Baz', voice: '9rR45HW0vcBmpCbkc4m9' },     // Knockout ringside lead: "Nathaniel – Live Football Commentator"
   clive: { name: 'Clive', voice: '1TE7ou3jyxHsyRehUuMB' }, // Knockout ex-fighter pundit: "Eastend Steve"
   vince: { name: 'Vince', voice: '8oLiG8m8nM6NUEzIvzhz' }, // Quiz Race commentary box: "DJ Wibbly"
+  // Bloodmoon's narrator: an original character with a Transylvanian accent, not an impression of any actor or film.
+  vesper: { name: 'Count Vesper', voice: '5BZv9Z02hAMUmkkcd5Hj' }, // "Paul – Engaging, Friendly and Mysterious" (Romanian)
 };
 /** The regular presenters; guests take over for particular games. */
 export const presenters = ['max', 'poppy'];
@@ -123,12 +125,11 @@ export const duoIntros = {
     ['poppy', '[warmly] So dig deep, and find a gem.'],
   ],
   bloodmoon: [
-    ['max', '[mysterious] Welcome to Bloodmoon.'],
-    ['poppy', '[whispers] Every phone gets a secret role. A few of you are vampires.'],
-    ['max', '[cheerfully] Each night, everyone chooses in secret on their own phone. The vampires pick someone to bite.'],
-    ['poppy', '[playfully] Each day, you all talk it over, and vote to banish a suspect.'],
-    ['max', '[nervous] Poppy, why are you looking at my neck?'],
-    ['poppy', '[laughs] No reason. Trust nobody.'],
+    ['poppy', '[nervous] This next one is not really our sort of game.'],
+    ['max', '[whispers] So we are handing over to a friend. From Transylvania.'],
+    ['vesper', '[slow, ominous] Good evening. I am Count Vesper. Most of you are villagers. A few... are vampires.'],
+    ['poppy', '[nervous] And, um... what happens at night?'],
+    ['vesper', '[whispers] At night, you choose in silence. By day, you talk... and vote to banish one of your own. Trust no one.'],
   ],
   wayoff: [
     ['poppy', '[excited] Welcome to Way Off!'],
@@ -344,38 +345,63 @@ export const raceCalls = {
 // Bloodmoon: Max and Poppy narrate the public beats only. Nothing here names
 // a player or a role; every line is fixed text recorded in advance.
 export const bloodmoonCalls = {
+  roles: [
+    ['vesper', '[slow, ominous] Look at your phone. Learn what you are. [whispers] And tell no one.'],
+    ['vesper', '[grave] Your fate has been dealt. Keep it close.'],
+  ],
   night: [
-    [['max', '[whispers] Night falls on the village.'], ['poppy', '[mysterious] Eyes on your own phone, everyone. Make your choice.']],
-    [['poppy', '[whispers] The moon is up. Phones close to your chest.'], ['max', '[nervous] And no peeking at your neighbour.']],
+    ['vesper', '[slow, ominous] Night falls on the village. [whispers] Make your choice.'],
+    ['vesper', '[whispers] The moon rises. Eyes on your own phone.'],
+    ['vesper', '[ominous] Darkness. And something in it is hungry.'],
+    ['vesper', '[slow] Another night. [whispers] Choose carefully. Someone is choosing you.'],
+    ['vesper', '[whispers] Hush now. The village sleeps. Not all of it.'],
   ],
   bitten: [
-    [['poppy', '[gasps] Oh no. Somebody did not make it through the night.'], ['max', '[serious] The vampires have struck.']],
-    [['max', '[sighs] Dawn breaks, and the village is one short.'], ['poppy', '[sad] They will be missed. Probably.']],
+    ['vesper', '[grave] Dawn breaks. And one of you... did not wake.'],
+    ['vesper', '[slow, ominous] The vampires have fed. The village is one fewer.'],
+    ['vesper', '[sighs] Another empty house. How sad. [whispers] How delicious.'],
+    ['vesper', '[grave] Morning comes, but not for everyone.'],
   ],
   safe: [
-    [['max', '[relieved] Dawn breaks, and everyone is still here!'], ['poppy', '[playfully] Somebody had a very lucky night.']],
+    ['vesper', '[surprised] Dawn. And every one of you still breathes. [ominous] For now.'],
+    ['vesper', '[slow] Nobody was taken in the night. Someone was well guarded.'],
+    ['vesper', '[amused] A quiet night. The vampires go hungry. They will not like that.'],
   ],
   day: [
-    [['poppy', '[excited] Right, village. Who is a vampire? Talk it over!'], ['max', '[playfully] Accuse, defend, and bluff your socks off.']],
-    [['max', '[cheerfully] Time to talk. Who has been acting strangely?'], ['poppy', '[laughs] Apart from Max.']],
+    ['vesper', '[ominous] The sun is up. Now... who among you is a vampire?'],
+    ['vesper', '[slow] Talk. Accuse. Defend yourselves. [whispers] One of you is lying.'],
+    ['vesper', '[grave] Look around the fire. Somebody here is not what they seem.'],
+    ['vesper', '[amused] Such friendly faces. Which one has blood on its teeth?'],
   ],
   vote: [
-    [['max', '[serious] Time to vote. Who will the village banish?'], ['poppy', '[whispers] Choose on your phone. A tie, and nobody goes.']],
+    ['vesper', '[grave] It is time. Vote. Who will the village banish?'],
+    ['vesper', '[slow, ominous] Cast your vote on your phone. A tie, and nobody leaves.'],
+    ['vesper', '[whispers] Decide. And pray that you are right.'],
   ],
   caught: [
-    [['poppy', '[shouting, excited] They got one! A vampire is out!'], ['max', '[cheerfully] Well played, village.']],
+    ['vesper', '[surprised] A vampire! You have caught one. [ominous] How unfortunate.'],
+    ['vesper', '[grave] Banished. And it was a vampire. Well done, village.'],
+    ['vesper', '[slow] One of mine is gone. You are sharper than you look.'],
   ],
   wrong: [
-    [['max', '[groans] Oh dear. That was not a vampire.'], ['poppy', '[playfully] Somewhere, a vampire is smiling.']],
+    ['vesper', '[sighs] Banished. But that was no vampire. [amused] What a pity.'],
+    ['vesper', '[slow, ominous] An innocent, cast out. The vampires are grateful.'],
+    ['vesper', '[whispers] Wrong. Somewhere in this room, somebody is smiling.'],
   ],
   nobody: [
-    [['poppy', '[surprised] Nobody is banished!'], ['max', '[nervous] Which means the vampires get another night.']],
+    ['vesper', '[amused] Nobody is banished. The village cannot agree.'],
+    ['vesper', '[ominous] No decision. Then night will decide for you.'],
+  ],
+  onevampire: [
+    ['vesper', '[grave] One vampire remains. [whispers] Find it, before it finds you.'],
   ],
   village: [
-    [['max', '[shouting, excited] The village wins! Every vampire is gone!'], ['poppy', '[cheerfully] The sun is up, and you can all sleep soundly.']],
+    ['vesper', '[sighs] The last vampire is gone. The village wins. [slow] Sleep well. If you can.'],
+    ['vesper', '[grave] It is over. The sun rises on a safe village. I shall be going.'],
   ],
   vampires: [
-    [['poppy', '[dramatic] The vampires win! The night belongs to them.'], ['max', '[laughs] I knew it. I absolutely knew it.']],
+    ['vesper', '[laughs darkly] The vampires win. The night belongs to us.'],
+    ['vesper', '[slow, ominous] Too late, village. There are more of us than of you. [whispers] Goodnight.'],
   ],
 };
 
@@ -460,7 +486,7 @@ export const reactionTakes = Object.fromEntries([
   ...Object.entries(reactions).flatMap(([kind, lines]) => lines.map((line, index) => [`react-${kind}-${index + 1}`, [line]])),
   ...Object.entries(knockoutReactions).flatMap(([kind, takes]) => takes.map((lines, index) => [`react-ko-${kind}-${index + 1}`, lines])),
   ...Object.entries(raceCalls).flatMap(([kind, lines]) => lines.map((line, index) => [`react-race-${kind}-${index + 1}`, [line]])),
-  ...Object.entries(bloodmoonCalls).flatMap(([kind, takes]) => takes.map((lines, index) => [`react-blood-${kind}-${index + 1}`, lines])),
+  ...Object.entries(bloodmoonCalls).flatMap(([kind, lines]) => lines.map((line, index) => [`react-count-${kind}-${index + 1}`, [line]])),
   ...[['board', boardCalls], ['wayoff', wayoffCalls], ['catch', catchupCalls], ['close', closeCalls]].flatMap(([prefix, calls]) =>
     Object.entries(calls).flatMap(([kind, lines]) => lines.map((line, index) => [`react-${prefix}-${kind}-${index + 1}`, [line]]))),
 ]);

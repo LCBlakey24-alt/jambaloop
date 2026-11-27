@@ -17,6 +17,7 @@
 - Do not add paid services/dependencies, age-restricted content, external login systems or persistent user-generated secrets without explicit review.
 - New game designs **are not shipped**. In particular: [Secret Suspects #42](https://github.com/LCBlakey24-alt/jambaloop/issues/42) is planning-only. [Bloodmoon #43](https://github.com/LCBlakey24-alt/jambaloop/issues/43) was approved by the owner on 26 November 2026 and is implemented (engine `bloodmoon.js`, view `public/bloodmoon-view.js`); it has automated tests but **no real-group playtest yet**, so role balance and timings are provisional. Read [Bloodmoon brief](docs/BLOODMOON_COUNCIL_DESIGN.md) before implementation. Keep the two distinct from Spot the Bluff.
 - All art, narration and card/question copy must be original or properly licensed, not replications of another show's branded assets.
+- **Third-party asset packs (owner guidance, 27 November 2026):** use them where they are relevant to that game or screen and genuinely improve it, and nowhere else. Do not spread one pack's look across every game: each game keeps its own identity. Record every pack's source and licence in [docs/BRANDING_ASSETS.md](docs/BRANDING_ASSETS.md) before using it, and prefer CC0.
 - Expand and fact-check content regularly, avoiding immediate repeats; use honest source and answer provenance.
 
 ## Voiceover future roadmap (do not implement during current QA sprint)

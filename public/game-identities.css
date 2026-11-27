@@ -277,4 +277,6 @@ body.playing .game.player-only :is([data-action="advance"], [data-action="clock"
 }
 @media (max-width: 760px) and (max-height: 600px) {
   body.playing .game.player-only[data-phase="reveal"] .question-panel .round-status { display: none; }
+  /* The dice or board roll is on the TV; the smallest phones need the room for answers. */
+  body.playing .game.player-only .question-panel .roll-recap { display: none; }
 }

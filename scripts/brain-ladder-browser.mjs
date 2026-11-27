@@ -39,7 +39,7 @@ try {
   await setup.locator('.game-tile[data-mode="brain"]').click();
   assert.match(await setup.locator('#game-preview').innerText(),/Brain Ladder/i);
   await setup.locator('#game-preview [data-action="party"]').click();
-  await setup.locator('[data-picker-tv] [data-action="picker-settings"]').click();
+  await setup.locator('[data-action="party-skip"]').click(); await setup.locator('[data-picker-tv] [data-action="picker-settings"]').click();
   const form=setup.locator('#configure-form');
   assert.equal(await form.locator('input[name="mode"]:checked').inputValue(),'brain');
   assert.equal(await form.locator('select[name="count"]').isVisible(),true);

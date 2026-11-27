@@ -27,7 +27,7 @@ try {
     const create=await creating;
     assert.equal(create.status(),201,await create.text());
     const {code,host:hostKey}=await create.json();
-    await host.locator('[data-picker-tv] [data-action="picker-settings"]').click();
+    await host.locator('[data-action="party-skip"]').click(); await host.locator('[data-picker-tv] [data-action="picker-settings"]').click();
     const form=host.locator('#configure-form');
     assert.equal(await form.locator('input[name="playStyle"][value="individual"]').isDisabled(),true);
     assert.equal(await form.locator('input[name="playStyle"][value="teams"]').isChecked(),true);

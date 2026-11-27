@@ -27,6 +27,17 @@ test('a lobby-first room: the captain browses, everyone follows, playing a game 
   const { game } = await state(room.host);
   assert.deepEqual((await state(guest.key)).picker, { mode: 'classic', version: 0 }, 'everyone sees the carousel');
 
+  // The room opens as a waiting room: no browsing until someone starts the party.
+  assert.equal((await state(guest.key)).gathering, true, 'phones know the party has not started');
+  assert.equal((await call(path + '/browse', captain.key, { mode: 'knockout', game })).status, 409, 'no browsing in the waiting room');
+  assert.equal((await call(path + '/welcome', guest.key, { action: 'party', game })).status, 403, 'only the captain or TV starts the party');
+  assert.equal((await call(path + '/welcome', captain.key, { action: 'party', game })).status, 204);
+  const started = await state(guest.key);
+  assert.equal(started.gathering, undefined, 'the waiting room is over');
+  assert.equal(started.welcome, 'playing', 'starting the party plays the welcome');
+  assert.equal((await call(path + '/welcome', room.host, { action: 'party', game })).status, 409, 'it only starts once');
+  assert.equal((await call(path + '/welcome', room.host, { action: 'end', game })).status, 204);
+
   assert.equal((await call(path + '/browse', guest.key, { mode: 'wheel', game })).status, 403, 'only the captain or TV drives');
   assert.equal((await call(path + '/browse', captain.key, { mode: 'nope', game })).status, 400);
   assert.equal((await call(path + '/browse', captain.key, { mode: 'knockout', game })).status, 204);
@@ -47,6 +58,23 @@ test('a lobby-first room: the captain browses, everyone follows, playing a game 
   assert.equal((await call(path + '/browse', captain.key, { mode: 'wheel', game })).status, 409, 'browsing needs the carousel open');
   assert.equal((await call(path + '/browse', captain.key, { open: true, game })).status, 204);
   assert.equal((await state(guest.key)).picker.mode, 'potato', 'reopening starts on the current game');
+});
+
+test('the party cannot start in an empty room, a returning room is asked, and the intro can be skipped', async () => {
+  const { data: room } = await call('', undefined, { mode: 'classic', category: 'mixed', count: 5, seconds: 0, picker: true });
+  const path = '/' + room.code;
+  const { game } = (await call(path, room.host)).data;
+  assert.equal((await call(path + '/welcome', room.host, { action: 'party', game })).status, 409, 'nobody is here yet');
+  await call(path + '/join', undefined, { name: 'Ada', returning: true });
+  assert.equal((await call(path + '/welcome', room.host, { action: 'party', game })).status, 204);
+  assert.equal((await call(path, room.host)).data.welcome, 'asking', 'everyone has played before, so the room is asked');
+
+  const { data: quick } = await call('', undefined, { mode: 'classic', category: 'mixed', count: 5, seconds: 0, picker: true });
+  const quickGame = (await call('/' + quick.code, quick.host)).data.game;
+  assert.equal((await call('/' + quick.code + '/browse', quick.host, { open: true, skipIntro: true, game: quickGame })).status, 204);
+  const open = (await call('/' + quick.code, quick.host)).data;
+  assert.equal(open.gathering, undefined);
+  assert.equal(open.welcome, undefined, 'straight to the carousel, no welcome');
 });
 
 test('rooms made without the carousel behave as before', async () => {

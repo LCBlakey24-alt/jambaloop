@@ -26,7 +26,7 @@ import { bloodmoonCalls, boardCalls, catchupCalls, closeCalls, knockoutReactions
 import { openWelcome } from './welcome-show.js';
 import { playChiptune, playCue, playTick, playTowerImpact } from './sound-cues.js';
 import { duckMusic, playMusic, playSfx, preloadSfx, stopMusic } from './sfx.js';
-import { bindPickerSwipe, movePicker, pickerPhone, pickerTv, stepMode } from './lobby-picker.js';
+import { bindPickerSwipe, gatherPhone, gatherTv, movePicker, pickerPhone, pickerTv, stepMode } from './lobby-picker.js';
 import { knockoutLadder, phoneHearts, playKnockout, rememberLadder, shatterPhoneHeart } from './knockout-ladder.js';
 import { boardLengths, boardRoute, boardDuration, durationLabel, suggestedTurnCap, boardRequiresChoice, boardPathChoices } from './board-route.js';
 import {teamPlayModes, defaultPlayStyle} from './team-play.js';
@@ -1044,6 +1044,8 @@ function render(s) {
     body = partyView(s, { host, canControl, escape, icons, reply: partyReply });
     if (s.phase === 'party-potato' && pauseButton) body = `<div class="round-pace">${pauseButton}</div>` + body;
     if (s.phase === 'party-potato' && !host) timer = '<span class="timer potato-timer" id="timer"></span>';
+  } else if (s.phase === 'lobby' && s.picker && s.gathering) {
+    body = host ? gatherTv(s, { escape }) : gatherPhone(s, { escape, canDrive: s.isCaptain });
   } else if (s.phase === 'lobby' && s.picker) {
     body = host ? pickerTv(s, { escape, canDrive: true }) : pickerPhone(s, { escape, canDrive: s.isCaptain });
   } else if (s.phase === 'lobby') {
@@ -1219,7 +1221,7 @@ function render(s) {
   const shownMode = s.phase === 'lobby' && s.picker ? s.picker.mode : s.mode;
   app.innerHTML = `<section class="game ${host ? 'host-screen' : 'player-only'} ${immersive ? 'immersive' : ''} ${host && tvFocus ? 'tv-focus' : ''} ${enter ? 'phase-enter' : ''}" data-deck-key="${phaseKey}" data-phase="${s.phase}" data-paused="${Boolean(s.pausedAt)}" data-mode="${shownMode}" data-result="${result}" style="${modeVariables(shownMode)}">${sceneBackdrop(shownMode, enter && (s.phase === 'finished' || result === 'win'))}<div class="game-top">
     <div class="screen-identity"><span class="screen-mode-icon" aria-hidden="true">${icons(mode[3])}</span>
-      <div><div class="screen-mode-title">${s.phase === 'lobby' && s.picker ? 'Pick a game' : escape(s.quizTitle || (s.mode === 'classic' ? categoryName(s.category) : modeName(s.mode)))}</div>
+      <div><div class="screen-mode-title">${s.phase === 'lobby' && s.picker ? (s.gathering ? 'Join the party' : 'Pick a game') : escape(s.quizTitle || (s.mode === 'classic' ? categoryName(s.category) : modeName(s.mode)))}</div>
       <div class="screen-status">${host && s.phase === 'lobby' && !s.picker && showIdentity(s.mode) ? `<span class="show-studio-label">${showIdentity(s.mode).studio}</span>` : ''}<span class="phase-caption">${caption}</span>${s.afterDark && s.phase !== 'lobby' ? '<span class="after-hours-tag">AFTER HOURS 18+</span>' : ''}
       ${s.isCaptain && s.phase !== 'lobby' ? '<span class="captain-tag">★ Captain</span>' : ''}${boost}
       ${host && ['lobby','finished'].includes(s.phase) ? '<span class="studio-publisher">A ROOKIE QUEST GAMES PRODUCTION</span>' : ''}
@@ -1276,8 +1278,7 @@ function render(s) {
   // Catch Up: a frozen side's buttons come back by themselves when the freeze ends.
   if (s.mode === 'catchup' && s.party?.frozenFor > 0) setTimeout(() => app.querySelectorAll('.catch-button[disabled]').forEach(button => { button.disabled = false; }), s.party.frozenFor + 60);
   if(s.mode==='sketch')paintSketchBoard(s.party);
-  // The welcome plays once the room has players and a captain to hand over to.
-  if (host && s.phase === 'lobby' && s.picker && s.playerCount > 0 && s.captainName && !s.welcome && !welcomedRooms().includes(s.code)) requestWelcome();
+  // The welcome plays when the TV or the captain presses "Start the party".
   if (welcome && s.phase !== 'lobby') closeWelcome();
   if (s.phase === 'lobby' && s.picker) bindPickerSwipe(app, direction => stepPicker(direction));
   if (host && s.phase === 'lobby') stageFor(app.querySelector('.game'), shownMode); else hideStage();
@@ -1655,8 +1656,6 @@ function showGameError(error) {
 // Max and Poppy's welcome to Jambaloop. The room holds its state (playing,
 // asking or skipping) so the TV, the captain's phone and everyone else agree.
 let welcome;
-const welcomedKey = 'jambaloop-welcomed';
-const welcomedRooms = () => { try { return JSON.parse(sessionStorage.getItem(welcomedKey) ?? '[]'); } catch { return []; } };
 // A phone that has seen the welcome or played a game is a returning player.
 const returningKey = 'jambaloop-returning';
 const isReturning = () => { try { return localStorage.getItem(returningKey) === '1'; } catch { return false; } };
@@ -1665,13 +1664,6 @@ const markReturning = () => { try { localStorage.setItem(returningKey, '1'); } c
 function welcomeAction(action) {
   if (!session || !state) return Promise.resolve();
   return api('/' + session.code + '/welcome', { action, game: state.game }).catch(() => {});
-}
-
-/** TV: start the welcome once per room (or offer a skip if everyone's been before). */
-function requestWelcome() {
-  if (!session?.host || !state) return;
-  try { sessionStorage.setItem(welcomedKey, JSON.stringify([...welcomedRooms(), state.code].slice(-20))); } catch {}
-  welcomeAction(state.everyoneReturning ? 'ask' : 'start');
 }
 
 function welcomeOverlay() {
@@ -2378,6 +2370,8 @@ document.addEventListener('click', async event => {
   if (action === 'close') return dialog.close();
   if (action === 'night' && session && state) return openDialog('night');
   if (action === 'leave') return leave();
+  if (action === 'party-start' && session && state?.gathering) { button.disabled = true; return api('/' + session.code + '/welcome', { action: 'party', game: state.game }).catch(error => { button.disabled = false; showGameError(error); }); }
+  if (action === 'party-skip' && session && state?.gathering) { button.disabled = true; return api('/' + session.code + '/browse', { open: true, skipIntro: true, game: state.game }).catch(error => { button.disabled = false; showGameError(error); }); }
   if (action === 'welcome-play' && session?.host && !state?.welcome) return welcomeAction('start');
   if (action === 'welcome-skip' && session) return welcomeAction('skip');
   if (action === 'welcome-tour' && session) return welcomeAction('tour');

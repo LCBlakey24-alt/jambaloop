@@ -139,7 +139,8 @@ app.post('/api/rooms', async (req, res) => {
   const room = { code, host, game: 1, revision: 0, clients: new Map(), seen: new Set(), players: new Map(), waiting: new Map(), liveConnections: new Map(), lastSeen: new Map(), night: { queue: [], played: 0, version: 0, results: [], standings: [] }, answers: new Map(), updated: Date.now() };
   resetGame(room, settings);
   // Lobby-first hosting: the room opens on a game carousel the captain drives.
-  if (req.body?.picker === true) room.picker = { mode: settings.mode, version: 0 };
+  // It starts as a waiting room: nobody browses games until the party is started.
+  if (req.body?.picker === true) { room.picker = { mode: settings.mode, version: 0 }; room.gathering = true; }
   // Prefer a real Wi-Fi/LAN address over localhost or virtual adapters.
   // Hosts can switch adapters from the lobby if the recommended one is unreachable.
   // Do not use x-forwarded-host/proto when generating invite links.
@@ -262,6 +263,8 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
     liveGuesses: isHost && phase === 'question' && !room.privateQuestions && room.questions[index]?.type === 'estimate' ? liveGuesses(room) : undefined,
     picker: phase === 'lobby' && !waiting && room.picker ? { ...room.picker } : undefined,
     welcome: phase === 'lobby' && !waiting ? room.welcome : undefined,
+    // The waiting room before "Start the party": join, but no carousel yet.
+    gathering: phase === 'lobby' && !waiting && room.picker && room.gathering ? true : undefined,
     // TV only: everyone here has played or seen the welcome before.
     everyoneReturning: isHost && players.size > 0 && [...players.values()].every(entry => entry.returning) || undefined,
     connected: counts.connected, waitingCount: room.waiting.size, responseTarget: counts.target,
@@ -1336,7 +1339,9 @@ app.post('/api/rooms/:code/configure', (req, res) => {
 // Max and Poppy's welcome, in step on every screen. The TV starts it ('start',
 // or 'ask' when everyone has played before); the captain or TV can 'skip', or
 // answer 'ask' with 'tour'; the TV ends it.
-const welcomeMoves = { start: [undefined, 'playing'], ask: [undefined, 'asking'], tour: ['asking', 'playing'], skip: [['playing', 'asking'], 'skipping'], end: [null, undefined] };
+// 'party' is the "Start the party" button on the TV or the captain's phone: it
+// closes the waiting room and plays the welcome (or asks a returning room).
+const welcomeMoves = { party: [undefined, 'playing'], start: [undefined, 'playing'], ask: [undefined, 'asking'], tour: ['asking', 'playing'], skip: [['playing', 'asking'], 'skipping'], end: [null, undefined] };
 app.post('/api/rooms/:code/welcome', (req, res) => {
   const { room, key } = res.locals;
   const action = req.body?.action;
@@ -1345,11 +1350,16 @@ app.post('/api/rooms/:code/welcome', (req, res) => {
   const hostOnly = ['start', 'ask', 'end'].includes(action);
   if (hostOnly ? key !== room.host : !controlsRoom(room, key)) return res.status(403).json({ error: 'Only the captain or TV host can do that.' });
   if (room.phase !== 'lobby' || req.body?.game !== room.game) return res.status(409).json({ error: 'The lobby has closed.' });
-  const [from, to] = move;
+  if (action === 'party' && !room.gathering) return res.status(409).json({ error: 'The party has already started.' });
+  if (action === 'party' && !room.players.size) return res.status(409).json({ error: 'Wait for at least one player to join.' });
+  const [from] = move;
+  const everyoneBack = [...room.players.values()].every(entry => entry.returning);
+  const to = action === 'party' && everyoneBack ? 'asking' : move[1];
   const current = room.welcome;
   const allowed = from === null || (Array.isArray(from) ? from.includes(current) : from === current);
   if (!allowed) return res.status(409).json({ error: 'The welcome has moved on.' });
   room.welcome = to;
+  room.gathering = false;
   // The TV normally ends the welcome. If it has gone away, the room moves on
   // by itself so phones are never left waiting on it.
   clearTimeout(room.welcomeTimer);
@@ -1373,6 +1383,8 @@ app.post('/api/rooms/:code/browse', (req, res) => {
   if (!controlsRoom(room, key)) return res.status(403).json({ error: 'Only the captain or TV host can choose the game.' });
   if (room.phase !== 'lobby' || req.body?.game !== room.game) return res.status(409).json({ error: 'The lobby has closed.' });
   const { mode, open } = req.body ?? {};
+  if (room.gathering && req.body?.skipIntro !== true) return res.status(409).json({ error: 'Start the party first.' });
+  room.gathering = false;
   if (open === true) room.picker ??= { mode: room.mode, version: 0 };
   else if (!room.picker) return res.status(409).json({ error: 'Open the game carousel first.' });
   if (mode !== undefined) {

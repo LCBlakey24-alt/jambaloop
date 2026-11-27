@@ -52,6 +52,41 @@ export function pickerTv(state, { escape, canDrive }) {
     </div></section>`;
 }
 
+const joinHost = state => { try { return new URL(state.joinUrl).host; } catch { return location.host; } };
+
+/** The TV before the party starts: how to join, who is here, and the start button. */
+export function gatherTv(state, { escape }) {
+  const count = state.players?.length || state.playerCount || 0;
+  const captain = state.captainName ? escape(state.captainName) : '';
+  return `<section class="party-gather" data-gather-tv>
+    <div class="gather-join"><div class="eyebrow">JOIN THE PARTY</div>
+      <p class="gather-how">Scan with your phone camera, or go to <strong>${escape(joinHost(state))}</strong> and enter</p>
+      <div class="room-code">${escape(state.code)}</div>
+      ${state.qr ? `<img class="qr" src="${state.qr}" alt="QR code to join room ${escape(state.code)}">` : ''}</div>
+    <div class="gather-room"><div class="eyebrow">IN THE ROOM · ${count}</div>
+      <ul class="players gather-players">${(state.players ?? []).slice(0, 24).map(player => `<li>${avatarView(player, escape)}<span>${escape(player.name)}</span></li>`).join('')}${(state.players?.length ?? 0) > 24 ? `<li class="players-more">+${state.players.length - 24} more</li>` : ''}</ul>
+      ${count ? '' : '<p class="gather-empty">Waiting for the first player…</p>'}
+      <div class="gather-actions"><button type="button" class="button primary gather-start" data-action="party-start" ${count ? '' : 'disabled'}>Everyone’s in · Start the party</button>
+        <p class="picker-hint">${count ? `${captain || 'The captain'} can also start it from their phone` : 'The first player to join is the captain'}</p>
+        <button type="button" class="gather-skip" data-action="party-skip">Skip the intro and go to the games</button></div>
+    </div></section>`;
+}
+
+/** A phone before the party starts: you are in; the captain starts it. */
+export function gatherPhone(state, { escape, canDrive }) {
+  const captain = state.captainName ? escape(state.captainName) : 'The captain';
+  const count = state.playerCount || state.players?.length || 1;
+  return `<section class="game-panel gather-phone" data-gather-phone>
+    <div class="lobby-eyebrow"><span class="eyebrow">ROOM ${escape(state.code)}</span>${canDrive ? '<span class="captain-tag">★ Captain</span>' : ''}</div>
+    <h2 class="phone-welcome">${avatarView(state.player, escape)}<span>You’re in, ${escape(state.player?.name ?? '')}!</span></h2>
+    <p class="gather-count" role="status">${count === 1 ? 'You are the first one here.' : `${count} players in the room.`}</p>
+    ${canDrive ? `<p>You are the captain. When everyone has joined, start the party.</p>
+      <div class="actions"><button type="button" class="button primary" data-action="party-start" style="grid-column:1 / -1">Everyone’s in · Start the party</button></div>
+      <button type="button" class="gather-skip" data-action="party-skip">Skip the intro</button>`
+      : `<p>Waiting for ${captain} to start the party. Watch the TV.</p>`}
+  </section>`;
+}
+
 /** Glide the shelf (TV or phone) to a game and re-theme the screen around it. */
 export function movePicker(root, mode, escape) {
   const track = root.querySelector('.picker-carousel .carousel-track');

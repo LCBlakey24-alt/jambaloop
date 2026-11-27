@@ -11,12 +11,36 @@ export function courseCurve() {
 const ROAD_HALF = 1.85;
 const LANES = 6;
 const themes = {
-  neon:   { ground: '#07061a', grid: ['#ff3fb4', '#1dfbe0'], road: '#120d38', edge: '#1dfbe0', line: '#ff3fb4', sky: '#0b0927' },
-  desert: { ground: '#b88a52', road: '#3b3330', edge: '#f4f1ea', kerb: '#d6452f', line: '#f2d16b', sky: '#e9b979' },
-  snow:   { ground: '#e6eef6', road: '#39414f', edge: '#ffffff', kerb: '#2f7de0', line: '#ffffff', sky: '#b9d4ee' },
-  jungle: { ground: '#1f4d2e', road: '#2e3331', edge: '#f4f1ea', kerb: '#e0a12f', line: '#f4f1ea', sky: '#2c5e45' },
-  space:  { ground: '#050814', grid: ['#6f5bff', '#2b3a8f'], road: '#161a33', edge: '#8f6bff', line: '#ffd34d', sky: '#04050d' },
+  // The default circuit: a floodlit night track. Grey tarmac on a dark infield with red and white kerbs,
+  // so the road always reads against the ground (it used to be dark purple on near-black with glowing edges).
+  neon:   { ground: '#16233a', verge: '#24406b', road: '#454b5c', edge: '#f4f1ea', kerb: '#e0364f', line: '#f4d35e', sky: '#1b2444' },
+  desert: { ground: '#b88a52', verge: '#d2a468', road: '#3b3330', edge: '#f4f1ea', kerb: '#d6452f', line: '#f2d16b', sky: '#e9b979' },
+  snow:   { ground: '#e6eef6', verge: '#cfdcea', road: '#39414f', edge: '#ffffff', kerb: '#2f7de0', line: '#ffffff', sky: '#b9d4ee' },
+  jungle: { ground: '#1f4d2e', verge: '#2f6b3f', road: '#2e3331', edge: '#f4f1ea', kerb: '#e0a12f', line: '#f4f1ea', sky: '#2c5e45' },
+  space:  { ground: '#0a1024', verge: '#1a2350', grid: ['#3d4a9a', '#1c2552'], road: '#3a3f58', edge: '#c9b8ff', line: '#ffd34d', sky: '#070a18' },
 };
+
+/** A vertical strip following one side of the course, from `top` down to `bottom`: the side of the slab. */
+function skirt(curve, offset, top, bottom, material, samples = 320) {
+  const positions = [];
+  const indices = [];
+  for (let i = 0; i <= samples; i++) {
+    const u = i / samples;
+    const p = curve.getPointAt(u);
+    const t = curve.getTangentAt(u);
+    const n = new THREE.Vector3(-t.z, 0, t.x).normalize();
+    const x = p.x + n.x * offset; const z = p.z + n.z * offset;
+    // On the ground the side runs down to the floor; on the bridge it is only the edge of the deck,
+    // so the road passing underneath stays open.
+    positions.push(x, p.y + top, z, x, p.y > 0.3 ? p.y + top - 0.22 : Math.min(p.y + top, bottom), z);
+    if (i) { const a = (i - 1) * 2; indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return new THREE.Mesh(geometry, material);
+}
 
 function canvasTexture(size, draw) {
   const canvas = document.createElement('canvas');
@@ -142,7 +166,7 @@ function makeCar(racer) {
   for (const z of [0.17, -0.17]) at(new THREE.Mesh(parts.light, parts.head), 0.685, 0.14, z);
   at(new THREE.Mesh(parts.tailbar, parts.tail), -0.705, 0.2);
   for (const z of [0.1, -0.1]) at(new THREE.Mesh(parts.exhaust, parts.rimMaterial), -0.71, 0.11, z);
-  const glowMaterial = new THREE.MeshBasicMaterial({ color: racer.color, transparent: true, opacity: 0.45, blending: THREE.AdditiveBlending, depthWrite: false });
+  const glowMaterial = new THREE.MeshBasicMaterial({ color: racer.color, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending, depthWrite: false });
   const glow = new THREE.Mesh(parts.glow, glowMaterial);
   glow.position.y = 0.015;
   const flameMaterial = new THREE.MeshBasicMaterial({ color: '#ffb347', transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false });
@@ -217,8 +241,10 @@ export function mountRace3D({ key, track = 'neon', reducedMotion = false }) {
   canvas.setAttribute('aria-hidden', 'true');
 
   const scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(theme.sky, 26, 60);
-  const camera = new THREE.PerspectiveCamera(34, 2, 0.1, 120);
+  // Fog starts well behind the far corners so the back of the circuit does not fade into the ground.
+  scene.fog = new THREE.Fog(theme.sky, 44, 110);
+  // A nearer "near" plane keeps the depth buffer precise enough to separate road, kerbs and ground.
+  const camera = new THREE.PerspectiveCamera(34, 2, 0.6, 140);
   scene.add(new THREE.HemisphereLight('#dfe6ff', '#2a2240', 1.6));
   const sun = new THREE.DirectionalLight('#fff1dc', 2.2);
   sun.position.set(-6, 14, 9);
@@ -231,13 +257,14 @@ export function mountRace3D({ key, track = 'neon', reducedMotion = false }) {
   const keep = object => { owned.push(object); return object; };
   const ground = keep(new THREE.Mesh(new THREE.PlaneGeometry(140, 80), new THREE.MeshStandardMaterial({ color: theme.ground, roughness: 0.95 })));
   ground.rotation.x = -Math.PI / 2;
-  ground.position.y = -0.02;
+  // Well below the road: at -0.02 the far side of the track flickered into the ground.
+  ground.position.y = -0.3;
   scene.add(ground);
   if (theme.grid) {
     const grid = keep(new THREE.GridHelper(120, 120, theme.grid[0], theme.grid[1]));
     grid.material.transparent = true;
-    grid.material.opacity = 0.35;
-    grid.position.y = -0.01;
+    grid.material.opacity = 0.22;
+    grid.position.y = -0.28;
     scene.add(grid);
   }
   if (track === 'space') {
@@ -249,22 +276,31 @@ export function mountRace3D({ key, track = 'neon', reducedMotion = false }) {
   }
 
   const curve = courseCurve();
-  scene.add(keep(ribbon(curve, -ROAD_HALF, ROAD_HALF, 0, new THREE.MeshStandardMaterial({ color: theme.road, roughness: 0.75 }))));
+  // Everything painted on the road is drawn in front of the layer beneath it, so kerbs, lines and the
+  // chequered flag never flicker into the tarmac, and the tarmac never flickers into the verge.
+  const onTop = (material, level) => Object.assign(material, { polygonOffset: true, polygonOffsetFactor: -level, polygonOffsetUnits: -level * 4 });
+  // A wide verge under the road and a skirt down each side, so the track is a raised slab on the ground.
+  const vergeMaterial = new THREE.MeshStandardMaterial({ color: theme.verge ?? theme.ground, roughness: 0.95 });
+  scene.add(keep(ribbon(curve, -ROAD_HALF - 0.9, ROAD_HALF + 0.9, -0.05, vergeMaterial)));
+  const skirtMaterial = new THREE.MeshStandardMaterial({ color: '#1c2130', roughness: 0.9, side: THREE.DoubleSide });
+  for (const side of [-1, 1]) scene.add(keep(skirt(curve, side * (ROAD_HALF + 0.9), -0.05, -0.3, skirtMaterial)));
+  scene.add(keep(ribbon(curve, -ROAD_HALF, ROAD_HALF, 0, onTop(new THREE.MeshStandardMaterial({ color: theme.road, roughness: 0.82 }), 1))));
   const edgeMaterial = theme.kerb
     ? new THREE.MeshBasicMaterial({ map: canvasTexture(32, (ctx, s) => { ctx.fillStyle = theme.kerb; ctx.fillRect(0, 0, s, s / 2); ctx.fillStyle = theme.edge; ctx.fillRect(0, s / 2, s, s / 2); }) })
     : new THREE.MeshBasicMaterial({ color: theme.edge });
   if (edgeMaterial.map) { edgeMaterial.map.wrapS = edgeMaterial.map.wrapT = THREE.RepeatWrapping; }
-  scene.add(keep(ribbon(curve, -ROAD_HALF - 0.14, -ROAD_HALF, 0.012, edgeMaterial)));
-  scene.add(keep(ribbon(curve, ROAD_HALF, ROAD_HALF + 0.14, 0.012, edgeMaterial)));
+  onTop(edgeMaterial, 2);
+  scene.add(keep(ribbon(curve, -ROAD_HALF - 0.26, -ROAD_HALF, 0.02, edgeMaterial)));
+  scene.add(keep(ribbon(curve, ROAD_HALF, ROAD_HALF + 0.26, 0.02, edgeMaterial)));
   // Dashed centre line: short ribbons along the course.
-  const lineMaterial = new THREE.MeshBasicMaterial({ color: theme.line });
+  const lineMaterial = onTop(new THREE.MeshBasicMaterial({ color: theme.line }), 2);
   for (let u = 0.02; u < 0.985; u += 0.012) scene.add(keep(ribbon(curve, -0.04, 0.04, 0.014, lineMaterial, 4, u, u + 0.006)));
   // Start grid and chequered finish line across the road.
   const flag = chequer();
   flag.wrapS = flag.wrapT = THREE.RepeatWrapping;
   flag.repeat.set(1, 0.18);
   // One lap: the chequered start/finish line sits at u = 0 on the main straight.
-  scene.add(keep(ribbon(curve, -ROAD_HALF, ROAD_HALF, 0.016, new THREE.MeshBasicMaterial({ map: flag }), 4, 0.994, 1)));
+  scene.add(keep(ribbon(curve, -ROAD_HALF, ROAD_HALF, 0.024, onTop(new THREE.MeshBasicMaterial({ map: flag }), 3), 4, 0.994, 1)));
   // Finish arch over the line.
   const end = curve.getPointAt(0.997);
   const tangent = curve.getTangentAt(0.997);
@@ -433,7 +469,7 @@ export function mountRace3D({ key, track = 'neon', reducedMotion = false }) {
       const boosted = racer.power === 'boost';
       // A raised shield glows blue round the car.
       glowMaterial.color.set(rammed ? '#ff2a2a' : boosted ? '#ffffff' : racer.shield ? '#58b7ff' : racer.color);
-      glowMaterial.opacity = rammed || boosted || racer.shield ? 0.95 : 0.45;
+      glowMaterial.opacity = rammed || boosted || racer.shield ? 0.9 : 0.2;
       paint.emissive.set(rammed ? '#ff2a2a' : '#000000');
       paint.emissiveIntensity = rammed ? 0.6 : 0;
       for (const material of car.userData.modelPaints ?? []) { material.emissive.set(rammed ? '#ff2a2a' : '#000000'); material.emissiveIntensity = rammed ? 0.6 : 0; }

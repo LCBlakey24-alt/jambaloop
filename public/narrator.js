@@ -179,7 +179,35 @@ export function playScript(key, lines, { onLine, onDone } = {}) {
   playDuo(key, token, { lines, onLine, onDone });
 }
 
-export const narrationPlaying = () => currentMode;
+// Reading a public question aloud with the device's own British voice. It is
+// opt-in on the TV, never blocks a timer, and steps aside for the hosts.
+let reading;
+export const canReadAloud = () => 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+export function stopReading() {
+  if (!reading) return;
+  reading = undefined;
+  if (canReadAloud()) speechSynthesis.cancel();
+  duckMusic(false);
+}
+export function readAloud(text, tries = 0) {
+  stopReading();
+  if (!canReadAloud() || !text) return;
+  const utterance = new SpeechSynthesisUtterance(text);
+  reading = utterance;
+  // A host line that is already playing finishes first.
+  if (currentMode && tries < 24) { setTimeout(() => { if (reading === utterance) readAloud(text, tries + 1); }, 300); return; }
+  utterance.lang = 'en-GB';
+  utterance.rate = 1.04;
+  utterance.volume = 0.9;
+  utterance.voice = hostVoice('poppy');
+  const done = () => { if (reading === utterance) { reading = undefined; duckMusic(false); } };
+  utterance.onend = done;
+  utterance.onerror = done;
+  duckMusic(true);
+  try { speechSynthesis.speak(utterance); } catch { done(); }
+}
+
+export const narrationPlaying = () => currentMode ?? (reading ? 'reading' : undefined);
 export const isWelcomeNarration = () => ['welcome', 'welcome-back'].includes(currentMode) || /^skip-/.test(currentMode ?? '');
 
 export function toggleNarration(mode) {

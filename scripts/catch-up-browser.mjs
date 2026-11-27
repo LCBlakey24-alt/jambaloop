@@ -44,8 +44,9 @@ try {
   assert.equal(await tv.locator('.catch-options li').count(), 4);
   assert.equal(await tv.locator('.catch-options [data-correct], .catch-options .correct').count(), 0, 'the TV never marks the answer');
   assert.equal((await snap(host)).party.question.correct, undefined);
-  const tap = await runPhone.locator('.catch-button').first().boundingBox();
-  assert.ok(tap.height >= 56, 'thumb-sized buttons');
+  // Measured once the screen's entry animation has settled (it scales the panel in).
+  await runPhone.waitForFunction(() => document.querySelector('.catch-button')?.getBoundingClientRect().height >= 56, null, { timeout: 4000 })
+    .catch(() => assert.fail('thumb-sized buttons'));
   assert.ok(await runPhone.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'no sideways scroll');
   // Tap answers until the count moves or the side is frozen; either way the question changes.
   const before = (await snap(host)).party.step;
@@ -67,7 +68,7 @@ try {
   assert.equal(await tv.locator('.catch-target').count(), 1);
   await tv.screenshot({ path: 'browser-screenshots/catch-up-chase-tv.png' });
   await advance();
-  await tv.locator('.catch-game[data-catch="result"] .catch-result').waitFor({ timeout: 15000 });
+  await tv.locator('.catch-game[data-catch="result"] .catch-finish').waitFor({ timeout: 15000 });
   await tv.screenshot({ path: 'browser-screenshots/catch-up-result-tv.png' });
   // Round two and the end.
   for (const phase of ['ready', 'leg', 'ready', 'leg', 'result']) { await advance(); await tv.locator(`.catch-game[data-catch="${phase}"]`).waitFor({ timeout: 15000 }); }

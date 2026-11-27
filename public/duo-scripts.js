@@ -482,11 +482,257 @@ export const closeCalls = {
   ],
 };
 
+
+
+/**
+ * Calls for the public moments of the party games, the wheel and the dice.
+ * Recorded as react-<game>-<kind>-<n>. Like every reaction, they describe what
+ * the whole room can already see on the TV: they never name a player, never
+ * read anything a player typed, and never hint at a secret before its reveal.
+ */
+export const momentCalls = {
+  potato: {
+    start: [
+      ['poppy', "[excited] The potato is live! Answer fast and get rid of it!"],
+      ['max', "[urgent] Here we go. Two minutes. Do not be holding it at the end!"],
+    ],
+    minute: [
+      ['max', "[tense] One minute left on the potato."],
+      ['poppy', "[tense] Halfway. Sixty seconds to go!"],
+    ],
+    twenty: [
+      ['poppy', "[urgent] Twenty seconds! Pass it, pass it, pass it!"],
+      ['max', "[urgent] Twenty seconds left. Somebody is about to get burned!"],
+    ],
+    burned: [
+      ['max', "[wincing] Ooh. Burned! That has got to sting."],
+      ['poppy', "[laughs] And that is the potato. Somebody is holding a very hot one!"],
+    ],
+  },
+  funny: {
+    write: [
+      ['poppy', "[cheerfully] Thinking caps on. Funniest answer wins."],
+      ['max', "[playfully] Get writing. And remember, nobody will know it was you."],
+    ],
+    final: [
+      ['max', "[excited] Last round, and the votes are worth double!"],
+      ['poppy', "[excited] Final round. Double points for every vote!"],
+    ],
+    vote: [
+      ['max', "[cheerfully] They are all in. Pick your favourite on your phone."],
+      ['poppy', "[playfully] Time to vote. And no, you cannot pick your own."],
+    ],
+    landslide: [
+      ['poppy', "[amazed] A clean sweep! Every single vote!"],
+      ['max', "[impressed] Unanimous. The whole room agreed on that one."],
+    ],
+    tie: [
+      ['max', "[surprised] A tie at the top! You could not split them."],
+      ['poppy', "[laughs] Level on votes. Two of you are equally hilarious."],
+    ],
+    votes: [
+      ['poppy', "[cheerfully] The votes are in. Let's see who wrote what."],
+      ['max', "[warmly] And there is your winner. Names revealed!"],
+    ],
+  },
+  tracks: {
+    start: [
+      ['poppy', "[urgent] The brakes have gone! Teams, protect your track!"],
+      ['max', "[dramatic] Runaway trolley! Pick something nobody could bear to hit."],
+    ],
+    sabotage: [
+      ['max', "[mischievously] Now for the sabotage. Make the other track easy to hit."],
+      ['poppy', "[playfully] Time to play dirty. Something awful for the other track."],
+    ],
+    judge: [
+      ['poppy', "[tense] Over to the Driver. One lever, two tracks. Plead your case!"],
+      ['max', "[tense] Driver, it is all yours. Who gets spared?"],
+    ],
+    lever: [
+      ['max', "[dramatic] The lever is pulled! No going back now."],
+      ['poppy', "[gasps] And the Driver has chosen. Look away if you are squeamish!"],
+    ],
+  },
+  bluff: {
+    write: [
+      ['max', "[whispers] One of you cannot see the question. Blend in."],
+      ['poppy', "[playfully] Answers, please. And bluffer, keep that face straight."],
+    ],
+    vote: [
+      ['poppy', "[suspicious] Read them carefully. Which answer does not belong?"],
+      ['max', "[curious] Time to vote. Who was making it up?"],
+    ],
+    caught: [
+      ['max', "[triumphant] Caught! The room sniffed out the bluffer."],
+      ['poppy', "[laughs] Busted! You could not fool this lot."],
+    ],
+    escaped: [
+      ['poppy', "[amazed] They got away with it! The bluffer fooled the room."],
+      ['max', "[impressed] Not caught! That is some very convincing nonsense."],
+    ],
+  },
+  samepage: {
+    write: [
+      ['poppy', "[cheerfully] Do not be clever. Write what everyone else will write."],
+      ['max', "[warmly] Think like the room. One answer, in secret."],
+    ],
+    all: [
+      ['max', "[amazed] Everybody wrote the same thing! One mind, the lot of you."],
+      ['poppy', "[delighted] A full house! You are all on the same page."],
+    ],
+    none: [
+      ['poppy', "[laughs] Not one match! Do you people even know each other?"],
+      ['max', "[amused] Nobody agreed. Not a single pair. Remarkable."],
+    ],
+    big: [
+      ['max', "[impressed] Now that is a big group. Points all round."],
+      ['poppy', "[cheerfully] Lots of you thinking alike there. Lovely."],
+    ],
+  },
+  spotlight: {
+    contestant: [
+      ['poppy', "[smoothly] A new contestant steps into the spotlight."],
+      ['max', "[warmly] Next in the hot seat. Let's spin for an expert."],
+    ],
+    expert: [
+      ['max', "[cheerfully] The wheel has chosen. Expert, what is your advice?"],
+      ['poppy', "[playfully] There is your topic and your expert. Choose your words wisely."],
+    ],
+    over: [
+      ['poppy', "[whispers] The advice is in. Contestant, trust it or ignore it?"],
+      ['max', "[tense] Final decision time. It is your call, contestant."],
+    ],
+    right: [
+      ['max', "[delighted] Correct! A hundred points in the spotlight."],
+      ['poppy', "[excited] That is right! Nicely done."],
+    ],
+    wrong: [
+      ['poppy', "[sympathetic] Oh, not this time. Somebody owes somebody an apology."],
+      ['max', "[wincing] Wrong answer. That is going to be an awkward journey home."],
+    ],
+  },
+  brain: {
+    level: [
+      ['max', "[curious] Next rung of the ladder. Take your time. But not too much."],
+      ['poppy', "[cheerfully] Up we go. This one is a little harder."],
+    ],
+    top: [
+      ['poppy', "[excited] The top rung! This is the hardest puzzle of the lot."],
+      ['max', "[tense] Final level. Everything rides on this one."],
+    ],
+    allright: [
+      ['max', "[impressed] Everyone got it. What a clever room."],
+      ['poppy', "[delighted] A clean sweep! Brains all round."],
+    ],
+    nobody: [
+      ['poppy', "[wincing] Nobody got that one. Lives lost everywhere."],
+      ['max', "[amused] Not a single right answer. That puzzle beat all of you."],
+    ],
+    out: [
+      ['max', "[sympathetic] And somebody is off the ladder. Out of lives."],
+      ['poppy', "[softly] That is both lives gone. Down they go."],
+    ],
+    last: [
+      ['poppy', "[excited] Just one player left on the ladder!"],
+      ['max', "[impressed] One survivor. Can they make it to the top?"],
+    ],
+  },
+  top: {
+    poll: [
+      ['poppy', "[cheerfully] Be honest. Pick your real favourite."],
+      ['max', "[warmly] Survey time. Vote with your heart."],
+    ],
+    guess: [
+      ['max', "[curious] Now predict. Which answer did the room pick the most?"],
+      ['poppy', "[playfully] The poll is closed. So, how well do you know this lot?"],
+    ],
+    unanimous: [
+      ['poppy', "[amazed] Every vote for the same answer! Unanimous!"],
+      ['max', "[impressed] The whole room agreed. That never happens."],
+    ],
+    tie: [
+      ['max', "[surprised] A tie at the top! Both answers count."],
+      ['poppy', "[cheerfully] Two top answers. A split room!"],
+    ],
+    clear: [
+      ['poppy', "[excited] And there is your top answer!"],
+      ['max', "[cheerfully] The room has spoken. Did you see that coming?"],
+    ],
+  },
+  rare: {
+    write: [
+      ['max', "[whispers] Avoid the obvious. Find one nobody else will say."],
+      ['poppy', "[playfully] Dig deep. The rarer the answer, the better."],
+    ],
+    review: [
+      ['poppy', "[curious] Ooh, an unusual one. Let's check that with the host."],
+      ['max', "[amused] Somebody has gone off the map. One moment while we check."],
+    ],
+    unique: [
+      ['max', "[delighted] A rare find! Only one of you thought of that."],
+      ['poppy', "[impressed] One of a kind. Two hundred points for that."],
+    ],
+    shared: [
+      ['poppy', "[laughs] No rare finds this time. You all think alike."],
+      ['max', "[amused] Nothing unique there. Great minds, sadly."],
+    ],
+  },
+  sketch: {
+    draw: [
+      ['poppy', "[cheerfully] Pencil down on the screen. Artist, off you go!"],
+      ['max', "[playfully] A new artist. This should be interesting."],
+    ],
+    first: [
+      ['max', "[excited] Somebody has got it! Keep guessing, the rest of you."],
+      ['poppy', "[delighted] First correct guess is in! Who is next?"],
+    ],
+    nobody: [
+      ['poppy', "[laughs] Nobody got it. Artist, what on earth was that?"],
+      ['max', "[amused] Not one correct guess. We may need to talk about that drawing."],
+    ],
+    cracked: [
+      ['max', "[impressed] Everyone got it with time to spare. Lovely drawing."],
+      ['poppy', "[cheerfully] Cracked it early! That was a clear one."],
+    ],
+  },
+  wheel: {
+    spin: [
+      ['poppy', "[excited] Round and round it goes!"],
+      ['max', "[cheerfully] Spinning. Come on, something I am good at."],
+      ['poppy', "[playfully] Where will it land this time?"],
+    ],
+  },
+  dice: {
+    triple: [
+      ['max', "[excited] Triple points! This is the big one."],
+      ['poppy', "[amazed] Times three! Concentrate, everybody."],
+    ],
+    double: [
+      ['poppy', "[cheerfully] Double points on this one."],
+      ['max', "[warmly] Times two. Worth getting right."],
+    ],
+    single: [
+      ['max', "[amused] Just the one. A quiet roll."],
+      ['poppy', "[playfully] No multiplier this time. Save your luck."],
+    ],
+  },
+  showdown: {
+    lead: [
+      ['poppy', "[excited] We have a new team in the lead!"],
+      ['max', "[impressed] All change at the top. A new leading team!"],
+    ],
+    level: [
+      ['max', "[tense] It is level at the top. Nothing between them."],
+      ['poppy', "[excited] The teams are tied! This is anybody's game."],
+    ],
+  },
+};
+
 export const reactionTakes = Object.fromEntries([
   ...Object.entries(reactions).flatMap(([kind, lines]) => lines.map((line, index) => [`react-${kind}-${index + 1}`, [line]])),
   ...Object.entries(knockoutReactions).flatMap(([kind, takes]) => takes.map((lines, index) => [`react-ko-${kind}-${index + 1}`, lines])),
   ...Object.entries(raceCalls).flatMap(([kind, lines]) => lines.map((line, index) => [`react-race-${kind}-${index + 1}`, [line]])),
   ...Object.entries(bloodmoonCalls).flatMap(([kind, lines]) => lines.map((line, index) => [`react-count-${kind}-${index + 1}`, [line]])),
-  ...[['board', boardCalls], ['wayoff', wayoffCalls], ['catch', catchupCalls], ['close', closeCalls]].flatMap(([prefix, calls]) =>
+  ...[['board', boardCalls], ['wayoff', wayoffCalls], ['catch', catchupCalls], ['close', closeCalls], ...Object.entries(momentCalls)].flatMap(([prefix, calls]) =>
     Object.entries(calls).flatMap(([kind, lines]) => lines.map((line, index) => [`react-${prefix}-${kind}-${index + 1}`, [line]]))),
 ]);

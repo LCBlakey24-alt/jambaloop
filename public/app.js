@@ -21,10 +21,11 @@ import { modeVariables, sceneBackdrop } from './mode-style.js';
 import { launcherTile, launcherPreview, launcherModes, launcherSetupArtwork, LAUNCHER_PAGE_SIZE } from './home-launcher.js';
 import { carouselView, moveCarousel, themeHome, wrapIndex } from './game-carousel.js';
 import { playSting, stingFor } from './show-sting.js';
-import { isWelcomeNarration, narrationPlaying, playScript, playWelcome, stopNarration, toggleNarration } from './narrator.js';
-import { bloodmoonCalls, boardCalls, catchupCalls, closeCalls, knockoutReactions, raceCalls, reactions, skipQuips, wayoffCalls, welcomeBack } from './duo-scripts.js';
+import { canReadAloud, isWelcomeNarration, narrationPlaying, playScript, playWelcome, readAloud, stopNarration, stopReading, toggleNarration } from './narrator.js';
+import { bloodmoonCalls, boardCalls, momentCalls, catchupCalls, closeCalls, knockoutReactions, raceCalls, reactions, skipQuips, wayoffCalls, welcomeBack } from './duo-scripts.js';
 import { openWelcome } from './welcome-show.js';
 import { openGuide } from './guide-show.js';
+import { momentFor, potatoClockCall, publicPrompt } from './moment-calls.js';
 import { gameGuides } from './guide-scripts.js';
 import { playChiptune, playCue, playTick, playTowerImpact } from './sound-cues.js';
 import { duckMusic, playMusic, playSfx, preloadSfx, stopMusic } from './sfx.js';
@@ -773,6 +774,7 @@ function startSession(next) {
 
 function leave() {
   closeWelcome();
+  stopReading();
   closeGuide();
   stopMusic();
   stream?.abort();
@@ -1232,6 +1234,7 @@ function render(s) {
       <div class="game-controls">${host ? '' : timer}
     ${host ? `<button class="button outline small tv-focus-toggle" data-action="tv-focus" title="Hide TV host controls while the captain runs the game" aria-pressed="${tvFocus}" aria-label="${tvFocus ? 'Exit TV focus' : 'TV focus'}">${icons('monitor-play', 'host-compact-icon')} <span>${tvFocus ? 'Exit TV focus' : 'TV focus'}</span></button>` : ''}
     ${host && s.phase !== 'lobby' ? `<button class="button outline small room-link" data-action="show-join" aria-label="Room ${s.code}">${icons('qr-code')} <span>Room ${s.code}</span></button>` : ''}
+    ${host && soundEnabled && canReadAloud() ? `<button class="button outline small" data-action="read-aloud" aria-pressed="${readQuestions}" title="This device reads each question aloud">${icons(readQuestions ? 'message-square-text' : 'message-square-off')} <span>Read questions ${readQuestions ? 'on' : 'off'}</span></button>` : ''}
     ${host && window.AudioContext ? `<button class="button outline small" data-action="sound" aria-pressed="${soundEnabled}" aria-label="Sound ${soundEnabled ? 'on' : 'off'}">${icons(soundEnabled ? 'volume-2' : 'volume-x')} <span>Sound ${soundEnabled ? 'on' : 'off'}</span></button>` : ''}
     ${host && document.fullscreenEnabled ? `<button class="button outline small" data-action="fullscreen" aria-label="Fullscreen">${icons('maximize', 'host-compact-icon')} <span>Fullscreen</span></button>` : ''}
     <button class="button outline small" data-action="leave" aria-label="Home">${host ? icons('house', 'host-compact-icon') : ''}<span>Home</span></button></div>${host ? '<p class="small-host-note" role="note"><strong>This phone is acting as the TV.</strong> For a group, host on a laptop plugged into your TV instead.</p>' : ''}</div>
@@ -1396,12 +1399,16 @@ function updateTimer() {
     potatoHeat(app, fraction);
     // A tick each second on the TV (sound is opt-in), quicker in the last ten.
     if (session?.host && soundEnabled && !state.pausedAt && remaining > 0) {
+      const clockCall = potatoClockCall(lastPotatoLeft, remaining);
+      lastPotatoLeft = remaining;
+      if (clockCall) sayReaction(`react-potato-${clockCall}`, momentCalls.potato[clockCall]);
       const beat = remaining < 10000 ? Math.ceil(remaining / 500) : secondsLeft;
       if (beat !== lastPotatoTick) { lastPotatoTick = beat; playTick(sound, remaining < 10000); }
     }
   }
 }
 let lastPotatoTick;
+let lastPotatoLeft;
 let lastQuestionTick;
 
 function boardPrediction(state, host) {
@@ -1456,6 +1463,7 @@ function receive(next, current) {
     }
     else if (next.mode === 'potato' && next.party?.passes > state.party?.passes) playCue(sound, next.mode, 'pass');
     soundMoments(state, next);
+    readQuestion(next);
     raceCommentary(state, next);
     bloodmoonCommentary(state, next);
     showCommentary(state, next);
@@ -1561,6 +1569,9 @@ function hostReaction(s, delay) {
 function showCommentary(before, next) {
   const say = (prefix, calls, kind, delay = 600) => calls[kind] && setTimeout(() => sayReaction(`react-${prefix}-${kind}`, calls[kind]), delay);
   const entered = phase => next.phase === phase && before.phase !== phase;
+  // Party games, the wheel and the dice: one line for the moment just reached.
+  const moment = momentFor(before, next);
+  if (moment) { const [game, kind, delay] = moment; return say(game, momentCalls[game], kind, delay); }
   if (next.mode === 'board' && next.game === before.game) {
     if (entered('finished')) return say('board', boardCalls, 'finish', 900);
     if (entered('question')) {
@@ -1624,6 +1635,18 @@ function raceCommentary(before, next) {
   const length = next.race.length || 1;
   if (first && leaderBefore && first.id !== leaderBefore && first.distance > length * 0.08) return call('lead', 9000);
   if (first && second && first.distance > length * 0.4 && first.distance - second.distance < length * 0.015) call('close', 20000);
+}
+
+// "Read questions aloud": an opt-in TV setting. The device's own voice reads
+// each public question as it opens; the hosts' recorded lines go first.
+let readQuestions = stored('jambaloop-read-aloud') === '1';
+let lastReadKey;
+function readQuestion(next) {
+  const [key, text] = publicPrompt(next) ?? [];
+  if (!key) { if (lastReadKey) { lastReadKey = undefined; stopReading(); } return; }
+  if (key === lastReadKey) return;
+  lastReadKey = key;
+  if (readQuestions && soundEnabled) setTimeout(() => { if (lastReadKey === key) readAloud(text); }, 1100);
 }
 
 /** The waiting room has the house music; after that, the game in view has its own. */
@@ -2473,6 +2496,11 @@ document.addEventListener('click', async event => {
       const label = tvFocus ? 'Exit TV focus' : 'TV focus';
       button.setAttribute('aria-label', label);
       button.querySelector('span').textContent = label;
+    } else if (action === 'read-aloud') {
+      readQuestions = !readQuestions;
+      store('jambaloop-read-aloud', readQuestions ? '1' : '0');
+      if (!readQuestions) stopReading();
+      render(state);
     } else if (action === 'sound') {
       soundEnabled = !soundEnabled;
       if (soundEnabled) {
@@ -2482,7 +2510,7 @@ document.addEventListener('click', async event => {
         playSfx(sound, 'ui-switch', { volume: 0.5 });
         preloadSfx(sound, ['whoosh', 'lockin', 'drumroll', 'reveal', 'correct', 'fanfare', 'cheer', 'bell', 'wheel', 'sizzle', 'ui-tap', 'dice-shake', 'dice-throw-1', 'dice-throw-2', 'card-place-1', 'card-slide']);
         roomMusic(state);
-      } else stopMusic();
+      } else { stopMusic(); stopReading(); }
       render(state);
       updateTimer();
     } else if (action === 'fullscreen') {

@@ -290,14 +290,14 @@ body.playing .game.player-only :is([data-action="advance"], [data-action="clock"
 
 /* Phone quality pass (28 November 2026). */
 /* The captain's controls are the same size in every game: full width and tall enough for a thumb.
-   (Short phones keep the two-in-a-row rule above.) */
+   (Short phones keep the two-in-a-row rule above, and the lobby keeps its own paged layout.) */
 @media (max-width: 760px) and (min-height: 721px) {
   /* A hidden or paged-away button stays hidden (So Close keeps its Next button back until the winner is shown). */
-  body.playing .game.player-only :is([data-action="advance"], [data-action="clock"]):not([hidden], [data-deck-hidden]) {
+  body.playing .game.player-only:not([data-phase="lobby"], [data-phase="waiting"]) :is([data-action="advance"], [data-action="clock"]):not([hidden], [data-deck-hidden]) {
     display: flex !important; width: 100% !important; max-width: none !important; min-height: 54px !important; justify-content: center !important; align-items: center !important;
     gap: .4em; margin-inline: 0 !important; padding: 12px 14px !important; font-size: 16px !important; line-height: 1.2 !important; white-space: normal !important; text-align: center;
   }
-  body.playing .game.player-only :is(.actions, .bluff-show-actions, .sketch-actions):not([hidden], [data-deck-hidden]):has([data-action="advance"], [data-action="clock"]) { display: grid !important; grid-template-columns: 1fr; gap: 8px; width: 100%; justify-items: stretch; }
+  body.playing .game.player-only:not([data-phase="lobby"], [data-phase="waiting"]) :is(.actions, .bluff-show-actions, .sketch-actions):not([hidden], [data-deck-hidden]):has([data-action="advance"], [data-action="clock"]) { display: grid !important; grid-template-columns: 1fr; gap: 8px; width: 100%; justify-items: stretch; }
 }
 /* Replay, choose another game and change settings: one clear stack, never three squeezed side by side. */
 @media (max-width: 760px) {

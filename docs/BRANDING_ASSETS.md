@@ -5,6 +5,11 @@ The two supplied logo designs are stored, unmodified, in `public/branding/origin
 - `jambaloop-logo-navy-original.png` — dark navy lettering on a transparent background.
 - `jambaloop-logo-white-original.jpg` — white lettering on a black background (uploaded image had JPEG contents).
 
+The current web lockups pair the revised two-player emblem with Fredoka lettering (see
+`public/fonts/fredoka-OFL.txt`). The white controller has matching end shapes. The four
+buttons run clockwise from the top in green, orange, purple and red. The Fire TV launcher
+sources use the same artwork. An installed APK receives those resources on its next app update.
+
 The site loads display-ready transparent WebP files:
 - `/branding/jambaloop-logo-navy.webp` on light backgrounds.
 - `/branding/jambaloop-logo-white.webp` on dark and Arcade backgrounds.

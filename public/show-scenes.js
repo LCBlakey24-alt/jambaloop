@@ -298,10 +298,42 @@ const scenes = {
 
 export const sceneModes = Object.keys(scenes);
 
+// Fine ink on the illustrated props. Keep the centre clear for the live title.
+const inkDetails = {
+  classic: 'M34 76V34H78 M40 60V40H60 M322 34h44v42 M340 40h20v20 M65 338Q200 304 335 338',
+  wheel: 'M12 23l12 19 12-19 M112 23l12 19 12-19 M212 23l12 19 12-19 M312 23l12 19 12-19 M69 329Q118 278 172 268',
+  board: 'M76 72H324V78 M76 322v6h248 M78 80h16m5 0h5 M307 282q4 2 4 8 M88 280l22-5',
+  dice: 'M34 80V34H80 M320 34h46v46 M48 60V48h12 M340 48h12v12 M67 377l16 4m4 1 8 2',
+  knockout: 'M18 185h20m-20 5h20m-20 5h20 M361 185h20m-20 5h20m-20 5h20 M45 304q150 9 310 0',
+  bluff: 'M52 312l22-4m-20 10 20-4 M299 79q20-12 37 3 M350 149l23 24 M360 294l8-2m-7 8 8-2',
+  punchline: 'M17 70l28-25m-25 40 37-34 M326 359l33-31m-23 34 28-26 M296 57l6-12m42 45 15-3',
+  cards: 'M22 37q0-15 15-15m326 0q15 0 15 15 M145 243q0-10 10-10 M151 373v10h12 M237 373v10h-12',
+  tracks: 'M317 72h29m-29 72h29 M320 96q-6-12 3-18 M330 191v35m0 8v7 M98 357l28 3m134 0 37-3',
+  potato: 'M253 285q6-26 33-35m9-2 7-1 M315 316q20-5 29-18 M48 297q9-5 13-15m271 47 11-12',
+  showdown: 'M26 58h83m-72 6h53 M290 58h83m-72 6h53 M16 324l33-23m-29 32 37-26 M344 330l38-29',
+  samepage: 'M58 128q17-44 66-58m8-2 8-1 M308 113q25 17 38 45 M87 312l16-17 M294 322l17 11',
+  spotlight: 'M20 73q12 54 4 102m7-86q12 45 8 76 M380 73q-12 54-4 102m-7-86q-12 45-8 76 M113 361q87 26 174 0',
+  brain: 'M10 91h68v57m-57-49h48v28 M391 131h-78v-58m66 67h-56v-23 M250 389v-68h34',
+  topanswers: 'M62 274v-11h14 M138 205v-12h15 M214 301v-11h14 M290 243v-11h14 M63 369h45m31 0h45m31 0h45m31 0h45',
+  rare: 'M46 164a160 160 0 0 1 75-104 M48 173l-2 9 M331 288l11 13-35 37 M66 306l12-11m-2 22 12-11',
+  bloodmoon: 'M240 82a52 52 0 0 1 35-27 M255 102q5-6 11-4 M26 339v-11h15m88 12v-11h14 M12 366q52-18 98-3t72 4',
+  wayoff: 'M18 142a148 148 0 0 1 66-61 M267 299a144 144 0 0 1-44 34 M320 106l9-16m-2 18 9-16',
+  catchup: 'M200 80v6m21 0-3 5m13 8-5 3m10 18h-6m-63 0h-6m13-19-5-3m19-12-3-5 M38 35h44m236 0h44 M20 363q105-43 201-35',
+  shade: 'M36 60V49h52m224 0h50v11 M39 322v12h49m226 0h48v-12 M202 181h9m14 0h7 M245 193v9m0 10v8',
+  dontlook: 'M73 105V92q0-8 9-8h88 M79 111l19-19m-7 25 23-23 M305 220h4m5 0h4m5 0h4 M148 270h28',
+  sketch: 'M34 60l16-9m-17 15 12-7 M69 360l10-9m-9 15 10-8 M357 329l15-5m-12 11 13-4 M226 76q13-8 25 1t21-1',
+  quizrace: 'M18 223l37-26 25 12 35-26 49 40 M242 223l34-20 21 8 33-23 50 35 M19 229h95m160 0h109 M112 343l19-25m-11 30 10-14',
+  soclose: 'M24 330q9-9 22-4 M20 380q14 8 27-2 M217 48h20m-14 8h14 M323 172h26m-18 8h18',
+};
+
 /** The scene for a show as a standalone SVG document. */
 export function sceneSvg(mode) {
   const draw = scenes[mode];
   if (!draw) return '';
-  const body = draw(identityOf(mode)).join('');
+  const c = identityOf(mode);
+  const strokes = path(inkDetails[mode], { fill: 'none', stroke: c.ink, 'stroke-width': 2.4,
+    'stroke-linecap': 'round', 'stroke-linejoin': 'round', opacity: .58 });
+  const wash = linear('print-wash', [[0, c.ink, .09], [.44, c.ink, 0], [.66, c.bg[1], 0], [1, c.bg[1], .2]], [0, 0, 1, 1]);
+  const body = draw(c).join('') + strokes + '<defs>' + wash + '</defs>' + rect(0, 0, 400, 400, 'url(#print-wash)');
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid slice">${body}</svg>\n`;
 }

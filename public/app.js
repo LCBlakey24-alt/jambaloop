@@ -802,7 +802,7 @@ function openDialog(mode, value, gameMode, quizId) {
     // The screen check: what this device reports, and a way to tell the site it is the TV (or a phone).
     const report = screenReport();
     const rows = [['Treated as', report.detected === 'tv' ? 'The TV' : report.detected === 'phone' ? 'A phone' : 'A computer'], ['Chosen on this device', report.remembered],
-      ['Page size', report.page], ['Screen size', report.screen], ['Pixel ratio', report.pixelRatio], ['Touch points', report.touchPoints], ['Pointer', report.pointer], ['Page loads', report.loads], ['Browser', report.agent]];
+      ['Page size', report.page], ['Screen size', report.screen], ['Pixel ratio', report.pixelRatio], ['Touch points', report.touchPoints], ['Pointer', report.pointer], ['Lighter TV mode', report.lighter], ['Page loads', report.loads], ['Browser', report.agent]];
     content.innerHTML = `<div class="eyebrow">SCREEN CHECK</div><h2>Is this the TV?</h2>
     <p>Jambaloop works out whether this screen is the TV everyone watches or a phone. If it gets it wrong (some TV sticks look like phones), choose here. The choice is remembered on this device.</p>
     <div class="actions bigscreen-actions screen-choices">

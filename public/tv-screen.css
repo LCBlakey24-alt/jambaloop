@@ -56,3 +56,18 @@ html.tv-screen :focus-visible { outline: 4px solid #ffd34d !important; outline-o
     --tile-edge:min(calc((100dvh - 270px)/3),calc((min(1400px, 100vw - 40px) - 7 * var(--tile-gap, 10px) - 8px)/8),192px) !important;
   }
 }
+
+/* A lighter show for low-powered TVs (html.tv-lite: Fire TV sticks and smart-TV browsers; see device.js
+   lightTv). The game, timers and anything that means something keep moving; the decoration that never
+   stops (drifting backdrops, the home sky, rotating tile art, sweeping rays and shimmer) holds still, and
+   blurs, which are slow on TV graphics chips, are dropped. */
+html.tv-lite .scene-backdrop > i,
+html.tv-lite body:not(.playing)::before,
+html.tv-lite .tile-motion, html.tv-lite .tile-motion i,
+html.tv-lite .score-ceremony::before,
+html.tv-lite .podium-place.place-1::after,
+html.tv-lite .home-heading h1 em,
+html.tv-lite .samepage-orbits i,
+html.tv-lite .game[data-mode="quizrace"] .race-track-wrap::before { animation: none !important; }
+html.tv-lite .home-ambient::before, html.tv-lite .home-ambient::after { display: none; }
+html.tv-lite *, html.tv-lite *::before, html.tv-lite *::after { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }

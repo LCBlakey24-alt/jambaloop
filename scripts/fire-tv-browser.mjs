@@ -40,6 +40,10 @@ try{
   assert.equal(await fire.locator('dialog[open] .bigscreen-steps').count(),0,'no "use a laptop" prompt on the TV');
   assert.equal(await fire.evaluate(()=>document.documentElement.classList.contains('mobile-deck')),false,'never the phone layout');
   await fire.waitForTimeout(1200);
+  // A Fire TV stick gets the lighter show: no floating 3D background behind the lobby, and no blur.
+  const light=await fire.evaluate(()=>({lite:document.documentElement.classList.contains('tv-lite'),stage:Boolean(document.querySelector('canvas.stage-3d')?.isConnected),
+    blur:[...document.querySelectorAll('*')].some(el=>{const v=getComputedStyle(el).backdropFilter;return v&&v!=='none';})}));
+  assert.deepEqual(light,{lite:true,stage:false,blur:false},'the lighter TV mode on a Fire TV stick: '+JSON.stringify(light));
   await fire.screenshot({path:'browser-screenshots/fire-tv-lobby.png'});
   console.log('PASS: a Fire TV Stick is the TV: 1280-wide TV layout, the laptop\'s game carousel, hosts with no phone prompt');
   // 2. A TV stick that does not say what it is (a desktop browser identity) but has no touchscreen.

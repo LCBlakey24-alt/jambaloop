@@ -64,6 +64,7 @@ export function screenReport(env = globalThis) {
     pixelRatio: env.devicePixelRatio, touchPoints: env.navigator?.maxTouchPoints ?? 0,
     pointer: media('(pointer: fine)') ? 'fine' : media('(pointer: coarse)') ? 'coarse' : media('(pointer: none)') ? 'none' : 'unknown',
     hover: media('(hover: hover)'),
+    lighter: lightTv(env) ? 'on' : 'off',
     // When the page last loaded: a reload here means the page really restarted (the TV app's engine was
     // stopped, or the app was reopened); none means a flash came from the screen redrawing, not a reload.
     loads: recentLoads(env).map(load => `${load.at.slice(5, 16).replace('T', ' ')} ${load.kind}${load.reason ? ' (' + load.reason + ')' : ''}`).join(' · ') || 'none recorded',
@@ -78,9 +79,25 @@ export function prepareTvScreen(doc = globalThis.document, env = globalThis) {
   if (!doc) return false;
   const tv = isTvScreen(env);
   doc.documentElement.classList.toggle('tv-screen', tv);
+  doc.documentElement.classList.toggle('tv-lite', tv && lightTv(env));
   const meta = doc.querySelector('meta[name="viewport"]');
   if (tv && meta && (env.innerWidth ?? tvLayoutWidth) < tvLayoutWidth - 80) meta.setAttribute('content', `width=${tvLayoutWidth}`);
   return tv;
+}
+
+// A lighter show for low-powered TVs (owner's Fire TV Stick HD was jerky): Fire TV sticks, smart-TV and
+// Chromecast browsers, or a device that reports 2 GB of memory or less. Consoles and Apple TV are left alone.
+// ?lite=on / ?lite=off choose for this device (remembered); ?lite=auto goes back to deciding by itself.
+const LITE = 'jambaloop-tv-lite';
+const lightAgent = /\bJambaloopTV\b|\bAFT[A-Z0-9]{1,8}\b|AmazonWebAppPlatform|SMART-TV|SmartTV|\bTizen\b|Web0S|\bwebOS\b|NetCast|HbbTV|\bCrKey\b|\bChromecast\b|VIDAA|\bRoku\b/i;
+export function lightTv(env = globalThis) {
+  if (!isTvScreen(env)) return false;
+  let choice = null;
+  try { choice = env.localStorage?.getItem(LITE) ?? null; } catch { /* private mode: decide by the device */ }
+  if (choice === 'on') return true;
+  if (choice === 'off') return false;
+  const nav = env.navigator ?? {};
+  return lightAgent.test(nav.userAgent ?? '') || (typeof nav.deviceMemory === 'number' && nav.deviceMemory <= 2);
 }
 
 /** ?tv or ?phone in the address sets this device's screen for good (until ?auto). */
@@ -89,5 +106,10 @@ export function readScreenChoice(search = globalThis.location?.search ?? '') {
   if (params.has('tv')) rememberScreen('tv');
   else if (params.has('phone')) rememberScreen('phone');
   else if (params.has('auto')) rememberScreen();
+  const lite = params.get('lite');
+  try {
+    if (lite === 'on' || lite === 'off') globalThis.localStorage?.setItem(LITE, lite);
+    else if (lite === 'auto') globalThis.localStorage?.removeItem(LITE);
+  } catch { /* private mode: not remembered */ }
   return params.has('device');
 }

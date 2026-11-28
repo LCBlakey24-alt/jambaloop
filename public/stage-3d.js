@@ -9,7 +9,8 @@ let loading;
 const allowed = () => typeof matchMedia === 'function'
   && !matchMedia('(prefers-reduced-motion: reduce)').matches
   && matchMedia('(min-width: 900px)').matches
-  && !navigator.connection?.saveData;
+  && !navigator.connection?.saveData
+  && !document.documentElement.classList.contains('tv-lite');
 
 function heartShape(THREE) {
   const shape = new THREE.Shape();

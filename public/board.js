@@ -779,7 +779,8 @@ function dressTable(scene, state, rally, accent) {
 
 export function mountTable(container, state, duration, onImpact) {
   let start = performance.now();
-  const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+  const lite = document.documentElement.classList.contains('tv-lite');
+  const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: !lite });
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(36, 1, .1, 70);
   const [baseColor, tableColor, accent] = tableTone(state);
@@ -789,7 +790,7 @@ export function mountTable(container, state, duration, onImpact) {
   let initialProgress;
   let lastProgress;
   const rally = state.mode === 'dice';
-  renderer.setPixelRatio(Math.min(1.75, window.devicePixelRatio));
+  renderer.setPixelRatio(lite ? 1 : Math.min(1.75, window.devicePixelRatio));
   renderer.toneMapping = THREE.NeutralToneMapping;
   renderer.toneMappingExposure = 1.08;
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;

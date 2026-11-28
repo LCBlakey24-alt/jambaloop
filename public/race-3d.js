@@ -254,8 +254,11 @@ function disposeCar(car) {
 export function mountRace3D({ key, track = 'neon', course = 'medium', reducedMotion = false }) {
   const circuit = circuits[course] ?? circuits.medium;
   const theme = themes[track] ?? themes.neon;
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(1.5, window.devicePixelRatio || 1));
+  // A light TV (a Fire TV stick) draws at the page's own resolution, without edge smoothing, 30 times a second.
+  const lite = document.documentElement.classList.contains('tv-lite');
+  const renderer = new THREE.WebGLRenderer({ antialias: !lite, alpha: false, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(lite ? 1 : Math.min(1.5, window.devicePixelRatio || 1));
+  let lastDrawn = 0;
   renderer.toneMapping = THREE.NeutralToneMapping;
   renderer.setClearColor(theme.sky);
   const canvas = renderer.domElement;
@@ -734,13 +737,13 @@ export function mountRace3D({ key, track = 'neon', course = 'medium', reducedMot
     desiredPosition.copy(desiredTarget).addScaledVector(viewDirection, distance);
     if (reducedMotion || !cameraReady) { cameraTarget.copy(desiredTarget); cameraPosition.copy(desiredPosition); cameraReady = true; }
     else {
-      cameraTarget.lerp(desiredTarget, 0.05);
-      cameraPosition.lerp(desiredPosition, 0.05);
+      cameraTarget.lerp(desiredTarget, lite ? 0.1 : 0.05);
+      cameraPosition.lerp(desiredPosition, lite ? 0.1 : 0.05);
     }
     const drift = reducedMotion ? 0 : Math.sin(performance.now() / 5200) * 0.35;
     camera.position.set(cameraPosition.x + drift, cameraPosition.y, cameraPosition.z);
     camera.lookAt(cameraTarget);
-    if (!reducedMotion) placeCrowd(performance.now());
+    if (!reducedMotion && !lite) placeCrowd(performance.now());
     renderer.render(scene, camera);
   }
 
@@ -764,6 +767,9 @@ export function mountRace3D({ key, track = 'neon', course = 'medium', reducedMot
     },
     update(players, trackLength, msAhead = 0, _reduced = false, sim) {
       if (lost || !container?.isConnected) return false;
+      const now = performance.now();
+      if (lite && now - lastDrawn < 32) return true;
+      lastDrawn = now;
       frame(players, trackLength, msAhead, sim);
       return true;
     },

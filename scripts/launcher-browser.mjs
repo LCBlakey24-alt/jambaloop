@@ -80,6 +80,9 @@ try {
     const page=await browser.newPage({viewport:{width,height},deviceScaleFactor:1});
     await page.goto(base,{waitUntil:'networkidle',timeout:30000});
     if(width>=1000&&height>=600) await checkCarousel(page,width,height);
+    // A phone opens on its own simple Join screen (28 November 2026, phone-home-browser.mjs checks it); the launcher
+    // checked here is the one behind its "See the games" link.
+    if(width<=760) await page.locator('[data-action="phone-browse"]').click();
     await page.locator('.game-tile').first().waitFor({timeout:15000});
     await page.evaluate(()=>document.fonts.ready);
     assert.match(await page.title(),/Jambaloop.*Rookie Quest Games/);

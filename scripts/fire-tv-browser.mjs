@@ -124,6 +124,8 @@ try{
     if(grid)await context.addInitScript(()=>{try{localStorage.setItem('jambaloop-home-view','grid')}catch{}});
     const page=await context.newPage();
     await page.goto(site,{waitUntil:'domcontentloaded'});
+    // A phone opens on its own simple Join screen (28 November 2026); the tiles are under "See the games".
+    if(!grid)await page.locator('[data-action="phone-browse"]').click();
     await page.locator('.game-tile').first().waitFor({timeout:15000});
     await page.waitForTimeout(400);
     for(let pageNumber=0;pageNumber<4;pageNumber++){

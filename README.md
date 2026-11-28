@@ -199,8 +199,8 @@ Run `npm test` to verify room sizes, reconnect behavior, protected avatars and l
 
 - A Fire TV Stick's browser (Silk) reports a small 960×540 page and a remote instead of a mouse, so the site used to take it for a phone. It is now recognised as the TV: by name (Fire TV models report an `AFT…` code, and common smart-TV browsers are recognised too), by having no touchscreen, or by choice.
 - On a recognised TV the page is laid out at 1280 wide, the size every TV screen is designed and tested at, and the browser scales it to the screen. Hosting goes straight to the TV lobby, with no "made for a TV" prompt.
-- If a TV is not recognised, open `jambaloop-family-test.onrender.com/?tv` once on it (or press **On a TV?** in the footer and choose **This is our TV**). The choice is remembered on that device; `?auto` clears it. The same page shows what the device reports.
-- Phones that try to host still see the prompt, now with **This screen is our TV: host here**.
+- If a TV is not recognised, open `jambaloop-family-test.onrender.com/?tv` once on it (or press **On a TV?** beside "No downloads" on the home page and choose **This is our TV**). The choice is remembered on that device; `?auto` clears it. The same page shows what the device reports.
+- Phones that try to host still see the prompt, now with **This screen is our TV: host here**. On a touchscreen that choice lasts for that visit only, and opening a join link on a touchscreen is always the phone view.
 - Not yet tested on a real Fire TV Stick: the exact browser identity Silk sends there is not documented by Amazon.
 - Home tiles: the game type and player count are on a solid strip under the artwork, no longer printed over it; on narrow tiles "1+ players" shortens to "1+".
 

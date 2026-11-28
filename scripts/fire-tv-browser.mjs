@@ -64,12 +64,37 @@ try{
   assert.equal(await phone.locator('dialog[open] [data-screen="tv"]').count(),1,'the prompt offers "This screen is our TV"');
   await phone.locator('dialog[open] [data-screen="tv"]').click();
   await phone.locator('.host-screen').first().waitFor({timeout:15000});
-  assert.equal(await phone.evaluate(()=>localStorage.getItem('jambaloop-screen')),'tv','remembered on this device');
-  console.log('PASS: a phone gets the prompt, and "This screen is our TV" hosts and is remembered');
+  assert.equal(await phone.evaluate(()=>localStorage.getItem('jambaloop-screen')),null,'a touchscreen is not remembered as a TV');
+  assert.equal(await phone.evaluate(()=>sessionStorage.getItem('jambaloop-screen')),'tv','it is the TV for this visit');
+  const code=await phone.evaluate(()=>JSON.parse(sessionStorage.getItem('quizmas-session')).code);
+  // Later the same phone scans a friend's QR code: it is a phone again.
+  const later=await phoneContext.newPage();
+  later.on('pageerror',e=>errors.push('phone later: '+e.message));
+  await later.goto(site+'/?join='+code,{waitUntil:'domcontentloaded'});
+  await later.waitForTimeout(600);
+  const joined=await later.evaluate(()=>({w:innerWidth,tv:document.documentElement.classList.contains('tv-screen'),deck:document.documentElement.classList.contains('mobile-deck')}));
+  assert.deepEqual(joined,{w:390,tv:false,deck:true},'joining from a QR code is the phone view');
+  console.log('PASS: a phone gets the prompt; "This screen is our TV" hosts for that visit only, and a join link is the phone view again');
   // 4. The screen check: ?device shows what the device reports and lets you choose.
+  // The link is on the home page, beside "No downloads", on a TV and on a laptop.
+  for(const options of [tvStick(fireAgent),{viewport:{width:1280,height:720}}]){
+    const home=await (await browser.newContext(options)).newPage();
+    await home.goto(site,{waitUntil:'domcontentloaded'});
+    const link=home.locator('.home-tv-link');
+    await link.waitFor({timeout:10000});
+    assert.ok(await link.isVisible(),'"On a TV?" is visible on the home page');
+    await link.click();
+    await home.locator('dialog[open] [data-action="screen-choice"]').first().waitFor({timeout:5000});
+  }
   const check=await (await browser.newContext(tvStick(desktopAgent))).newPage();
   check.on('pageerror',e=>errors.push('check: '+e.message));
+  // Host first, so the tab has a saved room; ?device must still open and stay open.
+  await check.goto(site,{waitUntil:'domcontentloaded'});
+  await check.locator('[data-action="party"]').first().click();
+  await check.locator('.host-screen').first().waitFor({timeout:15000});
   await check.goto(site+'/?device',{waitUntil:'domcontentloaded'});
+  await check.waitForTimeout(1500);
+  assert.equal(await check.locator('dialog[open] [data-action="screen-choice"]').count(),3,'the screen check stays open over a saved room');
   await check.locator('dialog[open] [data-action="screen-choice"][data-screen="tv"]').waitFor({timeout:8000});
   await check.locator('dialog[open] .screen-details summary').click();
   const report=await check.locator('dialog[open] .screen-report').innerText();
@@ -82,6 +107,39 @@ try{
   // ?auto clears it again.
   await check.goto(site+'/?auto',{waitUntil:'domcontentloaded'});
   assert.equal(await check.evaluate(()=>localStorage.getItem('jambaloop-screen')),null);
-  console.log('PASS: ?device shows the screen check; "This is our TV" sticks; ?auto clears it');
+  console.log('PASS: "On a TV?" is on the home page; ?device shows the screen check even over a saved room; "This is our TV" sticks; ?auto clears it');
+  // 5. Tile captions are never cut off, at every grid size the home page uses, on every page; and every tile is on screen.
+  for(const [name,options,grid] of [['phone',{viewport:{width:390,height:844},isMobile:true,hasTouch:true},false],['tablet',{viewport:{width:1024,height:768}},true],['full hd',{viewport:{width:1920,height:1080}},true]]){
+    const context=await browser.newContext(options);
+    if(grid)await context.addInitScript(()=>{try{localStorage.setItem('jambaloop-home-view','grid')}catch{}});
+    const page=await context.newPage();
+    await page.goto(site,{waitUntil:'domcontentloaded'});
+    await page.locator('.game-tile').first().waitFor({timeout:15000});
+    await page.waitForTimeout(400);
+    for(let pageNumber=0;pageNumber<4;pageNumber++){
+      const report=await page.evaluate(()=>[...document.querySelectorAll('.game-tile')].filter(t=>t.getBoundingClientRect().width>0).map(t=>{
+        const k=t.querySelector('.tile-kind');const r=t.getBoundingClientRect();
+        const box=t.closest('.launcher-content')?.getBoundingClientRect()??{left:0,right:innerWidth};
+        const hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);
+        return {mode:t.dataset.mode,cut:k.scrollWidth>k.clientWidth+1,inside:r.right<=box.right+1&&r.left>=box.left-1,reachable:Boolean(hit&&t.contains(hit))};}));
+      assert.deepEqual(report.filter(t=>t.cut).map(t=>t.mode),[],`no type cut off (${name}, page ${pageNumber+1})`);
+      assert.deepEqual(report.filter(t=>!t.inside||!t.reachable).map(t=>t.mode),[],`every tile is on screen (${name}, page ${pageNumber+1})`);
+      const next=page.locator('.mode-pagination button:has-text("Next"):enabled');
+      if(!await next.count())break;
+      await next.first().click();await page.waitForTimeout(300);
+    }
+    await page.screenshot({path:`browser-screenshots/fire-tv-tiles-${name.replace(' ','-')}.png`});
+    await context.close();
+  }
+  console.log('PASS: tile captions are whole and every tile is on screen at phone, tablet and full HD sizes');
+  // 6. A narrow laptop window that chooses "This screen is our TV" drops the paged phone layout at once.
+  const narrow=await (await browser.newContext({viewport:{width:420,height:640}})).newPage();
+  await narrow.goto(site,{waitUntil:'domcontentloaded'});
+  await narrow.locator('[data-action="party"]').first().click();
+  await narrow.locator('dialog[open] [data-screen="tv"]').click();
+  await narrow.locator('.host-screen').first().waitFor({timeout:15000});
+  await narrow.waitForTimeout(500);
+  assert.equal(await narrow.evaluate(()=>document.documentElement.classList.contains('mobile-deck')),false,'no paged phone layout on the chosen TV');
+  console.log('PASS: choosing "This screen is our TV" in a narrow window drops the phone layout');
   assert.deepEqual(errors,[],'no page errors');
 }finally{await browser.close();}

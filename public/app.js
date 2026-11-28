@@ -2600,7 +2600,8 @@ document.addEventListener('click', async event => {
     // Phones and small tablets are controllers: recommend a TV before turning one into the main screen.
     if (smallScreen() && !button.dataset.anyway) return openDialog('bigscreen', undefined, button.dataset.mode);
     // "This screen is our TV": remember it, and lay the page out like a TV from now on.
-    if (button.dataset.screen === 'tv') { rememberScreen('tv'); prepareTvScreen(); }
+    // A touchscreen (a phone or tablet) is the TV for this visit only, so it is a phone again when it next joins a game.
+    if (button.dataset.screen === 'tv') { rememberScreen('tv', { visitOnly: hasTouchscreen() }); prepareTvScreen(); window.dispatchEvent(new Event('jambaloop-screen')); }
     if (dialog.open) dialog.close();
     button.disabled = true;
     const message = document.querySelector('#home-error');
@@ -2840,10 +2841,11 @@ const screenCheck = readScreenChoice();
 prepareTvScreen();
 renderHome();
 mobileDeck(app, dialog, content);
-if (screenCheck) openDialog('device');
 const code = new URLSearchParams(location.search).get('join');
 const saved = restoreRoomSession();
-if (saved && (!code || saved.code === code && !saved.host)) startSession(saved);
+// The screen check is a deliberate visit: it is not replaced by a saved room or a join form. Choosing reloads the page.
+if (screenCheck) openDialog('device');
+else if (saved && (!code || saved.code === code && !saved.host)) startSession(saved);
 else if (code) {
   const remembered = rememberedPlayer(code);
   if (remembered) startSession(remembered);

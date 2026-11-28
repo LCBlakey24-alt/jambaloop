@@ -42,7 +42,8 @@ try{
   console.log('PASS: Rare Find discoverable, original preview and 3/5/7 rounds');
 
   for(const [width,height] of [[1280,720],[1920,1080],[1024,768]]){
-    const ctx=await browser.newContext({viewport:{width,height}});
+    // Exercise reduced motion at full HD and capture settled panel-score screens.
+    const ctx=await browser.newContext({viewport:{width,height},reducedMotion:width===1920?'reduce':'no-preference'});
     const errors=[];
     const teams=width===1280;
     const panel=width===1920;

@@ -8,6 +8,7 @@ import { duoRecordings } from './duo-recordings.js';
 export const LAUNCHER_PAGE_SIZE = 8;
 
 const identities = {
+  moreless: {lines:['MORE OR','LESS'],strap:'MAKE THE COMPARISON',kind:'TRIVIA',steps:['Read the comparison and choose one of two answers on your phone.','The TV reveals the correct answer after everyone has locked in.','Choose points or elimination, then play the number of rounds you picked.']},
   soclose: {lines:['SO','CLOSE'],strap:'EVERY NUMBER COUNTS',kind:'ESTIMATION',steps:['Read the question and its measurement unit.','Scroll to your best estimate and lock it in privately.','The closest guess earns 100 points; exact guesses earn 200.']},
   classic:   {lines:['CLASSIC','QUIZ'], strap:'THE ORIGINAL QUIZ', kind:'TRIVIA', steps:['Pick a question category and round length.','Answer questions on your phone.','Collect points and top the leaderboard.']},
   wheel:     {lines:['SPIN THE','WHEEL'], strap:'LET FATE CHOOSE', kind:'TRIVIA', steps:['Spin the wheel for the next category.','Answer the question on your phone.','Score points across the rounds.']},

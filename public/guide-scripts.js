@@ -188,6 +188,16 @@ export const gameGuides = {
     ['max', '[warmly] It is all about knowing your friends. Most points wins.', 'win'],
     ['poppy', '[excited] Survey says, let\'s play!', 'go'],
   ],
+  moreless: [
+    ['max', 'Welcome to More or Less.', 'title'],
+    ['poppy', 'Each question asks you to compare two things.', 'prompt'],
+    ['max', 'Read carefully. Sometimes the question asks for more, sometimes less.', 'prompt'],
+    ['poppy', 'Tap your answer privately on your phone.', 'vote'],
+    ['max', 'The TV reveals the answer after everyone has locked in.', 'answer'],
+    ['poppy', 'In points play, each correct choice earns one hundred points.', 'scores'],
+    ['max', 'In elimination, a wrong or missed answer puts you out. If everyone misses, the remaining players tie.', 'out'],
+    ['poppy', 'Choose three, five, seven or ten rounds. Let us play!', 'go'],
+  ],
   debate: [
     ['max','Welcome to Floor Time.','title'],
     ['poppy','Two of you stand by the TV. Each gets a side to defend.','prompt'],

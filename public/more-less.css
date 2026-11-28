@@ -1,0 +1,24 @@
+.game[data-mode="moreless"] .moreless-stage {
+  display:flex; flex-direction:column; justify-content:center; gap:clamp(10px,2vh,24px);
+  padding:clamp(16px,3vw,48px); text-align:center;
+}
+.moreless-stage header { display:flex; justify-content:space-between; align-items:center; gap:1em; font-weight:800; }
+.moreless-stage h1 { margin:0; font:700 clamp(24px,4.3vw,58px)/1.08 var(--id-display),sans-serif; text-wrap:balance; }
+.moreless-kicker { margin:0; color:var(--id-accent); font-weight:900; letter-spacing:.1em; }
+.moreless-options { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:clamp(10px,2vw,24px); }
+.moreless-option { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.45em; min-height:clamp(100px,24vh,220px); border:2px solid var(--id-accent); border-radius:18px; padding:16px; color:var(--id-ink); background:var(--id-surface2); font:inherit; }
+button.moreless-option { cursor:pointer; }
+button.moreless-option:focus-visible { outline:3px solid white; outline-offset:3px; }
+.moreless-option strong { font:700 clamp(21px,3.2vw,44px)/1.05 var(--id-display),sans-serif; overflow-wrap:anywhere; }
+.moreless-letter { color:var(--id-accent); font-weight:900; }
+.moreless-value { font-weight:800; font-variant-numeric:tabular-nums; }
+.moreless-correct { background:var(--id-accent); color:var(--id-bg2); padding:.3em .7em; border-radius:2em; font-size:.8em; font-weight:900; }
+.moreless-option.is-correct { outline:3px solid var(--id-accent); outline-offset:2px; }
+.moreless-option.is-selected { border-color:white; }
+.moreless-status { margin:0; font-weight:700; }
+.moreless-actions .button { min-height:48px; }
+.player-only .moreless-stage { padding:12px; gap:10px; justify-content:flex-start; }
+.player-only .moreless-stage h1 { font-size:clamp(20px,6vw,30px); }
+.player-only .moreless-options { grid-template-columns:1fr; }
+.player-only .moreless-option { min-height:clamp(78px,14vh,130px); padding:8px; }
+.player-only .moreless-option strong { font-size:clamp(20px,6vw,28px); }

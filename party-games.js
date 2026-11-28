@@ -1,3 +1,4 @@
+import {startMoreLess,advanceMoreLess,voteMoreLess,publicMoreLess,moreLessReady} from './more-less.js';
 import { clockExpired, stopDeadline, watchDeadline } from './room-clock.js';
 import { connectedPlayers, isConnected, responseTarget } from './room-presence.js';
 import { randomInt } from 'node:crypto';
@@ -164,6 +165,7 @@ function advanceBluff(room,publish) {
 }
 
 export function startParty(room, publish) {
+  if(room.mode === 'moreless') return startMoreLess(room,publish);
   if(room.mode==='debate')return startDebate(room,publish);
   if(room.mode==='catchup')return startCatchUp(room,publish);
   if(room.mode==='dontlook')return startLook(room,publish);
@@ -222,6 +224,7 @@ export function expireParty(room, publish) {
 }
 
 export function advanceParty(room, publish) {
+  if(room.mode === 'moreless') return advanceMoreLess(room,publish);
   if(room.mode==='debate')return advanceDebate(room,publish);
   if(room.mode==='catchup')return advanceCatchUp(room,publish);
   if(room.mode==='dontlook')return advanceLook(room,publish);
@@ -239,6 +242,7 @@ export function advanceParty(room, publish) {
 }
 
 export function submitParty(room, key, data, publish) {
+  if(room.mode === 'moreless') return voteMoreLess(room,key,data,publish);
   if(room.mode==='debate')return voteDebate(room,key,data,publish);
   if(room.mode==='catchup')return submitCatchUp(room,key,data,publish);
   if(room.mode==='dontlook')return submitLook(room,key,data,publish);
@@ -316,6 +320,7 @@ export function partyWhoIsIn(room) {
 }
 
 export function publicParty(room, key) {
+  if(room.mode === 'moreless') return publicMoreLess(room,key);
   if(room.mode==='debate')return publicDebate(room,key);
   if(room.mode==='catchup')return publicCatchUp(room,key);
   if(room.mode==='dontlook')return publicLook(room,key);
@@ -385,6 +390,7 @@ export function publicParty(room, key) {
 }
 
 export function advancePartyWhenReady(room, publish) {
+  if(room.mode === 'moreless') return moreLessReady(room,publish);
   if (room.mode === 'debate') return debateReady(room,publish);
   if (room.mode === 'catchup') return false;
   if (room.mode === 'dontlook') return false;

@@ -483,6 +483,7 @@ function openDialog(mode, value, gameMode, quizId) {
       <label>Difficulty<select name="raceDifficulty">${selected([['easy','Easy'],['medium','Medium'],['hard','Hard'],['mixed','Mixed']],raceSetup.raceDifficulty ?? 'mixed')}</select></label>
       <label>Format<select name="raceLeague">${selected([['off','Single race'],['on','League · 3 races, points for every place']],raceSetup.raceLeague ? 'on' : 'off')}</select></label></div>
       <small>2–12 racers. Multiple-choice questions appear privately on phones. Fast correct answers boost speed. Easy/Hard use curated questions where available, supplemented by standard questions.</small></fieldset>
+    <label id="moreless-style-field" hidden>Scoring<select name="moreLessStyle">${selected([['points','Points'],['elimination','Elimination']],configured && state.moreLessStyle || 'points')}</select></label>
     <label id="rare-scoring-field" hidden>Rarity reference<select name="rareScoring">${selected([['panel','UK research panel'],['room','People in this room']],configured && state.rareScoring || 'panel')}</select></label>
     <label id="score-interval-field">Leaderboard reveal<select name="scoreInterval" aria-label="Leaderboard reveal" aria-describedby="score-interval-help">${selected(scoreIntervals.map(value => [value, intervalLabels[value]]), interval)}</select>
       <small id="score-interval-help">Correct answers are still revealed after each question.</small></label>
@@ -582,6 +583,8 @@ function openDialog(mode, value, gameMode, quizId) {
       const brain = game === 'brain';
       const topAnswers = game === 'topanswers';
       const rare = game === 'rare';
+      const moreLess = game === 'moreless';
+      form.querySelector('#moreless-style-field').hidden = !moreLess;
       form.querySelector('#rare-scoring-field').hidden=!rare;
       const creativeRounds = ['cards', 'punchline', 'bluff', 'sketch'].includes(game);
       const allowsTeams = teamPlayModes.includes(game);
@@ -625,7 +628,7 @@ function openDialog(mode, value, gameMode, quizId) {
       const formatField = form.querySelector('#format-field');
       formatField.hidden = custom || party || privateQuiz || curated || race || soClose;
       formatField.disabled = formatField.hidden;
-      form.elements.count.closest('label').hidden = custom || (party && !matching && !spotlight && !brain && !topAnswers && !rare && !creativeRounds) || race;
+      form.elements.count.closest('label').hidden = custom || (party && !matching && !spotlight && !brain && !topAnswers && !rare && !moreLess && !creativeRounds) || race;
       form.elements.seconds.closest('label').hidden = party || race;
       form.elements.autoReveal.closest('label').hidden = party || race;
       form.elements.phoneView.closest('label').hidden = party || privateQuiz || race;
@@ -639,7 +642,7 @@ function openDialog(mode, value, gameMode, quizId) {
       const afterDarkField = form.querySelector('#after-dark-field');
       afterDarkField.hidden = !afterHoursModes.includes(game);
       form.elements.afterDark.disabled = afterDarkField.hidden;
-      form.querySelector('#count-label').textContent = board ? 'Maximum turns' : rare ? 'Rarity rounds' : topAnswers ? 'Room poll rounds' : brain ? 'Ladder height' : spotlight ? 'Turns per contestant' : trolley || matching || creativeRounds ? 'Rounds' : 'Questions';
+      form.querySelector('#count-label').textContent = board ? 'Maximum turns' : moreLess ? 'Rounds' : rare ? 'Rarity rounds' : topAnswers ? 'Room poll rounds' : brain ? 'Ladder height' : spotlight ? 'Turns per contestant' : trolley || matching || creativeRounds ? 'Rounds' : 'Questions';
       const counts = questionCounts(game, privateQuiz || curated ? 'choice' : form.elements.format.value, privateQuiz || curated ? 'mixed' : form.elements.category.value);
       const previous = Number(form.elements.count.value) || (configured ? state.total : 0);
       const spaces = Number(form.elements.boardLength.value);
@@ -662,7 +665,7 @@ function openDialog(mode, value, gameMode, quizId) {
         : form.elements.seconds.value === '0' ? 'No speed bonus.'
         : formatTypes(format).includes('estimate') ? 'Timed correct answers can earn a speed bonus. Closest guesses receive equal base points.'
         : 'Faster correct answers earn more.';
-      form.querySelector('#scoring-note').textContent = soClose ? 'Closest guesses earn 100 points; exact guesses earn 200. No speed bonus.' : race ? 'You steer your speed with answers. Correct boosts you, Pass and wrong answers slow you down. First to finish wins.' : party ? (game==='debate' ? 'Everyone speaks twice. Each speaker has up to sixty seconds. Audience votes are private. Win by the vote margin.' : rare && form.elements.rareScoring.value==='panel' ? 'Name an answer fewer UK study participants mentioned. A matching answer costs each player five points. Unlisted valid entries earn 20 base points.' : rare ? 'Everyone secretly enters a valid answer that the other players might not think of. A verified unique answer earns 200 points, a pair earns 100 each, three or more matches earn 50 each. Unrecognised answers need the TV host to review them before reveal. Choose 3, 5 or 7 rounds.' : topAnswers ? 'Everyone privately votes for their genuine favourite among four options. Then secretly predicts the room’s most popular answer. The TV reveals real room vote counts (never invented surveys). Score 20 per vote for your prediction, plus 100 when you predict a top-ranked option. Choose 3, 5 or 7 rounds.' : brain ? 'Climb 5, 7 or 10 original reasoning puzzles. Start with 2 lives; a missed or wrong answer costs 1 life. Each higher level earns more points, and eliminated players can watch the remaining climb.' : spotlight ? 'Everyone takes one contestant turn. A randomly selected expert suggests an answer first. Contestants earn 100 points for a correct answer; experts earn 40 for a correct suggestion. Choose one, two or three turns each, for up to twenty players.' : matching ? 'Write a short answer privately. Each other player who matches it earns you 100 points. Choose 3, 5 or 7 rounds.' : trolley ? 'Each round: two teams choose one of three cards in each phase (defend, sabotage, reinforce). The Trolley Driver pulls the lever. One round per player.' : game === 'bluff' ? 'Play 3, 5 or 7 rounds. One player per round never sees the secret prompt, and the bluff role rotates. A correct vote earns +100 points. If the bluff escapes the vote, they earn +100. Strict most votes catches the bluff; tied top votes let them escape.' : game === 'potato' ? 'Two or more players. The potato has one shared two-minute timer.' : creativeRounds ? 'Choose 3, 5 or 7 rounds. Players select cards or write punchlines privately, then vote on the funniest entry each round. The same room and cumulative scores continue throughout.' : 'Players use their phones to enter or vote.')
+      form.querySelector('#scoring-note').textContent = soClose ? 'Closest guesses earn 100 points; exact guesses earn 200. No speed bonus.' : race ? 'You steer your speed with answers. Correct boosts you, Pass and wrong answers slow you down. First to finish wins.' : party ? (moreLess ? 'Choose the larger answer privately. Points awards 100 for each correct answer. In elimination a wrong or missed answer knocks you out. If everyone remaining misses together, they share the win.' : game==='debate' ? 'Everyone speaks twice. Each speaker has up to sixty seconds. Audience votes are private. Win by the vote margin.' : rare && form.elements.rareScoring.value==='panel' ? 'Name an answer fewer UK study participants mentioned. A matching answer costs each player five points. Unlisted valid entries earn 20 base points.' : rare ? 'Everyone secretly enters a valid answer that the other players might not think of. A verified unique answer earns 200 points, a pair earns 100 each, three or more matches earn 50 each. Unrecognised answers need the TV host to review them before reveal. Choose 3, 5 or 7 rounds.' : topAnswers ? 'Everyone privately votes for their genuine favourite among four options. Then secretly predicts the room’s most popular answer. The TV reveals real room vote counts (never invented surveys). Score 20 per vote for your prediction, plus 100 when you predict a top-ranked option. Choose 3, 5 or 7 rounds.' : brain ? 'Climb 5, 7 or 10 original reasoning puzzles. Start with 2 lives; a missed or wrong answer costs 1 life. Each higher level earns more points, and eliminated players can watch the remaining climb.' : spotlight ? 'Everyone takes one contestant turn. A randomly selected expert suggests an answer first. Contestants earn 100 points for a correct answer; experts earn 40 for a correct suggestion. Choose one, two or three turns each, for up to twenty players.' : matching ? 'Write a short answer privately. Each other player who matches it earns you 100 points. Choose 3, 5 or 7 rounds.' : trolley ? 'Each round: two teams choose one of three cards in each phase (defend, sabotage, reinforce). The Trolley Driver pulls the lever. One round per player.' : game === 'bluff' ? 'Play 3, 5 or 7 rounds. One player per round never sees the secret prompt, and the bluff role rotates. A correct vote earns +100 points. If the bluff escapes the vote, they earn +100. Strict most votes catches the bluff; tied top votes let them escape.' : game === 'potato' ? 'Two or more players. The potato has one shared two-minute timer.' : creativeRounds ? 'Choose 3, 5 or 7 rounds. Players select cards or write punchlines privately, then vote on the funniest entry each round. The same room and cumulative scores continue throughout.' : 'Players use their phones to enter or vote.')
         : privateQuiz ? 'Each player gets a unique multiple-choice or True or False question in each round.'
         : custom ? 'Uses every question in the saved quiz in its authored order.'
         : curated ? 'A curated mixed-topic pack with multiple-choice questions.' : board
@@ -948,7 +951,7 @@ document.addEventListener('submit', async event => {
     const customQuiz = quiz && quiz !== 'current' ? savedQuizzes().find(entry => entry.id === quiz) : undefined;
     const curated = difficulty && difficulty !== 'standard';
     const scoring = basePoints ? { base: Number(basePoints), bonus: Number(speedPoints), doubles: doublePoints } : undefined;
-    const settings = { mode, rareScoring:mode==='rare'?form.elements.rareScoring.value:undefined, playStyle, theme, difficulty, raceLength, raceTrack, raceDifficulty, raceLeague: raceLeague === 'on', raceStyle, scoring, scoreInterval: scoreInterval === undefined ? undefined : Number(scoreInterval), boardSpeed: boardSpeed === undefined ? undefined : Number(boardSpeed), format: curated ? 'choice' : format, category: curated ? 'mixed' : category, phoneView, teamCount: Number(teamCount), boardLength: Number(boardLength), customQuiz, useRoomQuiz: quiz === 'current', count: Number(count), privateQuestions: privateQuestions === 'on', seconds: Number(seconds), autoReveal: autoReveal === 'on', includeChristmas: includeChristmas === 'on', afterDark: afterHoursModes.includes(mode) && afterDark === 'on' };
+    const settings = { mode, moreLessStyle:mode==='moreless'?form.elements.moreLessStyle.value:undefined, rareScoring:mode==='rare'?form.elements.rareScoring.value:undefined, playStyle, theme, difficulty, raceLength, raceTrack, raceDifficulty, raceLeague: raceLeague === 'on', raceStyle, scoring, scoreInterval: scoreInterval === undefined ? undefined : Number(scoreInterval), boardSpeed: boardSpeed === undefined ? undefined : Number(boardSpeed), format: curated ? 'choice' : format, category: curated ? 'mixed' : category, phoneView, teamCount: Number(teamCount), boardLength: Number(boardLength), customQuiz, useRoomQuiz: quiz === 'current', count: Number(count), privateQuestions: privateQuestions === 'on', seconds: Number(seconds), autoReveal: autoReveal === 'on', includeChristmas: includeChristmas === 'on', afterDark: afterHoursModes.includes(mode) && afterDark === 'on' };
     if (form.id === 'rematch-form' || form.id === 'configure-form') {
       const action = form.id === 'rematch-form' ? 'rematch' : 'configure';
       await api('/' + session.code + '/' + action, { ...settings, game: Number(form.dataset.game), lobbyVersion: Number(form.dataset.lobbyVersion) });
@@ -1061,6 +1064,8 @@ function phaseCaption(s) {
     'spotlight-reveal': 'Spotlight answer and scores',
     'brain-question': 'Brain Ladder challenge',
     'brain-reveal': 'Brain Ladder solution',
+    'moreless-vote': 'Choose an answer',
+    'moreless-reveal': 'Answer revealed',
     'top-poll': 'Live room poll',
     'top-guess': 'Predict the most popular choice',
     'top-reveal': 'Real room vote reveal',
@@ -1591,7 +1596,7 @@ function receive(next, current) {
     if (next.party?.type === 'samepage') rememberQuestion(next.party.historyId);
     if (next.party?.type === 'spotlight') rememberQuestion(next.party.question?.historyId);
     if (next.party?.type === 'brain') rememberQuestion(next.party.question?.historyId);
-    if (next.party?.type === 'topanswers') rememberQuestion(next.party.historyId);
+    if (next.party?.type === 'topanswers' || next.party?.type === 'moreless') rememberQuestion(next.party.historyId);
     if (next.party?.type === 'rare') rememberQuestion(next.party.historyId);
   }
   if(next.race) raceSnapshotLocal=Date.now();
@@ -2471,6 +2476,7 @@ document.addEventListener('click', async event => {
     token:button.dataset.reviewToken,
     canonical:action === 'rare-review-approve' ? button.closest('.rare-review-row')?.querySelector('select[data-review-select]')?.value ?? '' : '',
   },button);
+  if (action === 'moreless-vote') return sendParty({action:'vote',option:Number(button.dataset.option)},button);
   if (action === 'debate-vote') return sendParty({action:'vote',option:Number(button.dataset.option)},button);
   if (action === 'top-poll' || action === 'top-guess') return sendParty({ action: action === 'top-poll' ? 'poll' : 'guess', option: Number(button.dataset.option) }, button);
   if (action === 'brain-answer') return sendParty({ action: 'answer', option: Number(button.dataset.option) }, button);

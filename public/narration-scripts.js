@@ -1,6 +1,7 @@
 // Original Jambaloop intros: always offer readable text as well as optional sound.
 // 'recorded' identifies only audio files already committed to this branch.
 export const narration = {
+  moreless: "Welcome to More or Less. Compare the two choices and lock in your answer. Play for points, or see who survives elimination.",
   soclose: "Welcome to So Close! Scroll to your best estimate, then lock it in. Above or below, it makes no difference. The nearest guess earns the points, and an exact answer earns double!",
   classic: "It's time for Classic Quiz! Choose your favourite topic, put those thinking caps on, and prove who knows their stuff. Every question counts. Are you ready?",
   wheel: "Step right up for Spin the Wheel! Give it a spin and find out what category comes next. One wheel, plenty of surprises, and a lot of points to win!",

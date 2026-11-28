@@ -8,6 +8,8 @@
 // accent / accent2: highlights. question: whether prompts use the display
 // face ('display') or the readable house sans ('body').
 export const identities = {
+  moreless: { title:'The Comparison Studio', display:'Show MoreLess', weight:700, question:'body', upper:false, scheme:'dark',
+    bg:['#76618f','#191528'], surface:'#211b36', surface2:'#2b2341', ink:'#fff8e9', muted:'#e2d6e7', accent:'#ffb862', accent2:'#7de7dd', radius:'12px' },
   debate: { title:'The Listening Room', display:'Show Debate', weight:700, question:'display', upper:false, scheme:'dark',
     bg:['#284d49','#0d2426'], surface:'#143332', surface2:'#214441', ink:'#fff6e8', muted:'#c6ddd6', accent:'#ffad8e', accent2:'#99e1d2', radius:'12px' },
   classic:    { title: 'Golden Hour', display: 'Show Classic', weight: 700, question: 'display', upper: false, scheme: 'dark',

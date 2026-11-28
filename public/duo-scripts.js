@@ -118,6 +118,11 @@ export const duoIntros = {
     ['poppy', '[curious] Then predict what most of this room picked.'],
     ['max', '[laughs] No mystery survey. Just you lot!'],
   ],
+  moreless: [
+    ['max', 'Welcome to More or Less. Two choices, one right answer.'],
+    ['poppy', 'Pick the answer on your phone before everyone locks in.'],
+    ['max', 'Play for points or survive the elimination round. Good luck!'],
+  ],
   debate: [
     ['max','Welcome to Floor Time. Two speakers, one question.'],
     ['poppy','Take a side and win the room.'],

@@ -5,6 +5,7 @@
 // colour). Studio and finale identities are added show by show as each
 // redesign batch lands; until then a show keeps the shared ceremony.
 const marks = Object.freeze({
+  moreless: '<path d="M60 14v70M26 31h68M34 31 18 67h32L34 31zm52 0L70 67h32L86 31zM41 89h38"/><circle cx="60" cy="26" r="5" fill="currentColor"/>',
   classic: '<path d="M39 19h42v25c0 15-8 23-21 27-13-4-21-12-21-27z"/><path d="M39 25H24v12c0 11 6 17 17 17M81 25h15v12c0 11-6 17-17 17M60 71v14M44 88h32"/><path d="m60 28 4 9 10 1-7 7 2 10-9-5-9 5 2-10-7-7 10-1z" fill="currentColor" stroke="none"/>',
   wheel: '<circle cx="60" cy="54" r="35"/><circle cx="60" cy="54" r="27"/><path d="M60 27v54M33 54h54M41 35l38 38M79 35 41 73"/><circle cx="60" cy="54" r="7" fill="currentColor"/><path d="m53 10 14 0-7 15z" fill="currentColor"/><path d="M38 90h44"/>',
   knockout: '<path d="m60 12 36 14v27c0 20-14 33-36 43-22-10-36-23-36-43V26z"/><path d="M36 46h12l6-13 8 28 7-15h15"/><path d="M40 74h12m2 0h12m2 0h12" stroke-width="5"/>',

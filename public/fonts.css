@@ -38,3 +38,5 @@
 @font-face { font-family: 'Show Sketch'; font-weight: 700; font-display: swap; src: url('/fonts/caveat.woff2') format('woff2'); }
 @font-face { font-family: 'Show Race'; font-weight: 700; font-display: swap; src: url('/fonts/barlowcondensed.woff2') format('woff2'); }
 @font-face { font-family: 'Show SoClose'; font-weight: 600; font-display: swap; src: url('/fonts/ibmplexmono.woff2') format('woff2'); }
+
+@font-face { font-family: 'Show MoreLess'; font-weight: 700; font-display: swap; src: url('/fonts/sora.woff2') format('woff2'); }

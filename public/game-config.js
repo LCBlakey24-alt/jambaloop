@@ -59,6 +59,7 @@ export const modes = [
   ['shade', 'Shade', 'One player describes a secret colour in a word. Everyone else hunts for it on a giant colour board.', 'palette', '#ff5fa2'],
   ['dontlook', 'Don’t Look!', 'Turn your back to the TV. Your team gets the word across in three rounds: speaking only, actions only, then anything goes.', 'eye-off', '#ff5fa2'],
   ['sketch', 'Sketch Sprint', 'One person draws a secret prompt live; everyone else races to guess it.', 'paintbrush', '#a4dcff'],
+  ['moreless','More or Less','Compare two choices and pick which has more or less. Play for points or survive elimination.', 'scale', '#80e9da'],
   ['debate','Floor Time','Two speakers, two sides. Win the audience over in sixty seconds.', 'mic', '#ffa889'],
 ];
 
@@ -131,6 +132,7 @@ export function questionCounts(mode, format, category) {
   if (mode === 'knockout') return [60];
   if (mode === 'wayoff') return [5];
   if (mode === 'brain') return [5, 7, 10];
+  if (mode === 'moreless') return [3, 5, 7, 10];
   if (mode === 'topanswers') return [3, 5, 7];
   if (mode === 'rare' || mode === 'sketch') return [3, 5, 7];
   if (['punchline','cards','bluff'].includes(mode)) return [3, 5, 7];
@@ -163,7 +165,7 @@ export const estimateShows = ['soclose', 'wayoff'];
 export const isEstimateShow = mode => estimateShows.includes(mode);
 
 export const socialModes = ['punchline', 'cards', 'tracks'];
-export const partyModes = ['debate','bluff', 'bloodmoon', 'catchup', 'shade', 'dontlook', 'potato', 'samepage', 'spotlight', 'brain', 'topanswers', 'rare', 'sketch', ...socialModes];
+export const partyModes = ['moreless','debate','bluff', 'bloodmoon', 'catchup', 'shade', 'dontlook', 'potato', 'samepage', 'spotlight', 'brain', 'topanswers', 'rare', 'sketch', ...socialModes];
 export const scoreIntervals = [0, 1, 3, 5];
 export const defaultScoreInterval = 3;
 export const supportsScoreCheckpoints = mode => mode !== 'quizrace' && !isEstimateShow(mode) && modes.some(([id]) => id === mode) && !partyModes.includes(mode);
@@ -175,7 +177,7 @@ export const minimumPlayers = mode => mode === 'debate' ? 4 : ['quizrace','soclo
   : mode === 'dontlook' ? 2
   : mode === 'tracks' ? 3 : ['potato', 'showdown'].includes(mode) ? 2 : 1;
 // One shared rule for how many players a game supports. `playStyle` matters
-// only for Board Race, where individual racing uses at most four pieces; the
+// only for Board Race, where individual racing uses at most eight pieces; the
 // room itself can still hold a larger group that switches to Teams.
 // Games with an adults-only After Hours prompt set. The host must switch it on.
 export const afterHoursModes = Object.freeze(['tracks', 'punchline', 'cards', 'bluff', 'samepage']);
@@ -188,7 +190,7 @@ export const maximumPlayers = (mode, playStyle) =>
   : mode === 'shade' ? 20
   : mode === 'dontlook' ? 30
   : mode === 'wayoff' ? 30
-  : ['brain', 'topanswers', 'rare'].includes(mode) ? 30
+  : ['brain', 'topanswers', 'rare', 'moreless'].includes(mode) ? 30
   : mode === 'board' && playStyle === 'individual' ? BOARD_PIECES
   : roomCapacity;
 export const capacityError = (mode, playStyle, players) => {

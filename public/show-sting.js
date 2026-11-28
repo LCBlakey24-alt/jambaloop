@@ -5,7 +5,7 @@
 import { identityVariables } from './game-identities.js';
 import { launcherCopy } from './home-launcher.js';
 
-const roundPhases = ['debate-first','question', 'ready', 'spotlight-ready', 'brain-question', 'top-poll', 'rare-write', 'party-write', 'party-build', 'sketch-draw', 'party-judge'];
+const roundPhases = ['moreless-vote','debate-first','question', 'ready', 'spotlight-ready', 'brain-question', 'top-poll', 'rare-write', 'party-write', 'party-build', 'sketch-draw', 'party-judge'];
 const played = new Set();
 
 /** Which sting (if any) the change from `previousKey` to state `s` deserves. */

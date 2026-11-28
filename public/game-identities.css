@@ -8,6 +8,7 @@
 
 /* ---------------------------------------------------------------- page -- */
 /* The page behind each show (generated from game-identities.js; a test keeps them in step). */
+body.playing:has(.game[data-mode="moreless"]) { background:#191528; }
 body.playing:has(.game[data-mode="debate"]) { background:#0d2426; }
 body.playing:has(.game[data-mode="classic"]) { background:#040b30; }
 body.playing:has(.game[data-mode="wheel"]) { background:#2b0548; }

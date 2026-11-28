@@ -24,6 +24,19 @@ const sparkle = (x, y, s, fill, opacity = 1) => star(x, y, s, s * .28, 4, fill, 
 const heart = (x, y, s, fill, extra = {}) => path(`M${x} ${y + s * .3}c0-${s * .45} ${-s * .6}-${s * .55} ${-s * .6}-${s * .05}c0 ${s * .45} ${s * .6} ${s * .7} ${s * .6} ${s * .8}c0-${s * .1} ${s * .6}-${s * .35} ${s * .6}-${s * .8}c0-${s * .5}-${s * .6}-${s * .4}-${s * .6} ${s * .05}z`, { fill, ...extra });
 
 const scenes = {
+  moreless: c => [
+    rect(0, 0, 400, 400, c.bg[1]),
+    ...range(8).map(i => line(i*58-50, 0, i*58+90, 400, c.surface2, 4, {opacity:.65})),
+    circle(200, 181, 142, c.bg[0], {stroke:c.accent, 'stroke-width':3}),
+    line(200, 76, 200, 291, c.ink, 10, {'stroke-linecap':'round'}),
+    line(96, 138, 306, 120, c.accent, 10, {'stroke-linecap':'round'}),
+    line(110, 137, 74, 223, c.ink, 4), line(110, 137, 146, 223, c.ink, 4),
+    line(292, 123, 256, 210, c.ink, 4), line(292, 123, 328, 210, c.ink, 4),
+    path('M61 222q49 55 98 0z', {fill:c.accent}),
+    path('M243 209q49 55 98 0z', {fill:c.accent2}),
+    rect(149, 290, 102, 14, c.accent, {rx:7}),
+    ...[[48,70],[350,67],[55,320],[344,320]].map(([x,y]) => sparkle(x,y,8,c.accent2)),
+  ],
   debate: c => [
     rect(0,0,400,400,c.bg[1]),
     path('M0 35L400 0v101L0 162z',{fill:c.surface2}),
@@ -310,6 +323,7 @@ export const sceneModes = Object.keys(scenes);
 
 // Fine ink on the illustrated props. Keep the centre clear for the live title.
 const inkDetails = {
+  moreless: 'M38 35h45 M317 35h45 M140 311h120 M179 77l21-18 21 18',
   classic: 'M34 76V34H78 M40 60V40H60 M322 34h44v42 M340 40h20v20 M65 338Q200 304 335 338',
   wheel: 'M12 23l12 19 12-19 M112 23l12 19 12-19 M212 23l12 19 12-19 M312 23l12 19 12-19 M69 329Q118 278 172 268',
   debate: 'M30 153h52l-15 15 M348 247h23v-12 M45 53h103 M225 279h113',

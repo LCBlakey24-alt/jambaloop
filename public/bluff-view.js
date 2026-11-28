@@ -1,6 +1,7 @@
 import { partyFinale } from './party-finale.js';
 import {replayButtons} from './game-night.js';
 import { answerWall } from './party-views.js';
+import { face } from './player-face.js';
 
 // TV/phone view for original Spot the Bluff, with no secret prompt in TV markup.
 export function bluffView(s,{host,canControl,escape,reply,icons}){
@@ -17,9 +18,10 @@ export function bluffView(s,{host,canControl,escape,reply,icons}){
   </header>`;
   let body='',actions='';
   if(writing){
-    body=`<div class="bluff-show-intro"><h1>${host?'One person has no prompt':party.bluffing?'You are the bluff!':'Your secret prompt'}</h1>
-      <p>${host?'Everyone writes privately. Exactly one player has to improvise without knowing the question.':
-        party.bluffing?'Invent something plausible. You need to blend in with the answers of players who saw the real prompt.':escape(party.prompt)}</p></div>`;
+    body=`<div class="bluff-show-intro"><h1>${host?'One of you cannot see the prompt':party.bluffing?'You are the bluff!':'Your secret prompt'}</h1>
+      <p>${host?'Everyone answers on their phone. The bluffer only knows what kind of answer to write, and has to blend in.':
+        party.bluffing?'You cannot see the prompt. Write something that could pass for an answer, then keep a straight face.':escape(party.prompt)}</p>
+      ${!host&&party.bluffing&&party.hint?`<p class="bluff-show-hint"><span>Everyone else is writing</span><strong>${escape(party.hint)}</strong></p>`:''}</div>`;
     if(host){
       body+=answerWall(s,escape,'replies in')||`<div class="bluff-show-progress" role="status"><strong>${party.submissions} / ${party.responseTarget}</strong><span>replies received</span></div>`;
     }else if(party.wrote){
@@ -32,35 +34,47 @@ export function bluffView(s,{host,canControl,escape,reply,icons}){
     }
     if(canControl)actions='<button type="button" class="button primary" data-action="advance">Open the vote</button>';
   }else if(voting||revealing){
-    const showTruth=revealing;
+    // The reveal has two beats, both timed by the server: the vote count, then the unmasking.
+    const counting=revealing&&party.stage==='count';
+    const showTruth=revealing&&!counting;
+    const liar=showTruth?(party.replies??[]).find(entry=>entry.id===party.liarId)??{id:party.liarId,name:party.liarName}:undefined;
+    const most=Math.max(1,...(party.replies??[]).map(entry=>entry.votes??0));
     body=`<div class="bluff-show-intro">
-      <h1>${showTruth?(party.caught?'The bluff was caught!':'The bluff escaped the vote!'):'Who had no prompt?'}</h1>
-      <p>${escape(party.prompt)}</p>
-      ${showTruth?`<p class="bluff-show-verdict"><strong>${escape(party.liarName)}</strong> was bluffing.
-        ${party.correctVotes} ${party.correctVotes===1?'player spotted':'players spotted'} the bluff.
-        ${party.escaped?'The bluff earned 100 escape points.':''}</p>`:''}
+      <h1>${showTruth?(party.caught?'Caught!':'Got away with it!'):counting?'The votes are in…':'Who had no prompt?'}</h1>
+      <p class="bluff-show-prompt">${escape(party.prompt)}</p>
+      ${counting?`<p class="bluff-show-countdown" role="status">The room suspects ${(party.suspects??[]).length>1?'more than one of you':(party.suspects??[]).length?'one of you most of all':'nobody'}. The bluffer is about to be unmasked…</p>`:''}
+      ${showTruth?`<div class="bluff-show-unmask ${party.caught?'is-caught':'is-escaped'}" role="status">
+        ${face(liar)}<div><span>THE BLUFFER WAS</span><strong>${escape(party.liarName)}</strong>
+        <small>${party.correctVotes} ${party.correctVotes===1?'player':'players'} spotted it · ${party.fooled??0} fooled${
+          (party.fooled??0)||party.escaped?` · +${(party.fooled??0)*50+(party.escaped?100:0)} for the bluffer`:''}</small></div>
+        <b>${party.caught?'CAUGHT':'ESCAPED'}</b></div>`:''}
     </div>
     <div class="bluff-replies bluff-show-cards" role="list" aria-label="${showTruth?'Round replies and voting results':'Replies to vote on'}">
-      ${(party.replies??[]).length?(party.replies??[]).map((entry,i)=>`<article class="bluff-card party-vote-card ${showTruth&&entry.id===party.liarId?'revealed-bluff':''}" role="listitem">
-        <header><span class="bluff-show-number">${i+1}</span><strong>${escape(entry.name)}</strong>${showTruth&&entry.id===party.liarId?'<b class="bluff-show-truth">THE BLUFF</b>':''}</header>
+      ${(party.replies??[]).length?(party.replies??[]).map((entry,i)=>`<article class="bluff-card party-vote-card ${showTruth&&entry.id===party.liarId?'revealed-bluff':''} ${revealing&&(party.suspects??[]).includes(entry.id)?'is-suspect':''}" role="listitem">
+        <header>${face(entry)}<strong>${escape(entry.name)}</strong>${showTruth&&entry.id===party.liarId?'<b class="bluff-show-truth">THE BLUFF</b>':revealing&&(party.suspects??[]).includes(entry.id)?'<b class="bluff-show-suspect">MOST SUSPECTED</b>':''}</header>
         <p>${escape(entry.text)}</p>
-        ${showTruth?`<small>${entry.votes} ${entry.votes===1?'vote':'votes'}</small>`:
+        ${revealing?`<small class="bluff-show-votes"><span class="bluff-vote-bar"><i style="width:${Math.round(100*(entry.votes??0)/most)}%"></i></span>${entry.votes} ${entry.votes===1?'vote':'votes'}</small>`:
           !host&&entry.id===s.player?.id?'<small>Your reply — you cannot vote for yourself.</small>':
           !host&&!party.voted?`<button type="button" class="button outline small party-vote-button" data-action="bluff-vote" data-id="${escape(entry.id)}" aria-label="Vote for ${escape(entry.name)}">Vote for ${escape(entry.name)}</button>`:''}
       </article>`).join(''):'<p class="bluff-show-empty">No player replies were submitted for this round.</p>'}
     </div>
-    ${!showTruth&&host?answerWall(s,escape,'votes in')||`<p class="bluff-show-progress" role="status">${party.submissions} / ${party.responseTarget} votes submitted</p>`:''}
-    ${!showTruth&&!host&&party.voted?'<div class="bluff-show-locked party-vote-confirmation" role="status"><strong>Vote locked in</strong><span>Your choice is saved. Watch the TV for the reveal.</span></div>':''}
+    ${voting&&host?answerWall(s,escape,'votes in')||`<p class="bluff-show-progress" role="status">${party.submissions} / ${party.responseTarget} votes submitted</p>`:''}
+    ${voting&&!host&&party.voted?'<div class="bluff-show-locked party-vote-confirmation" role="status"><strong>Vote locked in</strong><span>Your choice is saved. Watch the TV for the reveal.</span></div>':''}
     ${showTruth&&!host?`<p class="bluff-show-earned" role="status">You earned <strong>+${party.ownEarned??0} points</strong> this round.</p>`:''}`;
-    if(canControl)actions=`<button type="button" class="button primary" data-action="advance">${
-      showTruth?(s.index+1<s.total?'Next secret round':'Show final standings'):'Reveal the bluff'} ${icons('arrow-right')}</button>`;
+    if(canControl&&!counting)actions=`<button type="button" class="button primary" data-action="advance">${
+      showTruth?(s.index+1<s.total?'Next secret round':'Show final standings'):'Count the votes'} ${icons('arrow-right')}</button>`;
   }else if(finished){
     const players=s.players??[];
     const top=players[0]?.score??0;
     const winners=players.filter(p=>p.score===top);
     body=`<div class="bluff-show-finale"><span class="eyebrow">THE FINAL REVEAL</span>
       <h1>${winners.length===1?escape(winners[0].name)+' wins!':'It’s a shared win!'}</h1>
-      ${partyFinale(s,{host,escape})}<p>Correctly identify the bluff for +100 points. Escape as the bluff for +100 points.</p>
+      ${partyFinale(s,{host,escape})}
+      ${party.titles?.eye||party.titles?.bluffer?`<div class="bluff-show-titles">
+        ${party.titles.eye?`<div><span>SHARPEST EYE</span><strong>${party.titles.eye.names.map(escape).join(' & ')}</strong><small>spotted the bluffer ${party.titles.eye.count} ${party.titles.eye.count===1?'time':'times'}</small></div>`:''}
+        ${party.titles.bluffer?`<div><span>BEST BLUFFER</span><strong>${party.titles.bluffer.names.map(escape).join(' & ')}</strong><small>fooled ${party.titles.bluffer.count} ${party.titles.bluffer.count===1?'player':'players'}</small></div>`:''}
+      </div>`:''}
+      <p>Spot the bluffer for +100. As the bluffer: +50 for every player you fool, and +100 if you escape.</p>
       <ol class="ranking bluff-show-standings">${players.map(p=>{
         const rank=players.findIndex(candidate=>candidate.score===p.score)+1;
         return `<li><span>${rank}. ${escape(p.name)}</span><strong>${p.score.toLocaleString()} pts</strong></li>`;

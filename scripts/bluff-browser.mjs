@@ -44,6 +44,8 @@ try{
  const question=privately[phoneIndex].party.prompt;
  assert.ok(question);
  assert.equal(privately[liar].party.prompt,undefined);
+ assert.ok(privately[liar].party.hint,'the bluffer is told what kind of answer to write');
+ assert.ok(privately.filter((_,i)=>i!==liar).every(s=>s.party.hint===undefined));
  await tvContext.addInitScript(({code,key})=>{
    sessionStorage.setItem('quizmas-session',JSON.stringify({code,key,host:true}));
  },{code:created.code,key:created.host});
@@ -108,15 +110,32 @@ try{
    },204);
  }
  await phone.locator('[data-action="bluff-vote"][data-id="'+liarId+'"]').click();
- const revealed=await state();
- assert.equal(revealed.phase,'party-reveal');
- assert.equal(revealed.party.caught,true);
- assert.equal(revealed.party.correctVotes,2);
- assert.equal(revealed.players.reduce((n,p)=>n+p.score,0),200);
+ // First the count: the votes are public, the bluffer is not, and nobody can skip ahead.
+ const counting=await state();
+ assert.equal(counting.phase,'party-reveal');
+ assert.equal(counting.party.stage,'count');
+ assert.equal(counting.party.liarId,undefined,'the server holds the bluffer back during the count');
+ assert.ok(counting.players.every(p=>p.score===0),'scores wait for the unmasking');
  await tv.locator('.bluff-game[data-bluff-phase="party-reveal"]').waitFor();
  await phone.locator('.bluff-game[data-bluff-phase="party-reveal"]').waitFor();
- assert.match(await tv.locator('.bluff-show-verdict').innerText(),/was bluffing/);
+ assert.match(await tv.locator('.bluff-show-intro h1').innerText(),/votes are in/i);
+ assert.equal(await tv.locator('.bluff-show-suspect').count(),1,'the most suspected player is marked');
+ assert.equal(await tv.locator('.bluff-show-truth, .bluff-show-unmask, [data-action="advance"]').count(),0);
+ await tv.waitForTimeout(900);
+ await tv.screenshot({path:'browser-screenshots/bluff-count-tv-1280x720.png'});
+ // Then the unmasking, pushed by the server.
+ await tv.locator('.bluff-show-unmask').waitFor({timeout:12000});
+ const revealed=await state();
+ assert.equal(revealed.party.stage,'unmask');
+ assert.equal(revealed.party.caught,true);
+ assert.equal(revealed.party.correctVotes,2);
+ assert.equal(revealed.party.fooled,0);
+ assert.equal(revealed.players.reduce((n,p)=>n+p.score,0),200);
+ assert.match(await tv.locator('.bluff-show-unmask').innerText(),/THE BLUFFER WAS[\s\S]*Contestant[\s\S]*CAUGHT/i);
+ assert.equal(await tv.locator('.bluff-show-truth').count(),1);
+ await phone.locator('.bluff-show-earned').waitFor({timeout:12000});
  assert.match(await phone.locator('.bluff-show-earned').innerText(),/\+100/);
+ await tv.waitForTimeout(1300);
  const metrics=await tv.evaluate(()=>({
    scrollWidth:document.scrollingElement.scrollWidth,
    scrollHeight:document.scrollingElement.scrollHeight,

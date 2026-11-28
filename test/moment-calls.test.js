@@ -23,11 +23,13 @@ test('every moment line is short, spoken by a regular host, recorded, and regist
 });
 
 test('a moment is called once, at the public beat, and never across games', () => {
-  assert.equal(call(state('bluff', 'party-vote'), state('bluff', 'party-reveal', { party: { caught: true } })), 'bluff/caught');
-  assert.equal(call(state('bluff', 'party-vote'), state('bluff', 'party-reveal', { party: { escaped: true } })), 'bluff/escaped');
-  assert.equal(call(state('bluff', 'party-reveal', { party: { caught: true } }), state('bluff', 'party-reveal', { party: { caught: true } })), undefined, 'not repeated on a later update');
+  // The result is only called at the unmasking: while the votes are counted the server has not sent it.
+  assert.equal(call(state('bluff', 'party-vote'), state('bluff', 'party-reveal', { party: { stage: 'count' } })), undefined, 'nothing is called during the count');
+  assert.equal(call(state('bluff', 'party-reveal', { party: { stage: 'count' } }), state('bluff', 'party-reveal', { party: { liarId: 'p2', caught: true } })), 'bluff/caught');
+  assert.equal(call(state('bluff', 'party-vote'), state('bluff', 'party-reveal', { party: { liarId: 'p2', escaped: true } })), 'bluff/escaped');
+  assert.equal(call(state('bluff', 'party-reveal', { party: { liarId: 'p2', caught: true } }), state('bluff', 'party-reveal', { party: { liarId: 'p2', caught: true } })), undefined, 'not repeated on a later update');
   assert.equal(call(state('bluff', 'party-vote'), state('bluff', 'party-reveal', { party: {} })), undefined, 'nothing to say when nobody voted');
-  assert.equal(call(state('bluff', 'party-vote'), { ...state('bluff', 'party-reveal', { party: { caught: true } }), game: 2 }), undefined);
+  assert.equal(call(state('bluff', 'party-vote'), { ...state('bluff', 'party-reveal', { party: { liarId: 'p2', caught: true } }), game: 2 }), undefined);
   assert.equal(call(undefined, state('bluff', 'party-write')), undefined);
 });
 

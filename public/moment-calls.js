@@ -45,7 +45,8 @@ export function momentFor(before, next) {
     case 'bluff':
       if (opened('party-write')) return first ? ['bluff', 'write', 2600] : undefined;
       if (entered('party-vote')) return ['bluff', 'vote', 700];
-      if (entered('party-reveal')) return party.caught ? ['bluff', 'caught', 1200] : party.escaped ? ['bluff', 'escaped', 1200] : undefined;
+      // The call waits for the unmasking: the server holds the result back while the votes are counted.
+      if (next.phase === 'party-reveal' && party.liarId !== undefined && before.party?.liarId === undefined) return party.caught ? ['bluff', 'caught', 600] : party.escaped ? ['bluff', 'escaped', 600] : undefined;
       return undefined;
     case 'samepage':
       if (opened('party-write')) return first ? ['samepage', 'write', 2600] : undefined;

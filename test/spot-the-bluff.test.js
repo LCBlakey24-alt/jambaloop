@@ -4,10 +4,14 @@ import {once} from 'node:events';
 import {test} from 'node:test';
 import {questionCounts} from '../public/game-config.js';
 import {bluffView} from '../public/bluff-view.js';
+import {bluffHint, bluffShapes} from '../bluff-hints.js';
+import {bluffPromptCount, bluffScores} from '../party-games.js';
+import {bluffV6} from '../bluff-prompts-v6.js';
+import {setTimeout as delay} from 'node:timers/promises';
 
-async function withServer(work){
+async function withServer(work,unmask='0'){
  const server=spawn(process.execPath,['server.js'],{
-   env:{...process.env,PORT:'0',PUBLIC_URL:''},stdio:['ignore','pipe','pipe'],
+   env:{...process.env,PORT:'0',PUBLIC_URL:'',BLUFF_UNMASK_MS:unmask},stdio:['ignore','pipe','pipe'],
  });
  let stderr='';
  server.stderr.on('data',chunk=>stderr+=String(chunk));
@@ -163,8 +167,10 @@ test('Tied top votes let the bluff escape, but correct voters still score indepe
    assert.equal(revealed.party.caught,false);
    assert.equal(revealed.party.escaped,true);
    assert.equal(revealed.party.correctVotes,1);
-   assert.equal(revealed.players.reduce((n,p)=>n+p.score,0),200);
-   assert.equal((await game.state(game.keys[liar])).party.ownEarned,100);
+   // One player spotted the bluffer (+100); the other was fooled (+50 to the bluffer), and the bluffer escaped (+100).
+   assert.equal(revealed.party.fooled,1);
+   assert.equal(revealed.players.reduce((n,p)=>n+p.score,0),250);
+   assert.equal((await game.state(game.keys[liar])).party.ownEarned,150);
    await game.advance();
    assert.equal((await game.state()).phase,'party-write');
    assert.equal((await game.state()).index,1);
@@ -183,4 +189,100 @@ test('Secret response markup escapes user-provided content and TV never gains th
  assert.ok(!phone.includes('<script>'));
  assert.ok(phone.includes('&lt;unsafe&gt;'));
  assert.ok(phone.includes('&lt;script&gt;'));
+});
+
+test('the bluffer is told what kind of answer to write, and nobody else is told anything about it',async()=>{
+ assert.ok(bluffPromptCount>=200,'a bank of at least 200 prompts');
+ assert.equal(new Set(bluffV6).size,bluffV6.length);
+ for(const prompt of bluffV6)assert.ok(bluffShapes.includes(bluffHint(prompt)));
+ assert.equal(bluffHint('Name a bad place to fall asleep.'),'A place');
+ assert.equal(bluffHint('What is a good excuse for not doing the washing up?'),'A reason or an excuse');
+ assert.equal(bluffHint('Name a silly thing to wear to a job interview.'),'Something to wear');
+ assert.equal(bluffHint('Name something you might find under a sofa.'),'An object you could pick up or point at');
+ // A hint never repeats the prompt's own subject.
+ assert.ok(bluffShapes.every(shape=>shape.split(' ').length<=9));
+ await withServer(async({create})=>{
+   const game=await create(3,4);
+   await game.advance();
+   const clients=await Promise.all(game.keys.map(key=>game.state(key)));
+   const bluffer=clients.find(s=>s.party.bluffing);
+   const prompt=clients.find(s=>!s.party.bluffing).party.prompt;
+   assert.equal(bluffer.party.hint,bluffHint(prompt));
+   assert.equal(bluffer.party.prompt,undefined,'still no prompt for the bluffer');
+   assert.ok(clients.filter(s=>!s.party.bluffing).every(s=>s.party.hint===undefined));
+   assert.equal((await game.state()).party.hint,undefined,'the TV never shows the hint');
+   const html=bluffView(bluffer,{host:false,canControl:false,escape:textEscape,reply:'',icons});
+   assert.match(html,/Everyone else is writing/);
+   assert.ok(html.includes(textEscape(bluffer.party.hint)));
+   assert.doesNotMatch(bluffView(await game.state(),{host:true,canControl:true,escape:textEscape,reply:'',icons}),/Everyone else is writing/);
+ });
+});
+
+test('the reveal is staged on the server: the count first, then the bluffer, and no score moves until then',async()=>{
+ await withServer(async({create})=>{
+   const game=await create(3,4);
+   await game.advance();
+   const clients=await Promise.all(game.keys.map(key=>game.state(key)));
+   const liar=clients.findIndex(s=>s.party.bluffing);
+   const ids=clients.map(s=>s.player.id);
+   for(const key of game.keys)await game.send(key,'write',{text:'An answer'});
+   // Two spot the bluffer, one is fooled; the bluffer votes for a neighbour.
+   const honest=[0,1,2,3].filter(i=>i!==liar);
+   await game.send(game.keys[honest[0]],'vote',{id:ids[liar]});
+   await game.send(game.keys[honest[1]],'vote',{id:ids[liar]});
+   await game.send(game.keys[honest[2]],'vote',{id:ids[honest[0]]});
+   await game.send(game.keys[liar],'vote',{id:ids[honest[0]]});
+   for(const key of [game.host,...game.keys]){
+     const counting=await game.state(key);
+     assert.equal(counting.phase,'party-reveal');
+     assert.equal(counting.party.stage,'count');
+     assert.ok(counting.party.unmaskIn>0);
+     assert.deepEqual(counting.party.replies.map(r=>r.votes).sort(),[0,0,2,2],'the counts are public');
+     assert.equal(counting.party.suspects.length,2,'a tie for most suspected');
+     for(const field of ['liarId','liarName','caught','escaped','correctVotes','fooled','ownEarned'])assert.equal(counting.party[field],undefined,field+' is held back during the count');
+     assert.ok(counting.players.every(p=>p.score===0),'no score moves during the count');
+     assert.equal(JSON.stringify(counting).includes('"bluffing":true'),false);
+   }
+   const tvHtml=bluffView(await game.state(),{host:true,canControl:true,escape:textEscape,reply:'',icons});
+   assert.match(tvHtml,/The votes are in/);
+   assert.match(tvHtml,/MOST SUSPECTED/);
+   assert.doesNotMatch(tvHtml,/bluff-show-truth|THE BLUFFER WAS|data-action="advance"/,'no bluffer and no skipping during the count');
+   // The host cannot jump past the unmasking.
+   await game.advance();
+   assert.equal((await game.state()).index,0);
+   assert.equal((await game.state()).phase,'party-reveal');
+   await delay(700);
+   const shown=await game.state();
+   assert.equal(shown.party.stage,'unmask');
+   assert.equal(shown.party.liarId,ids[liar]);
+   assert.equal(shown.party.caught,false,'level on votes: the bluffer escapes');
+   assert.equal(shown.party.fooled,1);
+   const score=id=>shown.players.find(p=>p.id===id).score;
+   assert.equal(score(ids[liar]),bluffScores.fooled+bluffScores.escaped);
+   assert.equal(score(ids[honest[0]]),bluffScores.spotted);
+   assert.equal(score(ids[honest[2]]),0);
+   const html=bluffView(shown,{host:true,canControl:true,escape:textEscape,reply:'',icons});
+   assert.match(html,/THE BLUFFER WAS/);
+   assert.match(html,/ESCAPED/);
+   assert.match(html,/2 players spotted it · 1 fooled · \+150 for the bluffer/);
+   assert.match(html,/data-action="advance"/);
+   // Titles at the end come from the server's running records.
+   for(let round=1;round<3;round++){
+     await game.advance();
+     for(const key of game.keys)await game.send(key,'write',{text:'Round '+round});
+     const now=await Promise.all(game.keys.map(key=>game.state(key)));
+     const state=await game.state();
+     const targets=state.party.replies.map(r=>r.id);
+     for(let i=0;i<4;i++)await game.send(game.keys[i],'vote',{id:targets.find(id=>id!==now[i].player.id)});
+     await delay(700);
+   }
+   await game.advance();
+   const finale=await game.state();
+   assert.equal(finale.phase,'finished');
+   assert.ok(finale.party.titles.eye.count>=1);
+   assert.ok(finale.party.titles.eye.names.length>=1);
+   const end=bluffView(finale,{host:true,canControl:true,escape:textEscape,reply:'',icons});
+   assert.match(end,/SHARPEST EYE/);
+   assert.match(end,/\+50 for every player you fool/);
+ },'400');
 });

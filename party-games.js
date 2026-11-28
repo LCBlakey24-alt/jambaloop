@@ -5,6 +5,8 @@ import { makeQuestions } from './questions.js';
 import {v2Bluff} from './creative-expansion-v2.js';
 import {bluffV4} from './creative-expansion-v4.js';
 import {bluffV5} from './creative-expansion-v5.js';
+import {bluffV6} from './bluff-prompts-v6.js';
+import {bluffHint} from './bluff-hints.js';
 import {afterHoursBluffs} from './after-hours.js';
 
 import { partyModes, socialModes } from './public/game-config.js';
@@ -53,7 +55,12 @@ const prompts = [
   ...v2Bluff,
   ...bluffV4,
   ...bluffV5,
+  ...bluffV6,
 ];
+export const bluffPromptCount = prompts.length;
+// How long the TV shows the vote count before the bluffer is unmasked. The server holds the name back until then.
+const BLUFF_UNMASK_MS = process.env.BLUFF_UNMASK_MS === undefined ? 5000 : Math.max(0, Number(process.env.BLUFF_UNMASK_MS) || 0);
+export const bluffScores = Object.freeze({ spotted: 100, escaped: 100, fooled: 50 });
 
 const random = list => list[randomInt(list.length)];
 
@@ -81,7 +88,7 @@ function startBluffRound(room,publish) {
     publish(room);
     return;
   }
-  if(room.index===0)room.bluffQueue=[];
+  if(room.index===0){room.bluffQueue=[];room.bluffStats=new Map();}
   room.bluffQueue=(room.bluffQueue??[]).filter(key=>keys.includes(key));
   if(!room.bluffQueue.length)room.bluffQueue=shuffleBluffRoles(keys);
   const liar=room.bluffQueue.shift();
@@ -92,6 +99,15 @@ function startBluffRound(room,publish) {
   room.party={liar,prompt,replies:new Map(),votes:new Map(),earned:new Map()};
   room.phase='party-write';
   publish(room);
+}
+
+// Points are worked out when the vote closes but only added at the unmasking: a score that jumped
+// during the count would tell the room who the bluffer is.
+function settleBluff(room) {
+  const party=room.party;
+  if(!party?.earned||party.settled||party.unmaskAt===undefined||Date.now()<party.unmaskAt)return;
+  party.settled=true;
+  for(const [key,points] of party.earned){const player=room.players.get(key);if(player)player.score+=points;}
 }
 
 function advanceBluff(room,publish) {
@@ -110,17 +126,33 @@ function advanceBluff(room,publish) {
     for(const [key,vote] of party.votes){
       if(vote!==liarId)continue;
       const player=room.players.get(key);
-      player.score+=100;
-      party.earned.set(key,100);
+      party.earned.set(key,bluffScores.spotted);
       party.correctVotes++;
     }
     party.escaped=!party.caught&&party.votes.size>0&&party.replies.has(party.liar);
-    if(party.escaped){
-      room.players.get(party.liar).score+=100;
-      party.earned.set(party.liar,(party.earned.get(party.liar)??0)+100);
+    // The bluffer scores for every player they fooled, and a bonus for getting away with it.
+    party.fooled=party.replies.has(party.liar)?[...party.votes].filter(([key,vote])=>key!==party.liar&&vote!==liarId).length:0;
+    const bluffPoints=party.fooled*bluffScores.fooled+(party.escaped?bluffScores.escaped:0);
+    if(bluffPoints){
+      party.earned.set(party.liar,(party.earned.get(party.liar)??0)+bluffPoints);
     }
+    // Whoever drew the most votes: the room's suspect, shown before the truth.
+    const most=Math.max(0,...totals.values());
+    party.suspects=most?[...totals].filter(([,count])=>count===most).map(([id])=>id):[];
+    // Running records for the end-of-game titles.
+    const stats=room.bluffStats??=new Map();
+    const record=key=>{if(!stats.has(key))stats.set(key,{spotted:0,fooled:0,escapes:0});return stats.get(key);};
+    for(const [key,vote] of party.votes)if(vote===liarId)record(key).spotted++;
+    record(party.liar).fooled+=party.fooled;
+    if(party.escaped)record(party.liar).escapes++;
+    party.unmaskAt=Date.now()+BLUFF_UNMASK_MS;
+    if(BLUFF_UNMASK_MS>0)setTimeout(()=>{if(room.party===party&&room.phase==='party-reveal'){settleBluff(room);publish(room);}},BLUFF_UNMASK_MS+60).unref();
     room.phase='party-reveal';
+    settleBluff(room);
   }else if(room.phase==='party-reveal'){
+    // Nobody can skip past the unmasking: the next round waits for it.
+    if(Date.now()<party.unmaskAt)return;
+    settleBluff(room);
     if(room.index+1<room.count){
       room.index++;
       return startBluffRound(room,publish);
@@ -310,17 +342,32 @@ export function publicParty(room, key) {
     };
   }
   const writing = room.phase === 'party-write';
-  const revealed = ['party-reveal','finished'].includes(room.phase);
+  if (room.mode === 'bluff') settleBluff(room);
+  const counted = ['party-reveal','finished'].includes(room.phase);
+  // The count comes first. The bluffer's name, and anything that gives it away, is held on the server until the unmasking.
+  const revealed = counted && (room.phase === 'finished' || Date.now() >= (party.unmaskAt ?? 0));
   const player = players.get(key);
+  const stats = room.bluffStats ?? new Map();
+  const title = field => {
+    const best = Math.max(0, ...[...stats.values()].map(entry => entry[field]));
+    return best ? { count: best, names: [...stats].filter(([, entry]) => entry[field] === best).map(([statKey]) => players.get(statKey)?.name).filter(Boolean) } : undefined;
+  };
   return {
     prompt: writing ? player && key !== party.liar ? party.prompt : undefined : party.prompt,
     bluffing: writing && key === party.liar,
+    // Only the bluffer gets the hint: the kind of answer the others are writing, never the prompt.
+    hint: writing && key === party.liar ? bluffHint(party.prompt) : undefined,
+    stage: counted ? (revealed ? 'unmask' : 'count') : undefined,
+    unmaskIn: counted && !revealed ? Math.max(0, party.unmaskAt - Date.now()) : undefined,
+    suspects: counted ? party.suspects : undefined,
+    fooled: revealed ? party.fooled : undefined,
+    titles: room.phase === 'finished' ? { eye: title('spotted'), bluffer: title('fooled') } : undefined,
     wrote: party.replies.has(key), voted: party.votes.has(key),
     submissions: writing ? party.replies.size : party.votes.size,
     responseTarget: responseTarget(room, writing ? party.replies : party.votes),
     replies: writing ? undefined : [...players].filter(([id])=>party.replies.has(id)).map(([id, entry]) => ({
       id: entry.id, name: entry.name, avatar: entry.avatar, text: party.replies.get(id),
-      votes: revealed ? party.totals.get(entry.id) ?? 0 : undefined,
+      votes: counted ? party.totals.get(entry.id) ?? 0 : undefined,
     })),
     liarId: revealed ? players.get(party.liar).id : undefined,
     liarName: revealed ? players.get(party.liar).name : undefined,

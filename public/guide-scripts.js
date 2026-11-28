@@ -94,11 +94,11 @@ export const gameGuides = {
   bluff: [
     ['max', '[whispers] This is Spot the Bluff. Somebody in this room is about to make it all up.', 'title'],
     ['poppy', '[conversational] Every round, a question goes to every phone. Every phone except one.', 'secret'],
-    ['max', '[playfully] That player is the bluffer. They write blind, and only see the question once the answers are in.', 'secret'],
+    ['max', '[playfully] That player is the bluffer. They never see the question, only a hint at the kind of answer to write.', 'secret'],
     ['poppy', '[cheerfully] Everyone types an answer on their phone. Keep a straight face.', 'write'],
     ['max', '[conversational] The answers go up on the TV, and the room talks it over. Whose answer smells wrong?', 'replies'],
     ['poppy', '[excited] Then everyone votes for who they think was bluffing.', 'vote'],
-    ['max', '[cheerfully] Vote for the bluffer and you score a hundred. Escape the vote as the bluffer, and the hundred is yours.', 'scores'],
+    ['max', '[cheerfully] Spot the bluffer and you score a hundred. As the bluffer, you score fifty for everyone you fool, and a hundred more if you escape the vote.', 'scores'],
     ['poppy', '[warmly] The role moves round every time, so everyone gets a go at lying.', 'win'],
     ['max', '[whispers] Trust nobody. Let\'s play.', 'go'],
   ],

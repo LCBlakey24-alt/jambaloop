@@ -207,7 +207,10 @@ html body .tile-art[data-show="brain"] .tile-wordmark { --wm:13; padding:0; text
 html body .tile-art[data-show="brain"] .tile-wordmark > span:last-child { color:var(--id-accent2); text-shadow:0 0 .12em var(--id-accent2),0 0 .4em var(--id-accent2); }
 /* Seventies Survey: stacked retro shadow over the sunset bands. */
 html body .tile-art[data-show="topanswers"] { justify-content:flex-start; padding-top:26cqw; }
-html body .tile-art[data-show="topanswers"] .tile-wordmark { --wm:14; padding:0; text-shadow:.05em .05em 0 var(--id-accent2),.1em .1em 0 var(--id-bg2); }
+html body .tile-art[data-show="topanswers"] .tile-wordmark {
+  --wm:13; padding:.18em .42em; border-radius:.65em; background:var(--id-surface);
+  border:2px solid var(--id-accent2); text-shadow:none;
+}
 /* Treasure Vault: engraved on the vault door's centre plate. */
 html body .tile-art[data-show="rare"] .tile-wordmark { --wm:12; aspect-ratio:1; display:grid; align-content:center; padding:.5em; border-radius:50%;
   background:radial-gradient(var(--id-surface2),var(--id-bg2)); border:3px solid var(--id-accent); }
@@ -225,6 +228,16 @@ html body .tile-art[data-show="soclose"] .tile-wordmark { --wm:13; color:var(--i
 html body .tile-art[data-show="soclose"] .tile-wordmark > span:last-child { color:var(--id-bg2); }
 
 /* ---------------------------------------------- games wear their tile -- */
+/* A gallery caption, so the Fredoka lettering stays readable across every swatch. */
+html body .tile-art[data-show="shade"] .tile-wordmark {
+  --wm: 15; padding: .14em .42em .2em; background: var(--id-bg2);
+  border-bottom: .08em solid var(--id-accent2); border-radius: .12em; text-shadow: none;
+}
+/* A floodlit track timing board in the show's lime and indigo. */
+html body .tile-art[data-show="catchup"] .tile-wordmark {
+  --wm: 13; background: var(--id-bg2); border-inline: .09em solid var(--id-accent);
+  padding: .15em .44em; text-shadow: none;
+}
 /* Readability first: the scene is only a faint texture under text (93-96%
    solid surface on top); the full artwork lives on the tile and lobby card.
    The tile's scene, softened, behind each game's main panels (not nested

@@ -3,6 +3,7 @@ import { partyFinale } from './party-finale.js';
 import {replayButtons} from './game-night.js';
 import { answerWall } from './party-views.js';
 import { face } from './player-face.js';
+import { tvStepNote } from './captain-controls.js';
 function revealRows(p,escape){
  const groups=p.results?.groups||[];
  const invalid=p.results?.invalid||[];
@@ -72,17 +73,19 @@ export function rareFindView(s,{host,canControl,escape,icons,reply}){
       <textarea id="rare-answer" name="reply" maxlength="60" rows="2" required placeholder="Type something correct but unexpected">${escape(reply??'')}</textarea>
       <button class="button primary" type="submit">Lock in my answer ${icons('check')}</button>
       <small>One submission only. Accepted aliases and spelling variations count as the same answer.</small></form>`;
-    if(host)footer='<div class="rare-footer"><button type="button" class="button outline" data-action="advance">Close answers / review</button></div>';
+    // The captain's phone can close the answers too (for someone who has wandered off); the TV wording is unchanged.
+    if(canControl)footer=`<div class="rare-footer"><button type="button" class="button outline" data-action="advance">${host?'Close answers / review':'Close answers'}</button></div>`;
   }else if(review){
     body=host?reviewQueue(p,escape):`<div class="rare-wait"><div class="rare-gem" aria-hidden="true">◆</div>
-      <strong>Answers are being checked</strong><p>The TV host is reviewing unusual answers before the scores appear.</p></div>`;
+      <strong>Answers are being checked</strong><p>The TV host is reviewing unusual answers before the scores appear.</p>
+      ${canControl?`<p class="captain-tv-step" role="note">${escape(tvStepNote('rare',phase))}</p>`:''}</div>`;
     if(host)footer=`<div class="rare-footer"><button type="button" class="button primary" data-action="advance" ${p.remaining?'disabled':''}>
       ${p.remaining?'Review all answers to continue':'Reveal real answers and points'} ${icons('arrow-right')}</button></div>`;
   }else if(reveal){
     body=`<div class="rare-reveal-head"><strong>${p.results.valid} valid responses</strong><span>${p.results.responded} submitted · ${p.results.invalidCount} unaccepted</span></div>`+revealRows(p,escape)+
       (!host?`<p class="rare-own-score">You earned <strong>+${p.earned} pts</strong> this round.</p>`:'')+
       (p.source?`<p class="rare-source"><a href="${escape(p.source)}" target="_blank" rel="noopener noreferrer">Review reference source</a></p>`:'');
-    if(host)footer=`<div class="rare-footer"><button type="button" class="button primary" data-action="advance">
+    if(canControl)footer=`<div class="rare-footer"><button type="button" class="button primary" data-action="advance">
       ${s.index+1<s.total?'Next rarity round':'Show final standings'} ${icons('arrow-right')}</button></div>`;
   }
   stage=prompt+body;

@@ -24,6 +24,16 @@ try{
   await fire.locator('.carousel-card').first().waitFor({timeout:10000});
   assert.ok(await fire.locator('.carousel-card').count()>=24,'every game is in the carousel');
   await fire.screenshot({path:'browser-screenshots/fire-tv-home.png'});
+  // The remote: left and right still turn the carousel; down moves to the buttons below; OK presses.
+  const centre=()=>fire.evaluate(()=>document.querySelector('.carousel-card[aria-current="true"]')?.dataset.mode);
+  const first=await centre();
+  await fire.keyboard.press('ArrowRight');
+  await fire.waitForFunction(m=>document.querySelector('.carousel-card[aria-current="true"]')?.dataset.mode!==m,first,{timeout:5000});
+  await fire.keyboard.press('ArrowDown');
+  const focused=await fire.evaluate(()=>({tag:document.activeElement?.tagName,text:document.activeElement?.innerText?.trim().slice(0,40),ring:getComputedStyle(document.activeElement).outlineWidth}));
+  assert.equal(focused.tag,'BUTTON','down moves onto a button: '+JSON.stringify(focused));
+  assert.equal(focused.ring,'4px','with a ring you can see from the sofa');
+  await fire.screenshot({path:'browser-screenshots/fire-tv-remote-focus.png'});
   // Hosting goes straight to the TV lobby: no "made for a TV" prompt.
   await fire.locator('[data-action="party"]').first().click();
   await fire.locator('.host-screen').first().waitFor({timeout:15000});

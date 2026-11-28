@@ -44,3 +44,6 @@ html body .game-tile .tile-info .tile-kind { flex: 1 1 auto; }
   html body .game-tile .tile-info .tile-players-word { display: none; }
   html body .game-tile .tile-info .tile-kind { letter-spacing: .01em; }
 }
+
+/* On the TV the button the remote is on is unmistakable from the sofa. */
+html.tv-screen :focus-visible { outline: 4px solid #ffd34d !important; outline-offset: 4px !important; box-shadow: 0 0 0 8px #ffd34d40 !important; }

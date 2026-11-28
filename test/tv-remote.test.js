@@ -1,0 +1,46 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { nextInDirection } from '../public/tv-remote.js';
+import { looksLikeTvBrowser } from '../public/device.js';
+
+const box = (left, top, width = 100, height = 40) => ({ left, top, width, height });
+
+test('the remote moves to the nearest button in the direction pressed, preferring ones in line', () => {
+  // A row of three buttons and one below the middle.
+  const from = box(200, 100);
+  const others = [box(0, 100), box(400, 100), box(200, 200), box(420, 300)];
+  assert.equal(nextInDirection(from, 'left', others), 0);
+  assert.equal(nextInDirection(from, 'right', others), 1, 'the one in line, not the one further down');
+  assert.equal(nextInDirection(from, 'down', others), 2);
+  assert.equal(nextInDirection(from, 'up', others), -1, 'nothing above: stay put');
+  // A grid: right from the top-left goes to top-middle, not to bottom-middle.
+  const grid = [box(150, 0), box(150, 150), box(300, 0)];
+  assert.equal(nextInDirection(box(0, 0), 'right', grid), 0);
+});
+
+test('the Fire TV app is recognised as the TV, and the site listens to the remote only on a TV', () => {
+  assert.ok(looksLikeTvBrowser('Mozilla/5.0 (Linux; Android 9; AFTKA; wv) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36 JambaloopTV/1.0'));
+  assert.ok(looksLikeTvBrowser('Mozilla/5.0 (Linux; Android 11) AppleWebKit/537.36 Chrome/120 Safari/537.36 JambaloopTV/1.0'), 'by the app\'s own name');
+  const app = readFileSync(new URL('../public/app.js', import.meta.url), 'utf8');
+  assert.match(app, /enableRemote\(isTvScreen\);/);
+  const remote = readFileSync(new URL('../public/tv-remote.js', import.meta.url), 'utf8');
+  assert.match(remote, /win\.addEventListener\('keydown'/, 'after the page\'s own key handlers');
+  assert.match(remote, /event\.defaultPrevented/, 'keys the page already used (the carousel) are left alone');
+  assert.match(readFileSync(new URL('../public/tv-screen.css', import.meta.url), 'utf8'), /html\.tv-screen :focus-visible \{ outline: 4px solid #ffd34d/);
+});
+
+test('the Fire TV app opens the site as the TV, full screen, with sound, and shows on the TV home screen', () => {
+  const read = path => readFileSync(new URL('../fire-tv-app/' + path, import.meta.url), 'utf8');
+  const activity = read('app/src/main/java/com/rookiequest/jambaloop/MainActivity.java');
+  assert.match(activity, /HOME = "https:\/\/" \+ HOST \+ "\/\?tv"/);
+  assert.match(activity, /setMediaPlaybackRequiresUserGesture\(false\)/);
+  assert.match(activity, /setUseWideViewPort\(true\)/);
+  assert.match(activity, /JambaloopTV\/1\.0/);
+  assert.match(activity, /return !HOST\.equals\(/, 'it stays on Jambaloop');
+  const manifest = read('app/src/main/AndroidManifest.xml');
+  assert.match(manifest, /android\.intent\.category\.LEANBACK_LAUNCHER/);
+  assert.match(manifest, /android:banner="@drawable\/banner"/);
+  assert.match(manifest, /android\.hardware\.touchscreen" android:required="false"/);
+  assert.match(read('app/build.gradle'), /minSdk 22/);
+});

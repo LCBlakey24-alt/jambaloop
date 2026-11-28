@@ -43,7 +43,13 @@ function scoreRareRound(room){
  }
  const scored=[...groups.values()].map(group=>{
   const total=group.members.length;
-  const points=total===1?200:total===2?100:50;
+  const panelSize=party.prompt.panelSize;
+  const mentions=party.prompt.counts?.[group.canonical];
+  const basePoints=panelSize
+    ? Number.isInteger(mentions)?20+Math.round(180*(1-mentions/panelSize)):20
+    : total===1?200:total===2?100:50;
+  const matchPenalty=panelSize && total>1 ? 5 : 0;
+  const points=basePoints-matchPenalty;
   for(const member of group.members){
     const player=room.players.get(member.key);
     player.score+=points;
@@ -51,7 +57,7 @@ function scoreRareRound(room){
     player.streak++;
     player.bestStreak=Math.max(player.bestStreak,player.streak);
   }
-  return {answer:group.answer,count:total,points,reviewed:group.reviewed,
+  return {answer:group.answer,count:total,points,mentions,...(panelSize?{basePoints,matchPenalty}:{}),reviewed:group.reviewed,
     members:group.members.map(({id,name})=>({id,name}))};
  }).sort((a,b)=>b.points-a.points||a.answer.localeCompare(b.answer));
  for(const item of invalid){
@@ -71,7 +77,7 @@ function scoreRareRound(room){
 }
 
 export function startRareRound(room,publish){
- const prompt=selectRarePrompt(room.seen);
+ const prompt=selectRarePrompt(room.seen,room.rareScoring);
  room.seen.add(prompt.historyId);
  room.seen.add('rarefind:'+prompt.id);
  room.party={type:'rare',prompt,entries:new Map(),decisions:new Map(),audit:[],results:undefined,earned:undefined};
@@ -141,7 +147,7 @@ export function publicRare(room,key){
  const reviewing=room.phase==='rare-review';
  const own=party.entries.get(key);
  const reviews=isHost&&reviewing?reviewRows(room):undefined;
- return {type:'rare',category:party.prompt.category,prompt:party.prompt.prompt,
+ return {type:'rare',panelSize:party.prompt.panelSize,category:party.prompt.category,prompt:party.prompt.prompt,
    historyId:party.prompt.historyId,
    answered:party.entries.has(key),ownAnswer:own,submissions:party.entries.size,
    responseTarget:eligibleCount(room,party.entries),

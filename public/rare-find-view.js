@@ -11,8 +11,8 @@ function revealRows(p,escape){
    ${groups.length?groups.map(group=>`<article class="rare-answer-row" role="listitem">
      <div class="rare-answer-symbol">${group.points===200?'★':group.points===100?'◆':'●'}</div>
      <div class="rare-answer-name"><strong>${escape(group.answer)}</strong>
-       <span>${group.members.map(member=>face(member)+escape(member.name)).join(' · ')}${group.reviewed?' · host-approved':''}</span></div>
-     <div class="rare-answer-score"><strong>${group.count}×</strong><span>+${group.points} EACH</span></div>
+       <span>${group.members.map(member=>face(member)+escape(member.name)).join(' · ')}${group.matchPenalty?' · shared answer −5':''}${group.reviewed?' · host-approved':''}</span></div>
+     <div class="rare-answer-score"><strong>${p.panelSize?(group.mentions===undefined?'Unrated':group.mentions+' / '+p.panelSize):group.count+'×'}</strong><span>+${group.points} EACH</span></div>
    </article>`).join(''):'<p class="rare-muted">No valid answers submitted this round.</p>'}
    ${invalid.length?`<div class="rare-invalid-list"><strong>Unaccepted entries · 0 points</strong>
      ${invalid.map(entry=>`<p>${escape(entry.name)}: ${escape(entry.answer)}</p>`).join('')}</div>`:''}
@@ -48,7 +48,7 @@ function finalRows(s,escape,host){
  const top=rankings.filter(entry=>entry.score===highest);
  const title=top.length===1?escape(top[0].name)+' found the edge!':'It’s a shared Rare Find win!';
  return `<div class="rare-finale"><span class="rare-eyebrow">RARE FIND · FINAL RESULTS</span>
-  <h1>${title}</h1>${partyFinale(s,{host,escape})}<p>Correct answers scored best when nobody else thought of them.</p>
+  <h1>${title}</h1>${partyFinale(s,{host,escape})}<p>${s.party.panelSize?'Fewer panel mentions earned more points.':'Correct answers scored best when nobody else thought of them.'}</p>
   <ol class="rare-final-leaders">${rankings.map(entry=>{
     const rank=rankings.findIndex(candidate=>candidate.score===entry.score)+1;
     return `<li><span><b>${rank}.</b> ${face(entry)}${escape(entry.name)}</span><strong>${entry.score.toLocaleString()} PTS</strong></li>`;
@@ -70,7 +70,7 @@ export function rareFindView(s,{host,canControl,escape,icons,reply}){
  }else{
   const prompt=`<div class="rare-prompt"><span class="rare-eyebrow">${escape(p.category)} · ORIGINAL CHALLENGE</span>
     <h1>${escape(p.prompt)}</h1>
-    <p>${write?'Try for a valid answer nobody else will choose. Unique: 200 pts · two matches: 100 each · 3+: 50 each.':
+    <p>${p.panelSize?(review?'Match a spelling to its listed answer for full credit. An unlisted valid answer earns 20 base points.':write?'Choose quietly. Score more when fewer of the 20 UK participants named your answer. A shared answer costs 5 points.':'Out of 20 UK participants, how many named each answer in one minute?'):write?'Try for a valid answer nobody else will choose. Unique: 200 pts · two matches: 100 each · 3+: 50 each.':
       review?'Unrecognised entries must be checked before any round results can be revealed.':
       'These are the real submissions from your room. Different spellings of accepted answers count together.'}</p></div>`;
   let body='';
@@ -89,8 +89,8 @@ export function rareFindView(s,{host,canControl,escape,icons,reply}){
       ${p.remaining?'Review all answers to continue':'Reveal real answers and points'} ${icons('arrow-right')}</button></div>`;
   }else if(reveal){
     if(host) body=`<div class="rare-reveal-head"><strong>${p.results.valid} valid responses</strong><span>${p.results.responded} submitted · ${p.results.invalidCount} unaccepted</span></div>`+revealRows(p,escape)+
-      (p.source?`<p class="rare-source"><a href="${escape(p.source)}" target="_blank" rel="noopener noreferrer">Review reference source</a></p>`:'');
-    else body=`<div class="rare-locked" role="status"><span>${escape(p.ownAnswer||'No answer submitted')}</span><strong>+${p.earned} pts</strong><p>${p.earned===200?'Only you chose this answer.':p.earned===100?'Two players chose this answer.':p.earned===50?'At least three players chose this answer.':p.answered?'Answer not accepted.':'Round closed.'}</p></div>`;
+      (p.source?`<p class="rare-source"><a href="${escape(p.source)}" target="_blank" rel="noopener noreferrer">${p.panelSize?'Panel data · Banks &amp; Connell':'Review reference source'}</a></p>`:'');
+    else body=`<div class="rare-locked" role="status"><span>${escape(p.ownAnswer||'No answer submitted')}</span><strong>+${p.earned} pts</strong><p>${p.panelSize?(p.earned?(p.results.groups.find(g=>g.members.some(m=>m.id===s.player?.id))?.matchPenalty?'Shared answer · 5 points deducted.':'Scored against the research panel.'):'No scoring answer this round.'):p.earned===200?'Only you chose this answer.':p.earned===100?'Two players chose this answer.':p.earned===50?'At least three players chose this answer.':p.answered?'Answer not accepted.':'Round closed.'}</p></div>`;
     if(host)footer=`<div class="rare-footer"><button type="button" class="button primary" data-action="advance">
       ${s.index+1<s.total?'Next rarity round':'Show final standings'} ${icons('arrow-right')}</button></div>`;
   }

@@ -38,7 +38,7 @@ test('the captain can flick between games from the lobby; saved quizzes are left
     player: { name: 'Ada', ready: false }, scoring: { base: 500 }, total: 5, seconds: 20, phoneView: 'answers' };
   const helpers = { host: false, escape: String, icons: () => '', modeName: id => modes.find(([key]) => key === id)?.[1] ?? id };
   const phone = lobbyView(base, helpers);
-  assert.match(phone, /data-action="lobby-mode" data-mode="sketch"/, 'wraps round to the last game');
+  assert.match(phone, /data-action="lobby-mode" data-mode="debate"/, 'wraps round to the last game');
   assert.match(phone, /data-action="lobby-mode" data-mode="wheel"/);
   assert.doesNotMatch(lobbyView({ ...base, isCaptain: false }, helpers), /data-action="lobby-mode"/, 'only the captain or TV switches');
   assert.doesNotMatch(lobbyView({ ...base, quizTitle: 'My quiz' }, helpers), /data-action="lobby-mode"/);

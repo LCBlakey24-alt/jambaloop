@@ -35,6 +35,7 @@ const marks = Object.freeze({
   // A survey bar chart crowned by its top answer.
   topanswers: '<path d="M14 94h92"/><rect x="20" y="58" width="16" height="36" rx="3"/><rect x="44" y="34" width="16" height="60" rx="3" fill="currentColor" fill-opacity=".2"/><rect x="68" y="66" width="16" height="28" rx="3"/><rect x="92" y="76" width="10" height="18" rx="2"/><path d="m42 24 6-12 4 8 4-8 6 12z" fill="currentColor" stroke="none"/>',
   // A faceted gemstone with a vault glint.
+  debate: '<path d="M10 22h65v34H38L22 71V56H10zM57 67h52v28H96v12L81 95H57z"/>',
   rare: '<path d="M30 30h60l18 20-48 46-48-46z"/><path d="M12 50h96M42 30l-10 20 28 46 28-46-10-20M60 30v20"/><path d="M96 12v12M90 18h12" stroke-width="2.5"/>',
   // A precision caliper closing on a reading.
   soclose: '<path d="M14 26h92v16H14z"/><path d="M24 26v8M36 26v5M48 26v8M60 26v5M72 26v8M84 26v5M96 26v8" stroke-width="2"/><path d="M22 42v46l10-10V42M70 42v46l-10-10V42"/><path d="M46 60v18" stroke-width="2" stroke-dasharray="3 4"/><circle cx="46" cy="56" r="3" fill="currentColor"/>',

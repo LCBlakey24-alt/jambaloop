@@ -188,6 +188,15 @@ export const gameGuides = {
     ['max', '[warmly] It is all about knowing your friends. Most points wins.', 'win'],
     ['poppy', '[excited] Survey says, let\'s play!', 'go'],
   ],
+  debate: [
+    ['max','Welcome to Floor Time.','title'],
+    ['poppy','Two of you stand by the TV. Each gets a side to defend.','prompt'],
+    ['max','First speaker, you have one minute.','go'],
+    ['poppy','Then the second speaker gets the same time.','prompt'],
+    ['max','Everybody else votes privately on their phone for the better case.','vote'],
+    ['poppy','Eight votes to two earns six points. Ties earn zero.','scores'],
+    ['max','Everyone speaks twice. Make your case!','go'],
+  ],
   rare: [
     ['max', '[whispers] This is Rare Find. Being right is not enough. You need to be the only one who is right.', 'title'],
     ['poppy', '[conversational] The TV asks for something with lots of correct answers. Name a planet, for example.', 'prompt'],
@@ -265,3 +274,13 @@ export const gameGuides = {
     ['max', '[excited] Artists, ready? Go!', 'go'],
   ],
 };
+
+export const panelGuide=[
+ ['max','Welcome to Rare Find. This time you are playing against a UK research panel.','title'],
+ ['poppy','Twenty people had one minute to name things in this category.','prompt'],
+ ['max','Type one correct answer on your phone. Think of something fewer of those people might have named.','write'],
+ ['poppy','If someone here gives the same answer, you each lose five points.','gem'],
+ ['max','The host checks unusual answers. A spelling can be matched to the listed answer.','write'],
+ ['poppy','An accepted answer without a panel rating earns twenty base points.','scores',['20 base points']],
+ ['max','Most points wins. Take your best shot!','go'],
+];

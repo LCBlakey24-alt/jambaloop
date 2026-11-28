@@ -8,6 +8,8 @@
 // accent / accent2: highlights. question: whether prompts use the display
 // face ('display') or the readable house sans ('body').
 export const identities = {
+  debate: { title:'The Listening Room', display:'Show Debate', weight:700, question:'display', upper:false, scheme:'dark',
+    bg:['#284d49','#0d2426'], surface:'#143332', surface2:'#214441', ink:'#fff6e8', muted:'#c6ddd6', accent:'#ffad8e', accent2:'#99e1d2', radius:'12px' },
   classic:    { title: 'Golden Hour', display: 'Show Classic', weight: 700, question: 'display', upper: false, scheme: 'dark',
     bg: ['#0b1d6b', '#040b30'], surface: '#0f2479', surface2: '#18339b', ink: '#fffaf0', muted: '#ccd6ff', accent: '#ffc93c', accent2: '#ff6b5a', radius: '6px' },
   wheel:      { title: 'Carnival Midway', display: 'Show Wheel', weight: 400, question: 'body', upper: true, scheme: 'dark',

@@ -8,5 +8,5 @@
 export const releasedGameIds = Object.freeze([
   'classic', 'wheel', 'board', 'dice', 'knockout', 'punchline',
   'cards', 'tracks', 'bluff', 'bloodmoon', 'potato', 'quizrace', 'showdown',
-  'samepage', 'spotlight', 'brain', 'topanswers', 'rare', 'soclose', 'wayoff', 'catchup', 'shade', 'dontlook', 'sketch',
+  'samepage', 'spotlight', 'brain', 'topanswers', 'rare', 'soclose', 'wayoff', 'catchup', 'shade', 'dontlook', 'sketch', 'debate',
 ]);

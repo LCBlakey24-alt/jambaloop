@@ -118,10 +118,15 @@ export const duoIntros = {
     ['poppy', '[curious] Then predict what most of this room picked.'],
     ['max', '[laughs] No mystery survey. Just you lot!'],
   ],
+  debate: [
+    ['max','Welcome to Floor Time. Two speakers, one question.'],
+    ['poppy','Take a side and win the room.'],
+    ['max','Audience, vote on your phones once both speakers finish.'],
+  ],
   rare: [
     ['max', '[curious] Welcome to Rare Find.'],
     ['poppy', '[cheerfully] Give a correct answer you think nobody else will think of.'],
-    ['max', '[playfully] A unique answer scores the most. The more people match you, the less you score.'],
+    ['max', '[playfully] Type one answer on your phone, in private.'],
     ['poppy', '[warmly] So dig deep, and find a gem.'],
   ],
   bloodmoon: [

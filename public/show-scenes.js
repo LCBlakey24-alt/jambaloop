@@ -24,6 +24,16 @@ const sparkle = (x, y, s, fill, opacity = 1) => star(x, y, s, s * .28, 4, fill, 
 const heart = (x, y, s, fill, extra = {}) => path(`M${x} ${y + s * .3}c0-${s * .45} ${-s * .6}-${s * .55} ${-s * .6}-${s * .05}c0 ${s * .45} ${s * .6} ${s * .7} ${s * .6} ${s * .8}c0-${s * .1} ${s * .6}-${s * .35} ${s * .6}-${s * .8}c0-${s * .5}-${s * .6}-${s * .4}-${s * .6} ${s * .05}z`, { fill, ...extra });
 
 const scenes = {
+  debate: c => [
+    rect(0,0,400,400,c.bg[1]),
+    path('M0 35L400 0v101L0 162z',{fill:c.surface2}),
+    path('M0 309l400-80v171H0z',{fill:c.bg[0]}),
+    path('M24 39h143q16 0 16 16v47q0 15-16 15h-62l-27 26v-26H40q-16 0-16-16z',{fill:c.accent2}),
+    path('M221 264h139q16 0 16 16v48q0 16-16 16h-17v25l-30-25h-92q-16 0-16-16v-48q0-16 16-16z',{fill:c.accent}),
+    ...[58,92,126].map(x=>circle(x,78,7,c.surface)),
+    ...[244,278,312].map(x=>circle(x,304,7,c.surface)),
+    ...range(8).map(i=>line(16+i*12,381,28+i*12,359,c.accent2,2,{opacity:.5})),
+  ],
   classic: c => [
     `<defs>${radial('bg', [[0, c.bg[0]], [1, c.bg[1]]], [.5, .25, .9])}${linear('beam', [[0, c.accent, .55], [1, c.accent, 0]])}${linear('floor', [[0, c.surface2], [1, c.bg[1]]])}</defs>`,
     rect(0, 0, 400, 400, 'url(#bg)'),
@@ -302,6 +312,7 @@ export const sceneModes = Object.keys(scenes);
 const inkDetails = {
   classic: 'M34 76V34H78 M40 60V40H60 M322 34h44v42 M340 40h20v20 M65 338Q200 304 335 338',
   wheel: 'M12 23l12 19 12-19 M112 23l12 19 12-19 M212 23l12 19 12-19 M312 23l12 19 12-19 M69 329Q118 278 172 268',
+  debate: 'M30 153h52l-15 15 M348 247h23v-12 M45 53h103 M225 279h113',
   board: 'M76 72H324V78 M76 322v6h248 M78 80h16m5 0h5 M307 282q4 2 4 8 M88 280l22-5',
   dice: 'M34 80V34H80 M320 34h46v46 M48 60V48h12 M340 48h12v12 M67 377l16 4m4 1 8 2',
   knockout: 'M18 185h20m-20 5h20m-20 5h20 M361 185h20m-20 5h20m-20 5h20 M45 304q150 9 310 0',

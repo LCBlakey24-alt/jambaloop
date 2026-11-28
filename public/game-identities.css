@@ -8,6 +8,7 @@
 
 /* ---------------------------------------------------------------- page -- */
 /* The page behind each show (generated from game-identities.js; a test keeps them in step). */
+body.playing:has(.game[data-mode="debate"]) { background:#0d2426; }
 body.playing:has(.game[data-mode="classic"]) { background:#040b30; }
 body.playing:has(.game[data-mode="wheel"]) { background:#2b0548; }
 body.playing:has(.game[data-mode="board"]) { background:#05281a; }
@@ -324,3 +325,23 @@ body.playing .game.player-only :is([data-action="advance"], [data-action="clock"
 /* Sketch Sprint results: every row readable on the paper background. */
 .game[data-mode="sketch"] .sketch-end .ranking li { background: #fffdf6 !important; color: #1d1b17 !important; border: 1.5px solid #cfc7b4; }
 .game[data-mode="sketch"] .sketch-end .ranking li strong { color: #1d1b17 !important; }
+
+.game .debate-stage {display:flex;flex-direction:column;align-items:stretch;justify-content:center;gap:clamp(8px,2vh,22px);padding:clamp(16px,4vw,64px);text-align:center;}
+.debate-stage h1,.debate-stage p {margin:0;}
+.debate-stage h1 {font:700 clamp(26px,4vw,66px)/1.05 'Show Debate',sans-serif;text-wrap:balance;}
+.debate-stage small {font-weight:750;letter-spacing:.08em;}
+.debate-sides {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(8px,2vw,28px);}
+.debate-side {display:grid;align-content:center;gap:.35em;padding:clamp(14px,2vw,36px);border:0;border-radius:18px 18px 18px 2px;color:#15312f;background:#99e1d2;overflow-wrap:anywhere;}
+.debate-side:nth-child(2) {background:#ffad8e;border-radius:18px 18px 2px 18px;}
+.debate-side strong {font:700 clamp(20px,3.4vw,52px)/1.08 'Show Debate',sans-serif;}
+.debate-stage ol {overflow:auto;margin:0;text-align:start;}
+.player-only .debate-stage {justify-content:flex-start;padding:16px;}
+.player-only .debate-sides {grid-template-columns:1fr;}
+html body .tile-art[data-show="debate"] .tile-wordmark {
+  --wm:18;color:#fff6e8;letter-spacing:-.07em;text-shadow:none;
+}
+html body .tile-art[data-show="debate"] .tile-wordmark > span:last-child {color:#ffad8e;}
+
+.host-screen .debate-stage > .button {align-self:center;width:auto;min-width:12em;}
+.debate-stage [data-speaking="true"] {outline:3px solid #fff6e8;outline-offset:3px;}
+.host-screen .debate-stage .timer {font-size:clamp(20px,3vh,32px);font-variant-numeric:tabular-nums;}

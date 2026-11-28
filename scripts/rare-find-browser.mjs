@@ -48,7 +48,7 @@ try{
     const phoneWidth=width===1024?360:390;
     const phoneHeight=width===1024?640:844;
     const created=await ctx.request.post(site+'/api/rooms',{data:{
-      mode:'rare',category:'mixed',format:'choice',count:3,seconds:0,playStyle:teams?'teams':'individual',teamCount:2,
+      mode:'rare',rareScoring:'room',category:'mixed',format:'choice',count:3,seconds:0,playStyle:teams?'teams':'individual',teamCount:2,
     }});
     assert.equal(created.status(),201,await created.text());
     const {code,host:hostKey}=await created.json();

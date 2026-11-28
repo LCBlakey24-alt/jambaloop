@@ -1131,8 +1131,9 @@ function render(s) {
   const canControl = host || s.isCaptain;
   const controllerOnly = !host && s.phoneView === 'answers';
   const canPause = canControl && ((s.ends && ['question', 'party-potato'].includes(s.phase)) || (s.mode === 'quizrace' && ['race','race-countdown'].includes(s.phase)));
+  // A phone shows "Pause" beside the captain's main button; the TV keeps "Pause timer".
   const pauseButton = canPause ? `<button class="button outline small" data-action="clock">
-    ${icons('pause')} Pause timer</button>` : '';
+    ${icons('pause')} <span>Pause<span class="pause-timer-word"> timer</span></span></button>` : '';
   setTheme(s.theme);
   const board = s.mode === 'board';
   const showdown = s.mode === 'showdown';

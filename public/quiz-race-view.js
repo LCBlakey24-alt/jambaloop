@@ -1,10 +1,12 @@
 import {raceTrackMarkup} from './quiz-race-track.js';
 import { face } from './player-face.js';
-import { tileMarkup, tileName, tileLabel } from './race-symbols.js';
+import { tileMarkup, tileName, tileLabel, symbolGridSize } from './race-symbols.js';
 const name = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const percent = (distance, total) => Math.min(100, Math.round(100 * distance / Math.max(total,1)));
 
 export function quizRaceView(s, {host,canControl,icons,replayButtons,sending,replaying=false}) {
+  // During the action replay the standings start on the grid, in kart order, and move as they did in the race.
+  const onGrid = replaying && ['finished', 'race-standings'].includes(s.phase);
   const r = s.race;
   const intro = s.phase === 'race-countdown';
   const finished = s.phase === 'finished';
@@ -16,7 +18,7 @@ export function quizRaceView(s, {host,canControl,icons,replayButtons,sending,rep
   const winningTeam = teamRace && s.teamWinners?.length === 1
     ? s.teams.find(team=>team.id===s.teamWinners[0]) : undefined;
   const track = () => `<div class="race-track-wrap" data-track="${r.track}">${raceTrackMarkup()}
-    <div class="quiz-race-standings">${r.racers.map(p=>`<div class="race-rank-row" data-race-rank="${p.id}" style="--racer:${p.color}"><span class="race-position">${p.position}</span><span class="race-rank-name">${face(p)}${name(p.name)}<i class="race-rank-status" aria-hidden="true"></i></span><span class="race-rank-percent">${percent(p.distance,r.length)}%</span><span class="race-mini-track"><i style="width:${percent(p.distance,r.length)}%"></i></span></div>`).join('')}</div></div>`;
+    <div class="quiz-race-standings">${(onGrid ? [...r.racers].sort((a,b)=>a.marker-b.marker).map(p=>({...p,position:'·',distance:0})) : r.racers).map(p=>`<div class="race-rank-row" data-race-rank="${p.id}" style="--racer:${p.color}"><span class="race-position">${p.position}</span><span class="race-rank-name">${face(p)}${name(p.name)}<i class="race-rank-status" aria-hidden="true"></i></span><span class="race-rank-percent">${percent(p.distance,r.length)}%</span><span class="race-mini-track"><i style="width:${percent(p.distance,r.length)}%"></i></span></div>`).join('')}</div></div>`;
   // League: three races, points for every place. The table comes from the server.
   const league = s.league;
   const styleName = r.style === 'symbols' ? 'SYMBOL DASH' : 'QUIZ RACE';
@@ -34,7 +36,7 @@ export function quizRaceView(s, {host,canControl,icons,replayButtons,sending,rep
       <div class="actions">${skip}</div></section>`;
     return `<section class="game-panel race-broadcast race-replay-panel" aria-label="Action replay"><div class="race-broadcast-head"><div><div class="eyebrow">${styleName}${raceNumber}</div><h1>Action replay</h1></div><div class="race-broadcast-time"><strong data-race-clock>0:00</strong><span>RACE TIME</span></div></div>
       <div class="race-replay-bar"><span class="race-replay-badge"><i aria-hidden="true"></i>REPLAY</span><span class="race-replay-slow" data-replay-slow hidden>SLOW MOTION</span><span class="race-replay-progress" aria-hidden="true"><b data-replay-progress></b></span></div>
-      ${track()}${raceTeams}<div class="race-broadcast-foot"><p>The whole race again, exactly as it happened. How close was it?</p>${skip}</div></section>`;
+      ${track()}<div class="race-broadcast-foot"><p>The whole race again, exactly as it happened. How close was it?</p>${skip}</div></section>`;
   }
   const again = canControl ? `<button type="button" class="button outline" data-action="replay-again">${icons('rotate-ccw')} Watch the replay</button>` : '';
   const circuitName = { short: 'short', medium: 'figure-of-eight', long: 'long' };
@@ -100,9 +102,9 @@ export function quizRaceView(s, {host,canControl,icons,replayButtons,sending,rep
   // Symbol Dash: find the target symbol on a grid that reshuffles after every tap.
   const symbols=r.style==='symbols';
   const symbolBoard=!symbols?'':q?.symbols?`<div class="race-question race-symbol-round" data-question-id="${q.id}">
-      <div class="race-symbol-target">${q.symbols.target.startsWith('shape:')?`<span>TAP THE</span>${tileMarkup(q.symbols.target)}<strong>${name(tileLabel(q.symbols.target))}</strong>`:`<span>TAP THE</span><strong>${name(tileLabel(q.symbols.target))}</strong>${tileMarkup(q.symbols.target)}`}<em data-race-deadline></em></div>
+      <div class="race-symbol-target">${q.symbols.target.startsWith('shape:')?`<span>TAP THE</span>${tileMarkup(q.symbols.target)}<strong>${name(tileLabel(q.symbols.target))}</strong>`:`<span>TAP THE</span><strong>${name(tileLabel(q.symbols.target))}</strong>${tileMarkup(q.symbols.target)}<span class="sr-only">${name(tileName(q.symbols.target))}</span>`}<em data-race-deadline></em></div>
       <div class="race-symbol-grid" data-size="${q.symbols.tiles.length}">${q.symbols.tiles.map((id,index)=>`<button class="race-answer race-symbol-tile" data-action="race-answer" data-race-option="${index}" aria-label="${name(tileName(id))}" ${sending?'disabled':''}>${tileMarkup(id)}</button>`).join('')}</div></div>`
-    :`<div class="race-symbol-round is-waiting" aria-live="polite"><div class="race-symbol-target"><span>${feedback?.outcome==='correct'?'YES!':feedback?.outcome==='wrong'?'WRONG ONE':feedback?.outcome==='timeout'?'TOO SLOW':'GET READY'}</span></div><div class="race-symbol-grid is-empty"></div></div>`;
+    :`<div class="race-symbol-round is-waiting" aria-live="polite"><div class="race-symbol-target"><span>${feedback?.outcome==='correct'?'YES!':feedback?.outcome==='wrong'?'WRONG ONE':feedback?.outcome==='timeout'?'TOO SLOW':'GET READY'}</span></div><div class="race-symbol-grid is-empty" data-size="${symbolGridSize(r.difficulty, (own?.distance ?? 0) / Math.max(1, r.length))}"></div></div>`;
   return `<section class="game-panel race-phone ${symbols?'is-symbols':''}"><div class="race-phone-head"><div><div class="eyebrow">${symbols?'SYMBOL DASH':'QUIZ RACE'}</div><strong data-race-position>${own?.position??'-'} / ${s.playerCount}</strong></div><div class="race-phone-speed" data-race-speed>READY</div></div>
     ${teamRace ? `<p class="race-team-label">Your team: ${name(s.teams.find(t=>t.id===s.player?.team)?.name || 'Unassigned')}</p>` : ''}
     <div class="race-phone-progress" aria-label="Race progress"><i data-race-progress style="width:${percent(own?.distance||0,r.length)}%;background:${player?.color||'#1dd9be'}"></i></div>

@@ -261,11 +261,18 @@ function recordRace(race, last = false) {
   const replay = race.replay ??= { step: replayStep, from: 3000, frames: [] };
   const due = replay.from + replay.frames.length * replay.step;
   if (race.time < due && !last) return;
-  replay.frames.push([...race.racers.values()].map(racer => [
-    +racer.distance.toFixed(2),
-    (racer.power && race.time < racer.power.at + 1800 ? racer.power.kind : ''),
-    (racer.streak >= streaksFor(race).fireStreak ? 1 : 0) + (racer.shieldUntil > race.time ? 2 : 0) + (racer.armed ? 4 : 0),
-  ]));
+  // The finishing tick may already have been sampled a moment ago: do not add the same moment twice.
+  if (last && replay.sampledAt === race.time) return;
+  replay.sampledAt = race.time;
+  // The flags as the TV showed them live: a kart that has finished is not on fire, shielded or armed any more.
+  replay.frames.push([...race.racers.values()].map(racer => {
+    const racing = racer.finishedAt === undefined;
+    return [
+      +racer.distance.toFixed(2),
+      (racer.power && race.time < racer.power.at + 1800 ? racer.power.kind : ''),
+      racing ? (racer.streak >= streaksFor(race).fireStreak ? 1 : 0) + (racer.shieldUntil > race.time ? 2 : 0) + (racer.armed ? 4 : 0) : 0,
+    ];
+  }));
 }
 /** The finished race as the TV saw it, for the action replay. Undefined until the race is over. */
 export function raceReplay(race) {

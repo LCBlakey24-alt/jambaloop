@@ -182,3 +182,64 @@ test('on the server: the replay starts when the race ends, every screen is told 
   assert.equal(fresh.raceReplay, undefined);
   await request(path + '/race-replay', undefined, room.host, 404);
 });
+
+// Regression tests for the review of 28 November 2026.
+test('recording: a kart that has finished is not shown armed or on fire, and the last moment is never recorded twice', () => {
+  for (let run = 0; run < 6; run++) {
+    const race = createQuizRace(players, [], { length: 'short', style: 'symbols', scale: .12 }, 0);
+    let wall = 0, armed = false;
+    for (let guard = 0; guard < 4000 && !race.finished; guard++) {
+      wall += 50 + (run * 7) % 40;
+      advanceQuizRace(race, wall);
+      // Ada taps right until she is nearly home, then arms a boost and stops: she crosses the line first, still
+      // armed, and the race carries on behind her (Bo and Cy never tap), so there are frames after her finish.
+      const ada = race.racers.get('a');
+      if (!armed && ada.distance >= race.length - .8 && ada.finishedAt === undefined) armed = useRacePower(race, 'a', 'boost').armed === true;
+      if (!armed && ada.question) submitRaceAnswer(race, 'a', { questionId: ada.question.id, option: ada.question.item.correct }, race.time);
+    }
+    assert.ok(armed, 'Ada armed a boost just before the line');
+    assert.equal(race.racers.get('a').armed, true, 'and crossed it still armed');
+    const replay = raceReplay(race);
+    assert.ok(replay.frames.length > Math.ceil((race.racers.get('a').finishedAt - replay.from) / replay.step) + 2, 'the race went on after Ada finished');
+    replay.racers.forEach((racer, r) => {
+      if (racer.finishedAt === undefined) return;
+      const after = Math.ceil((racer.finishedAt - replay.from) / replay.step) + 1;
+      for (let i = after; i < replay.frames.length; i++) assert.equal(replay.frames[i][r][2], 0, `${racer.name}'s flags are clear after the finish`);
+    });
+    const span = race.time - replay.from;
+    assert.equal(replay.frames.length, Math.floor(span / replayStep) + 1 + (span % replayStep ? 1 : 0), 'one frame per quarter second, plus the very end if it fell between two');
+  }
+});
+
+test('the TV: the right recording for each league race, a retry if it fails, rows that start on the grid, and finish sounds with the results', () => {
+  const app = readFileSync(new URL('../public/app.js', import.meta.url), 'utf8');
+  assert.match(app, /const loaded=raceReplayData&&raceReplayKey===replayKeyFor\(state\)\?raceReplayData:undefined;/, 'only this race\'s own recording, never the last league race\'s');
+  assert.match(app, /if \(raceReplayKey !== key\) \{ raceReplayData = undefined; raceReplayKey = undefined; \}/);
+  assert.match(app, /raceReplayRetry = \{ key, tries, at: tries >= 4 \? Infinity : Date\.now\(\) \+ 1000 \* tries \};/, 'a failed fetch is tried again');
+  assert.match(app, /raceTrackView\?\.update\(snapshot\.racers,snapshot\.length,0,true,snapshot\.time\);/, 'until it arrives the track shows the finish, not nothing');
+  assert.match(app, /if\(row\.style\.order!==String\(r\.position\)\)row\.style\.order=r\.position;/, 'the standings rows move into each moment\'s order');
+  assert.match(app, /receive\(\{\.\.\.state,raceReplay:\{\.\.\.state\.raceReplay,playing:false\},now:Date\.now\(\)\+offset\},session\);/, 'the end of the replay renders the results once');
+  assert.match(app, /const heard = s => s\?\.mode === 'quizrace' && s\.raceReplay\?\.playing/, 'the finish fanfare and music wait for the results');
+  assert.match(app, /\['race', 'race-replay'\]\.includes\(before\.phase\)\) return setTimeout\(\(\) => call\('finish'\), 900\);/, 'and so does Vince\'s chequered flag');
+  // The view: during the replay the rows are in kart order with no places, and no final team strip.
+  const race = runRace();
+  const teamState = { ...base, phase: 'finished', playStyle: 'teams', raceTeams: [{ name: 'Red', color: '#f00', distance: 70 }], teams: [], race: publicRaceState(race, undefined, true) };
+  const html = quizRaceView(teamState, { ...kit, host: true, canControl: true, replaying: true });
+  const rows = [...html.matchAll(/data-race-rank="([A-Z])"[^>]*><span class="race-position">([^<]*)</g)].map(m => [m[1], m[2]]);
+  assert.deepEqual(rows, [['A', '·'], ['B', '·'], ['C', '·']], 'kart order, places hidden until the replay reaches them');
+  assert.doesNotMatch(html, /race-team-strip/, 'the final team standings are not shown before the replay gets there');
+});
+
+test('Symbol Dash phone: the waiting board is the shape of the grid, and number and letter targets are read out in full', () => {
+  const race = createQuizRace(players, [], { length: 'short', style: 'symbols', difficulty: 'hard' }, 0);
+  advanceQuizRace(race, 3200);
+  const own = publicRaceState(race, 'a', false);
+  const between = { ...own, own: { ...own.own, question: undefined, feedback: { outcome: 'correct' } } };
+  const waiting = quizRaceView({ ...base, phase: 'race', player: { id: 'A' }, race: between }, { ...kit, host: false, canControl: false });
+  assert.match(waiting, /race-symbol-grid is-empty" data-size="12"/);
+  const css = readFileSync(new URL('../public/quiz-race.css', import.meta.url), 'utf8');
+  assert.match(css, /\.race-symbol-grid\.is-empty\[data-size="12"\]\{aspect-ratio:4\/3\}/);
+  const target = { ...own, own: { ...own.own, question: { ...own.own.question, symbols: { target: 'num:42', tiles: ['num:42', 'num:7', 'num:13', 'num:99', 'num:5', 'num:61'] } } } };
+  const html = quizRaceView({ ...base, phase: 'race', player: { id: 'A' }, race: target }, { ...kit, host: false, canControl: false });
+  assert.match(html, /<span class="sr-only">number 42<\/span>/);
+});

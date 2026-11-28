@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {mkdir} from 'node:fs/promises';
-import {rareFindBank} from '../rare-find-bank.js';
+import {rareFindBank,panelBank} from '../rare-find-bank.js';
 import { releasedGameIds } from '../released-games.js';
 
 const site=process.env.SITE||'http://127.0.0.1:32000';
@@ -10,7 +10,6 @@ const browser=await chromium.launch({
   args:['--no-sandbox','--disable-dev-shm-usage'],
 });
 await mkdir('browser-screenshots',{recursive:true});
-const historyExcept=id=>rareFindBank.filter(p=>p.id!==id).map(p=>p.historyId);
 const fit=async(page,width,height,label)=>{
   const metrics=await page.evaluate(()=>{
     const rect=document.querySelector('.rare-game').getBoundingClientRect();
@@ -36,6 +35,7 @@ try{
   assert.equal(await page.locator('#configure-form input[name="mode"]:checked').inputValue(),'rare');
   assert.deepEqual(await page.locator('#configure-form select[name="count"] option')
     .evaluateAll(options=>options.map(option=>option.value)),['3','5','7']);
+  assert.equal(await page.locator('#configure-form select[name="rareScoring"]').inputValue(),'panel');
   await page.locator('#configure-form input[name="playStyle"][value="teams"]').check();
   assert.equal(await page.locator('#team-count-field').isVisible(),true);
   await menuContext.close();
@@ -45,17 +45,22 @@ try{
     const ctx=await browser.newContext({viewport:{width,height}});
     const errors=[];
     const teams=width===1280;
+    const panel=width===1920;
+    const bank=panel?panelBank:rareFindBank;
+    const seenQuestions=bank.filter(p=>p.id!==(panel?'panel-chemical-element':'solar-planets')).map(p=>p.historyId);
+    const common=panel?'oxygen':'Mercury';
+    const single=panel?'yttrium':'Planet Earth';
     const phoneWidth=width===1024?360:390;
     const phoneHeight=width===1024?640:844;
     const created=await ctx.request.post(site+'/api/rooms',{data:{
-      mode:'rare',rareScoring:'room',category:'mixed',format:'choice',count:3,seconds:0,playStyle:teams?'teams':'individual',teamCount:2,
+      mode:'rare',rareScoring:panel?'panel':'room',category:'mixed',format:'choice',count:3,seconds:0,playStyle:teams?'teams':'individual',teamCount:2,
     }});
     assert.equal(created.status(),201,await created.text());
     const {code,host:hostKey}=await created.json();
     const keys=[];
     for(const name of ['Alex','Bailey','Charlie']){
       const joined=await ctx.request.post(site+'/api/rooms/'+code+'/join',{
-        data:{name,seenQuestions:historyExcept('solar-planets')},
+        data:{name,seenQuestions},
       });
       assert.equal(joined.status(),201,await joined.text());
       keys.push((await joined.json()).key);
@@ -102,7 +107,7 @@ try{
       await host.locator('.rare-game[data-rare-phase="rare-write"]').waitFor({timeout:15000});
       await phone.locator('#bluff-form textarea').waitFor({timeout:15000});
       const snapshot=await state();
-      const prompt=rareFindBank.find(p=>p.prompt===snapshot.party.prompt);
+      const prompt=bank.find(p=>p.prompt===snapshot.party.prompt);
       assert.ok(prompt,'Challenge must originate in the curated catalogue');
       assert.equal(snapshot.party.results,undefined,'TV must not see submissions during writing');
       await fit(host,width,height,'Rare Find entry '+round);
@@ -111,12 +116,12 @@ try{
         await host.screenshot({path:'browser-screenshots/rare-entry-tv-'+width+'x'+height+'.png'});
         if(width===1280)await phone.screenshot({path:'browser-screenshots/rare-entry-phone.png'});
       }
-      await phone.locator('#bluff-form textarea').fill(round===2?'Unrecognised fictional answer':round===0?'Mercury':prompt.answers[0]);
+      await phone.locator('#bluff-form textarea').fill(round===2?'Unrecognised fictional answer':round===0?common:prompt.answers[0]);
       await phone.locator('#bluff-form button[type="submit"]').click();
       await phone.locator('.rare-locked').waitFor({timeout:15000});
       assert.equal((await state()).party.results,undefined);
-      await answer(keys[1],round,round===0?'Planet Earth':prompt.answers[0]);
-      await answer(keys[2],round,round===0?'Mercury':prompt.answers[1]);
+      await answer(keys[1],round,round===0?single:prompt.answers[0]);
+      await answer(keys[2],round,round===0?common:prompt.answers[1]);
       if(round===2){
         await host.locator('.rare-game[data-rare-phase="rare-review"]').waitFor({timeout:15000});
         const before=await state(keys[1]);
@@ -137,8 +142,8 @@ try{
       await fit(phone,phoneWidth,phoneHeight,'Rare Find phone result');
       if(round===0){
         const reveal=(await state()).party.results;
-        assert.equal(reveal.groups.find(g=>g.answer==='Mercury').count,2);
-        assert.equal(reveal.groups.find(g=>g.answer==='Earth').points,200);
+        assert.equal(reveal.groups.find(g=>g.answer===common).count,2);
+        assert.equal(reveal.groups.find(g=>g.answer===(panel?'yttrium':'Earth')).points,panel?191:200);
         await host.screenshot({path:'browser-screenshots/rare-reveal-tv-'+width+'x'+height+'.png'});
         if(width===1280)await phone.screenshot({path:'browser-screenshots/rare-reveal-phone.png'});
       }

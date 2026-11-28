@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { raceLengths } from '../quiz-race.js';
 import { circuitPoints, circuits, coursePath, courseSegments } from '../public/race-course.js';
 import { raceTrackMarkup } from '../public/quiz-race-track.js';
@@ -61,6 +61,19 @@ test('three circuits, one per race length: short, the figure of eight, and a lon
   // The crowd is made of little people, drawn in two instanced meshes, and it bobs unless motion is reduced.
   assert.match(race3d, /new THREE\.InstancedMesh\(new THREE\.CapsuleGeometry/);
   assert.match(race3d, /if \(!reducedMotion\) placeCrowd\(performance\.now\(\)\);/);
+});
+
+test('trackside models are recorded with their licence, and the race still draws if one is missing', () => {
+  const models = readdirSync(new URL('../public/models/racing/', import.meta.url)).filter(name => name.endsWith('.glb')).map(name => name.replace('.glb', ''));
+  const used = [...race3d.matchAll(/'(grandStand\w*|pits\w+|lightPostLarge|bannerTower\w+|flagCheckers|tentRoof)'/g)].map(match => match[1]);
+  assert.ok(used.length >= 8);
+  for (const name of used) assert.ok(models.includes(name), name + ' is used but not shipped');
+  for (const name of models) assert.ok(used.includes(name), name + ' is shipped but not used');
+  assert.match(readFileSync(new URL('../public/models/racing/LICENCE-CC0.txt', import.meta.url), 'utf8'), /Creative Commons Zero/);
+  assert.match(readFileSync(new URL('../docs/BRANDING_ASSETS.md', import.meta.url), 'utf8'), /public\/models\/racing\/\*\.glb/);
+  assert.match(race3d, /\.catch\(\(\) => \{ \/\* the circuit still works without it \*\/ \}\)/);
+  // The outer flame of a kart on fire survives the kart model swapping in.
+  assert.match(race3d, /\[glow, flame, fire, badge\]\.includes\(child\)/);
 });
 
 test('only the TV becomes immersive, and only once play starts', () => {

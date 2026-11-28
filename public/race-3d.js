@@ -205,6 +205,15 @@ function loadCarModel(name) {
   return modelCache.get(name);
 }
 
+// Kenney Racing Kit (CC0): grandstands, pit garages, light towers, banner towers and flags round the circuit.
+// Each is loaded once and cloned; if a model fails to load, that prop is simply missing.
+const propCache = new Map();
+function loadProp(name) {
+  if (!propCache.has(name)) propCache.set(name, import('/three-addons/GLTFLoader.js')
+    .then(({ GLTFLoader }) => new GLTFLoader().loadAsync(`/models/racing/${name}.glb`)).then(gltf => gltf.scene));
+  return propCache.get(name);
+}
+
 /** Swap the drawn body for a model, keeping the racer's glow, flame and number. */
 async function dressCar(car, racer) {
   const source = await loadCarModel(carModels[(racer.marker - 1) % carModels.length]);
@@ -225,8 +234,8 @@ async function dressCar(car, racer) {
     }
     if (/^wheel/.test(node.name)) wheels.push(node);
   });
-  const { glow, flame, badge } = car.userData;
-  for (const child of [...car.children]) if (![glow, flame, badge].includes(child)) car.remove(child);
+  const { glow, flame, fire, badge } = car.userData;
+  for (const child of [...car.children]) if (![glow, flame, fire, badge].includes(child)) car.remove(child);
   car.add(model);
   Object.assign(car.userData, { modelPaints: paints, modelWheels: wheels, wheels: [] });
 }
@@ -520,21 +529,59 @@ export function mountRace3D({ key, track = 'neon', course = 'medium', reducedMot
       scatter.add(tyre);
     }
   }
-  // Floodlight towers at the far corners and behind the back of the lap.
   const towerMaterial = new THREE.MeshStandardMaterial({ color: '#5a6072', metalness: .5, roughness: .4 });
-  const lampGlow = new THREE.MeshBasicMaterial({ color: track === 'space' ? '#c9b8ff' : '#fff6d6' });
   const towerGeometry = keep(new THREE.CylinderGeometry(.07, .12, 5, 8));
-  const headGeometry = keep(new THREE.BoxGeometry(1.1, .5, .14));
+  // Trackside buildings from the Racing Kit. `turn` is the way the prop faces (0 = towards the camera).
+  let tornDown = false;
+  const props = new THREE.Group();
+  scene.add(props);
+  const prop = (name, x, z, size, turn = 0, y = GROUND) => loadProp(name).then(source => {
+    if (tornDown) return;
+    const model = source.clone(true);
+    model.scale.setScalar(size);
+    model.rotation.y = turn;
+    model.position.set(x, y, z);
+    props.add(model);
+  }).catch(() => { /* the circuit still works without it */ });
+  const width = bounds.maxX - bounds.minX;
+  const depth = bounds.maxZ - bounds.minZ;
+  // Grandstands along the back of the lap, facing the camera, with gaps between blocks.
+  const standZ = bounds.minZ - 7.4;
+  for (let i = 0, count = Math.max(4, Math.round(width / 5.2)); i < count; i++) {
+    const x = bounds.minX + (i + .5) / count * width;
+    if (clearOfRoad(x, standZ, ROAD_HALF + 4)) prop(i % 2 ? 'grandStand' : 'grandStandCovered', x, standZ, 3.6);
+  }
+  // Light towers at the back corners and down the sides.
   for (const [fx, fz] of [[0, 0], [.33, 0], [.67, 0], [1, 0], [0, .55], [1, .55]]) {
-    const x = bounds.minX - 5 + fx * (bounds.maxX - bounds.minX + 10);
-    const z = bounds.minZ - 5.5 + fz * (bounds.maxZ - bounds.minZ);
-    if (!clearOfRoad(x, z, ROAD_HALF + 3)) continue;
-    const tower = new THREE.Mesh(towerGeometry, towerMaterial);
-    tower.position.set(x, GROUND + 2.5, z);
-    const head = new THREE.Mesh(headGeometry, lampGlow);
-    head.position.set(x, GROUND + 5.1, z);
-    head.lookAt((bounds.minX + bounds.maxX) / 2, 0, (bounds.minZ + bounds.maxZ) / 2);
-    scatter.add(tower, head);
+    const x = bounds.minX - 5 + fx * (width + 10);
+    const z = bounds.minZ - 5.2 + fz * depth;
+    if (clearOfRoad(x, z, ROAD_HALF + 3)) prop('lightPostLarge', x, z, 6.5, fx < .5 ? .5 : -.5);
+  }
+  // The pits: a row of garages and an office beside the start straight, on whichever side has room.
+  const startPoint = curve.getPointAt(.03);
+  const startTangent = curve.getTangentAt(.03);
+  const startNormal = new THREE.Vector3(-startTangent.z, 0, startTangent.x).normalize();
+  const startTurn = Math.atan2(-startTangent.z, startTangent.x);
+  for (const side of [-1, 1]) {
+    const spots = [0, 1, 2, 3, 4].map(i => ({ x: startPoint.x + startTangent.x * (1.5 + i * 2.3) + startNormal.x * side * (ROAD_HALF + 4.3), z: startPoint.z + startTangent.z * (1.5 + i * 2.3) + startNormal.z * side * (ROAD_HALF + 4.3) }));
+    if (!spots.every(spot => clearOfRoad(spot.x, spot.z, ROAD_HALF + 3.4))) continue;
+    // Nothing tall between the camera and the start line: on the near side only the low office row is built.
+    spots.forEach((spot, i) => prop(i === 4 ? 'pitsOffice' : 'pitsGarage', spot.x, spot.z, 2.2, startTurn + (side < 0 ? 0 : Math.PI)));
+    break;
+  }
+  // Banner towers and chequered flags either side of the finish line.
+  for (const side of [-1, 1]) {
+    const out = ROAD_HALF + 1.15;
+    prop(side < 0 ? 'bannerTowerRed' : 'bannerTowerGreen', end.x + tangent.x * -1.2 + -tangent.z * side * out, end.z + tangent.z * -1.2 + tangent.x * side * out, 2.4, startTurn);
+    prop('flagCheckers', end.x + tangent.x * 1.4 + -tangent.z * side * out, end.z + tangent.z * 1.4 + tangent.x * side * out, 2.2, startTurn + Math.PI / 2);
+  }
+  // A few marquees among the spectators.
+  for (let tries = 0, placed = 0; tries < 200 && placed < 5; tries++) {
+    const x = bounds.minX - 3 + random() * (width + 6);
+    const z = bounds.minZ - 3 + random() * (depth + 2);
+    if (!clearOfRoad(x, z, ROAD_HALF + 4.2)) continue;
+    placed++;
+    prop('tentRoof', x, z, 2.6, random() * Math.PI);
   }
   // Trackside boards behind the back of the lap, facing the camera. Our own names only.
   const boardColours = ['#e0364f', '#2f7de0', '#f4d35e', '#2fa35a'];
@@ -721,6 +768,7 @@ export function mountRace3D({ key, track = 'neon', course = 'medium', reducedMot
       return true;
     },
     dispose() {
+      tornDown = true;
       observer?.disconnect();
       canvas.removeEventListener('webglcontextlost', onLost);
       for (const car of cars.values()) disposeCar(car);

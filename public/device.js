@@ -4,22 +4,34 @@
 // touchscreen at all, or because someone pressed "This is my TV" (remembered on that device).
 const KEY = 'jambaloop-screen';
 // Fire TV model codes start with AFT; the rest are common smart-TV and console browser markers.
-// JambaloopTV is the Jambaloop Fire TV app (fire-tv-app/).
-const tvAgent = /\bJambaloopTV\b|\bAFT[A-Z0-9]{1,8}\b|AmazonWebAppPlatform|Android TV|Google ?TV|SMART-TV|SmartTV|\bTizen\b|Web0S|\bwebOS\b|NetCast|BRAVIA|HbbTV|\bCrKey\b|AppleTV|\bRoku\b|VIDAA|Opera TV|PlayStation|\bXbox\b|\bViera\b|\bAQUOS\b|Hisense|\bTV Safari\b/i;
+// JambaloopTV is the Jambaloop Fire TV app (fire-tv-app/). Only names that mean a TV: brand names alone (Hisense, AQUOS) also appear on those brands' phones.
+const tvAgent = /\bJambaloopTV\b|\bAFT[A-Z0-9]{1,8}\b|AmazonWebAppPlatform|Android TV|Google ?TV|SMART-TV|SmartTV|\bTizen\b|Web0S|\bwebOS\b|NetCast|BRAVIA|HbbTV|\bCrKey\b|\bChromecast\b|AppleTV|\bRoku\b|VIDAA|Opera TV|PlayStation|\bXbox\b|\bViera\b|\bTV Safari\b/i;
 // The layout every TV screen was designed and tested at.
 export const tvLayoutWidth = 1280;
 
-const read = () => { try { return localStorage.getItem(KEY); } catch { return null; } };
-export function rememberScreen(kind) {
-  try { if (kind === 'tv' || kind === 'phone') localStorage.setItem(KEY, kind); else localStorage.removeItem(KEY); } catch { /* private mode: not remembered */ }
+// A choice made for this visit only (a phone hosting just this once) wins over one remembered on the device.
+const read = () => {
+  try { return globalThis.sessionStorage?.getItem(KEY) ?? localStorage.getItem(KEY); } catch { return null; }
+};
+export function rememberScreen(kind, { visitOnly = false } = {}) {
+  try {
+    const store = visitOnly ? globalThis.sessionStorage : localStorage;
+    globalThis.sessionStorage?.removeItem(KEY);
+    if (kind === 'tv' || kind === 'phone') store.setItem(KEY, kind); else localStorage.removeItem(KEY);
+  } catch { /* private mode: not remembered */ }
 }
 
 export const looksLikeTvBrowser = agent => tvAgent.test(String(agent ?? ''));
-export const hasTouchscreen = (nav = globalThis.navigator, win = globalThis) => (nav?.maxTouchPoints ?? 0) > 0 || Boolean(win && 'ontouchstart' in win);
+// maxTouchPoints follows the real hardware (0 on a Fire TV); 'ontouchstart' is present on every Android browser,
+// touchscreen or not, so it is only used where maxTouchPoints is missing.
+export const hasTouchscreen = (nav = globalThis.navigator, win = globalThis) => typeof nav?.maxTouchPoints === 'number' ? nav.maxTouchPoints > 0 : Boolean(win && 'ontouchstart' in win);
 
 /** What this device is taken to be: 'tv' or 'phone' when known, otherwise undefined (a laptop or desktop). */
 export function screenKind(env = globalThis) {
   const stored = read();
+  // Joining a room from a QR code on a touchscreen is always a phone, whatever was chosen before.
+  const joining = new URLSearchParams(env.location?.search ?? '').has('join') && hasTouchscreen(env.navigator, env);
+  if (stored === 'tv' && joining) return undefined;
   if (stored === 'tv' || stored === 'phone') return stored;
   if (looksLikeTvBrowser(env.navigator?.userAgent)) return 'tv';
   // No touchscreen, steered by a remote rather than a mouse, on a landscape screen: a TV.

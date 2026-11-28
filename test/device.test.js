@@ -27,7 +27,11 @@ test('Fire TV sticks and common smart-TV browsers are recognised by name; phones
     'Mozilla/5.0 (Linux; Android 11; KFTRWI) AppleWebKit/537.36 Silk/120 Chrome/120 Safari/537.36',
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/17.1 Safari/605.1.15',
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36',
+    // TV brands that also make phones: their phones are not TVs.
+    'Mozilla/5.0 (Linux; Android 10; Hisense Infinity H50 Lite) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36',
+    'Mozilla/5.0 (Linux; Android 12; AQUOS sense7 Build/S1043) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36',
   ]) assert.ok(!looksLikeTvBrowser(agent), agent);
+  assert.ok(looksLikeTvBrowser('Mozilla/5.0 (Linux; Android 12; Chromecast) AppleWebKit/537.36 Chrome/108 Safari/537.36'), 'Chromecast with Google TV');
 });
 
 test('a screen with no touchscreen, steered by a remote, on a landscape screen is the TV; a phone and a laptop are not', () => {
@@ -74,11 +78,43 @@ test('the app: TVs never get the phone prompt or the phone layout, phones can sa
   const app = readFileSync(new URL('../public/app.js', import.meta.url), 'utf8');
   assert.match(app, /const smallScreen = \(\) => !isTvScreen\(\) && \(matchMedia\('\(max-width: 760px\)'\)\.matches \|\| \(hasTouchscreen\(\) &&/);
   assert.match(app, /data-screen="tv"[^>]*>This screen is our TV: host here<\/button>/);
-  assert.match(app, /if \(button\.dataset\.screen === 'tv'\) \{ rememberScreen\('tv'\); prepareTvScreen\(\); \}/);
+  assert.match(app, /if \(button\.dataset\.screen === 'tv'\) \{ rememberScreen\('tv', \{ visitOnly: hasTouchscreen\(\) \}\); prepareTvScreen\(\); window\.dispatchEvent\(new Event\('jambaloop-screen'\)\); \}/, 'a touchscreen is the TV for this visit only');
+  assert.match(app, /if \(screenCheck\) openDialog\('device'\);\nelse if \(saved/, 'the screen check is not swallowed by a saved room or a join link');
+  assert.match(readFileSync(new URL('../public/index.html', import.meta.url), 'utf8'), /class="text-button home-tv-link" data-action="device">On a TV\?<\/button>/, 'the screen check is reachable from the home page');
   assert.match(readFileSync(new URL('../public/mobile-deck.js', import.meta.url), 'utf8'), /const phoneLayout = \(\) => media\.matches && !isTvScreen\(\);/);
   assert.match(readFileSync(new URL('../public/index.html', import.meta.url), 'utf8'), /data-action="device">On a TV\?<\/button>/);
   const css = readFileSync(new URL('../public/tv-screen.css', import.meta.url), 'utf8');
   assert.match(css, /\.game-tile \{ display: grid !important; grid-template-rows: minmax\(0, 1fr\) auto; \}/, 'the caption is a row of its own, under the art');
   assert.match(css, /\.tile-info \{\n  position: static !important;/);
-  assert.match(css, /\.tile-players-word \{ display: none; \}/, 'narrow tiles shorten "1+ players" rather than cutting the type off');
+  assert.match(css, /@container \(max-width: 250px\) \{[\s\S]*?\.tile-players-word \{ display: none; \}/, 'tiles shorten "1+ players" rather than cutting the type off');
+});
+
+test('touch is read from the hardware: an Android TV stick has touch events but no touchscreen', async () => {
+  const { hasTouchscreen } = await import('../public/device.js');
+  assert.equal(hasTouchscreen({ maxTouchPoints: 0 }, { ontouchstart: null }), false, 'Android browsers always have ontouchstart; maxTouchPoints 0 decides');
+  assert.equal(hasTouchscreen({ maxTouchPoints: 5 }, {}), true);
+  assert.equal(hasTouchscreen({}, { ontouchstart: null }), true, 'only an old browser without maxTouchPoints falls back to ontouchstart');
+  store.clear();
+  const stick = device({ agent: 'Mozilla/5.0 (Linux; Android 9) Chrome/120 Safari/537.36', touch: 0, pointer: 'coarse', screen: [960, 540] });
+  assert.equal(screenKind({ ...stick, ontouchstart: null }), 'tv', 'a TV stick that does not name itself, with touch events present');
+});
+
+test('a phone that hosted "as the TV" once is a phone again when it joins a game', () => {
+  store.clear();
+  rememberScreen('tv');
+  const phone = { ...device({ touch: 5, pointer: 'coarse', screen: [390, 844] }), location: { search: '?join=123456' } };
+  assert.equal(screenKind(phone), undefined, 'a join link on a touchscreen is always the phone view');
+  assert.equal(screenKind({ ...phone, location: { search: '' } }), 'tv', 'the remembered choice still applies when it is hosting');
+  const stick = { ...device({ agent: 'AFTKA', touch: 0 }), location: { search: '?join=123456' } };
+  assert.equal(screenKind(stick), 'tv', 'a TV with no touchscreen is never turned into a phone by a join link');
+  // "This screen is our TV" on a touchscreen lasts for the visit only: nothing is written to the device's memory.
+  store.clear();
+  const visit = new Map();
+  globalThis.sessionStorage = { getItem: key => visit.get(key) ?? null, setItem: (key, value) => visit.set(key, String(value)), removeItem: key => visit.delete(key) };
+  rememberScreen('tv', { visitOnly: true });
+  assert.equal(store.size, 0, 'not remembered on the device');
+  assert.equal(screenKind(device()), 'tv', 'but this visit is the TV');
+  rememberScreen();
+  assert.equal(screenKind(device()), undefined);
+  delete globalThis.sessionStorage;
 });

@@ -211,6 +211,8 @@ export function mobileDeck(app, dialog, content) {
     if (!frame) frame = requestAnimationFrame(refresh);
   }
 
+  // Choosing "This screen is our TV" switches the phone layout off at once.
+  globalThis.addEventListener?.('jambaloop-screen', () => toggle());
   function toggle() {
     root.classList.toggle('mobile-deck', phoneLayout());
     if (!phoneLayout()) { root.classList.remove('mobile-keyboard'); appLayout.clear(); dialogLayout.clear(); return; }

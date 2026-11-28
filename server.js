@@ -1382,6 +1382,8 @@ app.post('/api/rooms/:code/playlist/next', (req, res) => {
     return res.status(409).json({ error: 'Check the current game and playlist before loading the next game.' });
   }
   const nextSettings = readSettings(queuedSettings(room.night.queue[0], room.theme));
+  // Never crash on a lineup the settings rules refuse: leave the room as it is.
+  if (!nextSettings) return res.status(409).json({ error: 'The next game could not be loaded. Edit the playlist to continue.' });
   const tooMany = capacityError(nextSettings.mode, nextSettings.playStyle, groupSize(room));
   if (tooMany) return res.status(409).json({ error: tooMany + ' Edit the playlist to continue.' });
   room.night.queue.shift();

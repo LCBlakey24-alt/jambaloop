@@ -1154,13 +1154,15 @@ function render(s) {
     body = `<section class="game-panel round-break">
       <span class="pause-mark">${icons('pause')}</span><div class="eyebrow">ROUND ON HOLD</div><h1>Timer paused<span class="brand-dot">.</span></h1>
       <div class="break-clock"><span class="timer" id="timer"></span><span>left in this round</span></div>
-      <p>${s.selection !== undefined ? 'Your answer is locked in.' : 'The round continues when the host or captain resumes.'}</p>
+      <p>${s.selection !== undefined ? 'Your answer is locked in.' : canControl ? 'Tap Resume timer when everyone is ready.' : 'The round continues when the captain resumes.'}</p>
       ${canControl ? `<div class="actions"><button class="button primary" data-action="clock">${icons('play')} Resume timer</button></div>` : ''}
     </section>`;
   } else if (s.party) {
     body = partyView(s, { host, canControl, escape, icons, reply: partyReply });
     if (s.phase === 'party-potato' && pauseButton) body = `<div class="round-pace">${pauseButton}</div>` + body;
     if (s.phase === 'party-potato' && !host) timer = '<span class="timer potato-timer" id="timer"></span>';
+    // Catch Up: the seconds left in a leg are on every phone, not only the TV.
+    if (s.phase === 'catch-leg' && !host && s.ends) timer = '<span class="player-timer" aria-label="Time remaining"><span class="player-timer-label">TIME LEFT</span><span class="timer" id="timer"></span></span>';
   } else if (s.phase === 'lobby' && s.picker && s.gathering) {
     body = host ? gatherTv(s, { escape }) : gatherPhone(s, { escape, canDrive: s.isCaptain });
   } else if (s.phase === 'lobby' && s.picker) {

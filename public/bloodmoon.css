@@ -190,3 +190,41 @@ button.blood-seat:focus-visible { border-color: var(--moon); outline: none; }
 .blood-grave { width: 1.15em; height: 1.15em; object-fit: contain; display: block; filter: saturate(.8) brightness(.95); }
 .blood-vampire { width: clamp(2.6rem, 8dvh, 4.6rem); height: clamp(2.6rem, 8dvh, 4.6rem); object-fit: contain; margin-bottom: -.2rem; }
 .blood-game[data-blood="night"] .blood-grave { filter: saturate(.5) brightness(.7); }
+
+/* The village in 3D renders (owner asked for the flat house and other symbols to match the gravestones and the
+   vampire): cottages and a manor for the living, a coffin for the bitten, a gravestone for the banished,
+   pines and a crypt in the corners and a brazier fire between two lanterns. */
+.blood-house { width: 1.2em; height: 1.2em; object-fit: contain; display: block; filter: saturate(.85) brightness(.95) drop-shadow(0 6px 10px #0008); }
+.blood-count-house { width: clamp(1.8rem, 4.6dvh, 2.8rem); height: clamp(1.8rem, 4.6dvh, 2.8rem); object-fit: contain; }
+.blood-coffin { transform: scale(.92); }
+.blood-game[data-blood="night"] .blood-house { filter: saturate(.55) brightness(.62) hue-rotate(-10deg) drop-shadow(0 6px 10px #000a); }
+.blood-scenery { position: absolute; inset: 0; pointer-events: none; }
+.blood-prop { position: absolute; width: clamp(3rem, 9dvh, 6rem); height: clamp(3rem, 9dvh, 6rem); object-fit: contain; opacity: .9; filter: saturate(.7) brightness(.85) drop-shadow(0 6px 8px #0007); }
+.blood-prop.is-nw { left: 0; top: 0; }
+.blood-prop.is-ne { right: 0; top: 2%; }
+.blood-prop.is-sw { left: 0; bottom: 0; width: clamp(3.6rem, 11dvh, 7rem); height: clamp(3.6rem, 11dvh, 7rem); }
+.blood-prop.is-se { right: 1%; bottom: 0; }
+.blood-game[data-blood="night"] .blood-prop { filter: saturate(.4) brightness(.55) drop-shadow(0 6px 8px #000a); }
+.blood-fire { position: relative; display: grid; place-items: end center; width: clamp(8rem, 24dvh, 13rem); height: clamp(4.4rem, 13dvh, 7.5rem); }
+.blood-fire > img { position: absolute; object-fit: contain; }
+.blood-fire-basket { width: 52%; height: 70%; bottom: 0; left: 24%; }
+.blood-fire-glow { width: 120%; height: 160%; left: -10%; bottom: -30%; opacity: .55; mix-blend-mode: screen; }
+.blood-flame { width: 34%; height: 100%; bottom: 30%; left: 33%; transform-origin: 50% 100%; mix-blend-mode: screen; }
+.blood-flame.is-b { width: 26%; left: 37%; height: 78%; opacity: .85; }
+.blood-lantern { width: 18%; height: 60%; bottom: 0; filter: drop-shadow(0 0 10px #ffb35a66); }
+.blood-lantern.is-left { left: 0; }
+.blood-lantern.is-right { right: 0; }
+.blood-game[data-blood="night"] .blood-fire-glow { opacity: .3; }
+.blood-game[data-blood="night"] .blood-flame { height: 60%; opacity: .7; }
+@media (prefers-reduced-motion: no-preference) {
+  .blood-flame.is-a { animation: blood-flame 1.1s ease-in-out infinite alternate; }
+  .blood-flame.is-b { animation: blood-flame .8s ease-in-out .2s infinite alternate-reverse; }
+  .blood-fire-glow { animation: blood-glow 2.2s ease-in-out infinite alternate; }
+}
+@keyframes blood-flame { from { transform: scale(1, .92) skewX(-3deg); } to { transform: scale(.94, 1.06) skewX(3deg); } }
+@keyframes blood-glow { from { opacity: .45; } to { opacity: .62; } }
+/* The verdict: the role is already announced, so a caught vampire stands there, and anyone else gets a gravestone. */
+.blood-verdict-figure { width: clamp(3.6rem, 11dvh, 6.5rem); height: clamp(3.6rem, 11dvh, 6.5rem); object-fit: contain; filter: drop-shadow(0 8px 12px #0009); }
+/* A full village (11-14 players): slightly smaller houses and corner props, so names keep clear. */
+.blood-village[data-size="large"] .blood-house { width: 1.02em; height: 1.02em; }
+.blood-village[data-size="large"] .blood-prop { width: clamp(2.4rem, 7dvh, 4.6rem); height: clamp(2.4rem, 7dvh, 4.6rem); }

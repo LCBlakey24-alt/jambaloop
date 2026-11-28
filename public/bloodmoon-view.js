@@ -52,17 +52,30 @@ const talkingPoints = [
  * a skull marks one who has fallen, with the role they turned out to be. It
  * shows only what is already public.
  */
+// The village is drawn from renders of Kenney's Hexagon Kit (the houses), Graveyard Kit (the props, coffin and
+// gravestones) and Particle Pack (the flames), all CC0. A seat's house is chosen by seat number, never by role, and
+// a fallen player's marker shows only how they fell, which everyone already knows.
+const sprite = (name, css) => `<img class="${css}" src="/models/sprites/${name}.webp" alt="">`;
+const home = (seat, index) => !seat.alive
+  ? (seat.how === 'bitten' ? sprite('coffin', 'blood-grave blood-coffin') : sprite(graves[index % graves.length], 'blood-grave'))
+  : sprite(index % 3 === 2 ? 'unit-mansion' : 'unit-house', 'blood-house');
+// Pines and the old crypt stand in the corners, clear of every seat; lanterns flank the fire.
+const scenery = `<div class="blood-scenery" aria-hidden="true">${sprite('pine', 'blood-prop is-nw')}${sprite('pine-crooked', 'blood-prop is-ne')}
+  ${sprite('crypt', 'blood-prop is-sw')}${sprite('pine', 'blood-prop is-se')}</div>`;
+const campfire = `<span class="blood-fire" aria-hidden="true">${sprite('blood-glow', 'blood-fire-glow')}${sprite('lantern-glass', 'blood-lantern is-left')}
+  ${sprite('fire-basket', 'blood-fire-basket')}${sprite('blood-flame-a', 'blood-flame is-a')}${sprite('blood-flame-b', 'blood-flame is-b')}${sprite('lantern-glass', 'blood-lantern is-right')}</span>`;
+
 function village(party, escape, centre) {
   const count = party.seats.length;
   const homes = party.seats.map((seat, index) => {
     const angle = (index / count) * Math.PI * 2 - Math.PI / 2;
     const out = !seat.alive;
     return `<li style="left:${(50 + 43 * Math.cos(angle)).toFixed(2)}%;top:${(50 + 39 * Math.sin(angle)).toFixed(2)}%"${out ? ' data-out' : ''}${seat.connected === false && !out ? ' data-away' : ''}>
-      <span class="blood-home">${out ? `<img class="blood-grave" src="/models/sprites/${graves[index % graves.length]}.webp" alt="">` : kicon('structure-house')}<span class="blood-face">${avatarView(seat, escape)}</span></span>
+      <span class="blood-home">${home(seat, index)}<span class="blood-face">${avatarView(seat, escape)}</span></span>
       <strong>${escape(seat.name)}</strong>${out && seat.role ? `<b class="blood-tag" data-role="${seat.role}">${roleNames[seat.role]}</b>` : ''}</li>`;
   }).join('');
-  return `<div class="blood-village" data-size="${count > 10 ? 'large' : count > 7 ? 'medium' : 'small'}"><ul>${homes}</ul>
-    <div class="blood-green">${kicon('campfire')}${centre ?? ''}</div></div>`;
+  return `<div class="blood-village" data-size="${count > 10 ? 'large' : count > 7 ? 'medium' : 'small'}">${scenery}<ul>${homes}</ul>
+    <div class="blood-green">${campfire}${centre ?? ''}</div></div>`;
 }
 
 /** What the whole room already knows, kept in view: who is left and how each player fell. */
@@ -72,7 +85,7 @@ function chronicle(party, escape) {
     <strong>${escape(seat.name)}</strong> ${seat.how === 'bitten' ? 'was bitten' : 'was banished'}${seat.role ? ` · <b class="blood-tag" data-role="${seat.role}">${roleNames[seat.role]}</b>` : ''}</span></li>`).join('');
   return `<aside class="blood-chronicle" aria-label="The story so far">
     <div class="blood-stats"><div data-kind="vampires"><img class="blood-vampire" src="/models/sprites/character-vampire.webp" alt=""><strong>${party.hiding ?? party.counts.vampire}</strong><span>${(party.hiding ?? party.counts.vampire) === 1 ? 'vampire' : 'vampires'} still hiding</span></div>
-      <div data-kind="village">${kicon('structure-house')}<strong>${party.aliveCount}</strong><span>still in the village</span></div></div>
+      <div data-kind="village">${sprite('unit-house', 'blood-count-house')}<strong>${party.aliveCount}</strong><span>still in the village</span></div></div>
     <h2>The story so far</h2>
     ${events ? `<ol>${events}</ol>` : '<p class="blood-quiet">Nobody has fallen yet.</p>'}</aside>`;
 }
@@ -197,7 +210,7 @@ export function bloodmoonView(state, { host, canControl, escape, icons }) {
     const top = Math.max(1, ...verdict.tally.map(row => row.votes));
     const out = verdict.banished;
     const news = out
-      ? `<div class="blood-news" data-kind="${out.role === 'vampire' ? 'caught' : 'wrong'}"><span class="blood-face">${avatarView(out, escape)}</span><h2>${escape(out.name)} is banished</h2><p>They were ${article(out.role)}${out.role === 'vampire' ? '!' : '.'}</p></div>`
+      ? `<div class="blood-news" data-kind="${out.role === 'vampire' ? 'caught' : 'wrong'}">${sprite(out.role === 'vampire' ? 'character-vampire' : 'gravestone-round', 'blood-verdict-figure')}<span class="blood-face">${avatarView(out, escape)}</span><h2>${escape(out.name)} is banished</h2><p>They were ${article(out.role)}${out.role === 'vampire' ? '!' : '.'}</p></div>`
       : `<div class="blood-news" data-kind="safe"><h2>Nobody is banished</h2><p>${verdict.tied ? 'The vote was tied.' : 'Nobody was voted for.'}</p></div>`;
     body = `${head('The verdict', '')}${news}
       <ol class="blood-tally">${verdict.tally.map(row => `<li><span class="blood-face">${avatarView(row, escape)}</span><strong>${escape(row.name)}</strong>

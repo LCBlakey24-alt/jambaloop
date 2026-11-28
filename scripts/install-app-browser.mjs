@@ -38,10 +38,10 @@ try {
   assert.deepEqual(manifest.errors, [], 'the app manifest has no errors');
   const { installabilityErrors } = await cdp.send('Page.getInstallabilityErrors');
   assert.deepEqual(installabilityErrors, [], 'Chrome can install Jambaloop');
-  // Chrome makes its own offer to an installable site, and the button appears for it.
-  await addSlot(page);
-  await page.locator('[data-action="install-app"]').waitFor({ timeout: 10000 });
-  console.log('PASS: Chrome can install Jambaloop as an app, and the install button appears');
+  // Chrome makes its own offer to an installable site, and the phone home's button appears for it.
+  await page.locator('.phone-home [data-action="install-app"]').waitFor({ timeout: 10000 });
+  assert.equal(await page.locator('[data-action="install-app"]').count(), 1, 'one install button');
+  console.log('PASS: Chrome can install Jambaloop as an app, and the phone home offers it');
 
   // 3. No internet: a page load shows the offline page; the room API is never answered from a cache.
   await phone.setOffline(true);
@@ -64,11 +64,12 @@ try {
   const tap = await android.newPage();
   tap.on('pageerror', error => errors.push(error.message));
   await tap.goto(site, { waitUntil: 'domcontentloaded' });
-  await addSlot(tap);
+  await tap.locator('.phone-home [data-install-slot]').waitFor({ state: 'attached', timeout: 10000 });
   await tap.waitForTimeout(150);
   assert.equal(await tap.locator('[data-action="install-app"]').count(), 0, 'no button before the browser offers');
+  assert.equal(await tap.locator('.phone-home [data-install-slot]').isHidden(), true, 'the slot stays out of the way');
   await offer(tap);
-  await tap.locator('[data-action="install-app"]').waitFor({ timeout: 5000 });
+  await tap.locator('.phone-home [data-action="install-app"]').waitFor({ timeout: 5000 });
   await tap.locator('[data-action="install-app"]').click();
   await tap.waitForFunction(() => window.installAsked === true);
   await tap.waitForFunction(() => !document.querySelector('[data-action="install-app"]'));
@@ -80,8 +81,7 @@ try {
   const page = await iphone.newPage();
   page.on('pageerror', error => errors.push(error.message));
   await page.goto(site, { waitUntil: 'domcontentloaded' });
-  await addSlot(page);
-  await page.locator('.install-offer-ios summary').waitFor({ timeout: 5000 });
+  await page.locator('.phone-home .install-offer-ios summary').waitFor({ timeout: 10000 });
   await page.locator('.install-offer-ios summary').click();
   assert.match(await page.locator('.install-offer-ios').textContent(), /Add to Home Screen/);
   console.log('PASS: an iPhone is shown how to add Jambaloop to the home screen');

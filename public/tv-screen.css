@@ -1,0 +1,36 @@
+/*
+ * TV screens and the home tiles (28 November 2026, after a first test on a Fire TV Stick).
+ * Loaded last so these rules win.
+ */
+
+/* A TV is never told it is "acting as the TV" like a phone would be. */
+html.tv-screen .small-host-note { display: none !important; }
+
+/* The screen check (?device, or "On a TV?" in the footer). */
+.screen-report { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: .35rem .9rem; margin: .8rem 0 1rem; font-size: .9rem; }
+.screen-report dt { font-weight: 800; color: var(--muted, #a8b8d1); }
+.screen-report dd { margin: 0; overflow-wrap: anywhere; }
+
+/*
+ * Home tiles: the game type and the player count sit on their own solid strip under the artwork,
+ * instead of on top of it where some tiles' art and colours made them unreadable.
+ */
+.game-tile { display: grid !important; grid-template-rows: minmax(0, 1fr) auto; }
+.game-tile > .tile-art { height: auto !important; min-height: 0; }
+html body .game-tile .tile-info {
+  position: static !important; inset: auto !important; z-index: 3;
+  display: flex; justify-content: space-between; align-items: center; gap: 6px; min-width: 0;
+  padding: clamp(4px, 3.2cqw, 9px) clamp(6px, 5cqw, 12px) !important;
+  background: #0b1020 !important; border-top: 1px solid #ffffff22; text-shadow: none !important;
+}
+html body .game-tile .tile-info :is(.tile-kind, .tile-minimum) {
+  font: 800 clamp(9px, 6.4cqw, 15px)/1.15 'House Sans', system-ui, sans-serif !important;
+  letter-spacing: .04em; color: #f4f7ff !important; opacity: 1 !important;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
+html body .game-tile .tile-info .tile-minimum { font-weight: 700 !important; color: #c9d6ee !important; flex: none; }
+/* The game's own colour stays, as a dot beside its type. */
+html body .game-tile .tile-info .tile-kind::before {
+  content: ""; display: inline-block; width: .6em; height: .6em; margin-right: .4em; border-radius: 50%;
+  background: var(--game-accent, var(--id-accent, #1dd9be)); vertical-align: .05em;
+}

@@ -388,3 +388,24 @@ body:not(.playing) .footer { display:none !important; }
   .home-preview .preview-cover { width:min(100%,35dvh); }
   .narrator-script,.narrator-credit { font-size:9px; }
 }
+
+/* The TV launcher uses the same static artwork as the Fire TV app tile.
+   The navy centre keeps descriptions and navigation legible from a distance. */
+html.tv-screen body:not(.playing)::before {
+  background: linear-gradient(#10162622, #10162622), url('/branding/fire-tv-home.webp') center / cover no-repeat, #101626;
+  animation: none;
+}
+html.tv-screen body:not(.playing)::after { background: none; }
+html.tv-screen body:not(.playing) .home-shell:not([data-carousel-scheme="light"]) .carousel-theme { background: transparent; }
+html.tv-screen body:not(.playing) .home-shell:not([data-carousel-scheme="light"]) .home-tabs-note {
+  background: #101626e8;
+  border-radius: 5px;
+  color: #d6e2f5;
+  padding: 2px 7px;
+}
+
+/* The TV is viewed from farther away than a laptop. */
+@media (min-width: 1000px) and (min-height: 600px) {
+  html.tv-screen body:not(.playing) .carousel-steps { font-size: clamp(16px, 2.1dvh, 21px); line-height: 1.32; }
+  html.tv-screen body:not(.playing) .carousel-description { font-size: clamp(16px, 2.1dvh, 22px); }
+}

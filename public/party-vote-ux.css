@@ -32,6 +32,13 @@
   border-radius: 11px;
   font-size: 15px;
   font-weight: 850;
+  touch-action: manipulation;
+  transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .game.player-only .party-vote-card .party-vote-button:not(:disabled):active {
+    transform: scale(.98);
+  }
 }
 .game.player-only .party-vote-card .party-vote-button:focus-visible {
   outline: 3px solid var(--game-accent, var(--pink));

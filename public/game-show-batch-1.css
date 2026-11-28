@@ -256,3 +256,31 @@ body.playing .immersive[data-mode="knockout"] .tv-round { grid-template-columns:
   body.playing .immersive[data-mode="knockout"] .question-panel:has(.decider-board) h2 { font-size: clamp(18px, 3.2dvh, 34px); margin: .2rem 0; }
   body.playing .immersive[data-mode="knockout"] .question-panel:has(.decider-board) :is(.life-info, .answer-guide, .hint) { display: none; }
 }
+
+/* Classic Quiz: the question and instructions stay readable from the sofa.
+   The gold rule ties the round label to the game's art-deco stage. */
+body.playing .game.host-screen[data-mode="classic"] .question-panel .round-kicker {
+  border-bottom: 1px solid #f5d58d80;
+  padding-bottom: 0.45em;
+}
+body.playing .game.host-screen[data-mode="classic"] .question-panel .question-guide {
+  color: #eef2ff;
+  font-size: clamp(17px, 2.2dvh, 24px);
+  line-height: 1.3;
+}
+body.playing .game.host-screen[data-mode="classic"] .question-panel > h2 {
+  text-wrap: balance;
+  line-height: 1.1;
+}
+body.playing .game.player-only[data-mode="classic"] .player-answer-feedback {
+  border-color: #f5d58d;
+  box-shadow: inset 3px 0 #f5d58d;
+}
+body.playing .game.player-only[data-mode="classic"] .player-answer-feedback[data-feedback="correct"] {
+  border-color: #9be4c4;
+  box-shadow: inset 3px 0 #9be4c4;
+}
+body.playing .game.player-only[data-mode="classic"] .player-answer-feedback[data-feedback="incorrect"] {
+  border-color: #ffc3cc;
+  box-shadow: inset 3px 0 #ffc3cc;
+}

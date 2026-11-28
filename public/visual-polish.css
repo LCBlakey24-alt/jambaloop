@@ -118,18 +118,15 @@
 .button.primary:not(:disabled):hover::before { left:120%; }
 
 /* ------------------------------------------------------ game phases ----- */
-/* Bolder, quicker stage entrances (replaces the faint .55 opacity start). */
-@keyframes journey-stage-in { from { opacity:.2; transform:translateY(18px) scale(.985); } to { opacity:1; transform:none; } }
-@keyframes journey-answer-in { from { opacity:.2; transform:translateY(10px) scale(.99); } to { opacity:1; transform:none; } }
+/* Keep questions readable as soon as the round opens. */
+@keyframes journey-stage-in { from { opacity:.85; transform:translateY(5px); } to { opacity:1; transform:none; } }
+@keyframes journey-answer-in { from { opacity:.85; transform:translateY(5px); } to { opacity:1; transform:none; } }
 .game.phase-enter[data-phase="question"] .question-panel,
-.game.phase-enter[data-phase="ready"] .game-panel { animation-duration:.5s; animation-timing-function:var(--ease-out-expo); }
+.game.phase-enter[data-phase="ready"] .game-panel { animation-duration:.24s; animation-timing-function:var(--ease-out-expo); }
 
-/* Answers deal in one after another; they are clickable throughout. */
-.game.phase-enter[data-phase="question"] .answers .answer { animation:answer-deal .46s var(--ease-out-expo) backwards; }
-.game.phase-enter[data-phase="question"] .answers .answer:nth-child(2){animation-delay:60ms}
-.game.phase-enter[data-phase="question"] .answers .answer:nth-child(3){animation-delay:120ms}
-.game.phase-enter[data-phase="question"] .answers .answer:nth-child(4){animation-delay:180ms}
-.game.phase-enter[data-phase="question"] .question-panel h2 { animation:headline-in .55s var(--ease-out-expo) backwards; }
+/* Answers arrive together and remain legible and interactive throughout. */
+.game.phase-enter[data-phase="question"] .answers .answer { animation:answer-deal .22s var(--ease-out-expo); }
+.game.phase-enter[data-phase="question"] .question-panel h2 { animation:headline-in .24s var(--ease-out-expo); }
 
 .answers .answer { transition:transform .22s var(--ease-out-expo), box-shadow .25s, opacity .3s, filter .3s, background-color .2s, border-color .2s; }
 .game[data-phase="question"] .answers .answer:not(:disabled):hover { transform:translateY(-2px); }
@@ -198,8 +195,8 @@
 @keyframes mark-draw { from { stroke-dashoffset:420; } to { stroke-dashoffset:0; } }
 @keyframes preview-cover-in { from { opacity:0; transform:translateY(16px) scale(.94) rotate(-2deg); } }
 @keyframes copy-rise { from { opacity:0; transform:translateY(12px); } }
-@keyframes answer-deal { from { opacity:.15; transform:translateY(14px) scale(.97); } }
-@keyframes headline-in { from { opacity:0; transform:translateY(10px); letter-spacing:.02em; } }
+@keyframes answer-deal { from { opacity:.75; transform:translateY(5px); } }
+@keyframes headline-in { from { opacity:.8; transform:translateY(5px); } }
 @keyframes answer-correct {
   0% { transform:scale(.96); box-shadow:0 0 0 0 color-mix(in srgb,var(--game-accent,#9fe) 70%,transparent); }
   45% { transform:scale(1.035); box-shadow:0 0 0 10px color-mix(in srgb,var(--game-accent,#9fe) 25%,transparent); }

@@ -144,6 +144,7 @@ jobs:
           node scripts/commentators-browser.mjs
           node scripts/race-powers-browser.mjs
           node scripts/race-league-browser.mjs
+          node scripts/symbol-race-browser.mjs
           node scripts/bloodmoon-browser.mjs
           node scripts/live-guesses-browser.mjs
           node scripts/short-phone-browser.mjs

@@ -189,9 +189,11 @@ export function submitBloodmoon(room, key, data, publish) {
     const target = keyOf(room, party, data.id);
     if (!target || !party.alive.has(target)) return [400, 'Choose someone who is still in the game.'];
     const role = party.roles.get(key);
-    if (role === 'vampire' && isVampire(party, target)) return [400, 'Choose someone who is not a vampire.'];
+    // Every refusal reads the same, so a mis-tap never shows a neighbour which role this phone has;
+    // the role card says who this role cannot pick (a fellow vampire, or last night's guard).
+    if (role === 'vampire' && isVampire(party, target)) return [400, 'Choose someone else.'];
     if (role !== 'warden' && target === key) return [400, 'Choose someone else.'];
-    if (role === 'warden' && party.night > 1 && party.guarded.get(key) === target) return [400, 'You cannot guard the same person two nights running.'];
+    if (role === 'warden' && party.night > 1 && party.guarded.get(key) === target) return [400, 'Choose someone else.'];
     // Vampires may change their mind until the night closes so they can agree
     // without speaking; every other pick is final.
     if (party.picks.has(key) && role !== 'vampire') return [204];

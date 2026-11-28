@@ -149,6 +149,7 @@ jobs:
           node scripts/phone-captain-browser.mjs
           node scripts/fire-tv-browser.mjs
           node scripts/bloodmoon-browser.mjs
+          node scripts/bloodmoon-glance-browser.mjs
           node scripts/live-guesses-browser.mjs
           node scripts/short-phone-browser.mjs
           node scripts/qr-scan-browser.mjs

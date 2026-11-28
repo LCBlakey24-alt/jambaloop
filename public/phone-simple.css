@@ -53,3 +53,22 @@ html.mobile-deck #dialog-content :is(#join-form, #configure-form, #rematch-form)
 html.mobile-deck #dialog-content #join-form .join-room-submit {
   position: sticky; bottom: 0; z-index: 2; box-shadow: 0 -10px 18px -6px rgba(0, 0, 0, .55);
 }
+
+/* ---- Bloodmoon: no role given away at a glance (fix/bloodmoon-glance) ----
+   Every role's phone shows the same heading, line, list and buttons; what only this player should know is
+   inside the role card they tap to peek. The card is only ever drawn on a player's screen, never the TV, so
+   these rules are scoped to .game.player-only (a player on a laptop gets them too). */
+.game.player-only .blood-role-card .blood-hide { display: none; }
+.game.player-only .blood-role-card[open] .blood-peek { display: none; }
+.game.player-only .blood-role-card[open] .blood-hide { display: inline; }
+/* Every row of players is the same height, so where your own "You" seat falls never changes the layout. */
+.game.player-only .blood-seats { grid-auto-rows: 1fr; }
+/* A card kept open while others tap does not replay its opening animation on every redraw. */
+.game.player-only .blood-role-card.is-kept .blood-role-body { animation: none; }
+.game.player-only .blood-tonight { width: 100%; display: grid; gap: 8px; margin-top: 6px; padding: 10px 12px; border-radius: 12px; background: #1d1233; text-align: center; }
+.game.player-only .blood-tonight h3 { margin: 0; font-size: .8rem; letter-spacing: .14em; text-transform: uppercase; color: #cdbfe6; }
+.game.player-only .blood-tonight p { margin: 0; font-size: 1rem; color: #efe8ff; }
+.game.player-only .blood-partner-picks { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; color: #ffd9db; }
+.game.player-only .blood-repick { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.game.player-only .blood-repick .button { min-height: 44px; }
+.game.player-only .blood-findings li[data-new] { outline: 2px solid #ffe9c2; outline-offset: -2px; }

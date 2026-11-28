@@ -223,7 +223,7 @@ function updateQuizRaceVisuals() {
     if(own.question)set('[data-race-deadline]',Math.max(0,Math.ceil((own.question.deadline-sim)/1000))+'s');
     // Symbol Dash: the view from your own kart, above the grid.
     const cockpit=app.querySelector('[data-race-cockpit]');
-    if(cockpit)drawCockpit(cockpit,{racers:snapshot.racers,ownId:state.player?.id,track:snapshot.track,time:sim,reduced,ahead:r=>reduced||r.finishedAt!==undefined?0:r.speed*elapsed/1000});
+    if(cockpit)drawCockpit(cockpit,{racers:snapshot.racers,ownId:state.player?.id,track:snapshot.track,course:snapshot.course,length:snapshot.length,time:sim,reduced,ahead:r=>reduced||r.finishedAt!==undefined?0:r.speed*elapsed/1000});
   }
   snapshot.racers.forEach(r=>{const row=[...app.querySelectorAll('[data-race-rank]')].find(node=>node.dataset.raceRank===r.id);if(!row)return;
     const rank=row.querySelector('.race-position');if(rank)rank.textContent=r.position;

@@ -155,7 +155,7 @@ html.mobile-deck .game[data-mode="quizrace"] {margin:6px auto 24px}
 }
 
 /* Symbol Dash (28 November 2026): the driver's-eye window, the target and the reshuffling grid. */
-.race-cockpit{display:block;width:100%;aspect-ratio:8/3;border-radius:14px;border:2px solid #405077;background:#101626;margin:0 0 12px}
+.race-cockpit{display:block;width:100%;aspect-ratio:2/1;border-radius:14px;border:2px solid #405077;background:#101626;margin:0 0 12px}
 .race-symbol{display:block;width:100%;height:100%}
 .race-symbol-target{display:flex;align-items:center;justify-content:center;gap:12px;min-height:64px;padding:8px 14px;border-radius:14px;background:#1b2741;border:2px solid #ffd34d;font-weight:900}
 .race-symbol-target span{letter-spacing:.14em;font-size:14px;color:#ffe9a8}
@@ -168,7 +168,7 @@ html.mobile-deck .game[data-mode="quizrace"] {margin:6px auto 24px}
 .race-symbol-tile.race-answer{aspect-ratio:1;min-height:0;padding:14%;display:block;border-radius:16px;touch-action:manipulation}
 .race-symbol-tile.race-answer:active{transform:scale(.94);background:#3d4f78}
 .race-phone.is-symbols .race-phone-foot{margin-top:10px;padding:10px 14px}
-@media (max-height:700px){.race-cockpit{aspect-ratio:4/1}.race-symbol-grid{gap:7px;margin:8px 0}.race-symbol-target{min-height:50px}.race-symbol-target .race-symbol{width:40px;height:40px}}
+@media (max-height:700px){.race-cockpit{aspect-ratio:3/1}.race-symbol-grid{gap:7px;margin:8px 0}.race-symbol-target{min-height:50px}.race-symbol-target .race-symbol{width:40px;height:40px}}
 /* Keep the whole phone screen in view: the grid is sized from the screen height, and the bars the cockpit replaces are hidden. */
 .race-phone.is-symbols .race-phone-progress,.race-phone.is-symbols .race-phone-foot{display:none}
 .race-phone.is-symbols .race-cockpit{margin-top:10px}

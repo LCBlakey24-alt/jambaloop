@@ -68,14 +68,11 @@ try{
   await mobile.goto(site,{waitUntil:'domcontentloaded',timeout:30000});
   await mobile.locator('[data-action="configure"]').first().click({timeout:15000});
   const configure=mobile.locator('#configure-form');
-  // Phones page through setup; step forward until the picker is on screen.
-  // Each step is given time to slide in before looking, or a slow machine steps straight past the page.
-  await mobile.waitForTimeout(500);
-  for(let page=0;page<12&&!await configure.locator('.format-picks-grid').isVisible();page++){
-    await mobile.locator('#dialog [data-deck-next], dialog [data-deck-next]').first().click();
-    await mobile.waitForTimeout(500);
-  }
-  assert.ok(await configure.locator('.format-picks-grid').isVisible(),'the picker is reachable on the phone');
+  // The phone's Settings are one scrolling screen with this game's settings: the question types are on it.
+  await configure.waitFor({timeout:15000});
+  await configure.locator('.format-picks-grid').scrollIntoViewIfNeeded();
+  assert.ok(await configure.locator('.format-picks-grid').isVisible(),'the picker is on the phone\'s Settings screen');
+  assert.equal(await configure.locator('.mode-options').isVisible(),false,'the phone\'s Settings do not list every game');
   assert.deepEqual(await ticked(configure),['choice','boolean'],'the phone shows the room’s current ticks');
   await configure.locator('#format-field label',{hasText:'Multiple choice'}).click();
   await configure.locator('#format-field label',{hasText:'Closest number'}).click();

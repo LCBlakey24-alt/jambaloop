@@ -461,14 +461,16 @@ function openDialog(mode, value, gameMode, quizId) {
       ...(configured && state.quizTitle ? [['current', state.quizTitle + ' (in this room)']] : []),
       ...library.map(quiz => [quiz.id, quiz.title]),
     ];
-    content.innerHTML = `<div class="eyebrow">GAME SETUP</div><h2>${rematch ? 'Set up a rematch' : configured ? 'Choose a game' : 'Host a game'}</h2>
+    // On a phone the captain's Settings are this game's settings only: Change game is its own button.
+    const phoneSettings = mode === 'configure' && smallScreen();
+    content.innerHTML = `<div class="eyebrow">GAME SETUP</div><h2>${rematch ? 'Set up a rematch' : phoneSettings ? escape(modeName(selectedMode)) + ' settings' : configured ? 'Choose a game' : 'Host a game'}</h2>
     <p>${rematch ? 'Everyone stays in the room and starts with a fresh score.' : configured ? 'Changes appear on every screen in this room.' : 'Choose a mode, then share the room code with your group.'}</p>
-    <form id="${mode}-form">
+    <form id="${mode}-form" class="${phoneSettings ? 'room-settings' : ''}">
     <fieldset class="mode-options"><legend>Game mode</legend>${modes.map(([id, name, description]) => `<label>
       <input name="mode" type="radio" value="${id}" ${id === selectedMode ? 'checked' : ''}>
       <span><i class="mode-thumb" style="${identityVariables(id)}" aria-hidden="true"></i><strong>${name}</strong><small>${description}</small></span></label>`).join('')}</fieldset>
     <div class="explainer-slot">${setupPreview(selectedMode, Boolean(gameMode))}</div>
-    <div class="quiz-source" id="quiz-source"><label>Question source<select name="quiz">${selected(quizChoices, selectedQuiz)}</select></label>
+    <div class="quiz-source advanced-setting" id="quiz-source"><label>Question source<select name="quiz">${selected(quizChoices, selectedQuiz)}</select></label>
       <button type="button" class="button outline small" data-action="library">My quizzes</button></div>
     <label id="difficulty-field">Difficulty<select name="difficulty">${selected(difficulties, configured ? state.difficulty : 'standard')}</select></label>
     <div class="form-row"><label id="category-field">Category<select name="category">${selected(categories, value ?? 'mixed')}</select></label>
@@ -485,11 +487,11 @@ function openDialog(mode, value, gameMode, quizId) {
       <label>Difficulty<select name="raceDifficulty">${selected([['easy','Easy'],['medium','Medium'],['hard','Hard'],['mixed','Mixed']],raceSetup.raceDifficulty ?? 'mixed')}</select></label>
       <label>Format<select name="raceLeague">${selected([['off','Single race'],['on','League · 3 races, points for every place']],raceSetup.raceLeague ? 'on' : 'off')}</select></label></div>
       <small>2–12 racers. Multiple-choice questions appear privately on phones. Fast correct answers boost speed. Easy/Hard use curated questions where available, supplemented by standard questions.</small></fieldset>
-    <label id="score-interval-field">Leaderboard reveal<select name="scoreInterval" aria-label="Leaderboard reveal" aria-describedby="score-interval-help">${selected(scoreIntervals.map(value => [value, intervalLabels[value]]), interval)}</select>
+    <label id="score-interval-field" class="advanced-setting">Leaderboard reveal<select name="scoreInterval" aria-label="Leaderboard reveal" aria-describedby="score-interval-help">${selected(scoreIntervals.map(value => [value, intervalLabels[value]]), interval)}</select>
       <small id="score-interval-help">Correct answers are still revealed after each question.</small></label>
-    <div class="setup-presets" aria-label="Timing presets"><button type="button" class="button outline small" data-preset="quick">Quick game</button>
+    <div class="setup-presets advanced-setting" aria-label="Timing presets"><button type="button" class="button outline small" data-preset="quick">Quick game</button>
       <button type="button" class="button outline small" data-preset="relaxed">No rush</button></div>
-    <fieldset class="scoring-fields" id="quiz-scoring"><legend>Quiz scoring</legend>
+    <fieldset class="scoring-fields advanced-setting" id="quiz-scoring"><legend>Quiz scoring</legend>
       <div class="form-row"><label>Points for a correct answer<select name="basePoints">${selected(pointValues.map(value => [value, value + ' points']), scoring.base)}</select></label>
       <label>Max speed bonus<select name="speedPoints">${selected(bonusValues.map(value => [value, value ? '+' + value + ' points' : 'Off']), scoring.bonus)}</select></label>
       <label>Double points<select name="doublePoints">${selected(doubleSchedules, scoring.doubles)}</select></label></div>
@@ -513,14 +515,15 @@ function openDialog(mode, value, gameMode, quizId) {
       <output class="duration-preview" aria-live="polite"></output>
       <small>Estimates use dice odds, question time and time between turns.</small>
     </fieldset>
-    <label>Phone display<select name="phoneView">${selected([['answers', 'Answer buttons only · follow the TV'], ['full', 'Also show the full question · no TV needed']], configured ? state.phoneView : 'answers')}</select></label>
-    <label>Visual style<select name="theme">${selected(themes, configured ? state.theme : previewTheme)}</select></label>
-    <label class="switch-row"><input type="checkbox" name="autoReveal" ${configured && state.autoReveal ? 'checked' : ''}><span><strong>Auto-reveal answers</strong><small>Reveal when every eligible player has answered.</small></span></label>
+    <label id="phone-view-field" class="advanced-setting">Phone display<select name="phoneView">${selected([['answers', 'Answer buttons only · follow the TV'], ['full', 'Also show the full question · no TV needed']], configured ? state.phoneView : 'answers')}</select></label>
+    <label id="theme-field" class="advanced-setting">Visual style<select name="theme">${selected(themes, configured ? state.theme : previewTheme)}</select></label>
+    <label class="switch-row advanced-setting"><input type="checkbox" name="autoReveal" ${configured && state.autoReveal ? 'checked' : ''}><span><strong>Auto-reveal answers</strong><small>Reveal when every eligible player has answered.</small></span></label>
     <label class="switch-row" id="christmas-field"><input type="checkbox" name="includeChristmas" ${configured && state.includeChristmas ? 'checked' : ''}><span>Include Christmas questions</span></label>
     <label class="switch-row after-dark-row" id="after-dark-field" hidden><input type="checkbox" name="afterDark" ${configured && state.afterDark ? 'checked' : ''}>
       <span><strong>After Hours · adults only (18+)</strong><small>Grown-up, darker prompts and cards instead of the family set. Off unless you switch it on. Not for children.</small></span></label>
     <p class="settings-note" id="scoring-note" aria-live="polite"></p>
-    <p class="error" role="alert"></p><button class="button primary" type="submit">${rematch ? 'Set up rematch' : configured ? 'Apply to lobby' : 'Create room'} ${icons('arrow-up-right')}</button></form>`;
+    ${phoneSettings ? '<button type="button" class="button outline small more-settings-toggle" data-more-settings aria-expanded="false">More options</button>' : ''}
+    <p class="error" role="alert"></p><button class="button primary" type="submit">${rematch ? 'Set up rematch' : phoneSettings ? 'Save settings' : configured ? 'Apply to lobby' : 'Create room'} ${icons('arrow-up-right')}</button></form>`;
     const form = content.querySelector('form');
     if (configured) {
       form.dataset.game = state.game;
@@ -602,6 +605,7 @@ function openDialog(mode, value, gameMode, quizId) {
         form.querySelector('input[name="playStyle"][value="individual"]').checked = true;
       }
       const style = form.querySelector('input[name="playStyle"]:checked').value;
+      form.querySelector('#team-play-setup').classList.toggle('no-choice', !allowsTeams || trolley);
       form.querySelector('#team-count-field').hidden = style !== 'teams';
       form.querySelector('#team-count-label').textContent = trolley ? 'Exactly two teams' : 'Number of teams';
       const help = form.querySelector('#team-play-help');
@@ -673,6 +677,13 @@ function openDialog(mode, value, gameMode, quizId) {
         : game === 'showdown' ? 'Balanced teams score the average of their players’ points each round.' : scoringNote;
     };
     form.addEventListener('click', event => {
+      const more = event.target.closest('[data-more-settings]');
+      if (more) {
+        const open = form.classList.toggle('show-more');
+        more.setAttribute('aria-expanded', String(open));
+        more.textContent = open ? 'Fewer options' : 'More options';
+        return;
+      }
       const preset = event.target.closest('[data-preset]');
       if (!preset) return;
       const quick = preset.dataset.preset === 'quick';
@@ -1157,7 +1168,7 @@ function render(s) {
   } else if (s.phase === 'lobby') {
     body = lobbyView(s, { host, escape, icons, modeName });
     const types = s.quizTypes ?? (s.format === 'mixed' ? helpTypes : formatTypes(s.format));
-    if (!partyModes.includes(s.mode)) body += `<section class="game-panel lobby-guide"><h2>How to answer</h2><dl>${types.map(type => {
+    if (host && !partyModes.includes(s.mode)) body += `<section class="game-panel lobby-guide"><h2>How to answer</h2><dl>${types.map(type => {
       const [label, description] = answerGuide(type);
       return `<div><dt>${label}</dt><dd>${description}</dd></div>`;
     }).join('')}</dl></section>`;
@@ -1274,7 +1285,9 @@ function render(s) {
 `;
   }
   if (s.phase === 'finished' && !replayPlaying(s)) {
-    const nextUp = gameNightView(s, { canControl, escape, icons });
+    // Phones keep the end short: the awards and Game Night planning are on the TV; a captain still gets
+    // "Load next game" when a playlist is queued.
+    const nextUp = host || s.night.queue.length ? gameNightView(s, { canControl, escape, icons }) : '';
     if (s.ceremony && host) {
       const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
       ceremonyFrames = revealFrames(s.players, s.awards);
@@ -1282,9 +1295,9 @@ function render(s) {
       body = scoreReveal(playing, s) + `<div id="post-ceremony" ${playing ? 'hidden' : ''}>${s.night.queue.length ? nextUp : ''}
         ${body}${awardView(s.awards, escape, icons)}${s.night.queue.length ? '' : nextUp}</div>`;
     } else {
-      body = (s.night.queue.length ? nextUp : '') + body + awardView(s.awards, escape, icons) + (s.night.queue.length ? '' : nextUp);
+      body = (s.night.queue.length ? nextUp : '') + body + (host ? awardView(s.awards, escape, icons) : '') + (s.night.queue.length ? '' : nextUp);
     }
-  } else if (['lobby', 'waiting'].includes(s.phase) && !s.picker) body += gameNightView(s, { canControl, escape, icons });
+  } else if (['lobby', 'waiting'].includes(s.phase) && !s.picker && host) body += gameNightView(s, { canControl, escape, icons });
   const phaseKey = `${s.code}/${s.game}/${s.index}/${s.phase}${replayPlaying(s) ? '/replay' + s.raceReplay.id : ''}${s.pausedAt ? '/paused' : ''}${s.party?.holding || s.party?.type === 'fork' ? '/' + s.party.step : ''}`;
   const enter = renderedPhase !== phaseKey;
   // TV broadcast stings: the show's title card at kick-off, a band before the last round.
@@ -1327,7 +1340,7 @@ function render(s) {
   const shownMode = s.phase === 'lobby' && s.picker ? s.picker.mode : s.mode;
   app.innerHTML = `<section class="game ${host ? 'host-screen' : 'player-only'} ${immersive ? 'immersive' : ''} ${host && tvFocus ? 'tv-focus' : ''} ${enter ? 'phase-enter' : ''}" data-deck-key="${phaseKey}" data-phase="${s.phase}" data-paused="${Boolean(s.pausedAt)}" data-mode="${shownMode}" data-result="${result}" style="${modeVariables(shownMode)}">${sceneBackdrop(shownMode, enter && (s.phase === 'finished' || result === 'win'))}<div class="game-top">
     <div class="screen-identity"><span class="screen-mode-icon" aria-hidden="true">${icons(mode[3])}</span>
-      <div><div class="screen-mode-title">${s.phase === 'lobby' && s.picker ? (s.gathering ? 'Join the party' : 'Pick a game') : escape(s.quizTitle || (s.mode === 'classic' ? categoryName(s.category) : modeName(s.mode)))}</div>
+      <div><div class="screen-mode-title">${s.phase === 'lobby' && s.picker ? (s.gathering ? 'Join the party' : 'Pick a game') : escape(s.quizTitle || (s.mode === 'classic' && host ? categoryName(s.category) : modeName(s.mode)))}</div>
       <div class="screen-status">${host && s.phase === 'lobby' && !s.picker && showIdentity(s.mode) ? `<span class="show-studio-label">${showIdentity(s.mode).studio}</span>` : ''}<span class="phase-caption">${caption}</span>${s.afterDark && s.phase !== 'lobby' ? '<span class="after-hours-tag">AFTER HOURS 18+</span>' : ''}
       ${s.isCaptain && s.phase !== 'lobby' ? '<span class="captain-tag">★ Captain</span>' : ''}${boost}
       ${host && ['lobby','finished'].includes(s.phase) ? '<span class="studio-publisher">A ROOKIE QUEST GAMES PRODUCTION</span>' : ''}
@@ -2329,13 +2342,8 @@ document.addEventListener('click', async event => {
         form.querySelector('.join-photo-option').open = true;
         updateJoinCard(form);
         stopScan = undefined;
-        // On a phone the join screen is paged: turn to the page with the name and selfie.
-        // (after the paged layout has re-measured the changed screen, or it would flip back)
-        setTimeout(() => {
-          if (!form.isConnected) return;
-          if (form.elements.name.closest('[data-deck-hidden]')) dialog.querySelector('[data-deck-next]')?.click();
-          form.elements.name.focus();
-        }, 450);
+        // Straight on to the name (the screen scrolls it into view on a phone).
+        setTimeout(() => { if (form.isConnected) form.elements.name.focus(); }, 300);
         return true;
       });
       if (!scanner.hidden) status.textContent = 'Point your camera at the QR code on the TV.';
@@ -2561,7 +2569,11 @@ document.addEventListener('click', async event => {
   }
   if (action === 'close') return dialog.close();
   if (action === 'night' && session && state) return openDialog('night');
-  if (action === 'leave') return leave();
+  // A player leaving mid-game is asked first: the Home button sits beside the timer.
+  if (action === 'leave') {
+    if (session && !session.host && state && !['lobby', 'finished', 'waiting'].includes(state.phase) && !confirm('Leave this game? You can join again with the room code.')) return;
+    return leave();
+  }
   if (action === 'party-start' && session && state?.gathering) { button.disabled = true; return api('/' + session.code + '/welcome', { action: 'party', game: state.game }).catch(error => { button.disabled = false; showGameError(error); }); }
   if (action === 'party-skip' && session && state?.gathering) { button.disabled = true; return api('/' + session.code + '/browse', { open: true, skipIntro: true, game: state.game }).catch(error => { button.disabled = false; showGameError(error); }); }
   if (action === 'guide-play' && session && state?.phase === 'lobby' && !state.briefing) return briefingAction('play');
@@ -2843,7 +2855,7 @@ prepareTvScreen();
 // On the TV, the remote's arrows move between buttons and OK presses them.
 enableRemote(isTvScreen);
 renderHome();
-mobileDeck(app, dialog, content);
+mobileDeck();
 const code = new URLSearchParams(location.search).get('join');
 const saved = restoreRoomSession();
 // The screen check is a deliberate visit: it is not replaced by a saved room or a join form. Choosing reloads the page.

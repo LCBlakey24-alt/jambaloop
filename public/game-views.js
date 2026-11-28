@@ -185,16 +185,27 @@ export function lobbyView(state, { host, escape, icons, modeName }) {
     <p>Keep this phone open. The game will start when the captain is ready.</p>
     ${state.isCaptain && !state.briefing ? '<button type="button" class="button outline" data-action="guide-play">▶ Play the guide on the TV</button>' : ''}
   </details>` : '';
-  if (!host) return `<div class="game-panel phone-lobby">
-    <div class="lobby-eyebrow"><span class="eyebrow">ROOM ${state.code}</span>${state.isCaptain ? '<span class="captain-tag">★ Captain</span>' : ''}</div>
+  if (!host) {
+    // The phone lobby is one simple screen (owner direction, 28 November 2026): who you are, the game, ready,
+    // how to play. The captain also gets Start, Change game and Settings. Host settings, practice rounds and
+    // the game switcher stay on the TV.
+    // The game's name is in the bar at the top; here only what players need to know about this room.
+    const notes = [state.afterDark ? '<span class="lobby-after-dark">After Hours · adults only (18+)</span>' : '',
+      state.connected < minimum ? `<span>Needs at least ${minimum} players</span>` : '',
+      asksFacts(state.mode) && !state.quizTitle ? `<span class="facts-checked">${factsCheckedLabel()}</span>` : ''].filter(Boolean);
+    const phoneGame = notes.length ? `<p class="phone-lobby-notes">${notes.join('')}</p>` : '';
+    const phoneConfig = state.quizTitle ? config : `<button class="button outline" data-action="picker-open">${icons('layout-grid')} Change game</button>
+      <button class="button outline" data-action="configure">${icons('settings')} Settings</button>`;
+    return `<div class="game-panel phone-lobby">
     <h2 class="phone-welcome">${avatarView(state.player, escape)}<span>${state.game > 1 ? 'Rematch ready, ' : 'You’re in, '}${escape(state.player.name)}!</span></h2>
-    <p>${state.isCaptain ? 'Choose a game for the room and start when everyone is ready.' : 'Stay here while the captain sets up the game.'}</p>
     ${briefing}
-    ${switcher}${summary}${teamPreview}${playerGuide}
+    ${phoneGame}
+    <p class="phone-lobby-note">${state.isCaptain ? '★ You are the captain: start when everyone is ready.' : state.captainName ? `${escape(state.captainName)} is the captain and starts the game.` : 'The first player to join becomes captain.'}</p>
     <div class="ready-actions"><button class="button outline" data-action="ready-toggle" aria-label="I’m ready" aria-pressed="${Boolean(state.player.ready)}">
       ${icons(state.player.ready ? 'circle-check' : 'circle')}${state.player.ready ? 'Ready' : 'I’m ready'}</button><span role="status">${readyText}</span></div>
-    ${state.isCaptain ? '' : captain}
-    <div class="actions">${canControl ? start + config : ''}${practice}</div></div>`;
+    ${playerGuide}
+    ${canControl ? `<div class="actions phone-lobby-captain">${start}<div class="phone-lobby-more">${phoneConfig}</div></div>` : ''}</div>`;
+  }
 
   const transfer = state.players.length > 1 ? `<form id="captain-form" class="captain-form"><label>Change captain<select name="player">${state.players.map(player =>
     `<option value="${player.id}" ${player.id === state.captainId ? 'selected' : ''}>${escape(player.name)}</option>`).join('')}</select></label>

@@ -1,6 +1,6 @@
 // The captain's phone keeps hidden buttons hidden: So Close holds back its Next button until the winner is
-// shown, and the lobby's paged phone layout hides what is on another page. (A phone-wide button style once
-// overrode both; this guards against that coming back.)
+// shown. (A phone-wide button style once overrode that; this guards against it coming back.) The lobby is
+// one screen with the captain's Start, Change game and Settings all on it.
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 const site=process.env.SITE||'http://127.0.0.1:32000';
@@ -16,19 +16,20 @@ try{
     return {code,host,players,snap,captain};
   };
   const open=async(code,key,size)=>{const ctx=await browser.newContext({viewport:size,isMobile:true,hasTouch:true});await ctx.addInitScript(({code,key})=>sessionStorage.setItem('quizmas-session',JSON.stringify({code,key,host:false})),{code,key});const p=await ctx.newPage();p.on('pageerror',e=>errors.push(e.message));await p.goto(site,{waitUntil:'domcontentloaded'});return p;};
-  // 1. Lobby on tall phones: anything the paged layout puts on another page is not displayed.
+  // 1. The lobby is one screen on tall and short phones: no pages, and the captain's buttons are all on it.
   for(const size of [{width:390,height:844},{width:360,height:740}]){
     const r=await room({mode:'classic',category:'mixed',count:5,seconds:20,format:'choice'});
     const phone=await open(r.code,r.captain.key,size);
-    await phone.locator('[data-action="advance"]').first().waitFor({state:'attached',timeout:15000});
+    await phone.locator('.phone-lobby [data-action="advance"]').waitFor({timeout:15000});
     await phone.waitForTimeout(600);
-    const leaks=await phone.evaluate(()=>[...document.querySelectorAll('[data-deck-hidden]')].filter(el=>getComputedStyle(el).display!=='none').map(el=>el.className||el.tagName));
-    assert.deepEqual(leaks,[],`paged-away parts of the lobby stay hidden at ${size.width}x${size.height}`);
-    // The captain's own lobby buttons keep their compact layout: on a 390x844 phone Settings is on the first page,
-    // as it always was (on shorter phones the paged lobby has always put it on the next page).
-    if(size.height>=844)assert.ok(await phone.locator('[data-action="configure"]').first().isVisible(),`Settings is on the captain's first page at ${size.width}x${size.height}`);
+    const screen=await phone.evaluate(()=>{const app=document.querySelector('#app');const box=app.getBoundingClientRect();
+      return {pager:Boolean(document.querySelector('.mobile-pager')),overflow:app.scrollHeight-app.clientHeight,
+        offscreen:[...document.querySelectorAll('.phone-lobby button')].filter(b=>b.getBoundingClientRect().height&&b.getBoundingClientRect().bottom>box.bottom+1).map(b=>b.innerText.trim())};});
+    assert.deepEqual(screen,{pager:false,overflow:0,offscreen:[]},`the lobby fits one screen at ${size.width}x${size.height}`);
+    for(const action of ['advance','picker-open','configure'])assert.ok(await phone.locator(`.phone-lobby [data-action="${action}"]`).isVisible(),`${action} is on the captain's lobby at ${size.width}x${size.height}`);
+    assert.equal(await phone.locator('[data-action="practice"], [data-action="lobby-mode"]').count(),0,'no practice or game-by-game switcher on the phone');
   }
-  console.log('PASS: the captain phone lobby keeps paged-away parts hidden');
+  console.log('PASS: the captain phone lobby is one screen with Start, Change game and Settings');
   // 2. So Close reveal on a tall phone: the captain's Next button stays hidden until the winner frame.
   const r=await room({mode:'soclose',category:'mixed',count:5,seconds:0,format:'estimate'});
   const phone=await open(r.code,r.captain.key,{width:390,height:844});

@@ -149,7 +149,7 @@ test('all party finale integrations, continuous scroll and reduced motion are pr
     readFile(new URL('party-finales.css',dir),'utf8'),
     readFile(new URL('index.html',dir),'utf8')
   ]);
-  assert.match(deck,/\.game\.player-only:not\(\[data-phase="lobby"\]\):not\(\[data-phase="waiting"\]\)/);
+  assert.doesNotMatch(deck,/data-deck-hidden|mobile-pager/,'a finale is never split into pages');
   assert.match(css,/overflow-y: auto/);
   assert.match(css,/prefers-reduced-motion: reduce/);
   assert.match(app,/'finished'\]\.includes\(s.phase\)/);

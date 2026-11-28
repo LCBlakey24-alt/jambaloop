@@ -23,7 +23,6 @@ html.mobile-deck:has(.game[data-mode="quizrace"]),
 html.mobile-deck:has(.game[data-mode="quizrace"]) body {overflow-y:auto;overscroll-behavior:auto}
 html.mobile-deck body:has(.game[data-mode="quizrace"]) {position:static;min-height:100dvh;height:auto;display:block;overflow-x:hidden}
 html.mobile-deck body:has(.game[data-mode="quizrace"]) #app {overflow:visible;min-height:0}
-html.mobile-deck body:has(.game[data-mode="quizrace"]) > .mobile-pager {display:none!important}
 html.mobile-deck .game[data-mode="quizrace"] {margin:6px auto 24px}
 
 

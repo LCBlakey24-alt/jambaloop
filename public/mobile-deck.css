@@ -1,4 +1,3 @@
-.mobile-pager[hidden], [data-deck-hidden] { display: none !important; }
 .mobile-home-links, .mobile-facts { display: none; }
 
 html.mobile-deck, html.mobile-deck body {
@@ -14,37 +13,17 @@ html.mobile-deck body {
   min-width: 0;
 }
 .mobile-deck body > .header { grid-row: 1; }
+/* One screen, never pages: anything taller than the phone scrolls on the same screen. */
 .mobile-deck #app {
   grid-row: 2;
   min-height: 0;
   min-width: 0;
-  overflow: clip;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
 }
-.mobile-deck body > .mobile-pager { grid-row: 3; }
 .mobile-deck body > .footer { display: none; }
-.mobile-deck .mobile-pager {
-  display: grid;
-  grid-template-columns: minmax(0,1fr) auto minmax(0,1fr);
-  align-items: center;
-  gap: 8px;
-  padding: 5px 12px max(5px, env(safe-area-inset-bottom));
-  background: var(--paper,var(--bg));
-  border-top: 1px solid var(--paper-line,var(--edge));
-  color: var(--home-ink,var(--ink));
-  z-index: 2;
-}
-.mobile-pager output { text-align: center; font-size: .83rem; font-weight: 750; font-variant-numeric: tabular-nums; }
-.mobile-pager button {
-  background: var(--sheet,var(--panel));
-  color: inherit;
-  border: 1px solid var(--paper-line,var(--edge));
-  border-radius: 9px;
-  padding: 0 10px;
-  min-height: 44px;
-  font-weight: 750;
-}
-.mobile-pager button:disabled { opacity: .37; }
-.mobile-pager [data-deck-next]:not(:disabled) { background: var(--home-accent,var(--pink)); color: var(--home-on-accent,#21182b); }
 
 .mobile-deck #dialog[open] {
   position: fixed;
@@ -62,10 +41,9 @@ html.mobile-deck body {
   grid-template-rows: minmax(0,1fr) auto;
   padding: 0;
 }
-.mobile-deck #dialog-content { min-height: 0; overflow: clip; padding: 11px 14px 10px; }
+.mobile-deck #dialog-content { min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: contain; padding: 11px 14px 10px; }
 .mobile-deck #dialog .icon-button { right: 10px; top: 9px; z-index: 2; }
 .mobile-deck #dialog-title { padding-inline-end: 36px; }
-.mobile-deck #dialog .mobile-pager { padding-inline: 14px; }
 .mobile-deck #dialog-content form { margin-top: 10px; gap: 8px; }
 .mobile-deck #dialog-content fieldset { min-width: 0; margin-inline: 0; }
 .mobile-deck #dialog-content .form-row { gap: 7px; }
@@ -96,11 +74,11 @@ html.mobile-deck body:not(.playing) .header .nav, html.mobile-deck body.playing 
 }
 .mobile-deck .hero .actions .primary { grid-column: 1/-1; }
 .mobile-deck body:not(.playing) .hero .hero-art { height: clamp(83px,18dvh,142px); min-height: 0; }
-.mobile-deck .mobile-home-links:not([data-deck-hidden]) { display: flex; flex-wrap: wrap; gap: 3px 12px; }
+.mobile-deck .mobile-home-links { display: flex; flex-wrap: wrap; gap: 3px 12px; }
 .mobile-home-links a, .mobile-home-links button { color: var(--home-accent); font-size: .82rem; font-weight: 750; padding-block: 6px; }
 .mobile-deck body:not(.playing) .modes, .mobile-deck body:not(.playing) .categories { padding-block: 10px; }
 .mobile-deck body:not(.playing) .quick-facts { display: none; }
-.mobile-deck .hero .mobile-facts:not([data-deck-hidden]) { display: block; font-size: .72rem; margin-top: 2px; }
+.mobile-deck .hero .mobile-facts { display: block; font-size: .72rem; margin-top: 2px; }
 .mobile-deck body:not(.playing) .mode-list, .mobile-deck body:not(.playing) .cards { grid-template-columns: repeat(2,minmax(0,1fr)); }
 .mobile-deck body:not(.playing) .mode-card { min-height: clamp(112px,28dvh,169px); padding: 7px; grid-template-rows: 24px 1fr; }
 .mobile-deck body:not(.playing) .mode-icon, .mobile-deck body:not(.playing) .category-icon { width: 27px; height: 27px; }

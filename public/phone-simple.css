@@ -1,0 +1,55 @@
+/* Simple phone screens (owner direction, 28 November 2026).
+   One screen per phone view, never pages; the phone is a remote control, so it shows only what this
+   player needs now. Everything here is phone-only: html.mobile-deck is never set on the TV. */
+
+/* The lobby: who you are, ready, how to play; the captain also has Start, Change game and Settings. */
+.phone-lobby { display: grid; gap: 12px; align-content: start; }
+.phone-lobby > * { margin: 0; }
+.phone-lobby-notes { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: .86rem; opacity: .85; }
+.phone-lobby-notes .lobby-after-dark { color: #ffb4c8; font-weight: 800; }
+.phone-lobby-note { font-size: .95rem; line-height: 1.3; }
+.phone-lobby .phone-lobby-captain { display: grid; grid-template-columns: 1fr; gap: 8px; width: 100%; }
+.phone-lobby .phone-lobby-captain > [data-action="advance"] { width: 100%; min-height: 58px; justify-content: center; font-size: 18px; }
+.phone-lobby .phone-lobby-more { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.phone-lobby .actions.phone-lobby-captain .phone-lobby-more .button { grid-column: auto; width: 100%; min-height: 48px; justify-content: center; white-space: normal; }
+.phone-lobby .actions.phone-lobby-captain .phone-lobby-more .button:only-child { grid-column: 1 / -1; }
+/* The lobby already says who the captain is: no "★ Captain ·" label on the Start button here. */
+body.playing .game.player-only:is([data-phase="lobby"], [data-phase="waiting"]) :is([data-action="advance"], [data-action="clock"])::before { content: none !important; }
+
+/* The captain's Settings on a phone: this game's settings only. Change game is its own button, so the
+   list of every game (and its preview) is not repeated here; rarely changed extras sit under "More options". */
+.more-settings-toggle { display: none; }
+html.mobile-deck #dialog-content .room-settings :is(.mode-options, .explainer-slot) { display: none; }
+html.mobile-deck #dialog-content .room-settings .team-play-setup.no-choice { display: none; }
+html.mobile-deck #dialog-content .room-settings:not(.show-more) .advanced-setting { display: none; }
+html.mobile-deck #dialog-content .room-settings .advanced-setting { order: 2; }
+html.mobile-deck #dialog-content .room-settings .more-settings-toggle { display: flex; order: 1; justify-self: start; min-height: 44px; }
+html.mobile-deck #dialog-content .room-settings > :is(.error, button[type="submit"]) { order: 3; }
+html.mobile-deck #dialog-content .room-settings > button[type="submit"] { position: sticky; bottom: 0; z-index: 2; min-height: 52px; }
+
+/* A live phone screen fills the phone exactly: no 14px of scrolling under every screen. */
+.mobile-deck body.playing .game.player-only:not([data-phase="lobby"]):not([data-phase="waiting"]) { margin-bottom: 0; }
+
+/* The end of a game on a phone: your finish, the standings and (for the captain) what to play next.
+   Your rank is already in the finish card, and Home is in the bar at the top. */
+.mobile-deck .game.player-only[data-phase="finished"] .personal-scorecard { display: none; }
+.mobile-deck .game.player-only[data-phase="finished"] .actions > [data-action="leave"] { display: none; }
+.mobile-deck .game.player-only[data-phase="finished"] .actions:not(:has(> :not([data-action="leave"]))) { display: none; }
+.mobile-deck .game.player-only .actions:has(> [data-action="quick-replay"]) { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.mobile-deck .game.player-only .actions:has(> [data-action="quick-replay"]) > [data-action="quick-replay"] { grid-column: 1 / -1; }
+.mobile-deck .game.player-only .actions:has(> [data-action="quick-replay"]) > :is([data-action="choose-game"], [data-action="again"]) { min-height: 48px; font-size: 15px; padding-inline: 8px; }
+
+/* The bar at the top of a phone: the game's name on one line, however long. */
+.mobile-deck .game.player-only .game-top .screen-identity, .mobile-deck .game.player-only .game-top .screen-identity > div { min-width: 0; }
+.mobile-deck .game.player-only .game-top .screen-mode-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Pop-ups on a phone are as tall as they need to be, up to the whole screen, and scroll inside; the main
+   button (Join the room, Save settings) stays at the bottom of the pop-up where a thumb finds it. */
+html.mobile-deck #dialog[open], html.mobile-deck #dialog[open]:has(#join-form) {
+  height: auto; max-height: calc(var(--phone-height, 100dvh) - 10px); display: flex; flex-direction: column;
+}
+html.mobile-deck #dialog[open] > .dialog-inner { height: auto; min-height: 0; flex: 1 1 auto; }
+html.mobile-deck #dialog-content :is(#join-form, #configure-form, #rematch-form) > button[type="submit"]:last-child,
+html.mobile-deck #dialog-content #join-form .join-room-submit {
+  position: sticky; bottom: 0; z-index: 2; box-shadow: 0 -10px 18px -6px rgba(0, 0, 0, .55);
+}

@@ -89,6 +89,7 @@ let raceTrackView;
 // One persistent WebGL circuit per race on the TV; re-attached after renders.
 let race3d;
 let race3dLoading;
+let race3dFailed;
 function disposeRace3d() { race3d?.dispose(); race3d = undefined; race3dLoading = undefined; }
 let raceAnimationFrame = 0;
 let raceSnapshotLocal = 0;
@@ -223,7 +224,8 @@ function updateQuizRaceVisuals() {
     if(own.question)set('[data-race-deadline]',Math.max(0,Math.ceil((own.question.deadline-sim)/1000))+'s');
     // Symbol Dash: the view from your own kart, above the grid.
     const cockpit=app.querySelector('[data-race-cockpit]');
-    if(cockpit)drawCockpit(cockpit,{racers:snapshot.racers,ownId:state.player?.id,track:snapshot.track,course:snapshot.course,length:snapshot.length,time:sim,reduced,ahead:r=>reduced||r.finishedAt!==undefined?0:r.speed*elapsed/1000});
+    // The drawn view is only the fallback, for a phone that cannot run the 3D scene.
+    if(cockpit&&!race3d?.ready)drawCockpit(cockpit,{racers:snapshot.racers,ownId:state.player?.id,track:snapshot.track,course:snapshot.course,length:snapshot.length,time:sim,reduced,ahead:r=>reduced||r.finishedAt!==undefined?0:r.speed*elapsed/1000});
   }
   snapshot.racers.forEach(r=>{const row=[...app.querySelectorAll('[data-race-rank]')].find(node=>node.dataset.raceRank===r.id);if(!row)return;
     const rank=row.querySelector('.race-position');if(rank)rank.textContent=r.position;
@@ -1312,15 +1314,16 @@ function render(s) {
     const svgTrack=mountQuizRaceTrack(app);
     // Each league race is on its own circuit, so the 3D scene is rebuilt for it.
     const raceKey=s.code+'/'+s.game+'/'+(s.race.course??s.raceLength)+'/'+s.race.track;
-    const stage=host?app.querySelector('.race-track-wrap'):null;
+    // The TV frames the whole track; a Symbol Dash phone rides behind its own kart in the very same 3D scene.
+    const stage=host?app.querySelector('.race-track-wrap'):app.querySelector('[data-race-chase]');
     if(!stage||race3d?.key!==raceKey&&race3dLoading!==raceKey) disposeRace3d();
-    if(stage&&!race3d&&race3dLoading!==raceKey){
+    if(stage&&!race3d&&race3dLoading!==raceKey&&race3dFailed!==raceKey){
       race3dLoading=raceKey;
       import('./race-3d.js').then(({mountRace3D})=>{
         if(race3dLoading!==raceKey||race3d)return;
-        race3d=mountRace3D({key:raceKey,track:s.race.track,course:s.race.course??s.raceLength,reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches});
-        race3d.attach(app.querySelector('.race-track-wrap'));
-      }).catch(()=>{ race3dLoading=undefined; /* No WebGL: the SVG track remains. */ });
+        race3d=mountRace3D({key:raceKey,track:s.race.track,course:s.race.course??s.raceLength,chase:host?undefined:s.player?.id,light:!host,reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches});
+        race3d.attach(app.querySelector(host?'.race-track-wrap':'[data-race-chase]'));
+      }).catch(()=>{ race3dLoading=undefined; race3dFailed=raceKey; /* No WebGL: the SVG track (or the phone's drawn view) remains, and this race does not try again. */ });
     }
     race3d?.attach(stage);
     // The 3D circuit draws when ready; otherwise the SVG track does.

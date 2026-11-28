@@ -118,3 +118,16 @@ test('the phone shows the target, a grid of symbol buttons and the driver\'s-eye
   assert.match(quizHtml, /race-pass/);
   assert.doesNotMatch(quizHtml, /data-race-cockpit|race-symbol-grid/);
 });
+
+test('the phone window is the TV\'s own 3D scene with a chase camera, and the drawn view is only the fallback', async () => {
+  const { readFileSync } = await import('node:fs');
+  const read = path => readFileSync(new URL('../public/' + path, import.meta.url), 'utf8');
+  const app = read('app.js'), scene = read('race-3d.js'), css = read('quiz-race.css');
+  assert.match(scene, /export function mountRace3D\(\{ key, track = 'neon', course = 'medium', reducedMotion = false, chase, light = false \}\)/);
+  assert.match(scene, /if \(chase && chased\) \{/, 'one scene, two cameras');
+  assert.match(app, /const stage=host\?app\.querySelector\('\.race-track-wrap'\):app\.querySelector\('\[data-race-chase\]'\);/);
+  assert.match(app, /chase:host\?undefined:s\.player\?\.id,light:!host,/, 'the TV still frames the whole track');
+  assert.match(app, /if\(cockpit&&!race3d\?\.ready\)drawCockpit\(/, 'the drawn view only runs when 3D is not available');
+  assert.match(app, /race3dFailed!==raceKey/, 'a phone without 3D does not retry on every update');
+  assert.match(css, /\.race-chase\[data-race3d="ready"\] \.race-cockpit\{visibility:hidden\}/);
+});

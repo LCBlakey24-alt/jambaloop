@@ -80,7 +80,7 @@ export function quizRaceView(s, {host,canControl,icons,replayButtons,sending}) {
   const feedback=own?.feedback;
   // Symbol Dash: find the target symbol on a grid that reshuffles after every tap.
   const symbols=r.style==='symbols';
-  const cockpit=symbols&&!intro?'<canvas class="race-cockpit" data-race-cockpit width="640" height="240" role="img" aria-label="The view from your kart"></canvas>':'';
+  const cockpit=symbols&&!intro?'<div class="race-chase" data-race-chase role="img" aria-label="The view from your kart"><canvas class="race-cockpit" data-race-cockpit width="640" height="320" aria-hidden="true"></canvas></div>':'';
   const symbolBoard=!symbols?'':q?.symbols?`<div class="race-question race-symbol-round" data-question-id="${q.id}">
       <div class="race-symbol-target"><span>TAP THE</span>${symbolMarkup(q.symbols.target)}<strong>${name(raceSymbol(q.symbols.target)?.name??'')}</strong><em data-race-deadline></em></div>
       <div class="race-symbol-grid" data-size="${q.symbols.tiles.length}">${q.symbols.tiles.map((id,index)=>`<button class="race-answer race-symbol-tile" data-action="race-answer" data-race-option="${index}" aria-label="${name(raceSymbol(id)?.name??'symbol')}" ${sending?'disabled':''}>${symbolMarkup(id)}</button>`).join('')}</div></div>`

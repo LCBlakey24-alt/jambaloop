@@ -61,7 +61,9 @@ test('the answer key never leaves the server, and a wrong answer freezes the sid
     assert.ok(view.question.options.length >= 2);
     assert.ok(!('correct' in view.question), 'no answer key in the question');
     assert.equal(view.last, undefined);
-    assert.ok(!JSON.stringify(view).includes('"k'), 'no private player keys');
+    for (const privateKey of room.players.keys()) {
+      assert.ok(!JSON.stringify(view).includes(JSON.stringify(privateKey)), 'no private player keys');
+    }
   }
   assert.equal(publicCatchUp(room, key).canAnswer, true);
   assert.equal(publicCatchUp(room, party.sides[1].keys[0]).canAnswer, false);

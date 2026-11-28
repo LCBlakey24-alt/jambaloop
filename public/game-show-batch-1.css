@@ -284,3 +284,27 @@ body.playing .game.player-only[data-mode="classic"] .player-answer-feedback[data
   border-color: #ffc3cc;
   box-shadow: inset 3px 0 #ffc3cc;
 }
+
+/* Spin the Wheel: bring the captain's action into the centre of the phone
+   and make the single action easy to reach without shrinking the TV wheel. */
+body.playing .game.player-only[data-mode="wheel"] .wheel-turn {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+}
+body.playing .game.player-only[data-mode="wheel"] .wheel-turn .turn-copy {
+  width: 100%;
+}
+body.playing .game.player-only[data-mode="wheel"] .wheel-turn .turn-copy > .button {
+  width: 100%;
+  min-height: 54px;
+}
+body.playing .game.host-screen[data-mode="wheel"] .wheel-turn .turn-status {
+  font-size: clamp(18px, 2.5dvh, 26px);
+  line-height: 1.3;
+}
+body.playing .game.host-screen[data-mode="wheel"] .wheel-turn .turn-copy > .button {
+  min-height: 52px;
+  font-size: clamp(17px, 2.3dvh, 24px);
+}

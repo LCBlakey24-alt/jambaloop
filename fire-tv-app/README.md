@@ -16,10 +16,16 @@ updating when the games change.
 Works on Fire TV devices that run Fire OS (Android based). The newest sticks that run Vega OS cannot install
 Android apps; use the Silk browser and `/?tv` there instead.
 
-1. On the Fire TV: Settings, My Fire TV, About, and press OK on the device name seven times to turn on Developer
-   Options. Then Settings, My Fire TV, Developer Options, Install unknown apps, and allow **Downloader**.
-2. Install the free **Downloader** app from the Amazon Appstore.
-3. In Downloader, type **jambaloop-family-test.onrender.com/tv.apk** and press Go, then Install.
-4. Jambaloop appears with your apps. Hold the home button and choose Apps to move it to the front.
+Checked against the owner's stick on 28 November 2026: a Fire TV Stick HD (1st generation) on Fire OS 7.7, which
+is Android based, so the app installs (not yet tried on it).
+
+1. Install the free **Downloader** app from the Amazon Appstore (search for "Downloader"). It has to be installed
+   first, or it is missing from the list in step 3.
+2. Settings, My Fire TV, About: press OK on the device name (for example "Fire TV Stick") seven times, until it
+   says you are now a developer. This shows the hidden Developer Options menu.
+3. Back to Settings, My Fire TV, Developer Options, Install unknown apps, and switch **Downloader** on.
+4. Open Downloader, type **jambaloop-family-test.onrender.com/tv.apk** in the address box, press Go, then Install.
+   Choose Done (not Open) if you want Downloader to offer to delete the download afterwards; it is tiny either way.
+5. Jambaloop is now with your apps: press and hold the home button, choose Apps, and move it to the front.
 
 The app is signed with a development key, so installing a newer build may ask you to remove the old one first.

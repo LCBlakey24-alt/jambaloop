@@ -106,7 +106,8 @@ test('3D motion is opt-out and the circuit fails safe', () => {
   const motion = css.slice(css.indexOf('(prefers-reduced-motion:no-preference)'), css.indexOf('@keyframes tv-card-swing'));
   for (const name of ['tv-card-swing', 'tv-answer-flip', 'tv-answer-pop']) assert.ok(motion.includes(name));
   assert.match(race3d, /webglcontextlost/);
-  assert.match(app, /catch\(\(\)=>\{ race3dLoading=undefined; \/\* No WebGL: the SVG track remains\. \*\/ \}\)/);
+  // No WebGL: the SVG track (or the phone's drawn view) remains, and that race does not try 3D again.
+  assert.match(app, /catch\(\(\)=>\{ race3dLoading=undefined; race3dFailed=raceKey; \/\* No WebGL/);
   assert.match(css, /\.race-track-wrap\[data-race3d="ready"\] \.quiz-race-scene \{ visibility:hidden; \}/);
   // One persistent context per race, disposed when leaving or changing game.
   assert.ok((app.match(/disposeRace3d\(\)/g) ?? []).length >= 4);

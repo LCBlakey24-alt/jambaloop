@@ -13,14 +13,14 @@ Each player tries to name a correct answer that nobody else in the **current roo
 - **3–30 contestants**, **3, 5 or 7 rounds**. Everyone answers individually from their phone.
 - The round begins with an original question/category. Players enter one answer of up to 60 characters, once per round.
 - Normalisation is case-insensitive, Unicode normalised and punctuation-insensitive. Explicit aliases, such as **Aluminium / Aluminum**, count as one canonical answer.
-- Once everyone has answered, or the TV host closes the entry stage, the server checks replies against the catalogue.
+- Once everyone has answered, or the TV host or captain closes the entry stage, the server checks replies against the catalogue.
 - If all submitted answers are recognised, the game moves directly to the reveal. If any are unknown, it enters a **host-only review** step.
 - The host can reject an unrecognised entry, accept it as a new valid answer, or **map it to an existing catalogue answer** (crucial for synonyms so they are not falsely treated as unique).
 - Review decisions are recorded in the room's audit log, with the answer, decision, canonical match, host actor and timestamp.
 - **Valid unique answer:** 200 points. **Valid answer chosen by exactly two people:** 100 points each. **Valid answer chosen by three or more:** 50 points each. **Invalid answer, or no answer:** zero.
 - These are literal group sizes from the **people who submitted answers in that round**. The number of votes and size of groups are real, not invented. Tied overall winners share the top step.
 - A host-approved answer is flagged as **host-reviewed**, not silently represented as independently verified. A reviewer should check a legitimate source before approval.
-- Host can advance a stalled round; unanswered entries get zero. Only the TV host can approve/reject answers or advance during gameplay. Players remain in the room after each round and at rematch.
+- The host or the captain can close a stalled round; unanswered entries get zero. Only the TV host can approve/reject answers and move the game on from the answer review; the captain's phone moves every other step on, like the TV (owner direction, 28 November 2026; `public/captain-controls.js`). Players remain in the room after each round and at rematch.
 
 ## Answer content
 

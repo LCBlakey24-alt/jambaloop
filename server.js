@@ -5,6 +5,7 @@ import { ESTIMATE_LIMIT } from './public/answer-controls.js';
 import { deskAwards } from './awards.js';
 import { answerValue, boardSpeedValues, bonusValues, canSetScore, defaultScoring, doubleSchedules, pointValues, roundMultiplier } from './public/scoring.js';
 import { playlistLimit, queuedSettings } from './public/game-night.js';
+import { onlyTvMovesOn, tvStepNote } from './public/captain-controls.js';
 import { isConnected, liveConnection, responseTarget, touchPlayer, trackConnection } from './room-presence.js';
 import { boardLengths, boardRoute, boardPath, boardPathChoices, boardFork, boardFinish, boardMappedPosition, boardRequiresChoice, boardStopsAtFork, boardCornerPower, boardPowers, compareBoardTeams } from './public/board-route.js';
 import { teamPlayModes, defaultPlayStyle, validPlayStyle, requiredPlayers, teamAssignments } from './public/team-play.js';
@@ -1175,9 +1176,12 @@ app.post('/api/rooms/:code/advance', (req, res) => {
   if (!controlsRoom(room, key)) return res.status(403).json({ error: 'Only the captain or TV host can advance the game.' });
   if (req.body?.lobbyVersion !== undefined && req.body.lobbyVersion !== room.lobbyVersion)
     return res.status(409).json({error:'Lobby settings changed. Review them before starting.'});
-  if (['tracks','spotlight','rare','sketch'].includes(room.mode) && room.phase !== 'lobby' && key !== room.host)
-    return res.status(403).json({error:'Only the TV host advances rounds in this game; contestants and experts answer on their phones.'});
   if (req.body?.game !== room.game || req.body?.phase !== room.phase || req.body?.index !== room.index) return res.sendStatus(204);
+  // The captain's phone is the remote control: it moves every step on that the TV can, except the few
+  // listed in public/captain-controls.js. Checked after the stale-request guard above, so a tap that
+  // arrives just after the game has moved on into one of those steps is ignored, not refused.
+  if (key !== room.host && onlyTvMovesOn(room.mode, room.phase))
+    return res.status(403).json({ error: tvStepNote(room.mode, room.phase) });
   if (room.pausedAt) return res.status(409).json({ error: 'Resume the timer before advancing.' });
   if (room.phase === 'lobby') {
     if (room.picker) return res.status(409).json({ error: 'Choose a game from the carousel first.' });

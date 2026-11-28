@@ -60,9 +60,9 @@ export function topAnswersView(state,{host,canControl,escape,icons}){
       (canControl?'<div class="actions top-final-controls">'+replayButtons(state,icons)+'</div>':'');
   } else {
     const note=poll
-      ?'Which answer would YOU choose? The poll is secret until everyone has voted.'
+      ?'Silent ballot. Choose your own favourite and keep it to yourself.'
       :guess
-        ?'Now guess which option was picked most often. No one can see the totals yet.'
+        ?'Keep it secret. Predict the room’s favourite before anyone discusses their vote.'
         :'These are the actual choices made by players in this room — not an outside survey.';
     let status='';
     if(reveal){
@@ -81,8 +81,13 @@ export function topAnswersView(state,{host,canControl,escape,icons}){
       status=locked?'<div class="top-progress top-progress-locked" role="status"><strong>LOCKED</strong><p>Your choice is saved. Watch the shared TV.</p></div>'
         :'<p class="top-player-tip">Choose one answer on your phone.</p>';
     }
-    content='<div class="top-question"><span class="top-hero-tag">'+label+'</span><h1>'+escape(party.prompt)+'</h1><p>'+note+'</p></div>'+
-      optionCards(party,phase,host,escape)+status;
+    const locked=poll?party.pollLocked:guess&&party.predictionLocked;
+    if(!host && locked){
+      content=status;
+    }else if(!host && reveal){
+      content=status;
+    }else content='<div class="top-question"><span class="top-hero-tag">'+label+'</span><h1>'+escape(party.prompt)+'</h1><p>'+note+'</p></div>'+
+      optionCards(party,phase,host,escape)+(host?status:'');
     if(canControl)actions='<div class="top-advance"><button type="button" class="button '+(reveal?'primary':'outline')+'" data-action="advance">'+
       (poll?'Close poll and start predictions':guess?'Reveal real vote totals':index+1<total?'Next room poll':'Show final standings')+
       ' '+icons('arrow-right')+'</button></div>';

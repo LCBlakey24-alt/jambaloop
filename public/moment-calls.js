@@ -85,6 +85,7 @@ export function momentFor(before, next) {
       }
       return undefined;
     case 'rare':
+      if (party.panelSize && !entered('rare-review')) return undefined;
       if (opened('rare-write')) return first ? ['rare', 'write', 2600] : undefined;
       if (entered('rare-review')) return ['rare', 'review', 500];
       if (entered('rare-reveal')) {

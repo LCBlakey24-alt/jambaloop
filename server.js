@@ -53,6 +53,8 @@ function readSettings(body = {}) {
   if (typeof privateQuestions !== 'boolean' || !validPlayStyle(mode,playStyle) || (mode === 'tracks' && teamCount !== 2)) return;
   if (mode === 'quizrace' && (!raceLengths[raceLength] || !raceTracks.includes(raceTrack) || !raceDifficulties.includes(raceDifficulty) || typeof raceLeague !== 'boolean' || !raceStyles.includes(raceStyle) || format !== 'choice' || customQuiz !== null)) return;
   if (isEstimateShow(mode) && (format !== 'estimate' || privateQuestions || customQuiz !== null || difficulty !== 'standard')) return;
+  const rareScoring=body?.rareScoring ?? 'panel';
+  if (mode==='rare' && !['room','panel'].includes(rareScoring)) return;
   const privateTeam = mode === 'showdown' && privateQuestions;
   if (privateTeam && customQuiz !== null) return;
   if (!boardLengths.includes(boardLength) || !['full', 'answers'].includes(phoneView) || !Number.isInteger(teamCount) || teamCount < 2 || teamCount > maximumTeams(mode)) return;
@@ -75,7 +77,7 @@ function readSettings(body = {}) {
   const scores = isEstimateShow(mode) ? {base:100,bonus:0,doubles:'off'} : canSetScore(mode) ? (scoring
     ? { base: scoring.base, bonus: seconds ? scoring.bonus : 0, doubles: scoring.doubles }
     : defaultScoring(seconds)) : undefined;
-  return { mode, theme, difficulty, raceLength, raceTrack, raceDifficulty, raceLeague: mode === 'quizrace' && raceLeague === true, raceStyle: mode === 'quizrace' ? raceStyle : 'quiz', scoring: scores, boardSpeed: seconds ? boardSpeed : 0, legacyScoring: !isEstimateShow(mode) && scoring === undefined, format: privateTeam ? 'choice' : format, category: fixedQuestionModes.includes(mode) && !privateTeam ? category : 'mixed', count: mode === 'knockout' ? KNOCKOUT_QUESTIONS : ['tracks', 'samepage', 'spotlight', 'brain', 'topanswers', 'rare', 'sketch', 'punchline', 'cards', 'bluff'].includes(mode) ? count : socialModes.includes(mode) ? 3 : partyModes.includes(mode) ? 1 : quiz?.questions.length ?? count,
+  return { mode, rareScoring:mode==='rare'?rareScoring:undefined, theme, difficulty, raceLength, raceTrack, raceDifficulty, raceLeague: mode === 'quizrace' && raceLeague === true, raceStyle: mode === 'quizrace' ? raceStyle : 'quiz', scoring: scores, boardSpeed: seconds ? boardSpeed : 0, legacyScoring: !isEstimateShow(mode) && scoring === undefined, format: privateTeam ? 'choice' : format, category: fixedQuestionModes.includes(mode) && !privateTeam ? category : 'mixed', count: mode === 'knockout' ? KNOCKOUT_QUESTIONS : ['tracks', 'samepage', 'spotlight', 'brain', 'topanswers', 'rare', 'sketch', 'punchline', 'cards', 'bluff'].includes(mode) ? count : socialModes.includes(mode) ? 3 : partyModes.includes(mode) ? 1 : quiz?.questions.length ?? count,
     seconds, autoReveal, includeChristmas, afterDark, phoneView: privateTeam ? 'full' : phoneView, privateQuestions: privateTeam,
     teamCount, boardLength, playStyle, scoreInterval: supportsScoreCheckpoints(mode) ? scoreInterval : 1, customQuiz: quiz };
 }
@@ -283,7 +285,7 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
     } : undefined,
     ceremony: isHost && phase === 'finished' ? room.ceremony : undefined,
     awards: !waiting && phase === 'finished' ? room.awards : undefined,
-    mode: room.mode, playStyle: room.playStyle, privateQuestions: room.privateQuestions, party: waiting ? undefined : publicParty(room, key), whoIsIn: waiting ? undefined : partyWhoIsIn(room), race: room.mode === 'quizrace' && room.race ? publicRaceState(room.race, key, isHost) : undefined, raceLength: room.raceLength, raceTrack: room.raceTrack, raceDifficulty: room.raceDifficulty, raceLeague: room.raceLeague || undefined,
+    mode: room.mode, rareScoring:room.rareScoring, playStyle: room.playStyle, privateQuestions: room.privateQuestions, party: waiting ? undefined : publicParty(room, key), whoIsIn: waiting ? undefined : partyWhoIsIn(room), race: room.mode === 'quizrace' && room.race ? publicRaceState(room.race, key, isHost) : undefined, raceLength: room.raceLength, raceTrack: room.raceTrack, raceDifficulty: room.raceDifficulty, raceLeague: room.raceLeague || undefined,
     // `playing` flips when the replay ends, so every screen's state changes and the results come up everywhere at once.
     raceReplay: room.mode === 'quizrace' && room.replayShow && ['finished', 'race-standings'].includes(room.phase) ? { ...room.replayShow, playing: Date.now() < room.replayShow.until } : undefined,
     raceStyle: room.mode === 'quizrace' ? room.raceStyle : undefined, league: room.mode === 'quizrace' ? publicLeague(room) : undefined, phoneView: room.phoneView, isCaptain: key === room.captain, captainId: captain?.id, captainName: captain?.name,
@@ -1175,7 +1177,7 @@ app.post('/api/rooms/:code/advance', (req, res) => {
   if (!controlsRoom(room, key)) return res.status(403).json({ error: 'Only the captain or TV host can advance the game.' });
   if (req.body?.lobbyVersion !== undefined && req.body.lobbyVersion !== room.lobbyVersion)
     return res.status(409).json({error:'Lobby settings changed. Review them before starting.'});
-  if (['tracks','spotlight','rare','sketch'].includes(room.mode) && room.phase !== 'lobby' && key !== room.host)
+  if (['tracks','spotlight','rare','sketch','debate'].includes(room.mode) && room.phase !== 'lobby' && key !== room.host)
     return res.status(403).json({error:'Only the TV host advances rounds in this game; contestants and experts answer on their phones.'});
   if (req.body?.game !== room.game || req.body?.phase !== room.phase || req.body?.index !== room.index) return res.sendStatus(204);
   if (room.pausedAt) return res.status(409).json({ error: 'Resume the timer before advancing.' });

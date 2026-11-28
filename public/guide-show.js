@@ -91,9 +91,8 @@ const scenes = {
 export const guideScenes = Object.keys(scenes);
 
 /** Open the guide on the TV. Returns { line(index), close() }. */
-export function openGuide(root, mode, { onSkip } = {}) {
+export function openGuide(root, mode, { onSkip, script = gameGuides[mode] ?? [] } = {}) {
   root.querySelector('.guide-show')?.remove();
-  const script = gameGuides[mode] ?? [];
   const overlay = document.createElement('section');
   overlay.className = 'guide-show';
   overlay.dataset.mode = mode;

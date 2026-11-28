@@ -1,5 +1,7 @@
 # Rare Find — original live-room rarity game (draft v1)
 
+New games default to the [research panel pack](RARE_FIND_PANEL.md). The rules below describe the optional room-rarity format.
+
 **Brand:** Jambaloop, a Rookie Quest Games production.
 
 **Branch:** `feature/17-rare-find-answer-review` (stacked on the unmerged Top Answers work). **Not deployed, not yet approved for public release.**

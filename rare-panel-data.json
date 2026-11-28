@@ -1,0 +1,600 @@
+[
+  {
+    "id": "panel-chemical-element",
+    "category": "Chemical Element",
+    "prompt": "Name a chemical element.",
+    "counts": {
+      "aluminium": 6,
+      "antimony": 1,
+      "argon": 2,
+      "arsenic": 3,
+      "beryllium": 4,
+      "boron": 5,
+      "bromine": 3,
+      "caesium": 2,
+      "calcium": 4,
+      "carbon": 8,
+      "chlorine": 3,
+      "cobalt": 2,
+      "copper": 3,
+      "fluorine": 1,
+      "francium": 1,
+      "gold": 8,
+      "helium": 11,
+      "hydrogen": 14,
+      "iodine": 2,
+      "iron": 9,
+      "lead": 3,
+      "lithium": 4,
+      "magnesium": 7,
+      "mercury": 1,
+      "neon": 2,
+      "nickel": 3,
+      "nitrogen": 8,
+      "oxygen": 15,
+      "platinum": 1,
+      "plutonium": 1,
+      "potassium": 10,
+      "radium": 1,
+      "radon": 1,
+      "rubidium": 1,
+      "selenium": 2,
+      "silicon": 1,
+      "silver": 5,
+      "sodium": 5,
+      "sulphur": 7,
+      "tin": 2,
+      "titanium": 3,
+      "tungsten": 1,
+      "uranium": 3,
+      "yttrium": 1,
+      "zinc": 2
+    },
+    "aliases": {
+      "sulphur": [
+        "sulfur"
+      ],
+      "aluminium": [
+        "aluminum"
+      ],
+      "caesium": [
+        "cesium"
+      ]
+    }
+  },
+  {
+    "id": "panel-bird-of-prey",
+    "category": "Bird Of Prey",
+    "prompt": "Name a bird of prey.",
+    "counts": {
+      "bald eagle": 1,
+      "barn owl": 1,
+      "buzzard": 3,
+      "eagle": 18,
+      "falcon": 9,
+      "golden eagle": 1,
+      "hawk": 6,
+      "kestrel": 1,
+      "kite": 3,
+      "osprey": 1,
+      "owl": 10,
+      "peregrine falcon": 1,
+      "red kite": 1,
+      "snowy owl": 1,
+      "sparrowhawk": 1,
+      "tawny owl": 1,
+      "vulture": 3
+    },
+    "aliases": {
+      "peregrine falcon": [
+        "peregrine"
+      ]
+    }
+  },
+  {
+    "id": "panel-wind-instrument",
+    "category": "Wind Instrument",
+    "prompt": "Name a wind instrument.",
+    "counts": {
+      "bass clarinet": 1,
+      "bassoon": 3,
+      "clarinet": 14,
+      "contra bassoon": 1,
+      "cornet": 1,
+      "didgeridoo": 1,
+      "english horn": 1,
+      "euphonium": 1,
+      "flute": 15,
+      "french horn": 3,
+      "harmonica": 1,
+      "oboe": 9,
+      "piccolo": 2,
+      "recorder": 8,
+      "saxophone": 5,
+      "trombone": 4,
+      "trumpet": 4,
+      "tuba": 3,
+      "vuvuzela": 1
+    },
+    "aliases": {
+      "contra bassoon": [
+        "contrabassoon",
+        "double bassoon"
+      ],
+      "english horn": [
+        "cor anglais"
+      ],
+      "saxophone": [
+        "sax"
+      ]
+    }
+  },
+  {
+    "id": "panel-citrus-fruit",
+    "category": "Citrus Fruit",
+    "prompt": "Name a citrus fruit.",
+    "counts": {
+      "blood orange": 2,
+      "clementine": 5,
+      "grapefruit": 11,
+      "lemon": 18,
+      "lime": 18,
+      "mandarin": 2,
+      "orange": 18,
+      "satsuma": 3,
+      "tangelos": 1,
+      "tangerine": 8
+    },
+    "aliases": {
+      "tangelos": [
+        "tangelo"
+      ],
+      "mandarin": [
+        "mandarin orange"
+      ]
+    }
+  },
+  {
+    "id": "panel-tree",
+    "category": "Tree",
+    "prompt": "Name a kind of tree.",
+    "counts": {
+      "apple tree": 9,
+      "ash": 4,
+      "beech": 1,
+      "birch": 4,
+      "cedar": 2,
+      "cherry": 2,
+      "chestnut": 3,
+      "damson": 1,
+      "douglas fir": 1,
+      "elm": 3,
+      "fir": 3,
+      "hawthorn": 1,
+      "hazel": 1,
+      "holly": 1,
+      "horse chestnut": 2,
+      "lemon": 1,
+      "lodgepole pine": 1,
+      "maple": 3,
+      "norway spruce": 1,
+      "oak": 17,
+      "palm tree": 2,
+      "pear": 4,
+      "pine": 9,
+      "plane": 1,
+      "plum": 1,
+      "redwood": 1,
+      "rowan": 1,
+      "scots pine": 1,
+      "silver birch": 3,
+      "spruce": 2,
+      "stone pine": 1,
+      "sycamore": 5,
+      "western hemlock": 1,
+      "willow": 7
+    },
+    "aliases": {
+      "apple tree": [
+        "apple"
+      ],
+      "palm tree": [
+        "palm"
+      ]
+    }
+  },
+  {
+    "id": "panel-month",
+    "category": "Month",
+    "prompt": "Name a month of the year.",
+    "counts": {
+      "april": 20,
+      "august": 20,
+      "december": 20,
+      "february": 20,
+      "january": 20,
+      "july": 20,
+      "june": 20,
+      "march": 20,
+      "may": 20,
+      "november": 19,
+      "october": 18,
+      "september": 19
+    },
+    "aliases": {}
+  },
+  {
+    "id": "panel-day-of-the-week",
+    "category": "Day Of The Week",
+    "prompt": "Name a day of the week.",
+    "counts": {
+      "friday": 19,
+      "monday": 19,
+      "saturday": 18,
+      "sunday": 18,
+      "thursday": 20,
+      "tuesday": 19,
+      "wednesday": 19
+    },
+    "aliases": {}
+  },
+  {
+    "id": "panel-gemstone",
+    "category": "Gemstone",
+    "prompt": "Name a gemstone.",
+    "counts": {
+      "amethyst": 5,
+      "aquamarine": 1,
+      "diamond": 10,
+      "emerald": 7,
+      "garnet": 3,
+      "onyx": 2,
+      "opal": 6,
+      "peridot": 1,
+      "ruby": 13,
+      "sapphire": 13,
+      "topaz": 7,
+      "turquoise": 1
+    },
+    "aliases": {}
+  },
+  {
+    "id": "panel-flower",
+    "category": "Flower",
+    "prompt": "Name a flower.",
+    "counts": {
+      "bluebell": 7,
+      "buttercup": 6,
+      "carnation": 2,
+      "cherry blossom": 1,
+      "clematis": 1,
+      "daffodil": 11,
+      "daisy": 14,
+      "dandelion": 7,
+      "freesia": 1,
+      "fuchsia": 1,
+      "hibiscus": 1,
+      "lavender": 3,
+      "lily": 12,
+      "marigold": 1,
+      "morning glory": 1,
+      "orchid": 3,
+      "pansy": 2,
+      "petunia": 4,
+      "poppy": 3,
+      "primrose": 1,
+      "red campion": 1,
+      "rose": 19,
+      "snowdrop": 2,
+      "sunflower": 12,
+      "tulip": 8
+    },
+    "aliases": {}
+  },
+  {
+    "id": "panel-musical-instrument",
+    "category": "Musical Instrument",
+    "prompt": "Name a musical instrument.",
+    "counts": {
+      "accordion": 1,
+      "acoustic guitar": 1,
+      "banjo": 1,
+      "bass guitar": 8,
+      "bassoon": 2,
+      "bongos": 2,
+      "castanets": 1,
+      "cello": 10,
+      "clarinet": 12,
+      "cornet": 4,
+      "cymbal": 1,
+      "didgeridoo": 1,
+      "double bass": 4,
+      "drums": 17,
+      "electric guitar": 5,
+      "flute": 15,
+      "french horn": 3,
+      "guitar": 18,
+      "harmonica": 5,
+      "harp": 6,
+      "keyboard": 9,
+      "lute": 1,
+      "maracas": 2,
+      "oboe": 8,
+      "ocarina": 1,
+      "organ": 3,
+      "piano": 16,
+      "recorder": 7,
+      "saxophone": 10,
+      "sousaphone": 1,
+      "timpani": 1,
+      "triangle": 9,
+      "trombone": 9,
+      "trumpet": 15,
+      "tuba": 2,
+      "ukulele": 1,
+      "viola": 5,
+      "violin": 19,
+      "xylophone": 5
+    },
+    "aliases": {
+      "saxophone": [
+        "sax"
+      ],
+      "ukulele": [
+        "uke"
+      ]
+    }
+  },
+  {
+    "id": "panel-fruit",
+    "category": "Fruit",
+    "prompt": "Name a fruit.",
+    "counts": {
+      "apple": 20,
+      "apricot": 3,
+      "avocado": 4,
+      "banana": 18,
+      "blackberries": 9,
+      "blackcurrants": 3,
+      "blueberries": 12,
+      "cherries": 5,
+      "clementine": 2,
+      "coconut": 2,
+      "damson": 1,
+      "dates": 3,
+      "dragon fruit": 3,
+      "durian": 1,
+      "elderberry": 1,
+      "fig": 1,
+      "goji berry": 1,
+      "gooseberry": 4,
+      "grape": 15,
+      "grapefruit": 9,
+      "greengage": 1,
+      "guava": 5,
+      "jack fruit": 1,
+      "kiwi": 11,
+      "lemon": 6,
+      "lime": 4,
+      "lychee": 1,
+      "mandarin": 1,
+      "mango": 13,
+      "melon": 11,
+      "nectarine": 2,
+      "orange": 15,
+      "papaya": 5,
+      "passion fruit": 7,
+      "peach": 9,
+      "pear": 14,
+      "pineapple": 11,
+      "plum": 8,
+      "pomegranate": 4,
+      "rambutan": 1,
+      "raspberries": 8,
+      "redcurrant": 2,
+      "satsuma": 2,
+      "sloe": 1,
+      "star fruit": 1,
+      "strawberry": 16,
+      "tangerine": 3,
+      "tomato": 10,
+      "watermelon": 7
+    },
+    "aliases": {
+      "blackberries": [
+        "blackberry"
+      ],
+      "blueberries": [
+        "blueberry"
+      ],
+      "blackcurrants": [
+        "blackcurrant"
+      ],
+      "cherries": [
+        "cherry"
+      ],
+      "dates": [
+        "date"
+      ],
+      "raspberries": [
+        "raspberry"
+      ],
+      "jack fruit": [
+        "jackfruit"
+      ],
+      "kiwi": [
+        "kiwifruit"
+      ]
+    }
+  },
+  {
+    "id": "panel-winter-sport",
+    "category": "Winter Sport",
+    "prompt": "Name a winter sport.",
+    "counts": {
+      "bobsleigh": 9,
+      "cross-country skiing": 3,
+      "curling": 5,
+      "downhill skiing": 1,
+      "figure skating": 2,
+      "ice climbing": 1,
+      "ice hockey": 10,
+      "ice skating": 12,
+      "luge": 2,
+      "skeleton": 1,
+      "ski jump": 4,
+      "skiing": 17,
+      "snowboarding": 15,
+      "speed skating": 2
+    },
+    "aliases": {
+      "bobsleigh": [
+        "bobsled",
+        "bobsledding"
+      ],
+      "ski jump": [
+        "ski jumping"
+      ]
+    }
+  },
+  {
+    "id": "panel-insect",
+    "category": "Insect",
+    "prompt": "Name an insect.",
+    "counts": {
+      "ant": 10,
+      "bee": 10,
+      "beetle": 8,
+      "bluebottle": 1,
+      "bumblebee": 3,
+      "butterfly": 8,
+      "cicada": 1,
+      "cockroach": 12,
+      "cricket": 5,
+      "damselfly": 1,
+      "dragonfly": 3,
+      "dung beetle": 2,
+      "earwig": 2,
+      "flea": 1,
+      "fly": 10,
+      "gnats": 1,
+      "grasshopper": 8,
+      "greenfly": 2,
+      "horsefly": 1,
+      "housefly": 2,
+      "ladybird": 9,
+      "louse": 1,
+      "midges": 1,
+      "mosquito": 4,
+      "moth": 5,
+      "praying mantis": 1,
+      "scarab beetle": 1,
+      "silverfish": 1,
+      "stag beetle": 1,
+      "stick insect": 3,
+      "termite": 1,
+      "wasp": 9,
+      "yellow jacket": 1
+    },
+    "aliases": {
+      "ladybird": [
+        "ladybug"
+      ],
+      "gnats": [
+        "gnat"
+      ],
+      "midges": [
+        "midge"
+      ],
+      "yellow jacket": [
+        "yellowjacket"
+      ]
+    }
+  },
+  {
+    "id": "panel-unit-of-time",
+    "category": "Unit Of Time",
+    "prompt": "Name a unit of time.",
+    "counts": {
+      "century": 11,
+      "days": 16,
+      "decades": 7,
+      "fortnight": 2,
+      "hours": 20,
+      "microsecond": 1,
+      "millennia": 8,
+      "milliseconds": 12,
+      "minutes": 19,
+      "months": 12,
+      "nanosecond": 2,
+      "seconds": 19,
+      "weeks": 12,
+      "years": 15
+    },
+    "aliases": {
+      "days": [
+        "day"
+      ],
+      "decades": [
+        "decade"
+      ],
+      "hours": [
+        "hour"
+      ],
+      "millennia": [
+        "millennium"
+      ],
+      "milliseconds": [
+        "millisecond"
+      ],
+      "minutes": [
+        "minute"
+      ],
+      "months": [
+        "month"
+      ],
+      "seconds": [
+        "second"
+      ],
+      "weeks": [
+        "week"
+      ],
+      "years": [
+        "year"
+      ]
+    }
+  },
+  {
+    "id": "panel-metal",
+    "category": "Metal",
+    "prompt": "Name a metal or metallic alloy.",
+    "counts": {
+      "aluminium": 13,
+      "brass": 3,
+      "bronze": 5,
+      "cadmium": 1,
+      "cast iron": 1,
+      "cobalt": 2,
+      "copper": 10,
+      "gold": 14,
+      "iron": 16,
+      "magnesium": 1,
+      "mercury": 1,
+      "nickel": 2,
+      "platinum": 5,
+      "potassium": 2,
+      "silver": 15,
+      "sodium": 2,
+      "steel": 7,
+      "tin": 7,
+      "titanium": 8,
+      "wrought iron": 1,
+      "zinc": 5
+    },
+    "aliases": {
+      "aluminium": [
+        "aluminum"
+      ]
+    }
+  }
+]

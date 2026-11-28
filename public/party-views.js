@@ -1,3 +1,4 @@
+import {debateView} from './debate-view.js';
 import { potatoCircleView, potatoSvg } from './potato-stage.js';
 import { replayButtons } from './game-night.js';
 import { partyFinale } from './party-finale.js';
@@ -37,6 +38,7 @@ export function avatarView(player, escape) {
 }
 
 export function partyView(state, { host, canControl, escape, reply, icons }) {
+  if(state.mode==='debate')return debateView(state,{host,canControl,escape,icons});
   if(state.mode==='bloodmoon')return bloodmoonView(state,{host,canControl,escape,icons});
   if(state.mode==='catchup')return catchUpView(state,{host,canControl,escape,icons});
   if(state.mode==='shade')return shadeView(state,{host,canControl,escape,icons});

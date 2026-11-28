@@ -52,13 +52,14 @@ export const modes = [
   ['spotlight', 'Spotlight Wheel', 'Take turns as contestant with an expert chosen by the wheel.', 'aperture', '#ffc88d'],
   ['brain', 'Brain Ladder', 'Solve fresh original logic puzzles, protect your two lives and climb ten levels.', 'brain-circuit', '#86e7fa'],
   ['topanswers', 'Top Answers', 'Vote for your favourite, predict the room’s most popular choice, and reveal the real results.', 'chart-no-axes-column-increasing', '#ffca83'],
-  ['rare', 'Rare Find', 'Play solo or in teams. Give a correct answer nobody else picks.', 'gem', '#a2f4cd'],
+  ['rare', 'Rare Find', 'Name a correct answer fewer people thought of in a UK study. Play solo or in teams.', 'gem', '#a2f4cd'],
   ['soclose', 'So Close', 'Scroll to your best numerical estimate; the closest guess wins.', 'ruler', '#ffbf68'],
   ['wayoff', 'Way Off', 'Guess the number. Each round the guess furthest from the answer is out, until one player is left.', 'target', '#ffd23f'],
   ['catchup', 'Catch Up', 'One side sets a target against the clock. The other side gets the same time to beat it. Then they swap.', 'timer', '#4cc9f0'],
   ['shade', 'Shade', 'One player describes a secret colour in a word. Everyone else hunts for it on a giant colour board.', 'palette', '#ff5fa2'],
   ['dontlook', 'Don’t Look!', 'Turn your back to the TV. Your team gets the word across in three rounds: speaking only, actions only, then anything goes.', 'eye-off', '#ff5fa2'],
   ['sketch', 'Sketch Sprint', 'One person draws a secret prompt live; everyone else races to guess it.', 'paintbrush', '#a4dcff'],
+  ['debate','Floor Time','Two speakers, two sides. Win the audience over in sixty seconds.', 'mic', '#ffa889'],
 ];
 
 export const defaultTheme = 'club';
@@ -126,7 +127,7 @@ export const wheelCategories = includeChristmas => categories.filter(([id]) =>
 export const categoryName = id => categories.find(category => category[0] === id)?.[1] ?? '';
 
 export function questionCounts(mode, format, category) {
-  if (mode === 'bloodmoon' || mode === 'catchup' || mode === 'shade' || mode === 'dontlook') return [1];
+  if (mode === 'debate' || mode === 'bloodmoon' || mode === 'catchup' || mode === 'shade' || mode === 'dontlook') return [1];
   if (mode === 'knockout') return [60];
   if (mode === 'wayoff') return [5];
   if (mode === 'brain') return [5, 7, 10];
@@ -162,11 +163,11 @@ export const estimateShows = ['soclose', 'wayoff'];
 export const isEstimateShow = mode => estimateShows.includes(mode);
 
 export const socialModes = ['punchline', 'cards', 'tracks'];
-export const partyModes = ['bluff', 'bloodmoon', 'catchup', 'shade', 'dontlook', 'potato', 'samepage', 'spotlight', 'brain', 'topanswers', 'rare', 'sketch', ...socialModes];
+export const partyModes = ['debate','bluff', 'bloodmoon', 'catchup', 'shade', 'dontlook', 'potato', 'samepage', 'spotlight', 'brain', 'topanswers', 'rare', 'sketch', ...socialModes];
 export const scoreIntervals = [0, 1, 3, 5];
 export const defaultScoreInterval = 3;
 export const supportsScoreCheckpoints = mode => mode !== 'quizrace' && !isEstimateShow(mode) && modes.some(([id]) => id === mode) && !partyModes.includes(mode);
-export const minimumPlayers = mode => ['quizrace','soclose'].includes(mode) ? 2 : mode === 'wayoff' ? 3 : ['bluff', 'punchline', 'cards', 'samepage', 'spotlight', 'topanswers', 'rare', 'sketch'].includes(mode) ? 3
+export const minimumPlayers = mode => mode === 'debate' ? 4 : ['quizrace','soclose'].includes(mode) ? 2 : mode === 'wayoff' ? 3 : ['bluff', 'punchline', 'cards', 'samepage', 'spotlight', 'topanswers', 'rare', 'sketch'].includes(mode) ? 3
   : mode === 'brain' ? 2
   : mode === 'bloodmoon' ? 5
   : mode === 'catchup' ? 2
@@ -180,7 +181,7 @@ export const minimumPlayers = mode => ['quizrace','soclose'].includes(mode) ? 2 
 export const afterHoursModes = Object.freeze(['tracks', 'punchline', 'cards', 'bluff', 'samepage']);
 export const roomCapacity = 300;
 export const maximumPlayers = (mode, playStyle) =>
-  mode === 'quizrace' ? 12
+  mode === 'debate' ? 12 : mode === 'quizrace' ? 12
   : mode === 'spotlight' ? 20
   : mode === 'bloodmoon' ? 16
   : mode === 'catchup' ? 30

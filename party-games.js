@@ -22,6 +22,7 @@ import {startLook,advanceLook,expireLook,submitLook,publicLook} from './dont-loo
 import {startCatchUp,advanceCatchUp,expireCatchUp,submitCatchUp,publicCatchUp} from './catch-up.js';
 import {startBloodmoon,advanceBloodmoon,expireBloodmoon,submitBloodmoon,publicBloodmoon} from './bloodmoon.js';
 import {startSketchRound,advanceSketch,expireSketch,submitSketch,publicSketch} from './sketch-sprint.js';
+import {startDebate,advanceDebate,expireDebate,voteDebate,publicDebate,debateReady} from './debate.js';
 export { partyModes };
 const prompts = [
   'Name something you might find under a sofa.',
@@ -163,6 +164,7 @@ function advanceBluff(room,publish) {
 }
 
 export function startParty(room, publish) {
+  if(room.mode==='debate')return startDebate(room,publish);
   if(room.mode==='catchup')return startCatchUp(room,publish);
   if(room.mode==='dontlook')return startLook(room,publish);
   if(room.mode==='shade')return startShade(room,publish);
@@ -207,6 +209,7 @@ export function rescuePotato(room, publish) {
 }
 
 export function expireParty(room, publish) {
+  if(room.mode==='debate')return expireDebate(room,publish);
   if(room.mode==='catchup')return expireCatchUp(room,publish);
   if(room.mode==='dontlook')return expireLook(room,publish);
   if(room.mode==='bloodmoon')return expireBloodmoon(room,publish);
@@ -219,6 +222,7 @@ export function expireParty(room, publish) {
 }
 
 export function advanceParty(room, publish) {
+  if(room.mode==='debate')return advanceDebate(room,publish);
   if(room.mode==='catchup')return advanceCatchUp(room,publish);
   if(room.mode==='dontlook')return advanceLook(room,publish);
   if(room.mode==='shade')return advanceShade(room,publish);
@@ -235,6 +239,7 @@ export function advanceParty(room, publish) {
 }
 
 export function submitParty(room, key, data, publish) {
+  if(room.mode==='debate')return voteDebate(room,key,data,publish);
   if(room.mode==='catchup')return submitCatchUp(room,key,data,publish);
   if(room.mode==='dontlook')return submitLook(room,key,data,publish);
   if(room.mode==='shade')return submitShade(room,key,data,publish);
@@ -311,6 +316,7 @@ export function partyWhoIsIn(room) {
 }
 
 export function publicParty(room, key) {
+  if(room.mode==='debate')return publicDebate(room,key);
   if(room.mode==='catchup')return publicCatchUp(room,key);
   if(room.mode==='dontlook')return publicLook(room,key);
   if(room.mode==='shade')return publicShade(room,key);
@@ -379,6 +385,7 @@ export function publicParty(room, key) {
 }
 
 export function advancePartyWhenReady(room, publish) {
+  if (room.mode === 'debate') return debateReady(room,publish);
   if (room.mode === 'catchup') return false;
   if (room.mode === 'dontlook') return false;
   if (room.mode === 'shade') return advanceShadeWhenReady(room, publish);

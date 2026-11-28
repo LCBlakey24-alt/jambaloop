@@ -18,14 +18,15 @@ const summaries = {
   brain: 'Start with two lives, solve fresh logic puzzles, and climb five, seven or ten increasingly difficult levels. Every wrong or missed answer costs a life. Correct answers are worth more points on higher levels.',
   samepage: 'Everyone privately types an answer to a prompt. Matching answers earn points when revealed together.',
   spotlight: 'The wheel chooses a topic and a player expert. The expert suggests an answer privately, then the contestant makes the final choice. Everyone takes a turn.',
-  topanswers: 'First choose the option you truly prefer. Your room anonymously votes to create real popularity data. Then secretly predict the top choice. Earn 20 points per real vote for that answer, plus 100 for choosing an option tied for most votes.',
-  rare: 'Each player privately types a valid answer to the same prompt. Rare valid answers win: 200 points if unique, 100 each for an answer chosen by exactly two, 50 each for answers shared by three or more, zero for invalid. The TV host reviews any missing catalogue entries before reveal.',
+  topanswers: 'No talking until the reveal. Choose the option you truly prefer. Your room anonymously votes to create real popularity data. Then secretly predict the top choice. Earn 20 points per real vote for that answer, plus 100 for choosing an option tied for most votes.',
+  rare: 'Type one answer privately. In panel play, fewer mentions in the UK study earn more points. In room play, fewer matches earn more points. The host reviews unlisted answers.',
+  debate: 'Two speakers take a minute each. The audience votes privately on their phones. The winner scores the difference in votes. Everyone speaks twice.',
   sketch: 'Choose three, five or seven rounds. One artist receives a secret word or silly scene and draws on a phone while the sketch appears live on TV. Everyone else guesses privately. The first correct guess earns 150 points, then 100 and 75; the artist earns 50 if somebody recognises the drawing.',
 };
 
 export function explainer(mode, play) {
   const title = modes.find(([id]) => id === mode)[1];
-  if(['soclose','quizrace','brain','samepage','spotlight','topanswers','rare','sketch'].includes(mode))return `<details class="mode-explainer" ${play?'open':''}><summary>How to play ${title}</summary><p>${summaries[mode]}</p></details>`;
+  if(['debate','soclose','quizrace','brain','samepage','spotlight','topanswers','rare','sketch'].includes(mode))return `<details class="mode-explainer" ${play?'open':''}><summary>How to play ${title}</summary><p>${summaries[mode]}</p></details>`;
   return `<details class="mode-explainer" ${play ? 'open' : ''}><summary>Watch how to play ${title}</summary>
     <video aria-label="How to play ${title}" controls playsinline muted preload="none" poster="/videos/${mode}.jpg"
       ${play && !matchMedia('(prefers-reduced-motion: reduce)').matches ? 'autoplay' : ''}>
@@ -83,9 +84,13 @@ const demonstrations = {
     ['Choose a track', 'What should the town’s new festival be?', ['A parade with floats made of cake', 'A silent disco in the supermarket']],
     ['Vote locked in', 'The TV reveals how many people chose each track after voting ends.', []],
   ],
+  debate: [
+    ['Take the floor','Choose a side for a practice debate.', ['A beach holiday','A city break']],
+    ['Cast a ballot','In a real game the rest of the room votes. A 5–2 result earns the winner three points.', []],
+  ],
   rare: [
-    ['Find a rare valid answer', 'Name one of the eight planets in our Solar System. In the real game you type any correct answer. Try one of these samples.', ['Mercury','Venus','Earth','Neptune']],
-    ['Keep it uncommon', 'Imagine you chose Neptune while your friends chose Mercury and Earth. You could earn 200 points because nobody else chose Neptune — this is only an example, not real survey data.', []],
+    ['Name a chemical element', 'Try an answer from the UK reference panel.', ['Oxygen','Yttrium']],
+    ['Compare the panel', '15 of 20 mentioned oxygen (65 points). One mentioned yttrium (191 points). A matching player answer costs 5 points each.', []],
   ],
   topanswers: [
     ['Cast your secret vote', 'Which snack would you choose tonight? Everyone privately selects the option they truly prefer.', ['Popcorn','Crisps','Chocolate','Biscuits']],

@@ -36,7 +36,7 @@ async function withServer(run){
 }
 const desiredHistory=id=>rareFindBank.filter(p=>p.id!==id).map(p=>p.historyId);
 async function makeGame(request,{promptId='solar-planets',count=3,names=['Alex','Bailey','Charlie'],settings={}}={}){
-  const room=await request('',null,{mode:'rare',category:'mixed',format:'choice',count,seconds:0,...settings},201);
+  const room=await request('',null,{mode:'rare',rareScoring:'room',category:'mixed',format:'choice',count,seconds:0,...settings},201);
   const base='/'+room.code;
   const keys=[];
   for(const name of names)keys.push((await request(base+'/join',null,{
@@ -279,10 +279,10 @@ test('Host can close stalled rounds; late player submissions fail with no fabric
 test('Rare Find accepts only its three supported game lengths and preserves players on rematch',async()=>{
   await withServer(async request=>{
     for(const count of [3,5,7]){
-      const room=await request('',null,{mode:'rare',category:'mixed',count,format:'choice',seconds:0},201);
+      const room=await request('',null,{mode:'rare',rareScoring:'room',category:'mixed',count,format:'choice',seconds:0},201);
       assert.equal((await request('/'+room.code,room.host)).total,count);
     }
-    const invalid=await request('',null,{mode:'rare',category:'mixed',count:4,format:'choice',seconds:0},400);
+    const invalid=await request('',null,{mode:'rare',rareScoring:'room',category:'mixed',count:4,format:'choice',seconds:0},400);
     assert.match(invalid.error,/question count|Choose a game mode/i);
 
     const game=await makeGame(request);
@@ -306,7 +306,7 @@ test('Rare Find accepts only its three supported game lengths and preserves play
 
 test('Thirty Rare Find contestants can submit and receive real room rarity scores',async()=>{
   await withServer(async request=>{
-    const room=await request('',null,{mode:'rare',category:'mixed',count:3,format:'choice',seconds:0},201);
+    const room=await request('',null,{mode:'rare',rareScoring:'room',category:'mixed',count:3,format:'choice',seconds:0},201);
     const base='/'+room.code,keys=[];
     for(let i=0;i<30;i++)keys.push((await request(base+'/join',null,{name:'Finder '+i,
       seenQuestions:desiredHistory('solar-planets')},201)).key);
@@ -321,4 +321,44 @@ test('Thirty Rare Find contestants can submit and receive real room rarity score
       [{answer:'Mercury',count:30,points:50}]);
     assert.equal((await request(base,keys[0])).party.earned,50);
   });
+});
+
+test('Research panel awards different values for unseen-by-the-room answers and one shared-answer deduction',async()=>{
+ const {panelBank}=await import('../rare-find-bank.js');
+ await withServer(async request=>{
+   const room=await request('',null,{mode:'rare',category:'mixed',format:'choice',count:3,seconds:0},201);
+   const base='/'+room.code;
+   const seenQuestions=panelBank.filter(p=>p.category!=='Chemical Element').map(p=>p.historyId);
+   const keys=[];
+   for(const name of ['Alex','Bea','Cleo','Drew'])keys.push((await request(base+'/join',null,{name,seenQuestions},201)).key);
+   const state=async(key=room.host)=>request(base,key);
+   assert.equal((await state()).rareScoring,'panel');
+   await request(base+'/advance',room.host,{game:1,index:0,phase:'lobby'},204);
+   assert.equal((await state()).party.prompt,'Name a chemical element.');
+   for(const [i,text] of ['Yttrium','Oxygen','Aluminum','Aluminium'].entries()){
+     assert.equal((await state(keys[i])).party.results,undefined);
+     await request(base+'/party',keys[i],{game:1,index:0,action:'write',text},204);
+   }
+   const groups=(await state()).party.results.groups;
+   assert.equal(groups.find(g=>g.answer==='oxygen').points,65);
+   assert.equal(groups.find(g=>g.answer==='yttrium').points,191);
+   const matched=groups.find(g=>g.answer==='aluminium');
+   assert.equal(matched.count,2);
+   assert.equal(matched.points,matched.basePoints-5);
+ });
+});
+
+test('Panel pack has measured counts, unambiguous aliases and seven fresh rounds even after prior visits',async()=>{
+ const {panelBank}=await import('../rare-find-bank.js');
+ assert.equal(new Set(panelBank.map(p=>p.id)).size,panelBank.length);
+ for(const p of panelBank){
+   const names=answerMapFor(p);
+   for(const [label,n] of Object.entries(p.counts)){
+     assert.equal(names.get(normaliseRare(label)),label);
+     assert.ok(Number.isInteger(n)&&n>=1&&n<=p.panelSize);
+   }
+ }
+ const history=new Set(panelBank.map(p=>p.historyId)),played=new Set();
+ for(let i=0;i<7;i++)played.add(selectRarePrompt(history,'panel',played).id);
+ assert.equal(played.size,7);
 });

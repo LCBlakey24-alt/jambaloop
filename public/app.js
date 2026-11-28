@@ -45,7 +45,7 @@ import {connectSketchPainter,paintSketchBoard,clearSketch} from './sketch-canvas
 import { openLibrary, savedQuizzes } from './quiz-editor.js';
 import { answerGuide, helpTypes, closestStep, RULER_PITCH, createDraft, formatNumber, orderedItems, setEstimatePrecision, specialAnswer } from './answer-controls.js';
 import { demoView, explainer, practicePlan, practiceView, samples } from './learning.js';
-import { hasTouchscreen, isTvScreen, prepareTvScreen, readScreenChoice, rememberScreen, screenReport } from './device.js';
+import { hasTouchscreen, isTvScreen, prepareTvScreen, readScreenChoice, recordPageLoad, rememberScreen, screenReport } from './device.js';
 import { enableRemote } from './tv-remote.js';
 import { isEstimateShow, maximumTeams, BOARD_PIECES, afterHoursModes, categories, categoryGroups, categoryName, modes, themes, questionTypes, formatTypes, formatId, difficulties, defaultTheme, partyModes, fixedQuestionModes, minimumPlayers, questionCounts, scoreIntervals, defaultScoreInterval, supportsScoreCheckpoints } from './game-config.js';
 import { boardView, diceView, lobbyView, powerBar, reviewView, rollRecap, teamList, teamScoreboard, wheelView } from './game-views.js';
@@ -802,7 +802,7 @@ function openDialog(mode, value, gameMode, quizId) {
     // The screen check: what this device reports, and a way to tell the site it is the TV (or a phone).
     const report = screenReport();
     const rows = [['Treated as', report.detected === 'tv' ? 'The TV' : report.detected === 'phone' ? 'A phone' : 'A computer'], ['Chosen on this device', report.remembered],
-      ['Page size', report.page], ['Screen size', report.screen], ['Pixel ratio', report.pixelRatio], ['Touch points', report.touchPoints], ['Pointer', report.pointer], ['Browser', report.agent]];
+      ['Page size', report.page], ['Screen size', report.screen], ['Pixel ratio', report.pixelRatio], ['Touch points', report.touchPoints], ['Pointer', report.pointer], ['Page loads', report.loads], ['Browser', report.agent]];
     content.innerHTML = `<div class="eyebrow">SCREEN CHECK</div><h2>Is this the TV?</h2>
     <p>Jambaloop works out whether this screen is the TV everyone watches or a phone. If it gets it wrong (some TV sticks look like phones), choose here. The choice is remembered on this device.</p>
     <div class="actions bigscreen-actions screen-choices">
@@ -2904,6 +2904,7 @@ carouselScreen.addEventListener('change', () => {
 // ?tv, ?phone or ?auto in the address chooses this screen; ?device opens the screen check.
 const screenCheck = readScreenChoice();
 prepareTvScreen();
+if (isTvScreen()) recordPageLoad();
 // Installing Jambaloop on a phone from the browser (no app store): any [data-install-slot] on screen shows
 // the offer this device supports, and updates when the browser makes or withdraws its offer.
 const fillInstallSlots = () => {

@@ -20,7 +20,7 @@
 
         <activity
             android:name=".MainActivity"
-            android:configChanges="orientation|screenSize|keyboard|keyboardHidden|navigation|uiMode"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|density|fontScale|keyboard|keyboardHidden|navigation|touchscreen|uiMode|colorMode|layoutDirection|locale|mcc|mnc"
             android:exported="true"
             android:launchMode="singleTask"
             android:screenOrientation="landscape">

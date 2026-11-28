@@ -81,7 +81,8 @@ test('a full game: bite, guard, oracle, vote, tie, and the village wins', () => 
   const [a, b, c] = withRole('villager');
 
   // Night 1: the Warden guards the target, so nobody is bitten.
-  assert.deepEqual(act(vampire, { action: 'night', id: id(vampire) }), [400, 'Choose someone who is not a vampire.']);
+  // The refusal no longer says "not a vampire": shown on the phone, it would tell a neighbour this is a vampire (fix/bloodmoon-glance).
+  assert.deepEqual(act(vampire, { action: 'night', id: id(vampire) }), [400, 'Choose someone else.']);
   act(vampire, { action: 'night', id: id(a) });
   act(warden, { action: 'night', id: id(a) });
   act(oracle, { action: 'night', id: id(vampire) });

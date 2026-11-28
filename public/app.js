@@ -1315,6 +1315,9 @@ function render(s) {
   const focused = document.activeElement;
   const guideWasOpen = !enter && !host && s.phase === 'lobby' && Boolean(app.querySelector('.player-game-guide')?.open);
   const guideHadFocus = guideWasOpen && Boolean(focused?.closest('.player-game-guide'));
+  // Bloodmoon: a role card the player has peeked at stays open while this phase lasts (others' taps
+  // redraw the screen); every new phase starts with it closed, so it looks the same on every phone.
+  const roleCardWasOpen = !enter && !host && Boolean(app.querySelector('.blood-role-card')?.open);
   // Re-rendering an unchanged live phase must not jump the player to the top
   // while they're reading a long ballot, writing an answer or drawing.
   const playerScroll = !enter && !host && !['lobby', 'waiting'].includes(s.phase) ? app.scrollTop : null;
@@ -1367,6 +1370,7 @@ function render(s) {
       if (guideHadFocus) guide.querySelector('summary')?.focus({ preventScroll: true });
     }
   }
+  if (roleCardWasOpen) { const card = app.querySelector('.blood-role-card'); card?.classList.add('is-kept'); card?.setAttribute('open', ''); }
   if (playerScroll !== null) app.scrollTop = playerScroll;
   switchAvatarSession.refresh();
   if (backdrop) app.querySelector('.scene-backdrop').replaceWith(backdrop);

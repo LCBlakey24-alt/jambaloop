@@ -1,0 +1,28 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.rookiequest.jambaloop'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.rookiequest.jambaloop.tv'
+        // Fire OS 5 (Android 5.1, API 22) and newer: every Fire TV Stick that runs Android apps.
+        minSdk 22
+        targetSdk 34
+        versionCode 1
+        versionName '1.0'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}

@@ -44,6 +44,7 @@ import { openLibrary, savedQuizzes } from './quiz-editor.js';
 import { answerGuide, helpTypes, closestStep, RULER_PITCH, createDraft, formatNumber, orderedItems, setEstimatePrecision, specialAnswer } from './answer-controls.js';
 import { demoView, explainer, hasDemo, practiceView, samples } from './learning.js';
 import { hasTouchscreen, isTvScreen, prepareTvScreen, readScreenChoice, rememberScreen, screenReport } from './device.js';
+import { enableRemote } from './tv-remote.js';
 import { isEstimateShow, maximumTeams, BOARD_PIECES, afterHoursModes, categories, categoryGroups, categoryName, modes, themes, questionTypes, formatTypes, formatId, difficulties, defaultTheme, partyModes, fixedQuestionModes, minimumPlayers, questionCounts, scoreIntervals, defaultScoreInterval, supportsScoreCheckpoints } from './game-config.js';
 import { boardView, diceView, lobbyView, powerBar, reviewView, rollRecap, teamList, teamScoreboard, wheelView } from './game-views.js';
 
@@ -2839,6 +2840,8 @@ carouselScreen.addEventListener('change', () => {
 // ?tv, ?phone or ?auto in the address chooses this screen; ?device opens the screen check.
 const screenCheck = readScreenChoice();
 prepareTvScreen();
+// On the TV, the remote's arrows move between buttons and OK presses them.
+enableRemote(isTvScreen);
 renderHome();
 mobileDeck(app, dialog, content);
 const code = new URLSearchParams(location.search).get('join');

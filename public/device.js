@@ -4,8 +4,8 @@
 // touchscreen at all, or because someone pressed "This is my TV" (remembered on that device).
 const KEY = 'jambaloop-screen';
 // Fire TV model codes start with AFT; the rest are common smart-TV and console browser markers.
-// Only names that mean a TV: brand names alone (Hisense, AQUOS) also appear on those brands' phones.
-const tvAgent = /\bAFT[A-Z0-9]{1,8}\b|AmazonWebAppPlatform|Android TV|Google ?TV|SMART-TV|SmartTV|\bTizen\b|Web0S|\bwebOS\b|NetCast|BRAVIA|HbbTV|\bCrKey\b|\bChromecast\b|AppleTV|\bRoku\b|VIDAA|Opera TV|PlayStation|\bXbox\b|\bViera\b|\bTV Safari\b/i;
+// JambaloopTV is the Jambaloop Fire TV app (fire-tv-app/). Only names that mean a TV: brand names alone (Hisense, AQUOS) also appear on those brands' phones.
+const tvAgent = /\bJambaloopTV\b|\bAFT[A-Z0-9]{1,8}\b|AmazonWebAppPlatform|Android TV|Google ?TV|SMART-TV|SmartTV|\bTizen\b|Web0S|\bwebOS\b|NetCast|BRAVIA|HbbTV|\bCrKey\b|\bChromecast\b|AppleTV|\bRoku\b|VIDAA|Opera TV|PlayStation|\bXbox\b|\bViera\b|\bTV Safari\b/i;
 // The layout every TV screen was designed and tested at.
 export const tvLayoutWidth = 1280;
 

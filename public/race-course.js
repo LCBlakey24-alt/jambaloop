@@ -39,3 +39,30 @@ export const circuitPoints = [
   [3.0, 1.5, 3.2], [0, 1.9, 0], [-3.0, 1.5, -3.1], // second pass: up and over the bridge
   [-6.8, .5, -6.4], [-11.8, 0, -7.6], [-16.4, 0, -5.2], [-18.0, 0, -.6], [-16.8, 0, 4.2],
 ];
+
+/**
+ * Three circuits, one per race length. Each is a closed lap that starts and finishes on its first
+ * straight. `crossing` marks where one part of the lap passes over another, so nothing is built there.
+ */
+export const circuits = {
+  // Short: a quick kidney-shaped oval with one dip in the back straight.
+  short: { points: [
+    [-8, 0, 6.6], [0, 0, 6.9], [8, 0, 6.6],
+    [12.6, 0, 3.6], [13.6, 0, 0], [12.4, 0, -3.8],
+    [8, 0, -6.6], [3, 0, -5.4], [-2, 0, -4.6], [-7.5, 0, -6.4],
+    [-12.4, 0, -3.8], [-13.6, 0, 0], [-12.6, 0, 3.6],
+  ], crossing: [] },
+  // Medium: the figure of eight.
+  medium: { points: circuitPoints, crossing: [[0, 0]] },
+  // Long: four straights joined by hairpins, with a ramp on every straight and a chicane in the middle.
+  long: { points: [
+    [-14, 0, 12], [-7, 0, 12], [0, 1.2, 12], [7, 0, 12], [15, 0, 12],                 // start straight and first ramp
+    [21, 0, 9.6], [23.6, 0, 3.5], [23.6, 0, -4], [21, 0, -10], [15, 0, -12.5],        // the long right-hander
+    [8, 0, -12.5], [1, 1.1, -12.5], [-6, 0, -12.5], [-14, 0, -12.5],                  // back straight and second ramp
+    [-19.6, 0, -11.4], [-22.2, 0, -8.5], [-19.6, 0, -5.4],                            // left hairpin
+    [-13, 0, -4.5], [-6.5, 0, -3.2], [-1, 0, -5.4], [4, 0, -4.2], [10, 1.5, -4.5], [15, 0, -3.8], // chicane and the big ramp
+    [18.4, 0, -1.6], [18.6, 0, 2.4], [15, 0, 4.8],                                    // right hairpin
+    [9, 0, 5], [3, .9, 4.6], [-3, 0, 5], [-10, 0, 4.6], [-16, 0, 4.6],                // return straight and last ramp
+    [-20.4, 0, 6], [-22, 0, 8.8], [-19.4, 0, 11.4],                                   // final turn back to the line
+  ], crossing: [] },
+};

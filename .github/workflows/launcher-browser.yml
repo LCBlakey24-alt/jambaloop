@@ -93,7 +93,7 @@ permissions:
 jobs:
   browser-layout:
     runs-on: ubuntu-latest
-    timeout-minutes: 18
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -143,6 +143,7 @@ jobs:
           node scripts/host-reactions-browser.mjs
           node scripts/commentators-browser.mjs
           node scripts/race-powers-browser.mjs
+          node scripts/race-league-browser.mjs
           node scripts/bloodmoon-browser.mjs
           node scripts/live-guesses-browser.mjs
           node scripts/short-phone-browser.mjs

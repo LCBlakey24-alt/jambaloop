@@ -1,21 +1,54 @@
 /** Server-authoritative continuous Quiz Race simulation. All times are race-clock ms. */
 import {questionHistoryId} from './public/question-history.js';
 export const raceLengths = Object.freeze({ short: 70, medium: 120, long: 190 });
+// A league is three races, one on each circuit, with points for every placing.
+export const leagueCircuits = Object.freeze(['short', 'medium', 'long']);
+export const leaguePoints = Object.freeze([10, 8, 6, 5, 4, 3, 2, 1]);
+export const leaguePointsFor = position => leaguePoints[position - 1] ?? 1;
+/** A fresh league for these player keys. */
+export const createLeague = keys => ({ races: leagueCircuits.length, round: 0, points: new Map([...keys].map(key => [key, 0])), gained: new Map(), last: undefined });
+/** Score one finished race, given the keys in finishing order. Returns true when the league is over. */
+export function scoreLeagueRace(league, order) {
+  league.last = [...order];
+  league.gained = new Map();
+  order.forEach((key, index) => {
+    const gained = leaguePointsFor(index + 1);
+    league.gained.set(key, gained);
+    league.points.set(key, (league.points.get(key) ?? 0) + gained);
+  });
+  league.round++;
+  return league.round >= league.races;
+}
+/** The table: most points first; level on points, whoever did better in the latest race is ahead. */
+export function leagueStandings(league) {
+  const latest = league.last ?? [];
+  const placed = key => latest.indexOf(key) + 1 || 99;
+  return [...league.points].map(([key, points]) => ({ key, points, gained: league.gained.get(key) ?? 0 }))
+    .sort((a, b) => b.points - a.points || placed(a.key) - placed(b.key));
+}
+/** The track theme for a league race: the chosen theme first, then the others in order. */
+export const leagueTrack = (first, round) => raceTracks[(Math.max(0, raceTracks.indexOf(first)) + round) % raceTracks.length];
 export const raceTracks = Object.freeze(['neon', 'desert', 'snow', 'jungle', 'space']);
 export const raceDifficulties = Object.freeze(['easy', 'medium', 'hard', 'mixed']);
 export const raceQuestionWindow = 12000;
 export const raceColors = ['#1dd9be', '#ffbd43', '#ff6b71', '#8954ff', '#65aaff', '#f998d2', '#bbef7d', '#ff9a4d', '#6fd3eb', '#f1a9ff', '#d4e87a', '#efb18c'];
 const wait = 700;
-// Power-ups: one boost and three rams per racer, per race. A ram only lands
-// on a rival within ramRange track units; a miss costs nothing.
-export const racePowers = Object.freeze({ boosts: 1, rams: 3, ramRange: 4, shields: 1, shieldTime: 6000,
+// Power-ups, per racer, per race.
+// Nudge (kind 'ram'): three a race. It only lands on a rival who is alongside,
+// within ramRange track units, and slows them for a moment. A nudge at nobody
+// is wasted: it is spent and does not come back until the next race.
+// Boost: arm it before you answer. If your next answer is right, that answer
+// is worth double speed; if it is wrong, passed or timed out, the boost is gone.
+export const racePowers = Object.freeze({ boosts: 2, rams: 3, ramRange: 2, shields: 1, shieldTime: 6000,
   // Three right answers in a row earn a turbo: one more boost, up to maxBoosts in hand.
-  turboStreak: 3, maxBoosts: 2,
+  turboStreak: 3, maxBoosts: 3, boostMultiplier: 2,
+  // Five right in a row and the kart is on fire: flames out of the back until a miss.
+  fireStreak: 5,
   // Slipstream: tucked in close behind a rival, a car gains a little speed.
   slipFrom: .4, slipTo: 3, slipSpeed: .12,
   // Final sprint: over the last stretch of track a right answer is worth half as much again.
   sprintFrom: .85, sprintBonus: 1.5,
-  boost: Object.freeze({ amount: .9, duration: 3000 }), rammed: Object.freeze({ amount: -.5, duration: 2500 }) });
+  rammed: Object.freeze({ amount: -.45, duration: 1500 }) });
 
 /** The rival this racer would hit right now: the nearest one within range. */
 export function ramTarget(race, racer) {
@@ -34,17 +67,19 @@ export function useRacePower(race, key, kind, at = race.time) {
   if (!racer) return { status: 403, error: 'Join the race to use power-ups.' };
   if (race.finished || racer.finishedAt !== undefined || at < 3000 || race.paused) return { status: 409, error: 'Power-ups work once the race is under way.' };
   if (kind === 'boost') {
-    if (racer.boosts < 1) return { status: 409, error: 'You have used your boost.' };
+    if (racer.armed) return { status: 409, error: 'Your boost is already armed. Answer the next question.' };
+    if (racer.boosts < 1) return { status: 409, error: 'You have no boosts left.' };
     racer.boosts--;
-    racer.effect = { ...racePowers.boost, start: at };
-    racer.power = { kind: 'boost', at };
-    return { status: 204 };
+    racer.armed = true;
+    racer.power = { kind: 'armed', at };
+    return { status: 204, armed: true };
   }
   if (kind === 'ram') {
-    if (racer.rams < 1) return { status: 409, error: 'You have no rams left.' };
+    if (racer.rams < 1) return { status: 409, error: 'You have no nudges left.' };
     const target = ramTarget(race, racer);
-    if (!target) return { status: 409, error: 'Nobody is close enough to ram.' };
     racer.rams--;
+    // Nobody alongside: the nudge is wasted.
+    if (!target) { racer.power = { kind: 'miss', at }; return { status: 204, missed: true }; }
     racer.power = { kind: 'ram', at };
     // A raised shield soaks up the hit; the ram is still spent.
     if (target.shieldUntil > at) {
@@ -78,7 +113,7 @@ export function raceSpeed(racer, at) {
   const effect = racer.effect;
   if (!effect) return 1;
   const fade = between(1 - (at - effect.start) / effect.duration, 0, 1);
-  return between(1 + effect.amount * fade, .4, 2);
+  return between(1 + effect.amount * fade, .4, 2.6);
 }
 
 // Integrate the linear fading speed effect exactly across any interval.
@@ -96,14 +131,14 @@ export function raceMovement(racer, fromMs, toMs) {
   return Math.max(0, distance);
 }
 
-export function createQuizRace(entries, questionPool, { length = 'medium', track = 'neon', difficulty = 'mixed' } = {}, now = 0) {
+export function createQuizRace(entries, questionPool, { length = 'medium', track = 'neon', difficulty = 'mixed', scale = 1 } = {}, now = 0) {
   if (!raceLengths[length] || !raceTracks.includes(track) || !raceDifficulties.includes(difficulty)) throw new Error('Invalid race setup');
   if (entries.length < 2 || entries.length > 12) throw new Error('Quiz Race needs 2 to 12 racers');
   if (!Array.isArray(questionPool) || !questionPool.length || questionPool.some(q => q.type !== 'choice' || !Array.isArray(q.options) || !Number.isInteger(q.correct))) {
     throw new Error('A valid multiple-choice question pool is required');
   }
   return {
-    lastWall: now, time: 0, length: raceLengths[length], track, difficulty, paused: false,
+    lastWall: now, time: 0, length: raceLengths[length] * (scale > 0 ? scale : 1), course: length, track, difficulty, paused: false,
     finished: false, firstFinish: undefined, graceEnd: undefined,
     pool: questionPool, issued: new Set(), results: [],
     racers: new Map(entries.map(([key, player], i) => [key, {
@@ -111,7 +146,7 @@ export function createQuizRace(entries, questionPool, { length = 'medium', track
       distance: 0, effect: null, speed: 1, questionIndex: 0, question: null, nextAt: 3000,
       feedback: null, finishedAt: undefined, correct: 0, wrong: 0, passed: 0, timeouts: 0,
       boosts: racePowers.boosts, rams: racePowers.rams, shields: racePowers.shields, shieldUntil: 0, power: null,
-      streak: 0, turbos: 0, turboAt: undefined, slip: false,
+      streak: 0, turbos: 0, turboAt: undefined, slip: false, armed: false,
     }])),
   };
 }
@@ -137,6 +172,10 @@ export function submitRaceAnswer(race, key, { questionId, option, pass = false }
   const effect = boostEffect(outcome, seconds);
   const sprint = outcome === 'correct' && racer.distance >= race.length * racePowers.sprintFrom;
   if (sprint) effect.amount *= racePowers.sprintBonus;
+  // An armed boost pays out on this answer only: double speed if it is right, nothing if not.
+  const boosted = racer.armed && outcome === 'correct';
+  if (racer.armed) { racer.armed = false; racer.power = { kind: boosted ? 'boost' : 'fizzle', at }; }
+  if (boosted) effect.amount *= racePowers.boostMultiplier;
   racer.streak = outcome === 'correct' ? racer.streak + 1 : 0;
   if (racer.streak && racer.streak % racePowers.turboStreak === 0 && racer.boosts < racePowers.maxBoosts) {
     racer.boosts++;
@@ -155,6 +194,7 @@ export function submitRaceAnswer(race, key, { questionId, option, pass = false }
 function timeoutQuestion(race, racer, at) {
   racer.effect = { ...boostEffect('timeout'), start: at };
   racer.streak = 0;
+  if (racer.armed) { racer.armed = false; racer.power = { kind: 'fizzle', at }; }
   racer.timeouts++;
   racer.feedback = { outcome: 'timeout', at, answer: racer.question.item.options[racer.question.item.correct] };
   racer.question = null;
@@ -225,7 +265,7 @@ export function publicRaceState(race, key, isHost) {
   const sorted = racePlacings(race);
   const own = race.racers.get(key);
   return {
-    time: race.time, length: race.length, track: race.track, difficulty: race.difficulty,
+    time: race.time, length: race.length, course: race.course, track: race.track, difficulty: race.difficulty,
     countdown: Math.max(0, 3000 - race.time), paused: race.paused, finished: race.finished,
     // The leader is into the last stretch: right answers are worth more for anyone in it.
     finalSprint: !race.finished && sorted[0]?.distance >= race.length * racePowers.sprintFrom,
@@ -236,6 +276,9 @@ export function publicRaceState(race, key, isHost) {
       power: r.power && race.time < r.power.at + 1800 ? r.power.kind : undefined,
       shield: r.shieldUntil > race.time || undefined, slip: (r.slip && r.finishedAt === undefined) || undefined,
       turbo: (r.turboAt !== undefined && race.time < r.turboAt + 2500) || undefined,
+      // On fire: five or more right in a row. Public, like the flames on the TV.
+      fire: (r.streak >= racePowers.fireStreak && r.finishedAt === undefined) || undefined,
+      armed: (r.armed && r.finishedAt === undefined) || undefined,
       connected: true,
     })),
     own: own && !isHost ? {
@@ -243,6 +286,8 @@ export function publicRaceState(race, key, isHost) {
       feedback: own.feedback && race.time < own.feedback.at + 1400 ? { ...own.feedback } : undefined,
       correct: own.correct, wrong: own.wrong, passed: own.passed, timeouts: own.timeouts,
       boosts: own.boosts, rams: own.rams, shields: own.shields, shieldLeft: Math.max(0, own.shieldUntil - race.time),
+      armed: own.armed, missed: own.power?.kind === 'miss' && race.time < own.power.at + 2500,
+      fizzled: own.power?.kind === 'fizzle' && race.time < own.power.at + 2500, onFire: own.streak >= racePowers.fireStreak,
       streak: own.streak, turboEarned: own.turboAt !== undefined && race.time < own.turboAt + 3000,
       blocked: own.power?.kind === 'blocked' && race.time < own.power.at + 2500 ? own.power.by : undefined,
       sprint: own.finishedAt === undefined && own.distance >= race.length * racePowers.sprintFrom,

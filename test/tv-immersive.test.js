@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { circuitPoints, coursePath, courseSegments } from '../public/race-course.js';
+import { raceLengths } from '../quiz-race.js';
+import { circuitPoints, circuits, coursePath, courseSegments } from '../public/race-course.js';
 import { raceTrackMarkup } from '../public/quiz-race-track.js';
 
 const read = path => readFileSync(new URL('../' + path, import.meta.url), 'utf8');
@@ -27,8 +28,9 @@ test('the 2D and 3D race tracks share one course with reflected S controls', () 
 });
 
 test('the 3D circuit is a figure-of-eight lap whose second pass bridges the first', () => {
-  assert.match(race3d, /import \{ circuitPoints \} from '\.\/race-course\.js'/);
-  assert.match(race3d, /CatmullRomCurve3\(circuitPoints[^\n]*, true, 'centripetal'/, 'closed lap: start and finish share a line');
+  assert.match(race3d, /import \{ circuits \} from '\.\/race-course\.js'/);
+  assert.match(race3d, /CatmullRomCurve3\(points[^\n]*, true, 'centripetal'/, 'closed lap: start and finish share a line');
+  assert.equal(circuits.medium.points, circuitPoints, 'the medium race is the figure of eight');
   const middle = circuitPoints.map((point, order) => ({ point, order })).filter(({ point: [x, , z] }) => Math.hypot(x, z) < .5);
   assert.equal(middle.length, 2, 'the course crosses the middle twice');
   const [under, over] = middle;
@@ -38,6 +40,27 @@ test('the 3D circuit is a figure-of-eight lap whose second pass bridges the firs
   assert.match(race3d, /const LANES = 6;/);
   assert.match(race3d, /Start\/finish gantry: a post either side/);
   for (const [x, y, z] of circuitPoints) assert.ok(Math.abs(x) < 19.5 && Math.abs(z) < 9 && y >= 0);
+});
+
+test('three circuits, one per race length: short, the figure of eight, and a long one with ramps', () => {
+  assert.deepEqual(Object.keys(circuits), Object.keys(raceLengths), 'every race length has its own circuit');
+  const lap = name => circuits[name].points.reduce((sum, [x, , z], i, all) => { const [nx, , nz] = all[(i + 1) % all.length]; return sum + Math.hypot(nx - x, nz - z); }, 0);
+  assert.ok(lap('short') < lap('medium') && lap('medium') * 1.4 < lap('long'), 'each is clearly longer than the last');
+  const ramps = circuits.long.points.filter(([, y], i, all) => y >= .9 && all.at(i - 1)[1] === 0 && all[(i + 1) % all.length][1] === 0);
+  assert.ok(ramps.length >= 4, 'the long circuit has a ramp on every straight');
+  assert.ok(circuits.short.points.every(([, y]) => y === 0), 'the short one is flat out');
+  // No part of a lap runs so close to another part that the two roads would overlap (the bridge excepted).
+  for (const [name, { points, crossing }] of Object.entries(circuits)) {
+    points.forEach(([x, , z], i) => points.forEach(([ox, , oz], j) => {
+      const apart = Math.min(Math.abs(i - j), points.length - Math.abs(i - j));
+      if (apart < 4 || crossing.some(([cx, cz]) => Math.hypot(x - cx, z - cz) < 5)) return;
+      assert.ok(Math.hypot(x - ox, z - oz) > 4.2, `${name}: points ${i} and ${j} are too close`);
+    }));
+  }
+  assert.match(app, /mountRace3D\(\{key:raceKey,track:s\.race\.track,course:s\.race\.course\?\?s\.raceLength,/, 'the TV draws the circuit of the race being run');
+  // The crowd is made of little people, drawn in two instanced meshes, and it bobs unless motion is reduced.
+  assert.match(race3d, /new THREE\.InstancedMesh\(new THREE\.CapsuleGeometry/);
+  assert.match(race3d, /if \(!reducedMotion\) placeCrowd\(performance\.now\(\)\);/);
 });
 
 test('only the TV becomes immersive, and only once play starts', () => {

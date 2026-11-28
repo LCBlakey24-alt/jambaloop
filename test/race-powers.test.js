@@ -9,35 +9,80 @@ const start = () => {
   return race;
 };
 
-test('one boost per race: it speeds you up, then it is gone', () => {
+test('a boost is armed before answering: a right answer is worth double, a wrong one wastes it', () => {
   const race = start();
+  const [ada, bo] = ['a', 'b'].map(key => race.racers.get(key));
+  assert.equal(ada.boosts, racePowers.boosts);
   assert.equal(useRacePower(race, 'a', 'boost').status, 204);
-  const ada = race.racers.get('a');
-  assert.equal(ada.boosts, 0);
-  assert.ok(raceSpeed(ada, race.time) > 1.8, 'boosting');
-  assert.equal(useRacePower(race, 'a', 'boost').status, 409, 'only one');
-  const before = [...race.racers.values()].map(r => r.distance);
-  advanceQuizRace(race, 6000);
-  const gain = [...race.racers.values()].map((r, i) => r.distance - before[i]);
-  assert.ok(gain[0] > gain[1] + 0.5, 'the boosted car pulls ahead');
+  assert.equal(ada.armed, true);
+  assert.equal(ada.boosts, racePowers.boosts - 1);
+  assert.equal(raceSpeed(ada, race.time), 1, 'arming does nothing by itself');
+  assert.equal(useRacePower(race, 'a', 'boost').status, 409, 'it cannot be armed twice');
+  assert.equal(publicRaceState(race, 'a', false).own.armed, true);
+  const boosted = submitRaceAnswer(race, 'a', { questionId: ada.question.id, option: 0 }, race.time);
+  const plain = submitRaceAnswer(race, 'b', { questionId: bo.question.id, option: 0 }, race.time);
+  assert.ok(Math.abs(boosted.amount - plain.amount * racePowers.boostMultiplier) < 1e-9, 'double speed for that answer');
+  assert.equal(ada.armed, false, 'it pays out once');
+  advanceQuizRace(race, race.lastWall + 900);
+  // Armed again, then a wrong answer: gone, with nothing gained.
+  assert.equal(useRacePower(race, 'a', 'boost').status, 204);
+  const wrong = submitRaceAnswer(race, 'a', { questionId: ada.question.id, option: 1 }, race.time);
+  assert.ok(wrong.amount < 0, 'a wrong answer still slows you');
+  assert.equal(ada.armed, false);
+  assert.equal(ada.boosts, racePowers.boosts - 2);
+  assert.equal(publicRaceState(race, 'a', false).own.fizzled, true);
+  assert.equal(useRacePower(race, 'a', 'boost').status, 409, 'none left');
 });
 
-test('three rams: only in range, the victim slows, a miss costs nothing', () => {
+test('an armed boost is lost if the question times out', () => {
+  const race = start();
+  const ada = race.racers.get('a');
+  useRacePower(race, 'a', 'boost');
+  advanceQuizRace(race, race.lastWall + 13000);
+  assert.equal(ada.armed, false);
+  assert.equal(ada.timeouts, 1);
+});
+
+test('three nudges: one only lands on a rival alongside and slows them briefly; at nobody it is wasted', () => {
   const race = start();
   const [ada, bo, cy] = ['a', 'b', 'c'].map(key => race.racers.get(key));
   cy.distance += 30;
-  assert.equal(useRacePower(race, 'c', 'ram').status, 409, 'nobody near Cy');
-  assert.equal(cy.rams, 3, 'a miss keeps the charge');
+  const miss = useRacePower(race, 'c', 'ram');
+  assert.equal(miss.status, 204);
+  assert.equal(miss.missed, true, 'nobody near Cy');
+  assert.equal(cy.rams, 2, 'a wasted nudge is spent and does not come back');
+  assert.equal(publicRaceState(race, 'c', false).own.missed, true);
+  assert.equal(raceSpeed(ada, race.time), 1, 'nobody was slowed');
   bo.distance += 1;
   const hit = useRacePower(race, 'a', 'ram');
   assert.equal(hit.status, 204);
-  assert.equal(hit.target, 'B', 'the nearest rival in range');
+  assert.equal(hit.target, 'B', 'the nearest rival alongside');
   assert.equal(ada.rams, 2);
   assert.ok(raceSpeed(bo, race.time) < 0.6, 'Bo is slowed');
-  assert.equal(raceSpeed(ada, race.time), 1, 'the rammer is not');
-  useRacePower(race, 'a', 'ram'); useRacePower(race, 'a', 'ram');
+  assert.equal(raceSpeed(ada, race.time), 1, 'the nudger is not');
+  assert.ok(racePowers.rammed.duration <= 1500, 'only for a moment');
+  advanceQuizRace(race, race.lastWall + racePowers.rammed.duration + 50);
+  assert.equal(raceSpeed(bo, race.time), 1, 'and it wears off');
+  // Out of range is a miss too: alongside means close.
+  bo.distance = ada.distance + racePowers.ramRange + 0.5;
+  assert.equal(useRacePower(race, 'a', 'ram').missed, true);
+  useRacePower(race, 'a', 'ram');
   assert.equal(ada.rams, 0);
-  assert.equal(useRacePower(race, 'a', 'ram').status, 409, 'only three');
+  assert.equal(useRacePower(race, 'a', 'ram').status, 409, 'only three a race');
+});
+
+test('five right in a row sets the kart on fire, on the TV and the phone, until a miss', () => {
+  const race = start();
+  const ada = race.racers.get('a');
+  const answer = right => { const result = submitRaceAnswer(race, 'a', { questionId: ada.question.id, option: right ? 0 : 1 }, race.time); advanceQuizRace(race, race.lastWall + 900); return result; };
+  for (let i = 0; i < 4; i++) answer(true);
+  assert.equal(publicRaceState(race, undefined, true).racers.find(r => r.id === 'A').fire, undefined, 'not yet');
+  answer(true);
+  assert.equal(ada.streak, racePowers.fireStreak);
+  assert.equal(publicRaceState(race, undefined, true).racers.find(r => r.id === 'A').fire, true);
+  assert.equal(publicRaceState(race, 'a', false).own.onFire, true);
+  answer(false);
+  assert.equal(publicRaceState(race, undefined, true).racers.find(r => r.id === 'A').fire, undefined, 'a miss puts it out');
 });
 
 test('power-ups are refused before the lights go out, after finishing and for strangers', () => {
@@ -55,7 +100,7 @@ test('each phone sees its own charges and target; the TV sees only the flashes',
   const race = start();
   useRacePower(race, 'a', 'ram');
   const own = publicRaceState(race, 'a', false).own;
-  assert.deepEqual([own.boosts, own.rams], [1, 2]);
+  assert.deepEqual([own.boosts, own.rams], [racePowers.boosts, 2]);
   assert.ok(['Bo', 'Cy'].includes(own.ramTarget));
   const victim = [...race.racers.entries()].find(([, r]) => r.power?.kind === 'rammed');
   assert.equal(publicRaceState(race, victim[0], false).own.rammedBy, 'Ada');
@@ -106,15 +151,15 @@ test('three right answers in a row earn a turbo boost, capped, and a miss resets
   const ada = race.racers.get('a');
   const next = () => { advanceQuizRace(race, race.lastWall + 800); };
   for (let i = 0; i < 2; i++) { assert.equal(answer(race, 'a').status, 204); next(); }
-  assert.equal(ada.boosts, 1);
+  assert.equal(ada.boosts, racePowers.boosts, 'two right is not a turbo');
   answer(race, 'a', false); next();
   assert.equal(ada.streak, 0, 'a wrong answer resets the run');
   for (let i = 0; i < 3; i++) { answer(race, 'a'); next(); }
-  assert.equal(ada.boosts, 2, 'turbo earned');
+  assert.equal(ada.boosts, racePowers.boosts + 1, 'turbo earned');
   assert.equal(ada.turbos, 1);
   assert.equal(publicRaceState(race, 'a', false).own.turboEarned, true);
   for (let i = 0; i < 3; i++) { answer(race, 'a'); next(); }
-  assert.equal(ada.boosts, racePowers.maxBoosts, 'never more than two in hand');
+  assert.equal(ada.boosts, racePowers.maxBoosts, 'never more than the cap in hand');
 });
 
 test('slipstream helps a car tucked in behind, and the final sprint makes right answers worth more', () => {

@@ -1,5 +1,5 @@
-// Quiz Race power-ups on a phone: one boost, and rams that only work when a
-// rival is in range. The TV's commentator calls the hit.
+// Quiz Race power-ups on a phone: a boost armed for the next answer, and nudges that
+// only land when a rival is alongside. The TV's commentator calls the hit.
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 const site=process.env.SITE||'http://127.0.0.1:32000';
@@ -19,21 +19,25 @@ try{
   const ram=phone.locator('.race-power.is-ram'); const boost=phone.locator('.race-power.is-boost');
   await ram.waitFor({timeout:20000});
   await phone.waitForFunction(()=>!document.querySelector('.race-power.is-ram')?.disabled,null,{timeout:15000});
-  assert.match(await ram.innerText(),/Hit Bo · 3 left/,'side by side off the line: Bo is in range');
+  assert.match(await ram.innerText(),/Bo is alongside · 3 left/,'side by side off the line: Bo is alongside');
   await phone.screenshot({path:'browser-screenshots/race-powers-phone.png'});
   await ram.click();
   await phone.waitForFunction(()=>/2 left/.test(document.querySelector('.race-power.is-ram')?.innerText??''),null,{timeout:8000});
   assert.equal((await snap(players[0].key)).race.own.rams,2);
-  assert.equal((await snap(players[1].key)).race.own.rammedBy,'Ada','Bo is told who hit them');
+  assert.equal((await snap(players[1].key)).race.own.rammedBy,'Ada','Bo is told who nudged them');
   await tv.waitForFunction(()=>document.querySelector('.duo-caption')?.dataset.host==='vince',null,{timeout:12000});
-  console.log('PASS: Ada rams Bo from her phone; Bo is slowed and told; Vince is on commentary');
+  console.log('PASS: Ada nudges Bo from her phone; Bo is slowed and told; Vince is on commentary');
+  // The boost is armed for the next question, and stays armed until that question is answered.
   await boost.click();
-  await phone.waitForFunction(()=>document.querySelector('.race-power.is-boost')?.disabled&&/in a row for a turbo/.test(document.querySelector('.race-power.is-boost').innerText),null,{timeout:8000});
-  assert.equal((await snap(players[0].key)).race.own.boosts,0);
-  console.log('PASS: the boost works once, then says how to earn a turbo');
+  await phone.waitForFunction(()=>document.querySelector('.race-power.is-boost')?.disabled&&/ARMED/.test(document.querySelector('.race-power.is-boost').innerText),null,{timeout:8000});
+  const armed=await snap(players[0].key);
+  assert.equal(armed.race.own.armed,true);
+  assert.equal(armed.race.own.boosts,1,'one of the two boosts is spent');
+  assert.equal((await snap(host)).race.racers.find(r=>r.name==='Ada').armed,true,'the TV knows, so the kart can glow');
+  console.log('PASS: the boost arms for the next answer');
   // Shield: once per race, and it counts down on the button.
   const shield=phone.locator('.race-power.is-shield');
-  assert.match(await shield.innerText(),/Blocks rams for 6s/);
+  assert.match(await shield.innerText(),/Blocks nudges for 6s/);
   await shield.click();
   await phone.waitForFunction(()=>/Up · \d+s/.test(document.querySelector('.race-power.is-shield')?.innerText??''),null,{timeout:8000});
   assert.equal((await snap(players[0].key)).race.own.shields,0);

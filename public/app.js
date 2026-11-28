@@ -95,16 +95,26 @@ let raceReplayData;
 let raceCameraShot = 'live';
 let raceReplayKey;
 let raceReplayLoading;
+let raceReplayRetry = { key: undefined, tries: 0, at: 0 };
 const replayPlaying = s => Boolean(s?.mode === 'quizrace' && s.raceReplay?.playing && ['finished', 'race-standings'].includes(s.phase) && s.raceReplay.until > Date.now() + offset);
+// One recording per race: in a league every race has its own circuit and round, so its own key.
+const replayKeyFor = s => s.code + '/' + s.game + '/' + (s.race?.course ?? '') + '/' + (s.race?.track ?? '') + '/' + (s.league?.round ?? '');
 function loadRaceReplay(s) {
-  const key = s.code + '/' + s.game + '/' + (s.race?.course ?? '') + '/' + (s.race?.track ?? '') + '/' + (s.league?.round ?? '');
+  const key = replayKeyFor(s);
   if (raceReplayKey === key || raceReplayLoading === key) return;
+  if (raceReplayRetry.key === key && Date.now() < raceReplayRetry.at) return;
+  // Never play the last race's recording while this one loads.
+  if (raceReplayKey !== key) { raceReplayData = undefined; raceReplayKey = undefined; }
   raceReplayLoading = key;
   api('/' + s.code + '/race-replay').then(data => {
     if (raceReplayLoading !== key) return;
     raceReplayData = { data, timeline: replayTimeline(data) };
     raceReplayKey = key;
-  }).catch(() => { /* No recording: the TV shows the final positions instead. */ }).finally(() => { if (raceReplayLoading === key) raceReplayLoading = undefined; });
+  }).catch(() => {
+    // Try again a little later (up to four times); meanwhile the track shows the final positions.
+    const tries = raceReplayRetry.key === key ? raceReplayRetry.tries + 1 : 1;
+    raceReplayRetry = { key, tries, at: tries >= 4 ? Infinity : Date.now() + 1000 * tries };
+  }).finally(() => { if (raceReplayLoading === key) raceReplayLoading = undefined; });
 }
 function disposeRace3d() { race3d?.dispose(); race3d = undefined; race3dLoading = undefined; }
 let raceAnimationFrame = 0;
@@ -226,8 +236,13 @@ function updateQuizRaceVisuals() {
   const cameraShot=session.host&&replayPlaying(state)?'replay'+state.raceReplay.id:'live';
   if(cameraShot!==raceCameraShot){raceCameraShot=cameraShot;race3d?.snapCamera?.();}
   if(session.host&&replayPlaying(state)){
-    const loaded=raceReplayData&&raceReplayKey?.startsWith(state.code+'/'+state.game+'/')?raceReplayData:undefined;
+    const loaded=raceReplayData&&raceReplayKey===replayKeyFor(state)?raceReplayData:undefined;
     const play=Date.now()+offset-state.raceReplay.startedAt;
+    if(!loaded){
+      loadRaceReplay(state);
+      // Until the recording arrives (or if it cannot), the track shows where everyone finished.
+      raceTrackView?.update(snapshot.racers,snapshot.length,0,true,snapshot.time);
+    }
     if(loaded){
       const {at,slow}=loaded.timeline.at(play);
       const racers=replayRacers(loaded.data,at);
@@ -239,6 +254,8 @@ function updateQuizRaceVisuals() {
       const slowBadge=app.querySelector('[data-replay-slow]');if(slowBadge&&slowBadge.hidden===slow)slowBadge.hidden=!slow;
       racers.forEach(r=>{const row=[...app.querySelectorAll('[data-race-rank]')].find(node=>node.dataset.raceRank===r.id);if(!row)return;
         const rank=row.querySelector('.race-position');if(rank&&rank.textContent!==String(r.position))rank.textContent=r.position;
+        // The rows move into the order of that moment, so the replay does not give the result away.
+        if(row.style.order!==String(r.position))row.style.order=r.position;
         const percent=Math.min(100,Math.round(100*r.distance/loaded.data.length));
         const text=row.querySelector('.race-rank-percent');if(text)text.textContent=percent+'%';
         const meter=row.querySelector('.race-mini-track i');if(meter)meter.style.width=percent+'%';});
@@ -247,7 +264,12 @@ function updateQuizRaceVisuals() {
     return;
   }
   // The replay has just ended on this screen's clock: show the results even if the server's update is a moment late.
-  if(session.host&&app.querySelector('.race-replay-panel')&&!replayPlaying(state)){render(state);return;}
+  // Marked as over here exactly as the server's update will mark it, so that update does not render the results a second time.
+  if(session.host&&app.querySelector('.race-replay-panel')&&!replayPlaying(state)){
+    if(state.raceReplay?.playing)receive({...state,raceReplay:{...state.raceReplay,playing:false},now:Date.now()+offset},session);
+    else render(state);
+    return;
+  }
   const elapsed=snapshot.paused ? 0 : Math.min(320,Math.max(0, Date.now()-raceSnapshotLocal));
   const sim=snapshot.time+(snapshot.paused?0:Math.max(0,Date.now()-raceSnapshotLocal));
   const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -268,6 +290,7 @@ function updateQuizRaceVisuals() {
   }
   snapshot.racers.forEach(r=>{const row=[...app.querySelectorAll('[data-race-rank]')].find(node=>node.dataset.raceRank===r.id);if(!row)return;
     const rank=row.querySelector('.race-position');if(rank)rank.textContent=r.position;
+    if(row.style.order!==String(r.position))row.style.order=r.position;
     const percent=Math.min(100,Math.round(100*r.distance/snapshot.length));
     const text=row.querySelector('.race-rank-percent');if(text)text.textContent=percent+'%';
     const meter=row.querySelector('.race-mini-track i');if(meter)meter.style.width=percent+'%';
@@ -1518,14 +1541,19 @@ function receive(next, current) {
   offset = next.now - Date.now();
   setConnectionStatus(false);
   if (soundEnabled && current.host && state) {
-    if (state.phase !== next.phase || state.index !== next.index) {
+    // During a race's action replay the results are not on screen yet, so the finish fanfare, music and
+    // Vince's chequered-flag call wait for them: for sound, the replay is a phase of its own.
+    // (By the server's flag, not the clock: at the moment it ends, the screen was still showing the replay.)
+    const heard = s => s?.mode === 'quizrace' && s.raceReplay?.playing && ['finished', 'race-standings'].includes(s.phase) ? { ...s, phase: 'race-replay' } : s;
+    const before = heard(state), after = heard(next);
+    if (before.phase !== after.phase || state.index !== next.index) {
       const staged = stageable(next) && !prefersReducedMotion();
-      if (!(isEstimateShow(next.mode) && next.phase==='reveal') && !staged && (!next.ceremony || matchMedia('(prefers-reduced-motion: reduce)').matches)) playCue(sound, next.mode, next.phase);
+      if (!(isEstimateShow(next.mode) && next.phase==='reveal') && !staged && (!next.ceremony || matchMedia('(prefers-reduced-motion: reduce)').matches)) playCue(sound, next.mode, after.phase);
     }
     else if (next.mode === 'potato' && next.party?.passes > state.party?.passes) playCue(sound, next.mode, 'pass');
-    soundMoments(state, next);
+    soundMoments(before, after);
     readQuestion(next);
-    raceCommentary(state, next);
+    raceCommentary(before, after);
     bloodmoonCommentary(state, next);
     showCommentary(state, next);
   }
@@ -1682,7 +1710,7 @@ function raceCommentary(before, next) {
     sayReaction(`react-race-${kind}`, raceCalls[kind]);
   };
   if (before.phase === 'race-countdown' && next.phase === 'race') return call('start');
-  if (['finished', 'race-standings'].includes(next.phase) && before.phase === 'race') return setTimeout(() => call('finish'), 900);
+  if (['finished', 'race-standings'].includes(next.phase) && ['race', 'race-replay'].includes(before.phase)) return setTimeout(() => call('finish'), 900);
   if (next.phase !== 'race' || before.phase !== 'race') return;
   // Power-ups: a new ram or boost anywhere on the track gets a call.
   const fresh = kind => next.race.racers.some(racer => racer.power === kind && before.race?.racers?.find(old => old.id === racer.id)?.power !== kind);

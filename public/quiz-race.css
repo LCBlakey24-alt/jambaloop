@@ -173,7 +173,10 @@ html.mobile-deck .game[data-mode="quizrace"] {margin:6px auto 24px}
 .race-symbol-grid{max-width:46dvh;margin-inline:auto}
 .race-symbol-grid[data-size="6"]{max-width:50dvh}
 .race-symbol-grid[data-size="12"]{max-width:60dvh}
-.race-symbol-grid.is-empty{min-height:46dvh}
+/* The waiting board between grids is the same shape as the grid, so nothing below it jumps after a tap. */
+.race-symbol-grid.is-empty{min-height:0;aspect-ratio:1}
+.race-symbol-grid.is-empty[data-size="6"]{aspect-ratio:3/2}
+.race-symbol-grid.is-empty[data-size="12"]{aspect-ratio:4/3}
 .race-symbol-tile.race-answer:disabled{opacity:1}
 
 /* The action replay on the TV (28 November 2026): a broadcast-style replay strip above the track. */

@@ -9,6 +9,10 @@ on:
       - 'public/room-avatars.js'
       - 'server.js'
       - 'public/mobile-deck.js'
+      - 'public/install-app.js'
+      - 'public/sw.js'
+      - 'public/manifest.webmanifest'
+      - 'scripts/install-app-browser.mjs'
       - 'scripts/launcher-browser.mjs'
       - 'scripts/board-team-browser.mjs'
       - 'scripts/fork-browser.mjs'
@@ -148,6 +152,7 @@ jobs:
           node scripts/race-replay-browser.mjs
           node scripts/phone-captain-browser.mjs
           node scripts/fire-tv-browser.mjs
+          node scripts/install-app-browser.mjs
           node scripts/bloodmoon-browser.mjs
           node scripts/live-guesses-browser.mjs
           node scripts/short-phone-browser.mjs

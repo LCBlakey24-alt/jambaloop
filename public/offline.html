@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101226">
+<title>Jambaloop · offline</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #101226; color: #fff; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; }
+  main { min-height: 100%; display: grid; place-content: center; gap: 18px; padding: 24px; text-align: center; box-sizing: border-box; }
+  img { width: 96px; height: 96px; margin: 0 auto; border-radius: 22px; }
+  h1 { margin: 0; font-size: 1.6rem; }
+  p { margin: 0; max-width: 32ch; line-height: 1.45; opacity: .85; }
+  button { justify-self: center; min-height: 52px; padding: 0 28px; border: 0; border-radius: 14px; background: #2ad6a0; color: #10221c; font: 800 1.05rem system-ui, sans-serif; }
+</style>
+</head>
+<body>
+<main>
+  <img src="/app-icons/icon-192.png" alt="">
+  <h1>Jambaloop can’t reach the internet</h1>
+  <p>Check your Wi-Fi or mobile data. This page tries again by itself as soon as you’re back online.</p>
+  <button type="button" onclick="location.reload()">Try again</button>
+</main>
+<script>addEventListener('online', () => location.reload());</script>
+</body>
+</html>

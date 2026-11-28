@@ -42,6 +42,12 @@ if (process.env.TRUST_PROXY) app.set('trust proxy', process.env.TRUST_PROXY);
 app.use(express.json({ limit: '128kb' }));
 app.use('/vendor', express.static(fileURLToPath(new URL('./node_modules/three/build/', import.meta.url))));
 app.use('/icons', express.static(fileURLToPath(new URL('./node_modules/lucide-static/icons/', import.meta.url))));
+// The service worker and app manifest are checked for updates on every visit, so an installed
+// Jambaloop never keeps an old copy of them.
+app.use(['/sw.js', '/manifest.webmanifest'], (_req, res, next) => {
+  res.set('Cache-Control', 'no-cache');
+  next();
+});
 app.use(express.static(fileURLToPath(new URL('./public/', import.meta.url))));
 app.use('/api', (_req, res, next) => {
   res.set('Cache-Control', 'no-store');

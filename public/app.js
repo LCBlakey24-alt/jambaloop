@@ -10,6 +10,7 @@ import { animatePotato, potatoHeat } from './potato-stage.js';
 import { quizRaceView, updateRacePowers } from './quiz-race-view.js';
 import { mountQuizRaceTrack } from './quiz-race-track.js';
 import { mobileDeck } from './mobile-deck.js';
+import { installKind, installOfferView, onInstallChange, promptInstall, setUpInstall } from './install-app.js';
 import { awardView, currentFrame, frameView, revealFrames, scoreReveal } from './ceremony.js';
 import { boardSpeedValues, bonusValues, canSetScore, defaultScoring, doubleSchedules, pointValues } from './scoring.js';
 import { gameNightPresets, gameNightView, partySettings, playlistEditor, playlistLimit, queuedSettings, replayButtons } from './game-night.js';
@@ -2569,6 +2570,7 @@ document.addEventListener('click', async event => {
   }
   if (action === 'close') return dialog.close();
   if (action === 'night' && session && state) return openDialog('night');
+  if (action === 'install-app') return promptInstall();
   // A player leaving mid-game is asked first: the Home button sits beside the timer.
   if (action === 'leave') {
     if (session && !session.host && state && !['lobby', 'finished', 'waiting'].includes(state.phase) && !confirm('Leave this game? You can join again with the room code.')) return;
@@ -2852,6 +2854,20 @@ carouselScreen.addEventListener('change', () => {
 // ?tv, ?phone or ?auto in the address chooses this screen; ?device opens the screen check.
 const screenCheck = readScreenChoice();
 prepareTvScreen();
+// Installing Jambaloop on a phone from the browser (no app store): any [data-install-slot] on screen shows
+// the offer this device supports, and updates when the browser makes or withdraws its offer.
+const fillInstallSlots = () => {
+  const offer = installOfferView(installKind({ isTv: isTvScreen }), icons);
+  for (const slot of document.querySelectorAll('[data-install-slot]')) {
+    if (slot.innerHTML !== offer) slot.innerHTML = offer;
+    slot.hidden = !offer;
+    slot.dataset.filled = '';
+  }
+};
+setUpInstall({ isTv: isTvScreen });
+onInstallChange(fillInstallSlots);
+new MutationObserver(() => { if (document.querySelector('[data-install-slot]:not([data-filled])')) fillInstallSlots(); })
+  .observe(document.querySelector('#app'), { childList: true, subtree: true });
 // On the TV, the remote's arrows move between buttons and OK presses them.
 enableRemote(isTvScreen);
 renderHome();

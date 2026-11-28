@@ -53,3 +53,12 @@ html.mobile-deck #dialog-content :is(#join-form, #configure-form, #rematch-form)
 html.mobile-deck #dialog-content #join-form .join-room-submit {
   position: sticky; bottom: 0; z-index: 2; box-shadow: 0 -10px 18px -6px rgba(0, 0, 0, .55);
 }
+
+/* Install Jambaloop on a phone from the browser (no app store). */
+.install-offer { display: grid; gap: 6px; justify-items: center; text-align: center; }
+.install-offer small { font-size: .8rem; opacity: .8; }
+.install-offer .install-app { min-height: 48px; width: 100%; justify-content: center; }
+.install-offer-ios { justify-items: stretch; text-align: left; border: 1px solid var(--paper-line, var(--edge, #34385c)); border-radius: 12px; padding: 4px 12px; }
+.install-offer-ios summary { min-height: 44px; display: flex; align-items: center; gap: 8px; font-weight: 750; cursor: pointer; }
+.install-offer-ios p { margin: 0 0 10px; font-size: .9rem; line-height: 1.4; }
+.install-offer img { width: 18px; height: 18px; }

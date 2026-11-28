@@ -4,7 +4,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { modes } from '../public/game-config.js';
 import { duoIntros, hosts, presenters, reactionTakes, skipQuips, spoken, welcomeBack, welcomeScript } from '../public/duo-scripts.js';
 import { duoRecordings, duoTake } from '../public/duo-recordings.js';
-import { gameGuides } from '../public/guide-scripts.js';
+import { gameGuides, panelGuide } from '../public/guide-scripts.js';
 
 test('every game has a short Double Act intro where both hosts take turns', () => {
   assert.deepEqual(Object.keys(duoIntros).sort(), modes.map(([id]) => id).sort());
@@ -82,4 +82,20 @@ test('every game has a detailed how-to-play guide, each line paired with a drawn
       assert.match(show, new RegExp(`\\n  ${scene}: `), `${mode}: scene ${scene} is drawn`);
     }
   }
+});
+
+test('guides describe the selected Rare Find scoring and Classic Quiz tied results', () => {
+  const panelText = panelGuide.map(([, text]) => text).join(' ');
+  const roomText = gameGuides.rare.map(([, text]) => text).join(' ');
+  const classicText = gameGuides.classic.map(([, text]) => text).join(' ');
+  assert.match(panelText, /research panel/i);
+  assert.match(panelText, /lose five points/i);
+  assert.equal(panelGuide.find(([, , scene]) => scene === 'gem')[3], 'SHARED −5');
+  assert.match(roomText, /hundred each/i);
+  assert.match(classicText, /shared victory/i);
+  assert.match(classicText, /if speed bonuses are switched on/i);
+  const boardIntro = duoIntros.board.map(([, text]) => text).join(' ');
+  assert.match(boardIntro, /roll the die and move your piece/i);
+  assert.match(boardIntro, /everyone answers/i);
+  assert.doesNotMatch(boardIntro, /question to keep moving/i);
 });

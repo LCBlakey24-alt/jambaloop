@@ -92,12 +92,15 @@ function showCaption(host, text) {
 
 function hideCaption() { caption?.remove(); duckMusic(false); }
 
+const lowerVoices = new Set(['max', 'baz', 'clive', 'vince', 'vesper']);
+
 function hostVoice(host) {
   const voices = 'speechSynthesis' in window ? speechSynthesis.getVoices().filter(voice => /^en-GB/i.test(voice.lang)) : [];
   const male = /male|daniel|george|arthur|ryan|oliver|thomas|brian/i;
   const female = /female|serena|kate|martha|libby|sonia|hazel|susan|amy|emma|lily/i;
-  const pick = host === 'max' ? voices.find(voice => male.test(voice.name) && !/female/i.test(voice.name)) : voices.find(voice => female.test(voice.name));
-  return pick ?? voices[host === 'max' ? 0 : Math.min(1, voices.length - 1)] ?? null;
+  const lowerVoice = lowerVoices.has(host);
+  const pick = lowerVoice ? voices.find(voice => male.test(voice.name) && !/female/i.test(voice.name)) : voices.find(voice => female.test(voice.name));
+  return pick ?? voices[lowerVoice ? 0 : Math.min(1, voices.length - 1)] ?? null;
 }
 
 function playDuo(mode, token, { lines = duoIntros[mode], onLine, onDone } = {}) {
@@ -120,13 +123,22 @@ function playDuo(mode, token, { lines = duoIntros[mode], onLine, onDone } = {}) 
       showCaption(host, spoken(text));
       onLine?.(index, lines[index]);
     };
+    const fallback = () => {
+      // Some browsers both reject play() and fire an error for the same failure.
+      if (!live() || currentAudio !== audio) return;
+      currentAudio = null;
+      audio.onerror = null;
+      audio.onended = null;
+      audio.pause();
+      speakLines(mode, token, lines, { onLine, onDone });
+    };
     audio.ontimeupdate = follow;
     audio.onplaying = follow;
     audio.onended = done;
-    audio.onerror = () => { currentAudio = null; speakLines(mode, token, lines, { onLine, onDone }); };
+    audio.onerror = fallback;
     presentation(mode, true, 'Playing Max and Poppy');
     // If the browser refuses to play, the device voice (or timed captions) carries on.
-    audio.play()?.catch(() => { if (live()) { currentAudio = null; speakLines(mode, token, lines, { onLine, onDone }); } });
+    try { audio.play()?.catch(fallback); } catch { fallback(); }
     return;
   }
   speakLines(mode, token, lines, { onLine, onDone });
@@ -148,7 +160,7 @@ function speakLines(mode, token, lines, { onLine, onDone }) {
     utterance.lang = 'en-GB';
     utterance.voice = hostVoice(host);
     // Two hosts, two sounds, even when a device has only one British voice.
-    utterance.pitch = host === 'max' ? 0.88 : 1.18;
+    utterance.pitch = lowerVoices.has(host) ? 0.88 : 1.18;
     utterance.rate = 1.04;
     utterance.volume = 0.86;
     // No voice on this device: the caption still stays up for reading time.

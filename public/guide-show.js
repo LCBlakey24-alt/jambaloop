@@ -6,7 +6,8 @@
 import { modes } from './game-config.js';
 import { identityVariables } from './game-identities.js';
 import { tileArt } from './home-launcher.js';
-import { gameGuides } from './guide-scripts.js';
+import { gameGuides, panelGuide } from './guide-scripts.js';
+import { duoRecordings } from './duo-recordings.js';
 
 const nameOf = mode => modes.find(([id]) => id === mode)?.[1] ?? '';
 const many = (count, draw) => Array.from({ length: count }, (_, n) => draw(n)).join('');
@@ -73,7 +74,7 @@ const scenes = {
   puzzle: () => pair(tv(`<span class="guide-seq"><i>2</i><i>4</i><i>8</i><i class="is-q">?</i></span>`), phone(pads(3, ['12', '14', '10', '16']))),
   predict: () => pair(tv(bar('Most popular?')), phone(pads(0) + chip('PREDICT'))),
   bars: () => solo(`<span class="guide-bars">${many(4, n => `<i style="--n:${n}"></i>`)}</span>`),
-  gem: () => solo(`<span class="guide-match is-gem"><i>Mars</i><i>Mars</i><i>Earth</i><i class="is-rare">Neptune</i></span>${chip('+200', 'is-rise')}`),
+  gem: (mode, label = '+200') => solo(`<span class="guide-match is-gem"><i>Mars</i><i>Mars</i><i>Earth</i><i class="is-rare">Neptune</i></span>${chip(label, 'is-rise')}`),
   closest: () => solo(scale(false) + chip('CLOSEST', 'is-rise')),
   target: () => solo(`<span class="guide-target"><em>7</em><i></i><em class="is-chase">5</em></span>${ring('60')}`),
   freeze: () => solo(`<span class="guide-freeze">${faces(3)}<b>FROZEN</b></span>`),
@@ -98,8 +99,10 @@ export function openGuide(root, mode, { onSkip, script = gameGuides[mode] ?? [] 
   overlay.dataset.mode = mode;
   overlay.setAttribute('style', identityVariables(mode));
   overlay.setAttribute('aria-label', 'How to play ' + nameOf(mode));
+  const recordingKey = mode === 'rare' && script === panelGuide ? 'guide-panel' : 'guide-' + mode;
+  const voiceNote = duoRecordings[recordingKey] ? '' : '<small class="guide-device-voice">Device voice · captions</small>';
   overlay.innerHTML = `<header class="guide-head"><span class="guide-head-tile">${tileArt(mode)}</span>
-      <span><small>HOW TO PLAY</small><strong>${nameOf(mode)}</strong></span>
+      <span><small>HOW TO PLAY</small><strong>${nameOf(mode)}</strong>${voiceNote}</span>
       <span class="guide-steps" aria-hidden="true">${script.map(() => '<i></i>').join('')}</span>
       <button type="button" class="button outline guide-skip">Skip · we know this one</button></header>
     <div class="guide-stage" aria-hidden="true"></div>`;

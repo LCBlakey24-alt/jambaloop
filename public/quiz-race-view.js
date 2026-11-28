@@ -1,5 +1,6 @@
 import {raceTrackMarkup} from './quiz-race-track.js';
 import { face } from './player-face.js';
+import { symbolMarkup, raceSymbol } from './race-symbols.js';
 const name = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const percent = (distance, total) => Math.min(100, Math.round(100 * distance / Math.max(total,1)));
 
@@ -69,18 +70,26 @@ export function quizRaceView(s, {host,canControl,icons,replayButtons,sending}) {
     <p>${winningTeam ? name(leader?.name) + ' crossed first to win it for their team.' : 'First across the finish line wins.'} Final order comes from the server, not the animation.</p>
     ${track()}${raceTeams}<div class="race-results">${r.racers.map(p=>`<div><strong>#${p.position} · ${face(p)}${name(p.name)}</strong><span>${p.finishedAt === undefined ? percent(p.distance,r.length)+'% completed' : ((p.finishedAt - 3000)/1000).toFixed(2)+'s'}</span></div>`).join('')}</div>
     <div class="actions">${canControl? replayButtons(s,icons):'<button class="button outline" data-action="leave">Back to home</button>'}</div></section>`;
-  if (host) return `<section class="game-panel race-broadcast" aria-label="Quiz Race broadcast"><div class="race-broadcast-head"><div><div class="eyebrow">QUIZ RACE · ${league ? `LEAGUE RACE ${league.round + 1} OF ${league.races}` : name(s.categoryName||'GENERAL KNOWLEDGE')}</div><h1>${intro?'Get ready to race!':'Race to the finish!'}</h1></div><div class="race-broadcast-time"><strong data-race-clock>0:00</strong><span>RACE TIME</span></div></div>
+  if (host) return `<section class="game-panel race-broadcast" aria-label="Quiz Race broadcast"><div class="race-broadcast-head"><div><div class="eyebrow">${r.style==='symbols'?'SYMBOL DASH':'QUIZ RACE'} · ${league ? `LEAGUE RACE ${league.round + 1} OF ${league.races}` : r.style==='symbols' ? 'TAP THE MATCHING SYMBOL' : name(s.categoryName||'GENERAL KNOWLEDGE')}</div><h1>${intro?'Get ready to race!':'Race to the finish!'}</h1></div><div class="race-broadcast-time"><strong data-race-clock>0:00</strong><span>RACE TIME</span></div></div>
     ${intro?'<div class="race-countdown" data-race-countdown aria-live="polite">3</div>':''}
-    ${track()}${raceTeams}<div class="race-broadcast-foot"><p>Answer questions on your phone to accelerate. Wrong answers slow you down.</p>
+    ${track()}${raceTeams}<div class="race-broadcast-foot"><p>${r.style==='symbols'?'Tap the matching symbol on your phone to accelerate. The wrong symbol slows you down.':'Answer questions on your phone to accelerate. Wrong answers slow you down.'}</p>
     ${canControl?`<button class="button outline small" data-action="clock">${s.pausedAt?'Resume race':'Pause race'}</button>`:''}</div></section>`;
   const own = r.own;
   const player = r.racers.find(p=>p.id===s.player?.id);
   const q=own?.question;
   const feedback=own?.feedback;
-  return `<section class="game-panel race-phone"><div class="race-phone-head"><div><div class="eyebrow">QUIZ RACE</div><strong data-race-position>${own?.position??'-'} / ${s.playerCount}</strong></div><div class="race-phone-speed" data-race-speed>READY</div></div>
+  // Symbol Dash: find the target symbol on a grid that reshuffles after every tap.
+  const symbols=r.style==='symbols';
+  const cockpit=symbols&&!intro?'<canvas class="race-cockpit" data-race-cockpit width="640" height="240" role="img" aria-label="The view from your kart"></canvas>':'';
+  const symbolBoard=!symbols?'':q?.symbols?`<div class="race-question race-symbol-round" data-question-id="${q.id}">
+      <div class="race-symbol-target"><span>TAP THE</span>${symbolMarkup(q.symbols.target)}<strong>${name(raceSymbol(q.symbols.target)?.name??'')}</strong><em data-race-deadline></em></div>
+      <div class="race-symbol-grid" data-size="${q.symbols.tiles.length}">${q.symbols.tiles.map((id,index)=>`<button class="race-answer race-symbol-tile" data-action="race-answer" data-race-option="${index}" aria-label="${name(raceSymbol(id)?.name??'symbol')}" ${sending?'disabled':''}>${symbolMarkup(id)}</button>`).join('')}</div></div>`
+    :`<div class="race-symbol-round is-waiting" aria-live="polite"><div class="race-symbol-target"><span>${feedback?.outcome==='correct'?'YES!':feedback?.outcome==='wrong'?'WRONG ONE':feedback?.outcome==='timeout'?'TOO SLOW':'GET READY'}</span></div><div class="race-symbol-grid is-empty"></div></div>`;
+  return `<section class="game-panel race-phone ${symbols?'is-symbols':''}"><div class="race-phone-head"><div><div class="eyebrow">${symbols?'SYMBOL DASH':'QUIZ RACE'}</div><strong data-race-position>${own?.position??'-'} / ${s.playerCount}</strong></div><div class="race-phone-speed" data-race-speed>READY</div></div>
     ${teamRace ? `<p class="race-team-label">Your team: ${name(s.teams.find(t=>t.id===s.player?.team)?.name || 'Unassigned')}</p>` : ''}
     <div class="race-phone-progress" aria-label="Race progress"><i data-race-progress style="width:${percent(own?.distance||0,r.length)}%;background:${player?.color||'#1dd9be'}"></i></div>
-    ${intro?'<div class="race-phone-intro"><h1>Ready, set…</h1><p>Quick, correct answers give you a bigger boost.</p><strong data-race-countdown>3</strong></div>':s.pausedAt?'<div class="race-phone-intro"><h1>Race paused</h1><p>Waiting for the host or captain to resume.</p></div>':q?`<div class="race-question" data-question-id="${q.id}"><div class="race-question-label"><span>QUESTION ${q.id}</span><span data-race-deadline>12s</span></div><h2>${name(q.prompt)}</h2><div class="race-options">${q.options.map((opt,index)=>`<button class="race-answer" data-action="race-answer" data-race-option="${index}" ${sending?'disabled':''}><span>${'ABCD'[index]}</span>${name(opt)}</button>`).join('')}</div><button class="button outline race-pass" data-action="race-pass" ${sending?'disabled':''}>Pass question · small slowdown</button></div>`:`<div class="race-phone-intro"><h2>${feedback?.outcome==='correct'?'Correct! Speed boost!':feedback?.outcome==='wrong'?'Not quite — slowing down':feedback?.outcome==='timeout'?'Time is up!':feedback?.outcome==='pass'?'Question passed':'Next question coming…'}</h2><p>${feedback?.answer?'Correct answer: '+name(feedback.answer):'Keep racing!'}</p></div>`}
+    ${cockpit}
+    ${intro?`<div class="race-phone-intro"><h1>Ready, set…</h1><p>${symbols?'Tap the matching symbol as fast as you can. The wrong one slows you down.':'Quick, correct answers give you a bigger boost.'}</p><strong data-race-countdown>3</strong></div>`:s.pausedAt?'<div class="race-phone-intro"><h1>Race paused</h1><p>Waiting for the host or captain to resume.</p></div>':symbols?symbolBoard:q?`<div class="race-question" data-question-id="${q.id}"><div class="race-question-label"><span>QUESTION ${q.id}</span><span data-race-deadline>12s</span></div><h2>${name(q.prompt)}</h2><div class="race-options">${q.options.map((opt,index)=>`<button class="race-answer" data-action="race-answer" data-race-option="${index}" ${sending?'disabled':''}><span>${'ABCD'[index]}</span>${name(opt)}</button>`).join('')}</div><button class="button outline race-pass" data-action="race-pass" ${sending?'disabled':''}>Pass question · small slowdown</button></div>`:`<div class="race-phone-intro"><h2>${feedback?.outcome==='correct'?'Correct! Speed boost!':feedback?.outcome==='wrong'?'Not quite — slowing down':feedback?.outcome==='timeout'?'Time is up!':feedback?.outcome==='pass'?'Question passed':'Next question coming…'}</h2><p>${feedback?.answer?'Correct answer: '+name(feedback.answer):'Keep racing!'}</p></div>`}
     ${intro?'':`<div class="race-powers" data-race-powers><button type="button" class="race-power is-boost" data-action="race-power" data-kind="boost"><b>🚀 Boost</b><small data-power-note></small></button>
       <button type="button" class="race-power is-ram" data-action="race-power" data-kind="ram"><b>💥 Nudge</b><small data-power-note></small></button>
       <button type="button" class="race-power is-shield" data-action="race-power" data-kind="shield"><b>🛡 Shield</b><small data-power-note></small></button></div>
@@ -100,8 +109,9 @@ export function updateRacePowers(root, state) {
     button.disabled = !enabled || button.dataset.sending === '1';
     button.querySelector('[data-power-note]').textContent = note;
   };
-  const toTurbo = 3 - (own.streak ?? 0) % 3;
-  set('boost', live && own.boosts > 0 && !own.armed, own.armed ? 'ARMED · get the next one right!' : own.boosts > 0 ? `Tap, then answer right · ${own.boosts} left` : `${toTurbo} right in a row earns one`);
+  const every = own.turboStreak ?? 3;
+  const toTurbo = every - (own.streak ?? 0) % every;
+  set('boost', live && own.boosts > 0 && !own.armed, own.armed ? 'ARMED · get the next one right!' : own.boosts > 0 ? `Tap, then ${state.race.style === 'symbols' ? 'hit the next symbol' : 'answer right'} · ${own.boosts} left` : `${toTurbo} right in a row earns one`);
   bar.querySelector('[data-kind="boost"]').toggleAttribute('data-armed', Boolean(own.armed));
   set('shield', live && own.shields > 0 && !own.shieldLeft, own.shieldLeft ? `Up · ${Math.ceil(own.shieldLeft / 1000)}s` : own.shields > 0 ? 'Blocks nudges for 6s' : 'Used');
   // A nudge can always be thrown while you have one: at nobody, it is wasted.
@@ -109,7 +119,7 @@ export function updateRacePowers(root, state) {
   bar.querySelector('[data-kind="ram"]').toggleAttribute('data-target', Boolean(own.ramTarget));
   const alert = root.querySelector('[data-race-alert]');
   const text = own.rammedBy ? `💥 Nudged by ${own.rammedBy}!` : own.blocked ? `🛡 Your shield stopped ${own.blocked}!` : own.missed ? '💨 Nobody there. Nudge wasted.' : own.fizzled ? '💨 Boost wasted: that answer was not right.'
-    : own.turboEarned ? '🚀 Three in a row: boost earned!' : own.onFire ? `🔥 On fire! ${own.streak} in a row` : own.sprint ? '🏁 Final sprint: right answers count extra!' : '';
+    : own.turboEarned ? `🚀 ${every} in a row: boost earned!` : own.onFire ? `🔥 On fire! ${own.streak} in a row` : own.sprint ? '🏁 Final sprint: right answers count extra!' : '';
   if (alert && alert.textContent !== text) alert.textContent = text;
   root.querySelector('.race-phone')?.toggleAttribute('data-rammed', Boolean(own.rammedBy));
 }

@@ -22,6 +22,7 @@ import { launcherTile, launcherPreview, launcherModes, launcherSetupArtwork, LAU
 import { carouselView, moveCarousel, themeHome, wrapIndex } from './game-carousel.js';
 import { playSting, stingFor } from './show-sting.js';
 import { canReadAloud, isWelcomeNarration, narrationPlaying, playScript, playWelcome, readAloud, stopNarration, stopReading, toggleNarration } from './narrator.js';
+import { drawCockpit } from './race-cockpit.js';
 import { bloodmoonCalls, boardCalls, momentCalls, catchupCalls, closeCalls, knockoutReactions, raceCalls, reactions, skipQuips, wayoffCalls, welcomeBack } from './duo-scripts.js';
 import { openWelcome } from './welcome-show.js';
 import { openGuide } from './guide-show.js';
@@ -220,6 +221,9 @@ function updateQuizRaceVisuals() {
     set('[data-race-position]',own.position+' / '+state.playerCount);
     set('[data-race-speed]',(current?.speed??1)>1.04?'BOOSTING':(current?.speed??1)<.96?'SLOWED':current?.slip?'SLIPSTREAM':'CRUISING');
     if(own.question)set('[data-race-deadline]',Math.max(0,Math.ceil((own.question.deadline-sim)/1000))+'s');
+    // Symbol Dash: the view from your own kart, above the grid.
+    const cockpit=app.querySelector('[data-race-cockpit]');
+    if(cockpit)drawCockpit(cockpit,{racers:snapshot.racers,ownId:state.player?.id,track:snapshot.track,time:sim,reduced,ahead:r=>reduced||r.finishedAt!==undefined?0:r.speed*elapsed/1000});
   }
   snapshot.racers.forEach(r=>{const row=[...app.querySelectorAll('[data-race-rank]')].find(node=>node.dataset.raceRank===r.id);if(!row)return;
     const rank=row.querySelector('.race-position');if(rank)rank.textContent=r.position;
@@ -407,6 +411,7 @@ function openDialog(mode, value, gameMode, quizId) {
       <div class="format-picks-grid">${questionTypes.map(([id, name]) => `<label><input type="checkbox" name="questionType" value="${id}" ${formatTypes(configured ? state.format : 'mixed').includes(id) ? 'checked' : ''}><span>${name}</span></label>`).join('')}</div>
       <small class="error format-picks-note" id="format-note" aria-live="polite"></small></fieldset>
     <fieldset id="race-setup" class="race-setup"><legend>Quiz Race</legend><div class="form-row">
+      <label>Race type<select name="raceStyle">${selected([['quiz','Quiz · answer questions'],['symbols','Symbol Dash · tap the matching symbol']],raceSetup.raceStyle ?? 'quiz')}</select></label>
       <label>Race length<select name="raceLength">${selected([['short','Short · ~1 min'],['medium','Medium · ~2 min'],['long','Long · ~3 min']],raceSetup.raceLength ?? 'medium')}</select></label>
       <label>Track theme<select name="raceTrack">${selected([['neon','Neon Circuit'],['desert','Desert Run'],['snow','Snow Circuit'],['jungle','Jungle Trail'],['space','Space Route']],raceSetup.raceTrack ?? 'neon')}</select></label>
       <label>Difficulty<select name="raceDifficulty">${selected([['easy','Easy'],['medium','Medium'],['hard','Hard'],['mixed','Mixed']],raceSetup.raceDifficulty ?? 'mixed')}</select></label>
@@ -856,12 +861,12 @@ document.addEventListener('submit', async event => {
   event.preventDefault();
   const button = form.querySelector('button:not([type="button"])');
   button.disabled = true;
-  const { mode, theme, format, category, count, seconds, code, name, autoReveal, includeChristmas, afterDark, phoneView, quiz, teamCount, boardLength, playStyle, privateQuestions, difficulty, basePoints, speedPoints, doublePoints, boardSpeed, scoreInterval, raceLength, raceTrack, raceDifficulty, raceLeague } = Object.fromEntries(new FormData(form));
+  const { mode, theme, format, category, count, seconds, code, name, autoReveal, includeChristmas, afterDark, phoneView, quiz, teamCount, boardLength, playStyle, privateQuestions, difficulty, basePoints, speedPoints, doublePoints, boardSpeed, scoreInterval, raceLength, raceTrack, raceDifficulty, raceLeague, raceStyle } = Object.fromEntries(new FormData(form));
   try {
     const customQuiz = quiz && quiz !== 'current' ? savedQuizzes().find(entry => entry.id === quiz) : undefined;
     const curated = difficulty && difficulty !== 'standard';
     const scoring = basePoints ? { base: Number(basePoints), bonus: Number(speedPoints), doubles: doublePoints } : undefined;
-    const settings = { mode, playStyle, theme, difficulty, raceLength, raceTrack, raceDifficulty, raceLeague: raceLeague === 'on', scoring, scoreInterval: scoreInterval === undefined ? undefined : Number(scoreInterval), boardSpeed: boardSpeed === undefined ? undefined : Number(boardSpeed), format: curated ? 'choice' : format, category: curated ? 'mixed' : category, phoneView, teamCount: Number(teamCount), boardLength: Number(boardLength), customQuiz, useRoomQuiz: quiz === 'current', count: Number(count), privateQuestions: privateQuestions === 'on', seconds: Number(seconds), autoReveal: autoReveal === 'on', includeChristmas: includeChristmas === 'on', afterDark: afterHoursModes.includes(mode) && afterDark === 'on' };
+    const settings = { mode, playStyle, theme, difficulty, raceLength, raceTrack, raceDifficulty, raceLeague: raceLeague === 'on', raceStyle, scoring, scoreInterval: scoreInterval === undefined ? undefined : Number(scoreInterval), boardSpeed: boardSpeed === undefined ? undefined : Number(boardSpeed), format: curated ? 'choice' : format, category: curated ? 'mixed' : category, phoneView, teamCount: Number(teamCount), boardLength: Number(boardLength), customQuiz, useRoomQuiz: quiz === 'current', count: Number(count), privateQuestions: privateQuestions === 'on', seconds: Number(seconds), autoReveal: autoReveal === 'on', includeChristmas: includeChristmas === 'on', afterDark: afterHoursModes.includes(mode) && afterDark === 'on' };
     if (form.id === 'rematch-form' || form.id === 'configure-form') {
       const action = form.id === 'rematch-form' ? 'rematch' : 'configure';
       await api('/' + session.code + '/' + action, { ...settings, game: Number(form.dataset.game), lobbyVersion: Number(form.dataset.lobbyVersion) });

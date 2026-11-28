@@ -14,7 +14,7 @@ import QRCode from 'qrcode';
 import { randomBytes, randomInt } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
 import { difficultyQuestions } from './difficulty-questions.js';
-import { advanceQuizRace, createQuizRace, publicRaceState, useRacePower, raceDifficulties, raceLengths, racePlacings, raceTracks, leagueCircuits, leagueTrack, createLeague, scoreLeagueRace, leagueStandings, setRacePaused, submitRaceAnswer } from './quiz-race.js';
+import { advanceQuizRace, createQuizRace, publicRaceState, useRacePower, raceDifficulties, raceLengths, racePlacings, raceTracks, raceStyles, leagueCircuits, leagueTrack, createLeague, scoreLeagueRace, leagueStandings, setRacePaused, submitRaceAnswer } from './quiz-race.js';
 import { networkInterfaces } from 'node:os';
 import { inviteOriginOptions, qrJoinUrl } from './room-invite.js';
 import { isRoomMember, positiveSetting, readAvatar, requestBudget } from './room-http.js';
@@ -48,9 +48,9 @@ app.use('/api', (_req, res, next) => {
 });
 
 function readSettings(body = {}) {
-  const { mode = 'classic', theme = defaultTheme, format = isEstimateShow(mode) ? 'estimate' : 'choice', category, count, seconds, autoReveal = false, includeChristmas = false, teamCount = mode === 'tracks' ? 2 : 4, boardLength = 24, playStyle = defaultPlayStyle(mode), privateQuestions = false, phoneView = 'answers', difficulty = 'standard', scoring, boardSpeed = 50, scoreInterval = 1, customQuiz = null, raceLength = 'medium', raceTrack = 'neon', raceDifficulty = 'mixed', raceLeague = false, afterDark = false } = body ?? {};
+  const { mode = 'classic', theme = defaultTheme, format = isEstimateShow(mode) ? 'estimate' : 'choice', category, count, seconds, autoReveal = false, includeChristmas = false, teamCount = mode === 'tracks' ? 2 : 4, boardLength = 24, playStyle = defaultPlayStyle(mode), privateQuestions = false, phoneView = 'answers', difficulty = 'standard', scoring, boardSpeed = 50, scoreInterval = 1, customQuiz = null, raceLength = 'medium', raceTrack = 'neon', raceDifficulty = 'mixed', raceLeague = false, raceStyle = 'quiz', afterDark = false } = body ?? {};
   if (typeof privateQuestions !== 'boolean' || !validPlayStyle(mode,playStyle) || (mode === 'tracks' && teamCount !== 2)) return;
-  if (mode === 'quizrace' && (!raceLengths[raceLength] || !raceTracks.includes(raceTrack) || !raceDifficulties.includes(raceDifficulty) || typeof raceLeague !== 'boolean' || format !== 'choice' || customQuiz !== null)) return;
+  if (mode === 'quizrace' && (!raceLengths[raceLength] || !raceTracks.includes(raceTrack) || !raceDifficulties.includes(raceDifficulty) || typeof raceLeague !== 'boolean' || !raceStyles.includes(raceStyle) || format !== 'choice' || customQuiz !== null)) return;
   if (isEstimateShow(mode) && (format !== 'estimate' || privateQuestions || customQuiz !== null || difficulty !== 'standard')) return;
   const privateTeam = mode === 'showdown' && privateQuestions;
   if (privateTeam && customQuiz !== null) return;
@@ -74,7 +74,7 @@ function readSettings(body = {}) {
   const scores = isEstimateShow(mode) ? {base:100,bonus:0,doubles:'off'} : canSetScore(mode) ? (scoring
     ? { base: scoring.base, bonus: seconds ? scoring.bonus : 0, doubles: scoring.doubles }
     : defaultScoring(seconds)) : undefined;
-  return { mode, theme, difficulty, raceLength, raceTrack, raceDifficulty, raceLeague: mode === 'quizrace' && raceLeague === true, scoring: scores, boardSpeed: seconds ? boardSpeed : 0, legacyScoring: !isEstimateShow(mode) && scoring === undefined, format: privateTeam ? 'choice' : format, category: fixedQuestionModes.includes(mode) && !privateTeam ? category : 'mixed', count: mode === 'knockout' ? KNOCKOUT_QUESTIONS : ['tracks', 'samepage', 'spotlight', 'brain', 'topanswers', 'rare', 'sketch', 'punchline', 'cards', 'bluff'].includes(mode) ? count : socialModes.includes(mode) ? 3 : partyModes.includes(mode) ? 1 : quiz?.questions.length ?? count,
+  return { mode, theme, difficulty, raceLength, raceTrack, raceDifficulty, raceLeague: mode === 'quizrace' && raceLeague === true, raceStyle: mode === 'quizrace' ? raceStyle : 'quiz', scoring: scores, boardSpeed: seconds ? boardSpeed : 0, legacyScoring: !isEstimateShow(mode) && scoring === undefined, format: privateTeam ? 'choice' : format, category: fixedQuestionModes.includes(mode) && !privateTeam ? category : 'mixed', count: mode === 'knockout' ? KNOCKOUT_QUESTIONS : ['tracks', 'samepage', 'spotlight', 'brain', 'topanswers', 'rare', 'sketch', 'punchline', 'cards', 'bluff'].includes(mode) ? count : socialModes.includes(mode) ? 3 : partyModes.includes(mode) ? 1 : quiz?.questions.length ?? count,
     seconds, autoReveal, includeChristmas, afterDark, phoneView: privateTeam ? 'full' : phoneView, privateQuestions: privateTeam,
     teamCount, boardLength, playStyle, scoreInterval: supportsScoreCheckpoints(mode) ? scoreInterval : 1, customQuiz: quiz };
 }
@@ -282,7 +282,7 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
     } : undefined,
     ceremony: isHost && phase === 'finished' ? room.ceremony : undefined,
     awards: !waiting && phase === 'finished' ? room.awards : undefined,
-    mode: room.mode, playStyle: room.playStyle, privateQuestions: room.privateQuestions, party: waiting ? undefined : publicParty(room, key), whoIsIn: waiting ? undefined : partyWhoIsIn(room), race: room.mode === 'quizrace' && room.race ? publicRaceState(room.race, key, isHost) : undefined, raceLength: room.raceLength, raceTrack: room.raceTrack, raceDifficulty: room.raceDifficulty, raceLeague: room.raceLeague || undefined, league: room.mode === 'quizrace' ? publicLeague(room) : undefined, phoneView: room.phoneView, isCaptain: key === room.captain, captainId: captain?.id, captainName: captain?.name,
+    mode: room.mode, playStyle: room.playStyle, privateQuestions: room.privateQuestions, party: waiting ? undefined : publicParty(room, key), whoIsIn: waiting ? undefined : partyWhoIsIn(room), race: room.mode === 'quizrace' && room.race ? publicRaceState(room.race, key, isHost) : undefined, raceLength: room.raceLength, raceTrack: room.raceTrack, raceDifficulty: room.raceDifficulty, raceLeague: room.raceLeague || undefined, raceStyle: room.mode === 'quizrace' ? room.raceStyle : undefined, league: room.mode === 'quizrace' ? publicLeague(room) : undefined, phoneView: room.phoneView, isCaptain: key === room.captain, captainId: captain?.id, captainName: captain?.name,
     quizTitle: room.customQuiz?.title, quizTypes: room.quizTypes,
     // Names and selfies of everyone playing, so each screen can show a face beside a name.
     // Already visible to the room in the lobby; left out of very large rooms to keep updates small.
@@ -927,15 +927,16 @@ function raceQuestionPool(category, difficulty, includeChristmas, history = new 
 
 function startRace(room) {
   if (room.race?.issued) for (const prompt of room.race.issued) room.seen.add(prompt);
-  const pool = raceQuestionPool(room.category, room.raceDifficulty, room.includeChristmas, room.seen);
-  if (!pool.length) throw new Error('No questions available for Quiz Race.');
+  // The symbol race deals its own grids and needs no questions.
+  const pool = room.raceStyle === 'symbols' ? [] : raceQuestionPool(room.category, room.raceDifficulty, room.includeChristmas, room.seen);
+  if (room.raceStyle !== 'symbols' && !pool.length) throw new Error('No questions available for Quiz Race.');
   // A league starts on the short circuit and works up; every race is a fresh grid with fresh nudges and boosts.
   if (room.raceLeague && !room.league) room.league = createLeague(room.players.keys());
   const league = room.raceLeague ? room.league : undefined;
   const length = league ? leagueCircuits[league.round] : room.raceLength;
   const track = league ? leagueTrack(room.raceTrack, league.round) : room.raceTrack;
   // RACE_LENGTH_SCALE shortens every race for browser tests; it is never set in production.
-  room.race = createQuizRace([...room.players], pool, { length, track, difficulty: room.raceDifficulty, scale: Number(process.env.RACE_LENGTH_SCALE) || 1 }, performance.now());
+  room.race = createQuizRace([...room.players], pool, { length, track, difficulty: room.raceDifficulty, style: room.raceStyle, scale: Number(process.env.RACE_LENGTH_SCALE) || 1 }, performance.now());
   room.phase = 'race-countdown';
   room.opened = Date.now();
   publish(room);

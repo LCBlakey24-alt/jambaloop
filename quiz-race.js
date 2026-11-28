@@ -1,5 +1,7 @@
 /** Server-authoritative continuous Quiz Race simulation. All times are race-clock ms. */
 import {questionHistoryId} from './public/question-history.js';
+import {randomInt} from 'node:crypto';
+import {raceSymbols, symbolGridSize} from './public/race-symbols.js';
 export const raceLengths = Object.freeze({ short: 70, medium: 120, long: 190 });
 // A league is three races, one on each circuit, with points for every placing.
 export const leagueCircuits = Object.freeze(['short', 'medium', 'long']);
@@ -31,6 +33,25 @@ export const leagueTrack = (first, round) => raceTracks[(Math.max(0, raceTracks.
 export const raceTracks = Object.freeze(['neon', 'desert', 'snow', 'jungle', 'space']);
 export const raceDifficulties = Object.freeze(['easy', 'medium', 'hard', 'mixed']);
 export const raceQuestionWindow = 12000;
+// Two kinds of race on the same tracks: 'quiz' answers questions, 'symbols' taps the matching symbol on a grid
+// that reshuffles every time. A symbol takes about a second, so its numbers are smaller and its streaks longer.
+export const raceStyles = Object.freeze(['quiz', 'symbols']);
+export const symbolRace = Object.freeze({ window: 4000, wait: 180, turboStreak: 10, fireStreak: 15,
+  correct: Object.freeze({ fast: .95, slow: .45, fastWithin: .7, slowAfter: 2.5, duration: 1700 }),
+  wrong: Object.freeze({ amount: -.5, duration: 1300 }), timeout: Object.freeze({ amount: -.35, duration: 1200 }) });
+const streaksFor = race => race.style === 'symbols' ? symbolRace : racePowers;
+
+/** One grid for the symbol race: a target and a shuffled set of different symbols, one of which is the target. */
+export function symbolRound(size, previous) {
+  const pool = [...raceSymbols.map(symbol => symbol.id)];
+  for (let i = pool.length - 1; i > 0; i--) { const j = randomInt(i + 1); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  const tiles = pool.slice(0, size);
+  // Never the same target twice running, so a tap is always a fresh search.
+  let correct = randomInt(size);
+  if (tiles[correct] === previous) correct = (correct + 1) % size;
+  const names = tiles.map(id => raceSymbols.find(symbol => symbol.id === id).name);
+  return { type: 'choice', category: 'Symbols', prompt: 'Tap the ' + names[correct], options: names, correct, tiles, target: tiles[correct] };
+}
 export const raceColors = ['#1dd9be', '#ffbd43', '#ff6b71', '#8954ff', '#65aaff', '#f998d2', '#bbef7d', '#ff9a4d', '#6fd3eb', '#f1a9ff', '#d4e87a', '#efb18c'];
 const wait = 700;
 // Power-ups, per racer, per race.
@@ -131,14 +152,16 @@ export function raceMovement(racer, fromMs, toMs) {
   return Math.max(0, distance);
 }
 
-export function createQuizRace(entries, questionPool, { length = 'medium', track = 'neon', difficulty = 'mixed', scale = 1 } = {}, now = 0) {
+export function createQuizRace(entries, questionPool, { length = 'medium', track = 'neon', difficulty = 'mixed', scale = 1, style = 'quiz' } = {}, now = 0) {
+  if (!raceStyles.includes(style)) throw new Error('Invalid race setup');
   if (!raceLengths[length] || !raceTracks.includes(track) || !raceDifficulties.includes(difficulty)) throw new Error('Invalid race setup');
   if (entries.length < 2 || entries.length > 12) throw new Error('Quiz Race needs 2 to 12 racers');
-  if (!Array.isArray(questionPool) || !questionPool.length || questionPool.some(q => q.type !== 'choice' || !Array.isArray(q.options) || !Number.isInteger(q.correct))) {
+  if (style === 'symbols') questionPool = [];
+  else if (!Array.isArray(questionPool) || !questionPool.length || questionPool.some(q => q.type !== 'choice' || !Array.isArray(q.options) || !Number.isInteger(q.correct))) {
     throw new Error('A valid multiple-choice question pool is required');
   }
   return {
-    lastWall: now, time: 0, length: raceLengths[length] * (scale > 0 ? scale : 1), course: length, track, difficulty, paused: false,
+    lastWall: now, time: 0, length: raceLengths[length] * (scale > 0 ? scale : 1), course: length, track, difficulty, style, paused: false,
     finished: false, firstFinish: undefined, graceEnd: undefined,
     pool: questionPool, issued: new Set(), results: [],
     racers: new Map(entries.map(([key, player], i) => [key, {
@@ -153,10 +176,12 @@ export function createQuizRace(entries, questionPool, { length = 'medium', track
 
 function issueQuestion(race, racer, at) {
   if (race.finished || racer.finishedAt !== undefined || racer.question || racer.nextAt > at || at < 3000) return false;
-  const item = race.pool[(racer.questionIndex + racer.marker - 1) % race.pool.length];
-  race.issued.add(item.prompt);
+  const symbols = race.style === 'symbols';
+  const item = symbols ? symbolRound(symbolGridSize(race.difficulty, racer.distance / race.length), racer.lastTarget)
+    : race.pool[(racer.questionIndex + racer.marker - 1) % race.pool.length];
+  if (symbols) racer.lastTarget = item.target; else race.issued.add(item.prompt);
   racer.questionIndex++;
-  racer.question = { id: racer.questionIndex, item, started: at, deadline: at + raceQuestionWindow };
+  racer.question = { id: racer.questionIndex, item, started: at, deadline: at + (symbols ? symbolRace.window : raceQuestionWindow) };
   return true;
 }
 
@@ -169,15 +194,19 @@ export function submitRaceAnswer(race, key, { questionId, option, pass = false }
   }
   const outcome = pass ? 'pass' : option === racer.question.item.correct ? 'correct' : 'wrong';
   const seconds = Math.max(0, at - racer.question.started) / 1000;
-  const effect = boostEffect(outcome, seconds);
+  const symbols = race.style === 'symbols';
+  if (symbols && pass) return { status: 400, error: 'Tap a symbol.' };
+  const effect = symbols ? symbolEffect(outcome, seconds) : boostEffect(outcome, seconds);
   const sprint = outcome === 'correct' && racer.distance >= race.length * racePowers.sprintFrom;
   if (sprint) effect.amount *= racePowers.sprintBonus;
   // An armed boost pays out on this answer only: double speed if it is right, nothing if not.
   const boosted = racer.armed && outcome === 'correct';
   if (racer.armed) { racer.armed = false; racer.power = { kind: boosted ? 'boost' : 'fizzle', at }; }
   if (boosted) effect.amount *= racePowers.boostMultiplier;
+  // In the symbol race one tap is over in a moment, so an armed boost also lasts twice as long.
+  if (boosted && symbols) effect.duration *= 2;
   racer.streak = outcome === 'correct' ? racer.streak + 1 : 0;
-  if (racer.streak && racer.streak % racePowers.turboStreak === 0 && racer.boosts < racePowers.maxBoosts) {
+  if (racer.streak && racer.streak % streaksFor(race).turboStreak === 0 && racer.boosts < racePowers.maxBoosts) {
     racer.boosts++;
     racer.turbos++;
     racer.turboAt = at;
@@ -187,18 +216,30 @@ export function submitRaceAnswer(race, key, { questionId, option, pass = false }
   racer[outcome === 'correct' ? 'correct' : outcome === 'wrong' ? 'wrong' : 'passed']++;
   racer.feedback = { outcome, at, answer: racer.question.item.options[racer.question.item.correct] };
   racer.question = null;
-  racer.nextAt = at + wait;
+  racer.nextAt = at + (symbols ? symbolRace.wait : wait);
   return { status: 204, outcome, amount: effect.amount };
 }
 
+/** Speed from one tap in the symbol race: quicker is better, a wrong square brakes. */
+export function symbolEffect(outcome, seconds = 4) {
+  const { correct, wrong, timeout } = symbolRace;
+  if (outcome === 'correct') {
+    const quick = 1 - between((seconds - correct.fastWithin) / (correct.slowAfter - correct.fastWithin), 0, 1);
+    return { amount: correct.slow + (correct.fast - correct.slow) * quick, duration: correct.duration };
+  }
+  if (outcome === 'wrong') return { ...wrong };
+  if (outcome === 'timeout') return { ...timeout };
+  throw new Error('Unknown answer outcome');
+}
+
 function timeoutQuestion(race, racer, at) {
-  racer.effect = { ...boostEffect('timeout'), start: at };
+  racer.effect = { ...(race.style === 'symbols' ? symbolEffect('timeout') : boostEffect('timeout')), start: at };
   racer.streak = 0;
   if (racer.armed) { racer.armed = false; racer.power = { kind: 'fizzle', at }; }
   racer.timeouts++;
   racer.feedback = { outcome: 'timeout', at, answer: racer.question.item.options[racer.question.item.correct] };
   racer.question = null;
-  racer.nextAt = at + wait;
+  racer.nextAt = at + (race.style === 'symbols' ? symbolRace.wait : wait);
 }
 
 export function advanceQuizRace(race, wall = race.lastWall) {
@@ -265,7 +306,7 @@ export function publicRaceState(race, key, isHost) {
   const sorted = racePlacings(race);
   const own = race.racers.get(key);
   return {
-    time: race.time, length: race.length, course: race.course, track: race.track, difficulty: race.difficulty,
+    time: race.time, length: race.length, course: race.course, track: race.track, difficulty: race.difficulty, style: race.style,
     countdown: Math.max(0, 3000 - race.time), paused: race.paused, finished: race.finished,
     // The leader is into the last stretch: right answers are worth more for anyone in it.
     finalSprint: !race.finished && sorted[0]?.distance >= race.length * racePowers.sprintFrom,
@@ -277,17 +318,19 @@ export function publicRaceState(race, key, isHost) {
       shield: r.shieldUntil > race.time || undefined, slip: (r.slip && r.finishedAt === undefined) || undefined,
       turbo: (r.turboAt !== undefined && race.time < r.turboAt + 2500) || undefined,
       // On fire: five or more right in a row. Public, like the flames on the TV.
-      fire: (r.streak >= racePowers.fireStreak && r.finishedAt === undefined) || undefined,
+      fire: (r.streak >= streaksFor(race).fireStreak && r.finishedAt === undefined) || undefined,
       armed: (r.armed && r.finishedAt === undefined) || undefined,
       connected: true,
     })),
     own: own && !isHost ? {
-      question: own.question ? { id: own.question.id, historyId:questionHistoryId(own.question.item.prompt), prompt: own.question.item.prompt, options: own.question.item.options, category: own.question.item.category, deadline: own.question.deadline } : undefined,
+      question: own.question ? { id: own.question.id, historyId:questionHistoryId(own.question.item.prompt), prompt: own.question.item.prompt, options: own.question.item.options, category: own.question.item.category, deadline: own.question.deadline,
+        // The symbol race: which symbol to find and the grid to find it on. Which square is right is never sent.
+        symbols: own.question.item.tiles ? { target: own.question.item.target, tiles: own.question.item.tiles } : undefined } : undefined,
       feedback: own.feedback && race.time < own.feedback.at + 1400 ? { ...own.feedback } : undefined,
       correct: own.correct, wrong: own.wrong, passed: own.passed, timeouts: own.timeouts,
       boosts: own.boosts, rams: own.rams, shields: own.shields, shieldLeft: Math.max(0, own.shieldUntil - race.time),
       armed: own.armed, missed: own.power?.kind === 'miss' && race.time < own.power.at + 2500,
-      fizzled: own.power?.kind === 'fizzle' && race.time < own.power.at + 2500, onFire: own.streak >= racePowers.fireStreak,
+      fizzled: own.power?.kind === 'fizzle' && race.time < own.power.at + 2500, onFire: own.streak >= streaksFor(race).fireStreak, turboStreak: streaksFor(race).turboStreak,
       streak: own.streak, turboEarned: own.turboAt !== undefined && race.time < own.turboAt + 3000,
       blocked: own.power?.kind === 'blocked' && race.time < own.power.at + 2500 ? own.power.by : undefined,
       sprint: own.finishedAt === undefined && own.distance >= race.length * racePowers.sprintFrom,

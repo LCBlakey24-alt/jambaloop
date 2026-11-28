@@ -19,6 +19,9 @@ on:
       - 'scripts/top-answers-browser.mjs'
       - 'scripts/rare-find-browser.mjs'
       - 'scripts/debate-browser.mjs'
+      - 'scripts/more-less-browser.mjs'
+      - 'more-less*.js'
+      - 'public/more-less*'
       - 'debate.js'
       - 'rare-panel-data.json'
       - 'scripts/game-night-browser.mjs'
@@ -131,6 +134,7 @@ jobs:
           node scripts/top-answers-browser.mjs
           node scripts/rare-find-browser.mjs
           node scripts/debate-browser.mjs
+          node scripts/more-less-browser.mjs
           node scripts/game-night-browser.mjs
           node scripts/player-live-browser.mjs
           node scripts/quiz-race-error-browser.mjs

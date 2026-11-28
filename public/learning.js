@@ -1,4 +1,4 @@
-import { modes } from './game-config.js';
+import { fixedQuestionModes, formatTypes, isEstimateShow, modes } from './game-config.js';
 import { answerGuide, helpTypes, specialAnswer } from './answer-controls.js';
 
 const summaries = {
@@ -40,9 +40,42 @@ export const samples = {
   order: { type: 'order', prompt: 'Put these numbers in order, smallest first.', options: ['Eight', 'Two', 'Five'], correct: [1, 2, 0] },
 };
 
+/**
+ * The answer types a room's questions really use, so practice never shows one the game will not ask.
+ * Party games and Symbol Dash ask none. So Close and Way Off have their own number wheel, so their
+ * practice would not match the game and is not offered.
+ */
+export function roomAnswerTypes(room) {
+  const { mode } = room;
+  if (mode === 'quizrace') return room.raceStyle === 'symbols' ? [] : ['choice'];
+  if (isEstimateShow(mode) || !(fixedQuestionModes.includes(mode) || ['wheel', 'board'].includes(mode))) return [];
+  let types = room.quizTypes ?? formatTypes(room.format);
+  // Knockout asks multiple choice or true or false (multiple choice if neither is picked), then a closest-number decider.
+  if (mode === 'knockout') {
+    const asked = room.quizTypes ?? types.filter(type => type === 'choice' || type === 'boolean');
+    types = [...(asked.length ? asked : ['choice']), 'estimate'];
+  }
+  return helpTypes.filter(type => types.includes(type));
+}
+
+/**
+ * The practice that fits a room's game: a short walk-through of the game itself (`demo`), or a sample
+ * question in each answer type the room asks (`types`). Games with neither have no practice (undefined).
+ * Outside a room, such as the home page's How to play, every answer type can be tried.
+ */
+export function practicePlan(room) {
+  if (!room?.mode) return { demo: false, types: [...helpTypes] };
+  const types = roomAnswerTypes(room);
+  if (hasDemo(room.mode)) return { demo: true, types };
+  return types.length ? { demo: false, types } : undefined;
+}
+
 export function practiceView(practice, escape) {
   const { sample, draft } = practice;
-  const types = helpTypes.map(id => `<button class="button outline small" data-action="practice-type" data-type="${id}" aria-pressed="${sample.type === id}">${answerGuide(id)[0]}</button>`).join('');
+  const offered = practice.types?.length ? practice.types : [sample.type];
+  // One answer type needs no switcher: its name is enough.
+  const types = offered.length > 1 ? offered.map(id => `<button class="button outline small" data-action="practice-type" data-type="${id}" aria-pressed="${sample.type === id}">${answerGuide(id)[0]}</button>`).join('')
+    : `<strong class="practice-type-name">${answerGuide(sample.type)[0]}</strong>`;
   const editor = sample.type === 'choice' || sample.type === 'boolean'
     ? `<div class="practice-choices">${sample.options.map((option, index) => `<button type="button" class="button outline" data-action="practice-choice" data-option="${index}">${option}</button>`).join('')}</div>`
     : specialAnswer(sample, { draft }, escape);
@@ -78,10 +111,6 @@ const demonstrations = {
     ['Play a phrase', 'The talent show ended with ____. Choose a card from this practice hand.', ['A tap-dancing cactus', 'A parade of shopping trolleys', 'An invisible sandwich']],
     ['Vote for a favourite', 'In the real game you pick one of the other entries. This is a sample ballot.', ['A tiny disco ball', 'A very polite ghost']],
     ['Vote locked in', 'Each vote earns the player who submitted that entry 100 points.', []],
-  ],
-  tracks: [
-    ['Choose a track', 'What should the town’s new festival be?', ['A parade with floats made of cake', 'A silent disco in the supermarket']],
-    ['Vote locked in', 'The TV reveals how many people chose each track after voting ends.', []],
   ],
   rare: [
     ['Find a rare valid answer', 'Name one of the eight planets in our Solar System. In the real game you type any correct answer. Try one of these samples.', ['Mercury','Venus','Earth','Neptune']],

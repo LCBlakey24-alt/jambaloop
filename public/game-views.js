@@ -1,7 +1,8 @@
 import { boardRoute, boardPath, boardPathChoices, boardFinish, boardFork, boardMappedPosition, boardDuration, durationLabel, boardPowers } from './board-route.js';
 import { avatarView, wallColumns } from './party-views.js';
 import { categories, categoryName, modes, partyModes, minimumPlayers, wheelCategories, capacityError } from './game-config.js';
-import {requiredPlayers} from './team-play.js';
+import {requiredPlayers, teamPlayModes} from './team-play.js';
+import { practicePlan } from './learning.js';
 import { launcherSteps } from './home-launcher.js';
 import { asksFacts, factsCheckedLabel } from './content-date.js';
 import { showMark } from './show-identity.js';
@@ -129,6 +130,42 @@ export function diceView(state) {
   </div>`;
 }
 
+const counted = (count, one, many = one + 's') => `${count} ${count === 1 ? one : many}`;
+
+/** What kind of thing the Start and Continue buttons start: a race, a party game or a quiz. */
+const gameNoun = mode => ['board', 'quizrace'].includes(mode) ? 'race' : partyModes.includes(mode) ? 'game' : 'quiz';
+
+/** One short line on how a party game runs. Voting is mentioned only where players really vote. */
+function partySummary(state) {
+  const rounds = counted(state.total, 'round');
+  switch (state.mode) {
+    case 'rare': return `${counted(state.total, 'unusual answer round')} · 3+ players · host validates unrecognised answers`;
+    case 'topanswers': return `${counted(state.total, 'live room poll')} · choose then predict · 3+ players`;
+    case 'brain': return `${counted(state.total, 'logic level')} · two lives each · points increase as you climb`;
+    case 'potato': return 'One shared 2-minute countdown';
+    case 'bluff': return `${rounds} · one secret bluff a round · private voting`;
+    case 'punchline': case 'cards': return `${rounds} · private voting`;
+    case 'spotlight': return state.playerCount ? `${counted(state.playerCount * state.total, 'contestant round')} · ${counted(state.total, 'turn')} each` : `${counted(state.total, 'turn')} each as contestant`;
+    case 'tracks': return `${state.playerCount ? counted(state.playerCount, 'round') : 'One round per player'} · rotating Trolley Driver`;
+    case 'samepage': return `${rounds} · score by matching answers`;
+    case 'sketch': return `${rounds} · one artist draws, everyone else guesses`;
+    case 'bloodmoon': return 'Secret roles · vampires bite by night, the village votes by day';
+    case 'catchup': return 'One side sets a target against the clock, the other chases it, then they swap';
+    case 'shade': return 'One clue-giver a round, up to 8 rounds · three one-word clues a round';
+    case 'dontlook': return 'Three rounds: speaking only, actions only, then anything goes';
+    default: return rounds;
+  }
+}
+
+/** How players are grouped. Said only where a game has teams or sides, or a team option this room left off. */
+function groupingLine(state) {
+  if (state.playStyle === 'teams') return `${state.teamCount} balanced teams · players automatically allocated`;
+  if (state.mode === 'board') return 'Individual racers · up to 8 pieces';
+  if (state.mode === 'dontlook') return 'Two teams with 4 or more players · 2 or 3 play as one group';
+  if (state.mode === 'catchup') return 'Two sides · players split automatically';
+  return teamPlayModes.includes(state.mode) ? 'Everyone plays individually' : '';
+}
+
 export function lobbyView(state, { host, escape, icons, modeName }) {
   const canControl = host || state.isCaptain;
   const config = `<button class="button outline" data-action="configure">${icons('settings')} Choose game</button>`
@@ -146,23 +183,25 @@ export function lobbyView(state, { host, escape, icons, modeName }) {
     <button type="button" class="button outline" data-action="lobby-mode" data-mode="${neighbour(-1)}" aria-label="Previous game: ${escape(modeName(neighbour(-1)))}"><span aria-hidden="true">‹</span> ${escape(modeName(neighbour(-1)))}</button>
     <button type="button" class="button outline" data-action="lobby-mode" data-mode="${neighbour(1)}" aria-label="Next game: ${escape(modeName(neighbour(1)))}">${escape(modeName(neighbour(1)))} <span aria-hidden="true">›</span></button></div>` : '';
   const minimum = requiredPlayers(state.mode,state.playStyle,state.teamCount,minimumPlayers(state.mode));
-  const start = `<button class="button primary" data-action="advance" ${state.connected < minimum ? 'disabled' : ''}>Start ${state.mode === 'board' ? 'race' : partyModes.includes(state.mode) ? 'game' : 'quiz'} ${icons('play')}</button>`;
-  const practice = `<button class="button outline" data-action="practice">${partyModes.includes(state.mode) || ['board', 'wheel', 'dice'].includes(state.mode) ? 'Try a practice round' : 'Practice answers'}</button>`;
+  const start = `<button class="button primary" data-action="advance" ${state.connected < minimum ? 'disabled' : ''}>Start ${gameNoun(state.mode)} ${icons('play')}</button>`;
+  // Practice only where it fits the game: its own walk-through, or the answer types this room asks.
+  const plan = practicePlan(state);
+  const practice = plan ? `<button class="button outline" data-action="practice">${plan.demo ? 'Try a practice round' : 'Practice answers'}</button>` : '';
   const captain = state.captainName ? `<p class="lobby-rule">Captain <strong>${escape(state.captainName)}</strong></p>` : '<p class="lobby-rule">The first player to join becomes captain.</p>';
   const game = escape(state.quizTitle || modeName(state.mode));
   const party = partyModes.includes(state.mode);
   const screens = state.phoneView === 'answers' ? 'Answer controls only' : 'Question and answers';
   const race = state.mode === 'quizrace';
   const boardPlan = state.mode === 'board' ? boardDuration({ spaces: state.boardLength, pieces: state.teamCount, players: state.playerCount || state.teamCount, cap: state.total, seconds: state.seconds, autoReveal: state.autoReveal }) : undefined;
-  const summary = `<div class="lobby-game"><span class="lobby-tile" aria-hidden="true">${showMark(state.mode)}</span><div class="lobby-game-copy"><strong>${game}</strong>${state.afterDark ? '<small class="lobby-after-dark">After Hours · adults only (18+)</small>' : ''}${race ? `<small>${state.raceStyle === 'symbols' ? 'Symbol Dash · ' : ''}2–12 racers · ${state.raceLeague ? 'league of 3 races: short, medium and long' : escape(state.raceLength) + ' race'} · ${escape(state.raceTrack)} track</small><small>${escape(state.raceDifficulty)} difficulty · ${state.raceStyle === 'symbols' ? 'tap the matching symbol' : '12 seconds per question'} · ${state.raceLeague ? 'most league points wins' : 'first to finish wins'}</small>` : party ? `<small>${state.mode === 'rare' ? (state.total + ' unusual answer rounds · 3+ players · host validates unrecognised answers') : state.mode === 'topanswers' ? (state.total + ' live room polls · choose then predict · 3+ players') : state.mode === 'brain' ? (state.total + ' logic levels · two lives each · points increase as you climb') : state.mode === 'potato' ? 'One shared 2-minute countdown' : state.mode === 'bluff' ? 'One secret bluff · private voting' : (state.mode === 'spotlight' ? ((state.playerCount * state.total) + ' contestant rounds · ' + state.total + ' ' + (state.total === 1 ? 'turn' : 'turns') + ' each') : state.mode === 'tracks' ? (state.playerCount + ' rounds · rotating Trolley Driver') : (state.total + ' rounds · private voting'))}</small>` : `<small>${state.total} ${state.mode === 'board' ? 'max turns' : state.total === 1 ? 'question' : 'questions'} · ${state.seconds ? state.seconds + 's each' : 'No timer'}</small><small>${state.privateQuestions ? 'Different questions on each phone' : 'Phones · ' + screens}</small>`}
+  const summary = `<div class="lobby-game"><span class="lobby-tile" aria-hidden="true">${showMark(state.mode)}</span><div class="lobby-game-copy"><strong>${game}</strong>${state.afterDark ? '<small class="lobby-after-dark">After Hours · adults only (18+)</small>' : ''}${race ? `<small>${state.raceStyle === 'symbols' ? 'Symbol Dash · ' : ''}2–12 racers · ${state.raceLeague ? 'league of 3 races: short, medium and long' : escape(state.raceLength) + ' race'} · ${escape(state.raceTrack)} track</small><small>${escape(state.raceDifficulty)} difficulty · ${state.raceStyle === 'symbols' ? 'tap the matching symbol' : '12 seconds per question'} · ${state.raceLeague ? 'most league points wins' : 'first to finish wins'}</small>` : party ? `<small>${partySummary(state)}</small>` : `<small>${state.mode === 'wayoff' ? 'Furthest guesses go out each round · last one standing' : `${state.total} ${state.mode === 'board' ? 'max turns' : state.total === 1 ? 'question' : 'questions'}`} · ${state.seconds ? state.seconds + 's each' : 'No timer'}</small><small>${state.privateQuestions ? 'Different questions on each phone' : 'Phones · ' + screens}</small>`}
     ${!race && !party && state.scoreInterval !== undefined ? `<small>${state.scoreInterval === 0 ? 'Leaderboard at the end' : state.scoreInterval === 1 ? 'Leaderboard after every question' : `Leaderboard every ${state.scoreInterval} ${state.mode === 'board' ? 'turns' : 'questions'}`}</small>` : ''}
     ${state.difficulty === 'family' ? '<small>Family mix · ages 8+</small>' : state.difficulty === 'challenge' ? '<small>Challenge mix</small>' : ''}
-    ${asksFacts(state.mode) && !state.quizTitle ? `<small class="facts-checked">${factsCheckedLabel()}</small>` : ''}
+    ${asksFacts(state.mode, state.raceStyle) && !state.quizTitle ? `<small class="facts-checked">${factsCheckedLabel()}</small>` : ''}
     ${!race && state.scoring ? `<small>${state.scoring.base} base pts${state.scoring.bonus ? ' · Up to +' + state.scoring.bonus + ' for speed' : ''}
       ${state.scoring.doubles === 'final' ? ' · Double scheduled finale' : state.scoring.doubles === 'third' ? ' · Double every third question' : ''}</small>` : ''}
     ${boardPlan && state.boardSpeed ? `<small>Up to +${state.boardSpeed}% for speed · Difficulty follows the die</small>` : ''}
     ${boardPlan ? `<small>${state.boardLength} spaces · ${boardPlan.teams} ${boardPlan.teams === 1 ? 'piece' : 'pieces'} · About ${durationLabel(boardPlan)}${state.playerCount ? '' : ' with ' + state.teamCount + ' players'}</small>` : ''}
-    ${state.connected < minimum && party ? `<small>Needs at least ${minimum} players</small>` : ''}${capacityError(state.mode, state.playStyle, state.playerCount ?? 0) ? `<small class="lobby-capacity" role="status">${escape(capacityError(state.mode, state.playStyle, state.playerCount))}</small>` : ''}${state.playStyle === 'teams' ? `<small>${state.teamCount} balanced teams · players automatically allocated</small>` : state.mode === 'board' ? '<small>Individual racers · up to 4 pieces</small>' : '<small>Everyone plays individually</small>'}</div></div>`;
+    ${state.connected < minimum && party ? `<small>Needs at least ${minimum} players</small>` : ''}${capacityError(state.mode, state.playStyle, state.playerCount ?? 0) ? `<small class="lobby-capacity" role="status">${escape(capacityError(state.mode, state.playStyle, state.playerCount))}</small>` : ''}${groupingLine(state) ? `<small>${groupingLine(state)}</small>` : ''}</div></div>`;
 
   const teamPreview = state.teamPreview?.length ? `<div class="lobby-team-preview" aria-label="Automatic team allocation">
     ${state.teamPreview.map(t => `<div class="lobby-team" style="--team:${t.color}">
@@ -192,7 +231,7 @@ export function lobbyView(state, { host, escape, icons, modeName }) {
     // The game's name is in the bar at the top; here only what players need to know about this room.
     const notes = [state.afterDark ? '<span class="lobby-after-dark">After Hours · adults only (18+)</span>' : '',
       state.connected < minimum ? `<span>Needs at least ${minimum} players</span>` : '',
-      asksFacts(state.mode) && !state.quizTitle ? `<span class="facts-checked">${factsCheckedLabel()}</span>` : ''].filter(Boolean);
+      asksFacts(state.mode, state.raceStyle) && !state.quizTitle ? `<span class="facts-checked">${factsCheckedLabel()}</span>` : ''].filter(Boolean);
     const phoneGame = notes.length ? `<p class="phone-lobby-notes">${notes.join('')}</p>` : '';
     const phoneConfig = state.quizTitle ? config : `<button class="button outline" data-action="picker-open">${icons('layout-grid')} Change game</button>
       <button class="button outline" data-action="configure">${icons('settings')} Settings</button>`;

@@ -49,8 +49,9 @@ test('the phone lobby is one simple screen: ready, how to play, and the captain\
   assert.doesNotMatch(saved, /data-action="picker-open"/);
   // After Hours is still announced in the phone lobby.
   assert.match(lobby({ mode: 'bluff', afterDark: true }), /After Hours · adults only \(18\+\)/);
-  // The TV lobby keeps practice and the switcher.
-  const tv = lobby({ joinUrl: 'https://example.test/?join=123456' }, { host: true });
+  // The TV lobby keeps practice and the switcher. Practice is checked on a quiz now: Bloodmoon has no
+  // practice round at all, since nothing in the quiz practice fits it (test/lobby-copy-practice.test.js).
+  const tv = lobby({ mode: 'classic', format: 'choice', joinUrl: 'https://example.test/?join=123456' }, { host: true });
   assert.match(tv, /data-action="practice"/);
   assert.match(tv, /data-action="lobby-mode"/);
 });

@@ -117,3 +117,17 @@ Before a new **home-page game tile** is approved, its design document must answe
 
 ## Planning status
 **Twelve additional proposals recorded:** the original six priority independent candidates and four backlog candidates, plus Secret Suspects and Bloodmoon Council (both planning-only). Doodle Detectives remains a potential drawing-game sub-mode. None of the proposals listed in this roadmap is implied to be coded, published or live.
+
+## Creator update · 28 November 2026
+
+**Floor Time** has a playable development build. Two speakers argue opposing sides of an original prompt, with up to 60 seconds each. Everyone else casts one private ballot. The winner earns the vote margin and a tie earns zero. Each person speaks twice, opening once and closing once. Playtest how long a full rotation feels at four, eight and twelve people.
+
+**Courtroom** is a planned role-playing game. The existing Case Closed entry covers cooperative investigation. For the courtroom prototype, give two advocates the same fictional case file, then let a jury weigh their arguments against the evidence. Cases, roles, verdict scoring and the working title still need a design pass.
+
+**Bank** is the creator’s higher-or-lower game. This specification updates the earlier design in [issue 46](https://github.com/LCBlakey24-alt/jambaloop/issues/46) and [draft PR 47](https://github.com/LCBlakey24-alt/jambaloop/pull/47).
+
+- Choose a target of **20, 30 or 40**. Ace is 1 and King is 13. The starter earns no points. Keep it or replace it once, then play the replacement.
+- Each correct higher/lower prediction earns **one unbanked point**. After the first correct guess, bank the whole run and pass, or keep going. Return the cards and reshuffle for the next turn.
+- A wrong prediction or an equal rank ends the turn, loses the run and preserves the bank. A Joker wipes both the run and the bank. A first-card Joker can be replaced before the penalty. Keeping it or drawing another Joker on the replacement wipes the bank.
+- At **bank + run = target − 5**, this is the final banking opportunity. At 15 against 20, bank or push. From 16 through 19 banking is locked. Reach 20 combined to win immediately. The corresponding last-bank totals are 25 and 35.
+- The TV shows the current card, bank and run. Only the active phone can replace, choose higher/lower or bank. The future draw stays on the server. Confirm the Joker count in a physical-deck playtest before tuning the odds.

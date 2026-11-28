@@ -155,7 +155,6 @@ html.mobile-deck .game[data-mode="quizrace"] {margin:6px auto 24px}
 }
 
 /* Symbol Dash (28 November 2026): the driver's-eye window, the target and the reshuffling grid. */
-.race-cockpit{display:block;width:100%;aspect-ratio:2/1;border-radius:14px;border:2px solid #405077;background:#101626;margin:0 0 12px}
 .race-symbol{display:block;width:100%;height:100%}
 .race-symbol-target{display:flex;align-items:center;justify-content:center;gap:12px;min-height:64px;padding:8px 14px;border-radius:14px;background:#1b2741;border:2px solid #ffd34d;font-weight:900}
 .race-symbol-target span{letter-spacing:.14em;font-size:14px;color:#ffe9a8}
@@ -168,19 +167,23 @@ html.mobile-deck .game[data-mode="quizrace"] {margin:6px auto 24px}
 .race-symbol-tile.race-answer{aspect-ratio:1;min-height:0;padding:14%;display:block;border-radius:16px;touch-action:manipulation}
 .race-symbol-tile.race-answer:active{transform:scale(.94);background:#3d4f78}
 .race-phone.is-symbols .race-phone-foot{margin-top:10px;padding:10px 14px}
-@media (max-height:700px){.race-cockpit{aspect-ratio:3/1}.race-symbol-grid{gap:7px;margin:8px 0}.race-symbol-target{min-height:50px}.race-symbol-target .race-symbol{width:40px;height:40px}}
-/* Keep the whole phone screen in view: the grid is sized from the screen height, and the bars the cockpit replaces are hidden. */
-.race-phone.is-symbols .race-phone-progress,.race-phone.is-symbols .race-phone-foot{display:none}
-.race-phone.is-symbols .race-cockpit{margin-top:10px}
-.race-symbol-grid{max-width:36dvh;margin-inline:auto}
-.race-symbol-grid[data-size="6"]{max-width:40dvh}
-.race-symbol-grid[data-size="12"]{max-width:48dvh}
-.race-symbol-grid.is-empty{min-height:36dvh}
+@media (max-height:700px){.race-symbol-grid{gap:7px;margin:8px 0}.race-symbol-target{min-height:50px}.race-symbol-target .race-symbol{width:40px;height:40px}}
+/* Keep the whole phone screen in view: the grid is sized from the screen height, and the speed panel steps aside for it. */
+.race-phone.is-symbols .race-phone-foot{display:none}
+.race-symbol-grid{max-width:46dvh;margin-inline:auto}
+.race-symbol-grid[data-size="6"]{max-width:50dvh}
+.race-symbol-grid[data-size="12"]{max-width:60dvh}
+.race-symbol-grid.is-empty{min-height:46dvh}
 .race-symbol-tile.race-answer:disabled{opacity:1}
 
-/* The phone's driver's-eye window holds the real 3D scene; the drawn canvas underneath is the fallback. */
-.race-chase{position:relative;aspect-ratio:2/1;border-radius:14px;border:2px solid #405077;background:#101626;overflow:hidden;margin:10px 0 12px}
-.race-chase .race-cockpit{position:absolute;inset:0;width:100%;height:100%;aspect-ratio:auto;border:0;border-radius:0;margin:0}
-.race-chase>.race-3d-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:1}
-.race-chase[data-race3d="ready"] .race-cockpit{visibility:hidden}
-@media (max-height:700px){.race-chase{aspect-ratio:3/1}}
+/* The action replay on the TV (28 November 2026): a broadcast-style replay strip above the track. */
+.race-replay-bar{display:flex;align-items:center;gap:14px;margin:0 0 10px}
+.race-replay-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:8px;background:#e0364f;color:#fff;font-weight:900;letter-spacing:.14em;font-size:clamp(13px,1.6vw,20px)}
+.race-replay-badge i{width:.7em;height:.7em;border-radius:50%;background:#fff}
+.race-replay-slow{padding:6px 12px;border-radius:8px;background:#ffd34d;color:#1b2030;font-weight:900;letter-spacing:.12em;font-size:clamp(12px,1.4vw,18px)}
+.race-replay-progress{flex:1;height:8px;border-radius:99px;background:#ffffff22;overflow:hidden}
+.race-replay-progress b{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#e0364f,#ffd34d)}
+.race-replay-panel .race-track-wrap{box-shadow:inset 0 0 0 3px #e0364f66}
+@media (prefers-reduced-motion:no-preference){.race-replay-badge i{animation:race-replay-blink 1s steps(2,start) infinite}}
+@keyframes race-replay-blink{to{visibility:hidden}}
+.race-replay-phone h1{font-size:clamp(28px,8vw,40px)}

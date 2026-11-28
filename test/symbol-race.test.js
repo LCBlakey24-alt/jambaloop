@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { advanceQuizRace, createQuizRace, publicRaceState, raceStyles, submitRaceAnswer, symbolEffect, symbolRace, symbolRound, useRacePower } from '../quiz-race.js';
-import { raceSymbols, symbolGridSize, symbolMarkup } from '../public/race-symbols.js';
+import { advanceQuizRace, createQuizRace, publicRaceState, raceStyles, submitRaceAnswer, symbolEffect, symbolKinds, symbolRace, symbolRound, useRacePower } from '../quiz-race.js';
+import { raceSymbols, symbolGridSize, symbolMarkup, tileMarkup, tileName } from '../public/race-symbols.js';
 import { quizRaceView } from '../public/quiz-race-view.js';
 
 const players = ['a', 'b', 'c'].map((key, i) => [key, { id: key.toUpperCase(), name: ['Ada', 'Bo', 'Cy'][i] }]);
@@ -24,16 +24,33 @@ test('twelve symbols, each with its own shape and its own colour', () => {
   assert.deepEqual([0, .5, .9].map(progress => symbolGridSize('mixed', progress)), [6, 9, 12], 'mixed grows as the race goes on');
 });
 
-test('a grid has one right square among different symbols, and the target changes every time', () => {
+test('a grid has one right square among different tiles, the target changes every time, and grids come in four kinds', () => {
+  assert.deepEqual(symbolKinds, ['shapes', 'numbers', 'letters', 'mixed']);
   let previous;
-  for (let i = 0; i < 200; i++) {
-    const round = symbolRound(9, previous);
-    assert.equal(new Set(round.tiles).size, 9, 'no symbol appears twice');
+  const kinds = new Set();
+  for (let i = 0; i < 400; i++) {
+    const round = symbolRound(i % 2 ? 12 : 9, previous);
+    kinds.add(round.kind);
+    assert.equal(new Set(round.tiles).size, round.tiles.length, 'no tile appears twice');
     assert.equal(round.tiles[round.correct], round.target);
     assert.notEqual(round.target, previous, 'never the same target twice running');
     assert.equal(round.prompt, 'Tap the ' + round.options[round.correct]);
+    for (const tile of round.tiles) assert.match(tile, /^(shape:[a-z]+|num:([1-9]|[1-9][0-9])|let:[A-HJ-NP-Z])$/);
+    if (round.kind === 'shapes') assert.ok(round.tiles.every(tile => tile.startsWith('shape:')));
+    if (round.kind === 'numbers') assert.ok(round.tiles.every(tile => tile.startsWith('num:')));
+    if (round.kind === 'letters') assert.ok(round.tiles.every(tile => tile.startsWith('let:')));
+    if (round.kind === 'mixed') assert.equal(new Set(round.tiles.map(tile => tile.split(':')[0])).size, 3, 'a mixed grid has all three');
     previous = round.target;
   }
+  assert.equal(kinds.size, 4, 'every kind turns up at random');
+  // Letters that look like numbers (I and O) are left out, so a mixed grid is never ambiguous.
+  for (let i = 0; i < 100; i++) assert.ok(!symbolRound(12, undefined, 'letters').tiles.some(tile => /let:[IO]$/.test(tile)));
+  assert.equal(tileName('shape:star'), 'star');
+  assert.equal(tileName('num:42'), 'number 42');
+  assert.equal(tileName('let:K'), 'letter K');
+  assert.match(tileMarkup('num:42'), />42</);
+  assert.match(tileMarkup('let:K'), />K</);
+  assert.equal(tileMarkup('let:<b>'), tileMarkup('let:b').replace('>b<', '><'), 'only digits and capitals are ever drawn');
 });
 
 test('the symbol race needs no questions, deals a grid to every phone, and never sends which square is right', () => {
@@ -102,12 +119,12 @@ test('the phone shows the target, a grid of symbol buttons and the driver\'s-eye
   const state = { ...base, race: publicRaceState(race, 'a', false) };
   const html = quizRaceView(state, kit);
   assert.match(html, /SYMBOL DASH/);
-  assert.match(html, /data-race-cockpit/);
-  assert.match(html, /TAP THE/);
+    assert.match(html, /TAP THE/);
   assert.equal((html.match(/data-action="race-answer"/g) ?? []).length, 12);
   assert.match(html, /data-size="12"/);
   assert.doesNotMatch(html, /race-pass/);
-  for (const id of state.race.own.question.symbols.tiles) assert.ok(html.includes(`aria-label="${raceSymbols.find(symbol => symbol.id === id).name}"`), 'every square is named for a screen reader');
+  for (const id of state.race.own.question.symbols.tiles) assert.ok(html.includes(`aria-label="${tileName(id)}"`), 'every square is named for a screen reader');
+  assert.doesNotMatch(html, /data-race-cockpit|race-chase|race-3d/, 'no driver\'s-eye window on the phone: just the grid');
   const tv = quizRaceView({ ...base, race: publicRaceState(race, undefined, true) }, { ...kit, host: true, canControl: true });
   assert.match(tv, /SYMBOL DASH · TAP THE MATCHING SYMBOL/);
   assert.match(tv, /Tap the matching symbol on your phone/);
@@ -119,15 +136,3 @@ test('the phone shows the target, a grid of symbol buttons and the driver\'s-eye
   assert.doesNotMatch(quizHtml, /data-race-cockpit|race-symbol-grid/);
 });
 
-test('the phone window is the TV\'s own 3D scene with a chase camera, and the drawn view is only the fallback', async () => {
-  const { readFileSync } = await import('node:fs');
-  const read = path => readFileSync(new URL('../public/' + path, import.meta.url), 'utf8');
-  const app = read('app.js'), scene = read('race-3d.js'), css = read('quiz-race.css');
-  assert.match(scene, /export function mountRace3D\(\{ key, track = 'neon', course = 'medium', reducedMotion = false, chase, light = false \}\)/);
-  assert.match(scene, /if \(chase && chased\) \{/, 'one scene, two cameras');
-  assert.match(app, /const stage=host\?app\.querySelector\('\.race-track-wrap'\):app\.querySelector\('\[data-race-chase\]'\);/);
-  assert.match(app, /chase:host\?undefined:s\.player\?\.id,light:!host,/, 'the TV still frames the whole track');
-  assert.match(app, /if\(cockpit&&!race3d\?\.ready\)drawCockpit\(/, 'the drawn view only runs when 3D is not available');
-  assert.match(app, /race3dFailed!==raceKey/, 'a phone without 3D does not retry on every update');
-  assert.match(css, /\.race-chase\[data-race3d="ready"\] \.race-cockpit\{visibility:hidden\}/);
-});

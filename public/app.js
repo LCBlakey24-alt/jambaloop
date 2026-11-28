@@ -22,7 +22,7 @@ import { launcherTile, launcherPreview, launcherModes, launcherSetupArtwork, LAU
 import { carouselView, moveCarousel, themeHome, wrapIndex } from './game-carousel.js';
 import { playSting, stingFor } from './show-sting.js';
 import { canReadAloud, isWelcomeNarration, narrationPlaying, playScript, playWelcome, readAloud, stopNarration, stopReading, toggleNarration } from './narrator.js';
-import { drawCockpit } from './race-cockpit.js';
+import { replayTimeline, replayRacers } from './race-replay.js';
 import { bloodmoonCalls, boardCalls, momentCalls, catchupCalls, closeCalls, knockoutReactions, raceCalls, reactions, skipQuips, wayoffCalls, welcomeBack } from './duo-scripts.js';
 import { openWelcome } from './welcome-show.js';
 import { openGuide } from './guide-show.js';
@@ -90,6 +90,22 @@ let raceTrackView;
 let race3d;
 let race3dLoading;
 let race3dFailed;
+// The action replay on the TV: the recorded race (fetched once per race) and how its clock maps onto the race clock.
+let raceReplayData;
+let raceCameraShot = 'live';
+let raceReplayKey;
+let raceReplayLoading;
+const replayPlaying = s => Boolean(s?.mode === 'quizrace' && s.raceReplay?.playing && ['finished', 'race-standings'].includes(s.phase) && s.raceReplay.until > Date.now() + offset);
+function loadRaceReplay(s) {
+  const key = s.code + '/' + s.game + '/' + (s.race?.course ?? '') + '/' + (s.race?.track ?? '') + '/' + (s.league?.round ?? '');
+  if (raceReplayKey === key || raceReplayLoading === key) return;
+  raceReplayLoading = key;
+  api('/' + s.code + '/race-replay').then(data => {
+    if (raceReplayLoading !== key) return;
+    raceReplayData = { data, timeline: replayTimeline(data) };
+    raceReplayKey = key;
+  }).catch(() => { /* No recording: the TV shows the final positions instead. */ }).finally(() => { if (raceReplayLoading === key) raceReplayLoading = undefined; });
+}
 function disposeRace3d() { race3d?.dispose(); race3d = undefined; race3dLoading = undefined; }
 let raceAnimationFrame = 0;
 let raceSnapshotLocal = 0;
@@ -203,8 +219,35 @@ function renderGraphics(s, previous, animateRoll) {
 
 function updateQuizRaceVisuals() {
   raceAnimationFrame = 0;
-  if(!session || !state?.race || !['race-countdown','race','finished'].includes(state.phase)) return;
+  if(!session || !state?.race || !['race-countdown','race','finished','race-standings'].includes(state.phase)) return;
   const snapshot=state.race;
+  // Action replay on the TV: the recorded race plays back on the same track, sped up, with the finish in slow motion.
+  // The camera jumps (rather than glides) to the start of a replay, and back to the finish afterwards.
+  const cameraShot=session.host&&replayPlaying(state)?'replay'+state.raceReplay.id:'live';
+  if(cameraShot!==raceCameraShot){raceCameraShot=cameraShot;race3d?.snapCamera?.();}
+  if(session.host&&replayPlaying(state)){
+    const loaded=raceReplayData&&raceReplayKey?.startsWith(state.code+'/'+state.game+'/')?raceReplayData:undefined;
+    const play=Date.now()+offset-state.raceReplay.startedAt;
+    if(loaded){
+      const {at,slow}=loaded.timeline.at(play);
+      const racers=replayRacers(loaded.data,at);
+      const reducedReplay=matchMedia('(prefers-reduced-motion: reduce)').matches;
+      raceTrackView?.update(racers,loaded.data.length,0,reducedReplay,at);
+      const set=(selector,text)=>{const item=app.querySelector(selector);if(item&&item.textContent!==String(text))item.textContent=String(text);};
+      set('[data-race-clock]',`${Math.floor(Math.max(0,at-3000)/60000)}:${String(Math.floor(Math.max(0,at-3000)/1000)%60).padStart(2,'0')}`);
+      const bar=app.querySelector('[data-replay-progress]');if(bar)bar.style.width=Math.min(100,100*play/loaded.timeline.duration).toFixed(1)+'%';
+      const slowBadge=app.querySelector('[data-replay-slow]');if(slowBadge&&slowBadge.hidden===slow)slowBadge.hidden=!slow;
+      racers.forEach(r=>{const row=[...app.querySelectorAll('[data-race-rank]')].find(node=>node.dataset.raceRank===r.id);if(!row)return;
+        const rank=row.querySelector('.race-position');if(rank&&rank.textContent!==String(r.position))rank.textContent=r.position;
+        const percent=Math.min(100,Math.round(100*r.distance/loaded.data.length));
+        const text=row.querySelector('.race-rank-percent');if(text)text.textContent=percent+'%';
+        const meter=row.querySelector('.race-mini-track i');if(meter)meter.style.width=percent+'%';});
+    }
+    raceAnimationFrame=requestAnimationFrame(updateQuizRaceVisuals);
+    return;
+  }
+  // The replay has just ended on this screen's clock: show the results even if the server's update is a moment late.
+  if(session.host&&app.querySelector('.race-replay-panel')&&!replayPlaying(state)){render(state);return;}
   const elapsed=snapshot.paused ? 0 : Math.min(320,Math.max(0, Date.now()-raceSnapshotLocal));
   const sim=snapshot.time+(snapshot.paused?0:Math.max(0,Date.now()-raceSnapshotLocal));
   const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -222,10 +265,6 @@ function updateQuizRaceVisuals() {
     set('[data-race-position]',own.position+' / '+state.playerCount);
     set('[data-race-speed]',(current?.speed??1)>1.04?'BOOSTING':(current?.speed??1)<.96?'SLOWED':current?.slip?'SLIPSTREAM':'CRUISING');
     if(own.question)set('[data-race-deadline]',Math.max(0,Math.ceil((own.question.deadline-sim)/1000))+'s');
-    // Symbol Dash: the view from your own kart, above the grid.
-    const cockpit=app.querySelector('[data-race-cockpit]');
-    // The drawn view is only the fallback, for a phone that cannot run the 3D scene.
-    if(cockpit&&!race3d?.ready)drawCockpit(cockpit,{racers:snapshot.racers,ownId:state.player?.id,track:snapshot.track,course:snapshot.course,length:snapshot.length,time:sim,reduced,ahead:r=>reduced||r.finishedAt!==undefined?0:r.speed*elapsed/1000});
   }
   snapshot.racers.forEach(r=>{const row=[...app.querySelectorAll('[data-race-rank]')].find(node=>node.dataset.raceRank===r.id);if(!row)return;
     const rank=row.querySelector('.race-position');if(rank)rank.textContent=r.position;
@@ -958,6 +997,7 @@ function tvRoundHud(s, timer, progress, host) {
 
 function phaseCaption(s) {
   if (s.pausedAt) return 'Timer paused';
+  if (replayPlaying(s)) return 'Action replay';
   if (s.phase === 'ready') return s.mode === 'wheel' ? 'Ready to spin' : 'Ready to roll';
   if (s.phase === 'rolling') return s.mode === 'wheel' ? 'Wheel spinning' : 'Dice rolling';
   // The caption must not announce the answer while So Close guesses are still showing.
@@ -1007,7 +1047,7 @@ function phaseCaption(s) {
     'sketch-reveal': 'Drawing revealed',
     'race-countdown': 'Race about to start',
     'race-standings': 'League standings',
-    race: 'Quiz Race in progress',
+    race: s.race?.style === 'symbols' ? 'Symbol Dash in progress' : 'Quiz Race in progress',
     finished: 'Final results',
   }[s.phase];
 }
@@ -1017,6 +1057,8 @@ function celebrateMoment(s, host, enter, result, held = 0) {
   const view = app.querySelector('.game');
   if (!view) return;
   const key = `${s.code}/${s.game}`;
+  // During a race's action replay the results are not on screen yet: the celebration waits for them.
+  if (replayPlaying(s)) return;
   if (s.phase === 'finished') {
     if (enter) countUp(view);
     if (host && !document.querySelector('#post-ceremony[hidden]')) celebrate(key + '/finale', { source: view, origin: 'sides' });
@@ -1054,7 +1096,8 @@ function render(s) {
       <p>The current game is underway. Keep this open and you’ll join the next lobby automatically.</p>
     </section>`;
   } else if (s.mode === 'quizrace' && s.race && ['race-countdown', 'race', 'race-standings', 'finished'].includes(s.phase)) {
-    body = quizRaceView({...s, categoryName: categoryName(s.category)}, {host,canControl,icons,replayButtons,sending:raceSending});
+    if (host && replayPlaying(s)) loadRaceReplay(s);
+    body = quizRaceView({...s, categoryName: categoryName(s.category)}, {host,canControl,icons,replayButtons,sending:raceSending,replaying:replayPlaying(s)});
   } else if (s.pausedAt) {
     body = `<section class="game-panel round-break">
       <span class="pause-mark">${icons('pause')}</span><div class="eyebrow">ROUND ON HOLD</div><h1>Timer paused<span class="brand-dot">.</span></h1>
@@ -1189,7 +1232,7 @@ function render(s) {
       </div>${host && knockout ? knockoutLadder(s, escape) : ''}${tvRoundHud(s, timer, response, host)}${host ? '</div>' : ''}${revealed && board && showLiveScores ? `<div class="game-panel round-leaders"><h2>Race standings</h2>${teamList(s, ownTeam?.id, true)}</div>` : ''}
 `;
   }
-  if (s.phase === 'finished') {
+  if (s.phase === 'finished' && !replayPlaying(s)) {
     const nextUp = gameNightView(s, { canControl, escape, icons });
     if (s.ceremony && host) {
       const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1201,7 +1244,7 @@ function render(s) {
       body = (s.night.queue.length ? nextUp : '') + body + awardView(s.awards, escape, icons) + (s.night.queue.length ? '' : nextUp);
     }
   } else if (['lobby', 'waiting'].includes(s.phase) && !s.picker) body += gameNightView(s, { canControl, escape, icons });
-  const phaseKey = `${s.code}/${s.game}/${s.index}/${s.phase}${s.pausedAt ? '/paused' : ''}${s.party?.holding || s.party?.type === 'fork' ? '/' + s.party.step : ''}`;
+  const phaseKey = `${s.code}/${s.game}/${s.index}/${s.phase}${replayPlaying(s) ? '/replay' + s.raceReplay.id : ''}${s.pausedAt ? '/paused' : ''}${s.party?.holding || s.party?.type === 'fork' ? '/' + s.party.step : ''}`;
   const enter = renderedPhase !== phaseKey;
   // TV broadcast stings: the show's title card at kick-off, a band before the last round.
   const stingKind = enter ? stingFor(renderedPhase, s, host) : null;
@@ -1314,15 +1357,14 @@ function render(s) {
     const svgTrack=mountQuizRaceTrack(app);
     // Each league race is on its own circuit, so the 3D scene is rebuilt for it.
     const raceKey=s.code+'/'+s.game+'/'+(s.race.course??s.raceLength)+'/'+s.race.track;
-    // The TV frames the whole track; a Symbol Dash phone rides behind its own kart in the very same 3D scene.
-    const stage=host?app.querySelector('.race-track-wrap'):app.querySelector('[data-race-chase]');
+    const stage=host?app.querySelector('.race-track-wrap'):null;
     if(!stage||race3d?.key!==raceKey&&race3dLoading!==raceKey) disposeRace3d();
     if(stage&&!race3d&&race3dLoading!==raceKey&&race3dFailed!==raceKey){
       race3dLoading=raceKey;
       import('./race-3d.js').then(({mountRace3D})=>{
         if(race3dLoading!==raceKey||race3d)return;
-        race3d=mountRace3D({key:raceKey,track:s.race.track,course:s.race.course??s.raceLength,chase:host?undefined:s.player?.id,light:!host,reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches});
-        race3d.attach(app.querySelector(host?'.race-track-wrap':'[data-race-chase]'));
+        race3d=mountRace3D({key:raceKey,track:s.race.track,course:s.race.course??s.raceLength,reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches});
+        race3d.attach(app.querySelector('.race-track-wrap'));
       }).catch(()=>{ race3dLoading=undefined; race3dFailed=raceKey; /* No WebGL: the SVG track (or the phone's drawn view) remains, and this race does not try again. */ });
     }
     race3d?.attach(stage);
@@ -2327,6 +2369,13 @@ document.addEventListener('click', async event => {
     homeSelected = undefined;
     renderModeCards(homeFilter);
     app.querySelector(`[data-action="preview-mode"][data-mode="${id}"]`)?.focus({preventScroll:true});
+    return;
+  }
+  if ((action === 'replay-skip' || action === 'replay-again') && session && state?.raceReplay) {
+    button.disabled = true;
+    try { await api('/' + session.code + '/race-replay', { game: state.game, action: action === 'replay-skip' ? 'skip' : 'again' }); }
+    catch (error) { showGameError(error); }
+    await refresh();
     return;
   }
   if (action === 'race-power' && session && state?.race?.own) {

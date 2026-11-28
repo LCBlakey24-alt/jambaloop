@@ -251,13 +251,11 @@ function disposeCar(car) {
  * move the canvas into the fresh DOM, and update(...) each animation frame
  * with the same arguments as the SVG track view.
  */
-// `chase` is a racer id: the camera then rides behind that kart (the phone's driver's-eye view) instead of
-// framing the whole pack (the TV). `light` trims the scene for a phone: fewer pixels and a thinner crowd.
-export function mountRace3D({ key, track = 'neon', course = 'medium', reducedMotion = false, chase, light = false }) {
+export function mountRace3D({ key, track = 'neon', course = 'medium', reducedMotion = false }) {
   const circuit = circuits[course] ?? circuits.medium;
   const theme = themes[track] ?? themes.neon;
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(light ? 1.25 : 1.5, window.devicePixelRatio || 1));
+  renderer.setPixelRatio(Math.min(1.5, window.devicePixelRatio || 1));
   renderer.toneMapping = THREE.NeutralToneMapping;
   renderer.setClearColor(theme.sky);
   const canvas = renderer.domElement;
@@ -421,9 +419,8 @@ export function mountRace3D({ key, track = 'neon', course = 'medium', reducedMot
   const people = [];
   const crowdColours = ['#ff5d8f', '#ffd34d', '#4fd1c5', '#8f6bff', '#ff8f5a', '#f4f1ea', '#5aa9ff', '#7bd66a', '#e0364f'];
   const skinTones = ['#f6d3b3', '#e8b98f', '#c98f62', '#9a6642', '#6f4628'];
-  const crowdSteps = light ? 300 : 620;
-  for (let i = 0; i < crowdSteps; i++) {
-    const u = i / crowdSteps;
+  for (let i = 0; i < 620; i++) {
+    const u = i / 620;
     const p = curve.getPointAt(u);
     if (p.y > .12) continue;
     const t = curve.getTangentAt(u);
@@ -621,7 +618,6 @@ export function mountRace3D({ key, track = 'neon', course = 'medium', reducedMot
   const cameraTarget = new THREE.Vector3();
   const cameraPosition = new THREE.Vector3();
   let cameraReady = false;
-  let chaseReady = false;
 
   function resize() {
     if (!container) return;
@@ -629,13 +625,12 @@ export function mountRace3D({ key, track = 'neon', course = 'medium', reducedMot
     if (!width || !height) return;
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
-    camera.fov = chase ? 62 : 36;
+    camera.fov = 36;
     camera.updateProjectionMatrix();
   }
 
   function frame(players, trackLength, msAhead, sim) {
     const count = players.length;
-    let chased;
     let leader;
     let packMin = Infinity;
     let packMax = -Infinity;
@@ -668,7 +663,6 @@ export function mountRace3D({ key, track = 'neon', course = 'medium', reducedMot
       car.rotation.order = 'YXZ';
       car.rotation.y = Math.atan2(-t.z, t.x);
       car.rotation.z = Math.asin(THREE.MathUtils.clamp(t.y, -1, 1));
-      if (racer.id === chase) chased = { p: car.position.clone(), t: t.clone().setY(0).normalize(), rise: t.y, speed: racer.speed };
       const boosting = racer.speed > 1.02;
       const { wheels, flame, flameMaterial, glowMaterial, paint } = car.userData;
       flame.visible = boosting && racer.finishedAt === undefined;
@@ -743,25 +737,9 @@ export function mountRace3D({ key, track = 'neon', course = 'medium', reducedMot
       cameraTarget.lerp(desiredTarget, 0.05);
       cameraPosition.lerp(desiredPosition, 0.05);
     }
-    if (chase && chased) {
-      // The same scene from behind one kart: low, close, looking down the road ahead of it.
-      const back = 2.5, up = 1.15;
-      desiredPosition.copy(chased.p).addScaledVector(chased.t, -back).setY(chased.p.y + up);
-      desiredTarget.copy(chased.p).addScaledVector(chased.t, 3.2).setY(chased.p.y + .45 + chased.rise * 2);
-      const ease = reducedMotion || !chaseReady ? 1 : 0.16;
-      cameraPosition.lerp(desiredPosition, ease);
-      cameraTarget.lerp(desiredTarget, ease);
-      chaseReady = true;
-      // A faster kart gets a slightly wider view, so speed is something you feel.
-      const fov = reducedMotion ? 62 : 62 + THREE.MathUtils.clamp((chased.speed - 1) * 9, -4, 12);
-      if (Math.abs(camera.fov - fov) > .2) { camera.fov += (fov - camera.fov) * .1; camera.updateProjectionMatrix(); }
-      camera.position.copy(cameraPosition);
-      camera.lookAt(cameraTarget);
-    } else {
-      const drift = reducedMotion ? 0 : Math.sin(performance.now() / 5200) * 0.35;
-      camera.position.set(cameraPosition.x + drift, cameraPosition.y, cameraPosition.z);
-      camera.lookAt(cameraTarget);
-    }
+    const drift = reducedMotion ? 0 : Math.sin(performance.now() / 5200) * 0.35;
+    camera.position.set(cameraPosition.x + drift, cameraPosition.y, cameraPosition.z);
+    camera.lookAt(cameraTarget);
     if (!reducedMotion) placeCrowd(performance.now());
     renderer.render(scene, camera);
   }
@@ -789,6 +767,8 @@ export function mountRace3D({ key, track = 'neon', course = 'medium', reducedMot
       frame(players, trackLength, msAhead, sim);
       return true;
     },
+    /** Cut straight to the next shot instead of gliding there (used when an action replay starts or ends). */
+    snapCamera() { cameraReady = false; },
     dispose() {
       tornDown = true;
       observer?.disconnect();

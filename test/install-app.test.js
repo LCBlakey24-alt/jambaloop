@@ -103,7 +103,8 @@ test('the install offer: one tap where the browser offers it, Share steps on an 
   assert.deepEqual(tv.registered, []);
 });
 
-test('the app wires the install offer in', () => {
+test('the app wires the install offer in, on the phone home', () => {
+  assert.match(read('public/phone-home.js'), /<div class="phone-home-install" data-install-slot hidden><\/div>/);
   const app = read('public/app.js');
   assert.match(app, /setUpInstall\(\{ isTv: isTvScreen \}\);/);
   assert.match(app, /if \(action === 'install-app'\) return promptInstall\(\);/);

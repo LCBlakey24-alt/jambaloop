@@ -39,6 +39,7 @@ export function phoneHomeView({ rooms = [], scan = false } = {}, { escape, icons
       ${scan ? `<button type="button" class="button outline phone-join-scan" data-action="join" data-scan="1">${icons('camera')} Scan the QR code instead</button>` : ''}
     </form>
     <div class="phone-home-foot">
+      <div class="phone-home-install" data-install-slot hidden></div>
       <p class="phone-home-host">Hosting? <button type="button" class="text-button" data-action="party">Open Jambaloop on your TV</button></p>
       <p class="error" role="alert" data-host-error></p>
       <button type="button" class="text-button phone-home-link phone-home-browse" data-action="phone-browse">See the games</button>

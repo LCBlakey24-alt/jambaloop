@@ -238,3 +238,6 @@ html.mobile-deck .phone-home-host .text-button { min-height: 44px; padding: 0 4p
 html.mobile-deck body.playing > .header { display: none; }
 /* The bar's Home button is a full-size thumb target (#app outranks the phone-wide 42px button rule). */
 html.mobile-deck #app .game .game-top .game-controls > [data-action="leave"] { min-height: 44px; min-width: 44px; }
+
+/* The phone home's install offer sits above the hosting line, full width like the Join card. */
+.phone-home-install { width: 100%; }

@@ -64,14 +64,16 @@ export const identityOf = mode => Object.hasOwn(identities, mode) ? identities[m
 
 /** CSS custom properties for a game's screens and launcher tile. */
 export function identityVariables(mode) {
-  const id = identityOf(mode);
+  const key = Object.hasOwn(identities, mode) ? mode : 'classic';
+  const id = identities[key];
   return [
     `--id-display:'${id.display}'`, `--id-weight:${id.weight}`,
     `--id-question:${id.question === 'display' ? `'${id.display}'` : "'House Sans'"}`,
     `--id-case:${id.upper ? 'uppercase' : 'none'}`, `--id-bg1:${id.bg[0]}`, `--id-bg2:${id.bg[1]}`,
     `--id-surface:${id.surface}`, `--id-surface2:${id.surface2}`, `--id-ink:${id.ink}`, `--id-muted:${id.muted}`,
     `--id-accent:${id.accent}`, `--id-accent2:${id.accent2}`, `--id-radius:${id.radius}`,
-    // The show's illustrated scene: launcher tile artwork and game backdrop.
-    `--id-scene:url('/scenes/${Object.hasOwn(identities, mode) ? mode : 'classic'}.svg')`,
+    `--id-cover:url('/covers/${key}.webp')`, `--id-cover-small:url('/covers/${key}-small.webp')`,
+    // Lightweight vector scene underneath the game panels.
+    `--id-scene:url('/scenes/${key}.svg')`,
   ].join(';');
 }

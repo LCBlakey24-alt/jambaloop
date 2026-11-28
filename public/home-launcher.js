@@ -1,4 +1,4 @@
-// Animated mode identities are CSS-driven: real text, no photographic covers.
+// Live show lettering is shared by illustrated covers, previews and the game shelf.
 import { modes, minimumPlayers, partyModes } from './game-config.js';
 import { modeStyle, modeVariables } from './mode-style.js';
 import { narration, narratorAsset } from './narration-scripts.js';
@@ -51,7 +51,6 @@ export function tileArt(id, isPreview = false) {
   const style = modeStyle(id);
   const {lines} = identity(id);
   return `<span class="tile-art ${isPreview?'tile-art-preview':''}" data-motif="${style.motif}" data-show="${id}" aria-hidden="true">
-    <span class="tile-motion"><i></i><i></i><i></i></span>
     <span class="tile-wordmark">${lines.map(line=>`<span>${line}</span>`).join('')}</span>
   </span>`;
 }

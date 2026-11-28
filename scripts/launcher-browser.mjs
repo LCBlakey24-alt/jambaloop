@@ -19,7 +19,7 @@ await mkdir('browser-screenshots',{recursive:true});
 // Big screens open on the game shelf: a 3D carousel whose centred game themes
 // the page. It must fit, respond to a remote's arrow keys, swipes and clicks,
 // keep the voice guide opt-in, then hand over to the tile grid on request.
-async function checkCarousel(page,width,height){
+async function checkCarousel(page,width,height,posters){
   const cards=page.locator('#game-carousel .carousel-card');
   await cards.first().waitFor({timeout:15000});
   await page.evaluate(()=>document.fonts.ready);
@@ -27,6 +27,8 @@ async function checkCarousel(page,width,height){
   const centre=()=>page.locator('.carousel-card[aria-current="true"]').getAttribute('data-mode');
   assert.equal(await centre(),modes[0][0]);
   if(width===1280){
+    assert.ok(posters.includes('/covers/classic.webp'),'The selected game loads its full poster');
+    assert.equal(posters.length,await page.locator('.carousel-card:not([aria-hidden="true"])').count(), 'Only the cards in reach request illustrations');
     await page.clock.fastForward(26000);
     assert.equal(await centre(),modes[0][0],'The shelf stays on the chosen game while idle');
   }
@@ -84,9 +86,14 @@ async function checkCarousel(page,width,height){
 try {
   for(const [width,height,count] of sizes) {
     const page=await browser.newPage({viewport:{width,height},deviceScaleFactor:1});
+    const posters=[];
+    page.on('request',request=>{
+      const path=new URL(request.url()).pathname;
+      if(path.startsWith('/covers/')) posters.push(path);
+    });
     if(width===1280) await page.clock.install();
     await page.goto(base,{waitUntil:'networkidle',timeout:30000});
-    if(width>=1000&&height>=600) await checkCarousel(page,width,height);
+    if(width>=1000&&height>=600) await checkCarousel(page,width,height,posters);
     await page.locator('.game-tile').first().waitFor({timeout:15000});
     await page.evaluate(()=>document.fonts.ready);
     assert.match(await page.title(),/Jambaloop.*Rookie Quest Games/);
@@ -108,6 +115,15 @@ try {
         viewportWidth:innerWidth,
         cards:tiles.length,
         visibleCards:visible.length,
+        badCovers:visible.filter(tile=>{
+          const art=tile.querySelector('.tile-art');
+          const wordmark=art.querySelector('.tile-wordmark');
+          const poster=getComputedStyle(art,'::before').backgroundImage;
+          const caption=getComputedStyle(wordmark);
+          return !poster.includes('/covers/'+tile.dataset.mode) ||
+            Number(caption.zIndex)<=Number(getComputedStyle(art,'::after').zIndex) ||
+            !caption.fontFamily.includes(caption.getPropertyValue('--id-display').trim().replaceAll("'",''));
+        }).map(tile=>tile.dataset.mode),
         logoWhite:getComputedStyle(document.querySelector('.site-logo-white')).display!=='none',
         accent:getComputedStyle(document.body).getPropertyValue('--home-accent').trim(),
         background:getComputedStyle(document.body).backgroundColor,
@@ -119,6 +135,7 @@ try {
     assert.ok(layout.documentWidth<=width+1,`Unexpected horizontal page scroll at ${width}×${height}`);
     assert.equal(layout.cards,count,`Wrong page size for ${width}×${height}`);
     assert.equal(layout.visibleCards,count,`Game tiles clipped at ${width}×${height}: ${JSON.stringify(layout)}`);
+    assert.deepEqual(layout.badCovers,[],'Each cover has its matching art and show type above the shading');
     assert.equal(layout.logoWhite,true,'Light-on-dark Jambaloop logo should be used');
     assert.match(layout.background,/rgb\(16, 18, 38\)|rgb\(16, 18, 38\)/);
     await page.screenshot({path:`browser-screenshots/home-${width}x${height}.png`,fullPage:false});
@@ -217,7 +234,7 @@ try {
   assert.equal(await page.locator('.carousel-card').first().evaluate(el=>getComputedStyle(el).transitionDuration),'0s','Reduce motion stops the shelf gliding');
   await page.locator('[data-action="carousel-view"]').click();
   await page.locator('.game-tile').first().waitFor();
-  const animation=await page.locator('.game-tile .tile-motion i').first().evaluate(el=>getComputedStyle(el).animationName);
+  const animation=await page.locator('.game-tile .tile-art').first().evaluate(el=>getComputedStyle(el).animationName);
   assert.equal(animation,'none','Reduce motion must disable card animations');
   console.log('PASS: reduced-motion disables decorative card animation');
   await page.close();

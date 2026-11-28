@@ -62,4 +62,5 @@ html.tv-screen :focus-visible { outline: 4px solid #ffd34d !important; outline-o
     --tile-edge:min(calc((100dvh - 270px)/3),calc((min(1400px, 100vw - 40px) - 8 * var(--tile-gap, 10px) - 8px)/9),192px) !important;
     grid-template-columns:repeat(9,minmax(0,var(--tile-edge))) !important;
   }
+  .home-shell .mode-list:has(> .game-tile:nth-child(25):last-child) > .game-tile:nth-child(19) {grid-column-start:2;}
 }

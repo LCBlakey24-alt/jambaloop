@@ -73,7 +73,9 @@ test('Spotlight rotates contestant, keeps expert hints confidential and scores b
       const contestant=s.party.contestant;
       assert.ok(contestant?.id);
       used.push(contestant.id);
-      await advance(keys[0]);
+      // keys[1], not keys[0]: the first player to join is the captain, whose phone now moves Spotlight on
+      // like the TV does (owner direction, 28 November 2026; see test/captain-controls.test.js).
+      await advance(keys[1]);
       assert.equal((await state()).phase,'spotlight-ready','Player cannot advance the TV stage');
       await advance();
       s=await state();

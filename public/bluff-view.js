@@ -55,7 +55,7 @@ export function bluffView(s,{host,canControl,escape,reply,icons}){
         <p>${escape(entry.text)}</p>
         ${revealing?`<small class="bluff-show-votes"><span class="bluff-vote-bar"><i style="width:${Math.round(100*(entry.votes??0)/most)}%"></i></span>${entry.votes} ${entry.votes===1?'vote':'votes'}</small>`:
           !host&&entry.id===s.player?.id?'<small>Your reply — you cannot vote for yourself.</small>':
-          !host&&!party.voted?`<button type="button" class="button outline small party-vote-button" data-action="bluff-vote" data-id="${escape(entry.id)}" aria-label="Vote for ${escape(entry.name)}">Vote for ${escape(entry.name)}</button>`:''}
+          !host&&!party.voted?`<button type="button" class="button outline small party-vote-button" data-action="bluff-vote" data-id="${escape(entry.id)}" aria-label="Vote for ${escape(entry.name)}">Vote</button>`:''}
       </article>`).join(''):'<p class="bluff-show-empty">No player replies were submitted for this round.</p>'}
     </div>
     ${voting&&host?answerWall(s,escape,'votes in')||`<p class="bluff-show-progress" role="status">${party.submissions} / ${party.responseTarget} votes submitted</p>`:''}

@@ -63,6 +63,11 @@ try {
   await phase(vampirePhone, 'blood-roles');
   await phase(villagerPhone, 'blood-roles');
   await tvIsNeutral('deal');
+  // The role card starts closed on every phone, so a glance gives nothing away; the player taps to peek.
+  for (const page of [vampirePhone, villagerPhone]) assert.equal(await page.locator('.blood-role-card').evaluate(card => card.open), false, 'the role card starts closed');
+  assert.ok(!/Vampire|Villager/.test(await vampirePhone.locator('.blood-game').innerText()), 'a closed card names no role');
+  await vampirePhone.locator('.blood-role-card summary').click();
+  await villagerPhone.locator('.blood-role-card summary').click();
   assert.match(await vampirePhone.locator('.blood-role-card h2').innerText(), /Vampire/);
   assert.match(await villagerPhone.locator('.blood-role-card h2').innerText(), /Villager/);
   assert.ok(!/Vampire/.test(await villagerPhone.locator('.blood-game').innerText()), 'a villager\'s phone names no vampire');

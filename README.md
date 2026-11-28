@@ -195,6 +195,15 @@ Set base points, a maximum time bonus, and a double-points schedule for Classic 
 
 Run `npm test` to verify room sizes, reconnect behavior, protected avatars and live streams, playlists and normalized standings, scoring, awards, readiness, pause and replay, newer game-show rules, Board Race difficulty, and dice-tower clearances. The reconnect test waits for the server’s actual grace period. Automated passes are not a substitute for a real multi-phone group playtest; see `docs/RELEASE_READINESS_2026-11-23.md` for the current evidence and blockers.
 
+### Jambaloop as an app on your phone (28 November 2026)
+
+No app store: phones install Jambaloop straight from the browser, and it then opens full screen from its own home-screen icon, like any other app.
+- **Android (Chrome, Edge, Samsung Internet):** tap **Install Jambaloop** on the phone's home screen, or the browser's ⋮ menu → **Install app** (some versions say **Add to Home screen**).
+- **iPhone and iPad:** in Safari, tap the Share button, then **Add to Home Screen**. The phone's home screen shows these steps.
+- The app is the website, so it never needs updating: new games appear by themselves. A QR code from the TV still opens the browser for guests who have not installed it.
+- Files: `public/manifest.webmanifest` (name, icons, colours), `public/app-icons/` (cut from the supplied logo), `public/sw.js` (shows `public/offline.html` when there is no internet; games and the room API never come from a cache), `public/install-app.js` (the install button). The TV is never offered it: the Fire TV has its own app.
+- Checked in Chrome: no installability errors, the button asks the browser, the offline page shows, the TV gets nothing. Not yet installed on a real phone.
+
 ### Playing on a TV stick (28 November 2026)
 
 - A Fire TV Stick's browser (Silk) reports a small 960×540 page and a remote instead of a mouse, so the site used to take it for a phone. It is now recognised as the TV: by name (Fire TV models report an `AFT…` code, and common smart-TV browsers are recognised too), by having no touchscreen, or by choice.

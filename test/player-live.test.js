@@ -24,7 +24,7 @@ test('active question controls are kept on a single scrollable mobile surface', 
     source('public/player-live.css'),
     source('public/index.html')
   ]);
-  assert.match(deck, /\.game\.player-only:not\(\[data-phase="lobby"\]\):not\(\[data-phase="waiting"\]\)/);
+  assert.doesNotMatch(deck, /data-deck-hidden|mobile-pager/, 'live controls are never split into pages');
   assert.match(style, /overflow-y: auto;/);
   assert.match(style, /min-height: 65px/);
   assert.match(style, /prefers-reduced-motion: reduce/);

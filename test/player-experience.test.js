@@ -29,7 +29,8 @@ test('player lobby offers optional rules without hiding the Ready control', () =
   for (const step of launcherSteps('samepage')) assert.ok(html.includes(escape(step)));
   assert.match(html, /data-action="ready-toggle"/);
   assert.match(html, /1 of 3 ready/);
-  assert.match(html, /data-action="practice"/);
+  // The phone lobby is kept simple: practice rounds are on the TV, not the phone.
+  assert.doesNotMatch(html, /data-action="practice"/);
   assert.doesNotMatch(html, /<details class="player-game-guide" open/);
 });
 

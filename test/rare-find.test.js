@@ -254,9 +254,12 @@ test('Host can close stalled rounds; late player submissions fail with no fabric
     assert.equal((await state(keys[1])).party.earned,0);
     const stale=await submit(keys[1],'Mercury',0,409);
     assert.match(stale.error,/stage has ended/);
-    const captainCannotAdvance=await request('/'+room.code+'/advance',keys[0],
+    // keys[1], not keys[0]: the first player to join is the captain, who may now move on from the reveal
+    // (owner direction, 28 November 2026). Only the answer review stays with the TV host; see
+    // test/captain-controls.test.js.
+    const playerCannotAdvance=await request('/'+room.code+'/advance',keys[1],
       {game:1,phase:'rare-reveal',index:0},403);
-    assert.match(captainCannotAdvance.error,/TV host/);
+    assert.match(playerCannotAdvance.error,/TV host/);
     await advance();
     assert.equal((await state()).phase,'rare-write');
   });

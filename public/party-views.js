@@ -104,7 +104,7 @@ function socialView(state, { host, canControl, escape, reply, icons }) {
   const finished = phase === 'finished';
   const next = label => canControl ? `<div class="actions"><button class="button primary" data-action="advance">${label}</button></div>` : '';
   const vote = (id, label) => !host && voting && !party.voted
-    ? `<button class="button primary small party-vote-button" type="button" data-action="bluff-vote" data-id="${id}" aria-label="${label}">${label}</button>` : '';
+    ? `<button class="button primary small party-vote-button" type="button" data-action="bluff-vote" data-id="${id}" aria-label="${label}">Vote</button>` : '';
   const prompt = `<p class="bluff-prompt">${escape(party.prompt)}</p>`;
 
   let body;

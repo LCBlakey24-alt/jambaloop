@@ -95,7 +95,7 @@ export function catchUpView(state, { host, canControl, escape, icons }) {
         <div class="catch-buttons">${party.question.options.map((option, index) => `<button type="button" class="catch-button" data-action="catch-answer" data-option="${index}"${frozen ? ' disabled' : ''}><i>${letters[index]}</i><span>${escape(option)}</span></button>`).join('')}</div>${last}`;
     } else {
       body = `<header class="catch-head"><span class="catch-kicker">${kicker}</span><h1>${escape(turn.name)} are ${party.chasing ? 'chasing' : 'running'}</h1>
-        <p>${mine ? 'It is the other side’s turn. Watch the TV.' : 'You are watching this game.'}</p></header><p class="catch-note" role="status">${party.count}${party.chasing ? ` · they need more than ${party.target}` : ''}</p>`;
+        <p>${mine ? 'It is the other side’s turn. Watch the TV.' : 'You are watching this game.'}</p></header><p class="catch-note catch-watch-count" role="status"><strong>${escape(turn.name)}: ${party.count}</strong>${party.chasing ? ` <span>· they need more than ${party.target}</span>` : ''}</p>`;
     }
   } else if (phase === 'catch-result') {
     const result = party.result;

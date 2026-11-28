@@ -13,8 +13,8 @@ export function partyFinale(state, { host, escape, variant = 'scores' }) {
     return `<div class="party-caught-banner" role="note">
       <span class="party-caught-icon" aria-hidden="true">!</span>
       <div><small>THE TIMER RAN OUT</small>
-        <strong>${host ? escape(holder.name) + ' was caught!' : own ? 'You got caught!' : escape(holder.name) + ' got caught!'}</strong>
-        <span>${passes} successful ${passes === 1 ? 'pass' : 'passes'} before time ran out</span>
+        <strong>${host ? escape(holder.name) + ' was caught!' : own ? 'You got caught!' : 'You’re safe!'}</strong>
+        <span>${host || own ? '' : escape(holder.name) + ' got caught · '}${passes} successful ${passes === 1 ? 'pass' : 'passes'} before time ran out</span>
       </div>
     </div>`;
   }

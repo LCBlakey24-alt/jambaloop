@@ -36,10 +36,17 @@ test('the Fire TV app opens the site as the TV, full screen, with sound, and sho
   assert.match(activity, /HOME = "https:\/\/" \+ HOST \+ "\/\?tv"/);
   assert.match(activity, /setMediaPlaybackRequiresUserGesture\(false\)/);
   assert.match(activity, /setUseWideViewPort\(true\)/);
-  assert.match(activity, /JambaloopTV\/1\.0/);
+  assert.match(activity, /JambaloopTV\/1\.\d/);
+  // Steady on a small stick: a stopped page engine is replaced (the site goes back to its room) instead of
+  // closing the app, and display, remote or font changes never restart it.
+  assert.match(activity, /public boolean onRenderProcessGone\(WebView v, RenderProcessGoneDetail detail\) \{[\s\S]*?restartPage\(\);\s+return true;/);
+  assert.match(activity, /web\.loadUrl\(HOME \+ "&back=engine"\)/);
   assert.match(activity, /return !HOST\.equals\(/, 'it stays on Jambaloop');
   const manifest = read('app/src/main/AndroidManifest.xml');
   assert.match(manifest, /android\.intent\.category\.LEANBACK_LAUNCHER/);
+  for (const change of ['screenSize', 'smallestScreenSize', 'screenLayout', 'density', 'fontScale', 'keyboard', 'keyboardHidden', 'navigation', 'uiMode']) {
+    assert.match(manifest, new RegExp(`android:configChanges="[^"]*\\b${change}\\b`), `a ${change} change does not restart the app`);
+  }
   assert.match(manifest, /android:banner="@drawable\/banner"/);
   assert.match(manifest, /android\.hardware\.touchscreen" android:required="false"/);
   assert.match(read('app/build.gradle'), /minSdk 22/);
@@ -53,4 +60,20 @@ test('the built app is served at /tv.apk, so a Fire TV can download it with Down
   assert.equal(bytes.subarray(0, 2).toString(), 'PK', 'an APK is a zip archive');
   assert.ok(bytes.includes(Buffer.from('AndroidManifest.xml')) && bytes.includes(Buffer.from('classes.dex')));
   assert.match(readFileSync(new URL('../fire-tv-app/README.md', import.meta.url), 'utf8'), /jambaloop-family-test\.onrender\.com\/tv\.apk/);
+});
+
+test('the TV keeps its last ten page loads, so the screen check shows whether a flash was a reload', async () => {
+  const { recordPageLoad, screenReport } = await import('../public/device.js');
+  const store = new Map();
+  const env = {
+    localStorage: { getItem: key => store.get(key) ?? null, setItem: (key, value) => store.set(key, value), removeItem: key => store.delete(key) },
+    performance: { getEntriesByType: () => [{ type: 'reload' }] },
+    location: { search: '?tv&back=engine' }, navigator: { userAgent: 'JambaloopTV/1.1', maxTouchPoints: 0 }, matchMedia: () => ({ matches: false }), screen: {},
+  };
+  for (let i = 0; i < 12; i++) recordPageLoad(env);
+  assert.equal(JSON.parse(store.get('jambaloop-page-loads')).length, 10, 'only the last ten');
+  assert.match(screenReport(env).loads, /reload \(engine\)/);
+  const app = readFileSync(new URL('../public/app.js', import.meta.url), 'utf8');
+  assert.match(app, /if \(isTvScreen\(\)\) recordPageLoad\(\);/);
+  assert.match(app, /\['Page loads', report\.loads\]/);
 });

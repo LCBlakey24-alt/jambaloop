@@ -26,6 +26,23 @@ function choiceBoard(party,phase,{host,escape}) {
   }).join('')+'</div>';
 }
 
+// Everyone starts with two lives.
+const hearts=lives=>'♥'.repeat(Math.max(0,lives||0))+'♡'.repeat(Math.max(0,2-(lives||0)));
+export function livesLabel(lives) {
+  return lives>0?'<span class="brain-own-lives" aria-label="Your lives: '+lives+' of 2">YOUR LIVES <b aria-hidden="true">'+hearts(lives)+'</b></span>'
+    :'<span class="brain-own-lives is-out">YOU’RE WATCHING</span>';
+}
+
+/** This player's own result for the level just revealed. */
+export function ownVerdict(party,player) {
+  const outcome=party.outcomes?.find(result=>result.id===player?.id);
+  if(!outcome)return '<div class="brain-verdict is-watching" role="status"><strong>You’re watching this climb</strong><span>You can still see every puzzle and solution.</span></div>';
+  if(outcome.correct)return '<div class="brain-verdict is-right" role="status"><strong>✓ Right! +'+outcome.gained+' points</strong><span>'+hearts(outcome.lives)+' still climbing</span></div>';
+  const miss=outcome.answered?'Not this time':'No answer in time';
+  if(outcome.eliminated)return '<div class="brain-verdict is-out" role="status"><strong>✗ '+miss+': you’re out</strong><span>Watch the rest of the climb from here.</span></div>';
+  return '<div class="brain-verdict is-wrong" role="status"><strong>✗ '+miss+': you lost a life</strong><span>'+hearts(outcome.lives)+' one life left</span></div>';
+}
+
 function ranking(party) {
   return [...party.roster].sort((a,b)=>b.score-a.score||b.lives-a.lives||a.name.localeCompare(b.name));
 }
@@ -61,10 +78,12 @@ export function brainLadderView(state,{host,canControl,escape,icons}) {
         :'<p class="brain-status">Choose one answer. A wrong answer costs a life.</p>')
       :'<p class="brain-status brain-spectator" role="status">You are spectating this round. You can still watch the other players climb.</p>';
     const correctText=reveal?'<div class="brain-explanation"><b>THE SOLUTION</b><span>'+escape(question.explanation)+'</span></div>':'';
-    const outcomes=reveal?'<div class="brain-outcomes"><b>'+party.remaining+' still climbing</b>'+
+    // The room's tally is for the TV; a phone shows that player's own result instead.
+    const outcomes=reveal?(host?'<div class="brain-outcomes"><b>'+party.remaining+' still climbing</b>'+
       '<span>'+party.outcomes.filter(result=>result.correct).length+' correct answers · '+
-      party.outcomes.filter(result=>result.eliminated).length+' eliminated this step</span></div>':'';
-    body='<div class="brain-puzzle"><div class="brain-micro">'+(reveal?'ANSWER REVEALED':'YOUR NEXT CHALLENGE')+
+      party.outcomes.filter(result=>result.eliminated).length+' eliminated this step</span></div>':ownVerdict(party,state.player)):'';
+    const micro=host?(reveal?'ANSWER REVEALED':'YOUR NEXT CHALLENGE'):(reveal?'ANSWER REVEALED':livesLabel(party.ownLives));
+    body='<div class="brain-puzzle"><div class="brain-micro">'+micro+
       '<span>+'+pointValue+' PTS</span></div><h1>'+escape(question.prompt)+'</h1>'+
       choiceBoard(party,phase,{host,escape})+
       (reveal?correctText+outcomes:response)+'</div>';

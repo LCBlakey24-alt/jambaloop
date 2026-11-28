@@ -66,7 +66,9 @@ export function scoreBreakView(state, { host, canControl, escape, icons }) {
   const previous = [...entries].sort((a, b) => a.previousRank - b.previousRank || a.previousIndex - b.previousIndex);
   const count = data.entryCount ?? (entries.length || (state.teams?.length || state.playerCount || 1));
   checkpoint = { key, data, entries, previous, escape, host, page: sameBreak ? checkpoint.page : 0, timeline: scoreBreakTimeline(count) };
-  const readyControl = canControl ? `<button class="button primary" data-action="advance">Continue quiz ${icons('arrow-right')}</button>` : '';
+  // Board Race is a race, not a quiz; the other games with score checkpoints are quizzes.
+  const noun = state.mode === 'board' ? 'race' : 'quiz';
+  const readyControl = canControl ? `<button class="button primary" data-action="advance">Continue ${noun} ${icons('arrow-right')}</button>` : '';
   return `<section class="game-panel score-break" data-score-break-key="${escape(key)}">
     <header class="score-break-head"><div>
       <div class="eyebrow">SCORE CHECKPOINT</div><h1>Standings after ${state.mode === 'board' ? 'turn' : 'question'} ${data.number}</h1>
@@ -90,7 +92,7 @@ export function scoreBreakView(state, { host, canControl, escape, icons }) {
     : `<div class="score-break-stage score-break-personal" data-score-phase="previous">
       <p class="score-break-spotlight" role="status" tabindex="-1"></p>
       <ol class="score-break-list" aria-label="Your standing"></ol>
-    </div>${canControl ? '' : '<p class="score-break-wait">The quiz resumes when the host or captain continues.</p>'}`}
+    </div>${canControl ? '' : `<p class="score-break-wait">The ${noun} resumes when the host or captain continues.</p>`}`}
   </section>`;
 }
 

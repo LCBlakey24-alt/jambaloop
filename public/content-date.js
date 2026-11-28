@@ -4,9 +4,11 @@
 // review has been done and written up as docs/QUESTION_FACT_CHECK_<date>.md.
 export const factsCheckedOn = '2026-11-27';
 
-/** Games whose questions are opinions, jokes, drawings or roles, not facts. */
-const opinionModes = ['punchline', 'cards', 'tracks', 'bluff', 'bloodmoon', 'samepage', 'sketch', 'topanswers', 'shade'];
-export const asksFacts = mode => !opinionModes.includes(mode);
+/** Games with nothing to fact-check: opinions, jokes, drawings, roles, colours, words to describe and
+ * calculated logic puzzles. */
+const opinionModes = ['punchline', 'cards', 'tracks', 'bluff', 'bloodmoon', 'samepage', 'sketch', 'topanswers', 'shade', 'dontlook', 'brain'];
+/** Whether a game asks factual questions. Quiz Race's Symbol Dash only matches shapes, so it asks none. */
+export const asksFacts = (mode, raceStyle) => !opinionModes.includes(mode) && !(mode === 'quizrace' && raceStyle === 'symbols');
 
 export function factsCheckedLabel() {
   const [year, month, day] = factsCheckedOn.split('-').map(Number);

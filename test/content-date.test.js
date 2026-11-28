@@ -9,9 +9,12 @@ test('the facts-checked date matches the latest written-up review and is shown i
   assert.equal(factsCheckedOn, reviews.at(-1), 'bump the date only with a written review, and never leave it behind one');
   assert.match(factsCheckedLabel(), /^Facts checked to \d{1,2} [A-Z][a-z]+ \d{4}$/);
   const views = readFileSync(new URL('../public/game-views.js', import.meta.url), 'utf8');
-  assert.match(views, /asksFacts\(state\.mode\) && !state\.quizTitle \? `<small class="facts-checked">\$\{factsCheckedLabel\(\)\}/, 'shown for built-in question games, not for a room’s own quiz');
-  for (const mode of ['classic', 'wheel', 'board', 'dice', 'knockout', 'showdown', 'quizrace', 'soclose', 'wayoff', 'catchup', 'rare', 'potato', 'spotlight', 'brain']) assert.ok(asksFacts(mode), mode);
-  for (const mode of ['punchline', 'cards', 'bluff', 'samepage', 'sketch', 'bloodmoon']) assert.ok(!asksFacts(mode), mode);
+  // The race style is passed too, so Symbol Dash (no questions) shows no facts date.
+  assert.match(views, /asksFacts\(state\.mode, state\.raceStyle\) && !state\.quizTitle \? `<small class="facts-checked">\$\{factsCheckedLabel\(\)\}/, 'shown for built-in question games, not for a room’s own quiz');
+  for (const mode of ['classic', 'wheel', 'board', 'dice', 'knockout', 'showdown', 'quizrace', 'soclose', 'wayoff', 'catchup', 'rare', 'potato', 'spotlight']) assert.ok(asksFacts(mode), mode);
+  // Brain Ladder's puzzles are calculated logic and Don't Look! is a word game: no facts to check
+  // (28 November 2026 audit; Brain Ladder used to be listed above).
+  for (const mode of ['punchline', 'cards', 'bluff', 'samepage', 'sketch', 'bloodmoon', 'brain', 'dontlook']) assert.ok(!asksFacts(mode), mode);
   for (const [id] of modes) assert.equal(typeof asksFacts(id), 'boolean');
 });
 

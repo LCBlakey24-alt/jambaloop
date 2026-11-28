@@ -17,13 +17,9 @@
 @media(max-width:410px){.quiz-race-standings{grid-template-columns:1fr}.race-phone-head strong{font-size:20px}.race-phone-foot strong{font-size:17px}}
 @media(prefers-reduced-motion:reduce){.race-answer,.race-mini-track i,.race-phone-progress i{transition:none!important}.race-wake-path{filter:none}.race-racer{filter:none}}
 
-/* On phone controllers, show the whole race question as one scrollable page.
-   The regular mobile-deck paginator would otherwise split the answer controls. */
-html.mobile-deck:has(.game[data-mode="quizrace"]),
-html.mobile-deck:has(.game[data-mode="quizrace"]) body {overflow-y:auto;overscroll-behavior:auto}
-html.mobile-deck body:has(.game[data-mode="quizrace"]) {position:static;min-height:100dvh;height:auto;display:block;overflow-x:hidden}
-html.mobile-deck body:has(.game[data-mode="quizrace"]) #app {overflow:visible;min-height:0}
-html.mobile-deck body:has(.game[data-mode="quizrace"]) > .mobile-pager {display:none!important}
+/* A race phone uses the same one-screen layout as every other phone screen: the screen scrolls inside #app
+   (mobile-deck.css). It used to turn the whole page into a document scroller to dodge the old paginator, but
+   that page could not scroll on a phone, so the captain's "Pause race" sat out of reach below the fold. */
 html.mobile-deck .game[data-mode="quizrace"] {margin:6px auto 24px}
 
 

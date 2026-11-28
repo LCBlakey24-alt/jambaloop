@@ -10,6 +10,8 @@ import { animatePotato, potatoHeat } from './potato-stage.js';
 import { quizRaceView, updateRacePowers } from './quiz-race-view.js';
 import { mountQuizRaceTrack } from './quiz-race-track.js';
 import { mobileDeck } from './mobile-deck.js';
+import { phoneHomeView } from './phone-home.js';
+import { installKind, installOfferView, onInstallChange, promptInstall, setUpInstall } from './install-app.js';
 import { awardView, currentFrame, frameView, revealFrames, scoreReveal } from './ceremony.js';
 import { boardSpeedValues, bonusValues, canSetScore, defaultScoring, doubleSchedules, pointValues } from './scoring.js';
 import { gameNightPresets, gameNightView, partySettings, playlistEditor, playlistLimit, queuedSettings, replayButtons } from './game-night.js';
@@ -42,8 +44,8 @@ import { bumpCount, clockTension, lockRail, reactionFor, stageReveal, stageable,
 import {connectSketchPainter,paintSketchBoard,clearSketch} from './sketch-canvas.js';
 import { openLibrary, savedQuizzes } from './quiz-editor.js';
 import { answerGuide, helpTypes, closestStep, RULER_PITCH, createDraft, formatNumber, orderedItems, setEstimatePrecision, specialAnswer } from './answer-controls.js';
-import { demoView, explainer, hasDemo, practiceView, samples } from './learning.js';
-import { hasTouchscreen, isTvScreen, prepareTvScreen, readScreenChoice, rememberScreen, screenReport } from './device.js';
+import { demoView, explainer, practicePlan, practiceView, samples } from './learning.js';
+import { hasTouchscreen, isTvScreen, prepareTvScreen, readScreenChoice, recordPageLoad, rememberScreen, screenReport } from './device.js';
 import { enableRemote } from './tv-remote.js';
 import { isEstimateShow, maximumTeams, BOARD_PIECES, afterHoursModes, categories, categoryGroups, categoryName, modes, themes, questionTypes, formatTypes, formatId, difficulties, defaultTheme, partyModes, fixedQuestionModes, minimumPlayers, questionCounts, scoreIntervals, defaultScoreInterval, supportsScoreCheckpoints } from './game-config.js';
 import { boardView, diceView, lobbyView, powerBar, reviewView, rollRecap, teamList, teamScoreboard, wheelView } from './game-views.js';
@@ -72,6 +74,21 @@ const dialog = document.querySelector('#dialog');
 // A phone or small tablet: never the TV. A Fire TV Stick reports a small, coarse-pointer screen too, but it has no
 // touchscreen and is recognised as a TV (see device.js), so it hosts like any other big screen.
 const smallScreen = () => !isTvScreen() && (matchMedia('(max-width: 760px)').matches || (hasTouchscreen() && matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) < 700));
+// The phone's home (owner direction, 28 November 2026): one simple screen to join from (phone-home.js). It is used
+// on a phone (the same test as the phone layout, so never on a screen recognised as the TV); "See the games" shows
+// the full launcher instead until the home is opened again.
+let phoneBrowsing = false;
+const phoneHomeWanted = () => !session && !phoneBrowsing && smallScreen() && document.documentElement.classList.contains('mobile-deck');
+function syncPhoneHome() {
+  const shell = app.querySelector('[data-home-shell]');
+  if (!shell) return;
+  const wanted = phoneHomeWanted();
+  // Only a change of screen rebuilds it, so a rotation never clears what is being typed.
+  if (wanted === shell.classList.contains('phone-home-on')) return;
+  shell.querySelector(':scope > .phone-home')?.remove();
+  shell.classList.toggle('phone-home-on', wanted);
+  if (wanted) shell.insertAdjacentHTML('afterbegin', phoneHomeView({ rooms: recentRooms(), scan: canScan() }, { escape, icons, modeName }));
+}
 const content = document.querySelector('#dialog-content');
 const footer = document.querySelector('footer');
 const announcement = document.querySelector('#phase-announcement');
@@ -332,6 +349,8 @@ function renderHome() {
   document.querySelector('#category-filters').innerHTML = categoryGroups.map(([name], index) => `
     <button class="topic-filter" type="button" data-action="filter-topics" data-group="${index}" aria-pressed="${index === 0}">${name}</button>`).join('');
   renderCategories();
+  phoneBrowsing = false;
+  syncPhoneHome();
   const topicCount=app.querySelector('[data-action="home-tab"][data-tab="topics"] span');
   if(topicCount)topicCount.textContent=String(categories.length-1);
   const gameCount=app.querySelector('[data-action="home-tab"][data-tab="games"] span');
@@ -461,14 +480,16 @@ function openDialog(mode, value, gameMode, quizId) {
       ...(configured && state.quizTitle ? [['current', state.quizTitle + ' (in this room)']] : []),
       ...library.map(quiz => [quiz.id, quiz.title]),
     ];
-    content.innerHTML = `<div class="eyebrow">GAME SETUP</div><h2>${rematch ? 'Set up a rematch' : configured ? 'Choose a game' : 'Host a game'}</h2>
+    // On a phone the captain's Settings are this game's settings only: Change game is its own button.
+    const phoneSettings = mode === 'configure' && smallScreen();
+    content.innerHTML = `<div class="eyebrow">GAME SETUP</div><h2>${rematch ? 'Set up a rematch' : phoneSettings ? escape(modeName(selectedMode)) + ' settings' : configured ? 'Choose a game' : 'Host a game'}</h2>
     <p>${rematch ? 'Everyone stays in the room and starts with a fresh score.' : configured ? 'Changes appear on every screen in this room.' : 'Choose a mode, then share the room code with your group.'}</p>
-    <form id="${mode}-form">
+    <form id="${mode}-form" class="${phoneSettings ? 'room-settings' : ''}">
     <fieldset class="mode-options"><legend>Game mode</legend>${modes.map(([id, name, description]) => `<label>
       <input name="mode" type="radio" value="${id}" ${id === selectedMode ? 'checked' : ''}>
       <span><i class="mode-thumb" style="${identityVariables(id)}" aria-hidden="true"></i><strong>${name}</strong><small>${description}</small></span></label>`).join('')}</fieldset>
     <div class="explainer-slot">${setupPreview(selectedMode, Boolean(gameMode))}</div>
-    <div class="quiz-source" id="quiz-source"><label>Question source<select name="quiz">${selected(quizChoices, selectedQuiz)}</select></label>
+    <div class="quiz-source advanced-setting" id="quiz-source"><label>Question source<select name="quiz">${selected(quizChoices, selectedQuiz)}</select></label>
       <button type="button" class="button outline small" data-action="library">My quizzes</button></div>
     <label id="difficulty-field">Difficulty<select name="difficulty">${selected(difficulties, configured ? state.difficulty : 'standard')}</select></label>
     <div class="form-row"><label id="category-field">Category<select name="category">${selected(categories, value ?? 'mixed')}</select></label>
@@ -485,11 +506,11 @@ function openDialog(mode, value, gameMode, quizId) {
       <label>Difficulty<select name="raceDifficulty">${selected([['easy','Easy'],['medium','Medium'],['hard','Hard'],['mixed','Mixed']],raceSetup.raceDifficulty ?? 'mixed')}</select></label>
       <label>Format<select name="raceLeague">${selected([['off','Single race'],['on','League · 3 races, points for every place']],raceSetup.raceLeague ? 'on' : 'off')}</select></label></div>
       <small>2–12 racers. Multiple-choice questions appear privately on phones. Fast correct answers boost speed. Easy/Hard use curated questions where available, supplemented by standard questions.</small></fieldset>
-    <label id="score-interval-field">Leaderboard reveal<select name="scoreInterval" aria-label="Leaderboard reveal" aria-describedby="score-interval-help">${selected(scoreIntervals.map(value => [value, intervalLabels[value]]), interval)}</select>
+    <label id="score-interval-field" class="advanced-setting">Leaderboard reveal<select name="scoreInterval" aria-label="Leaderboard reveal" aria-describedby="score-interval-help">${selected(scoreIntervals.map(value => [value, intervalLabels[value]]), interval)}</select>
       <small id="score-interval-help">Correct answers are still revealed after each question.</small></label>
-    <div class="setup-presets" aria-label="Timing presets"><button type="button" class="button outline small" data-preset="quick">Quick game</button>
+    <div class="setup-presets advanced-setting" aria-label="Timing presets"><button type="button" class="button outline small" data-preset="quick">Quick game</button>
       <button type="button" class="button outline small" data-preset="relaxed">No rush</button></div>
-    <fieldset class="scoring-fields" id="quiz-scoring"><legend>Quiz scoring</legend>
+    <fieldset class="scoring-fields advanced-setting" id="quiz-scoring"><legend>Quiz scoring</legend>
       <div class="form-row"><label>Points for a correct answer<select name="basePoints">${selected(pointValues.map(value => [value, value + ' points']), scoring.base)}</select></label>
       <label>Max speed bonus<select name="speedPoints">${selected(bonusValues.map(value => [value, value ? '+' + value + ' points' : 'Off']), scoring.bonus)}</select></label>
       <label>Double points<select name="doublePoints">${selected(doubleSchedules, scoring.doubles)}</select></label></div>
@@ -513,14 +534,15 @@ function openDialog(mode, value, gameMode, quizId) {
       <output class="duration-preview" aria-live="polite"></output>
       <small>Estimates use dice odds, question time and time between turns.</small>
     </fieldset>
-    <label>Phone display<select name="phoneView">${selected([['answers', 'Answer buttons only · follow the TV'], ['full', 'Also show the full question · no TV needed']], configured ? state.phoneView : 'answers')}</select></label>
-    <label>Visual style<select name="theme">${selected(themes, configured ? state.theme : previewTheme)}</select></label>
-    <label class="switch-row"><input type="checkbox" name="autoReveal" ${configured && state.autoReveal ? 'checked' : ''}><span><strong>Auto-reveal answers</strong><small>Reveal when every eligible player has answered.</small></span></label>
+    <label id="phone-view-field" class="advanced-setting">Phone display<select name="phoneView">${selected([['answers', 'Answer buttons only · follow the TV'], ['full', 'Also show the full question · no TV needed']], configured ? state.phoneView : 'answers')}</select></label>
+    <label id="theme-field" class="advanced-setting">Visual style<select name="theme">${selected(themes, configured ? state.theme : previewTheme)}</select></label>
+    <label class="switch-row advanced-setting"><input type="checkbox" name="autoReveal" ${configured && state.autoReveal ? 'checked' : ''}><span><strong>Auto-reveal answers</strong><small>Reveal when every eligible player has answered.</small></span></label>
     <label class="switch-row" id="christmas-field"><input type="checkbox" name="includeChristmas" ${configured && state.includeChristmas ? 'checked' : ''}><span>Include Christmas questions</span></label>
     <label class="switch-row after-dark-row" id="after-dark-field" hidden><input type="checkbox" name="afterDark" ${configured && state.afterDark ? 'checked' : ''}>
       <span><strong>After Hours · adults only (18+)</strong><small>Grown-up, darker prompts and cards instead of the family set. Off unless you switch it on. Not for children.</small></span></label>
     <p class="settings-note" id="scoring-note" aria-live="polite"></p>
-    <p class="error" role="alert"></p><button class="button primary" type="submit">${rematch ? 'Set up rematch' : configured ? 'Apply to lobby' : 'Create room'} ${icons('arrow-up-right')}</button></form>`;
+    ${phoneSettings ? '<button type="button" class="button outline small more-settings-toggle" data-more-settings aria-expanded="false">More options</button>' : ''}
+    <p class="error" role="alert"></p><button class="button primary" type="submit">${rematch ? 'Set up rematch' : phoneSettings ? 'Save settings' : configured ? 'Apply to lobby' : 'Create room'} ${icons('arrow-up-right')}</button></form>`;
     const form = content.querySelector('form');
     if (configured) {
       form.dataset.game = state.game;
@@ -602,6 +624,7 @@ function openDialog(mode, value, gameMode, quizId) {
         form.querySelector('input[name="playStyle"][value="individual"]').checked = true;
       }
       const style = form.querySelector('input[name="playStyle"]:checked').value;
+      form.querySelector('#team-play-setup').classList.toggle('no-choice', !allowsTeams || trolley);
       form.querySelector('#team-count-field').hidden = style !== 'teams';
       form.querySelector('#team-count-label').textContent = trolley ? 'Exactly two teams' : 'Number of teams';
       const help = form.querySelector('#team-play-help');
@@ -673,6 +696,13 @@ function openDialog(mode, value, gameMode, quizId) {
         : game === 'showdown' ? 'Balanced teams score the average of their players’ points each round.' : scoringNote;
     };
     form.addEventListener('click', event => {
+      const more = event.target.closest('[data-more-settings]');
+      if (more) {
+        const open = form.classList.toggle('show-more');
+        more.setAttribute('aria-expanded', String(open));
+        more.textContent = open ? 'Fewer options' : 'More options';
+        return;
+      }
       const preset = event.target.closest('[data-preset]');
       if (!preset) return;
       const quick = preset.dataset.preset === 'quick';
@@ -692,8 +722,11 @@ function openDialog(mode, value, gameMode, quizId) {
       openDialog(state?.phase === 'lobby' && session ? 'configure' : state?.phase === 'finished' && session ? 'rematch' : 'host', 'mixed', undefined, id);
     });
   } else if (mode === 'practice') {
-    if (!value && hasDemo(state?.mode)) showDemo(state.mode, 0);
-    else showPractice(value ?? (samples[formatTypes(state?.format)[0]] ? formatTypes(state?.format)[0] : 'choice'));
+    // Only practice that fits this game: its own walk-through, or the answer types this room really asks.
+    const plan = practicePlan(session ? state : undefined);
+    if (!value && plan?.demo) showDemo(state.mode, 0);
+    else if (plan?.types.length) showPractice(plan.types.includes(value) ? value : plan.types[0], plan.types);
+    else content.innerHTML = '<div class="eyebrow">PRACTICE</div><h2>Nothing to practise</h2><p>This game has no practice round. Watch the TV: it shows how to play.</p>';
   } else if (mode === 'themes') {
     content.innerHTML = `<div class="eyebrow">VISUAL STYLE</div><h2>Set the mood</h2><div class="theme-options">
       ${themes.map(([id, name, color, panel]) => `<button class="button outline" data-action="theme" data-theme="${id}" aria-pressed="${previewTheme === id}">
@@ -769,7 +802,7 @@ function openDialog(mode, value, gameMode, quizId) {
     // The screen check: what this device reports, and a way to tell the site it is the TV (or a phone).
     const report = screenReport();
     const rows = [['Treated as', report.detected === 'tv' ? 'The TV' : report.detected === 'phone' ? 'A phone' : 'A computer'], ['Chosen on this device', report.remembered],
-      ['Page size', report.page], ['Screen size', report.screen], ['Pixel ratio', report.pixelRatio], ['Touch points', report.touchPoints], ['Pointer', report.pointer], ['Browser', report.agent]];
+      ['Page size', report.page], ['Screen size', report.screen], ['Pixel ratio', report.pixelRatio], ['Touch points', report.touchPoints], ['Pointer', report.pointer], ['Page loads', report.loads], ['Browser', report.agent]];
     content.innerHTML = `<div class="eyebrow">SCREEN CHECK</div><h2>Is this the TV?</h2>
     <p>Jambaloop works out whether this screen is the TV everyone watches or a phone. If it gets it wrong (some TV sticks look like phones), choose here. The choice is remembered on this device.</p>
     <div class="actions bigscreen-actions screen-choices">
@@ -882,14 +915,14 @@ function leave() {
 
 // A pasted invite URL (or a six-digit number) becomes a plain, validated room code.
 document.addEventListener('input', event => {
-  if (!event.target.matches('#join-form input[name="code"]')) return;
+  if (!event.target.matches(':is(#join-form, #home-join-form) input[name="code"]')) return;
   const value = event.target.value;
   const compact = value.replace(/[^0-9]/g, '').slice(0, 6);
   if (value !== compact) event.target.value = compact;
 });
 
 document.addEventListener('paste', event => {
-  if (!event.target.matches('#join-form input[name="code"]')) return;
+  if (!event.target.matches(':is(#join-form, #home-join-form) input[name="code"]')) return;
   const code = parseRoomCode(event.clipboardData?.getData('text'));
   if (!code) return;
   event.preventDefault();
@@ -939,7 +972,7 @@ document.addEventListener('submit', async event => {
     }
     return;
   }
-  if (!['host-form', 'join-form', 'configure-form', 'rematch-form'].includes(form.id)) return;
+  if (!['host-form', 'join-form', 'home-join-form', 'configure-form', 'rematch-form'].includes(form.id)) return;
   event.preventDefault();
   const button = form.querySelector('button:not([type="button"])');
   button.disabled = true;
@@ -963,8 +996,10 @@ document.addEventListener('submit', async event => {
         startSession(known);
         return;
       }
-      const player = await api('/' + code + '/join', { name, avatar: joinAvatar, seenQuestions: readQuestionHistory(), returning: isReturning() });
-      pendingJoin = { name, avatar: joinAvatar };
+      // The home screen's Join card has no photo picker: a photo chosen earlier in the join pop-up stays there.
+      const avatar = form.id === 'join-form' ? joinAvatar : undefined;
+      const player = await api('/' + code + '/join', { name, avatar, seenQuestions: readQuestionHistory(), returning: isReturning() });
+      pendingJoin = { name, avatar };
       startSession({ code, key: player.key, host: false });
     }
   } catch (error) {
@@ -1119,8 +1154,9 @@ function render(s) {
   const canControl = host || s.isCaptain;
   const controllerOnly = !host && s.phoneView === 'answers';
   const canPause = canControl && ((s.ends && ['question', 'party-potato'].includes(s.phase)) || (s.mode === 'quizrace' && ['race','race-countdown'].includes(s.phase)));
+  // A phone shows "Pause" beside the captain's main button; the TV keeps "Pause timer".
   const pauseButton = canPause ? `<button class="button outline small" data-action="clock">
-    ${icons('pause')} Pause timer</button>` : '';
+    ${icons('pause')} <span>Pause<span class="pause-timer-word"> timer</span></span></button>` : '';
   setTheme(s.theme);
   const board = s.mode === 'board';
   const showdown = s.mode === 'showdown';
@@ -1143,13 +1179,15 @@ function render(s) {
     body = `<section class="game-panel round-break">
       <span class="pause-mark">${icons('pause')}</span><div class="eyebrow">ROUND ON HOLD</div><h1>Timer paused<span class="brand-dot">.</span></h1>
       <div class="break-clock"><span class="timer" id="timer"></span><span>left in this round</span></div>
-      <p>${s.selection !== undefined ? 'Your answer is locked in.' : 'The round continues when the host or captain resumes.'}</p>
+      <p>${s.selection !== undefined ? 'Your answer is locked in.' : canControl ? 'Tap Resume timer when everyone is ready.' : 'The round continues when the captain resumes.'}</p>
       ${canControl ? `<div class="actions"><button class="button primary" data-action="clock">${icons('play')} Resume timer</button></div>` : ''}
     </section>`;
   } else if (s.party) {
     body = partyView(s, { host, canControl, escape, icons, reply: partyReply });
     if (s.phase === 'party-potato' && pauseButton) body = `<div class="round-pace">${pauseButton}</div>` + body;
     if (s.phase === 'party-potato' && !host) timer = '<span class="timer potato-timer" id="timer"></span>';
+    // Catch Up: the seconds left in a leg are on every phone, not only the TV.
+    if (s.phase === 'catch-leg' && !host && s.ends) timer = '<span class="player-timer" aria-label="Time remaining"><span class="player-timer-label">TIME LEFT</span><span class="timer" id="timer"></span></span>';
   } else if (s.phase === 'lobby' && s.picker && s.gathering) {
     body = host ? gatherTv(s, { escape }) : gatherPhone(s, { escape, canDrive: s.isCaptain });
   } else if (s.phase === 'lobby' && s.picker) {
@@ -1157,7 +1195,7 @@ function render(s) {
   } else if (s.phase === 'lobby') {
     body = lobbyView(s, { host, escape, icons, modeName });
     const types = s.quizTypes ?? (s.format === 'mixed' ? helpTypes : formatTypes(s.format));
-    if (!partyModes.includes(s.mode)) body += `<section class="game-panel lobby-guide"><h2>How to answer</h2><dl>${types.map(type => {
+    if (host && !partyModes.includes(s.mode)) body += `<section class="game-panel lobby-guide"><h2>How to answer</h2><dl>${types.map(type => {
       const [label, description] = answerGuide(type);
       return `<div><dt>${label}</dt><dd>${description}</dd></div>`;
     }).join('')}</dl></section>`;
@@ -1202,7 +1240,7 @@ function render(s) {
       ${host ? `<div class="podium">${standings(s.players)}</div>` : ''}
       ${!host ? `<dl class="personal-scorecard"><div><dt>Rounds won</dt><dd>${s.player.wins} / ${s.index + 1}</dd></div><div><dt>Best streak</dt><dd>${s.player.bestStreak}</dd></div><div><dt>Final rank</dt><dd>#${s.rank}</dd></div></dl>` : ''}
       ${!host && s.playerCount > s.players.length ? '<h2>Top 10</h2>' : ''}${fullLeaderboard(s.players, 'Full standings')}${s.review.length ? reviewView(s.review, escape, formatNumber) : ''}<div class="actions">${canControl ? replayButtons(s, icons) : `<button class="button outline" data-action="leave">Back to home ${icons('arrow-right')}</button>`}</div>
-      ${host ? '' : '<p class="status">Stay here if the captain or host starts a rematch.</p>'}</div>`;
+      ${canControl ? '' : '<p class="status">Stay here if the captain or host starts a rematch.</p>'}</div>`;
   } else if(isEstimateShow(s.mode) && s.phase==='reveal' && s.estimateReveal){
     body=`<div class="game-panel so-close-broadcast"><div class="eyebrow">ROUND ${s.index+1}${s.mode==='wayoff'?` · ${s.stillIn} STILL IN`:` OF ${s.total}`}</div><p class="so-close-reveal-prompt">${controllerOnly?'Round results':escape(s.question.prompt)}</p>${s.wayOut?`<div class="way-out" role="status">${s.wayOut.length?`<strong>WAY OFF!</strong> ${s.wayOut.map(row=>`<span class="way-out-player">${avatarView(row,escape)}${escape(row.name)}</span>`).join('')} ${s.wayOut.length===1?'is':'are'} out.${!host&&s.out?' That includes you.':''}`:'<strong>NOBODY IS OUT</strong> Not enough guesses to cut anyone.'}</div>`:''}<div id="so-close-frame" aria-live="polite"></div>${canControl?`<div class="actions so-close-reveal-actions"><button class="button outline" data-action="estimate-reveal-skip">Skip to results</button><button class="button primary" data-action="advance" hidden>${nextQuestionLabel(s)} ${icons('arrow-right')}</button></div>`:''}</div>`;
   } else if (host && s.privateQuestions) {
@@ -1274,7 +1312,9 @@ function render(s) {
 `;
   }
   if (s.phase === 'finished' && !replayPlaying(s)) {
-    const nextUp = gameNightView(s, { canControl, escape, icons });
+    // Phones keep the end short: the awards and Game Night planning are on the TV; a captain still gets
+    // "Load next game" when a playlist is queued.
+    const nextUp = host || s.night.queue.length ? gameNightView(s, { canControl, escape, icons }) : '';
     if (s.ceremony && host) {
       const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
       ceremonyFrames = revealFrames(s.players, s.awards);
@@ -1282,9 +1322,9 @@ function render(s) {
       body = scoreReveal(playing, s) + `<div id="post-ceremony" ${playing ? 'hidden' : ''}>${s.night.queue.length ? nextUp : ''}
         ${body}${awardView(s.awards, escape, icons)}${s.night.queue.length ? '' : nextUp}</div>`;
     } else {
-      body = (s.night.queue.length ? nextUp : '') + body + awardView(s.awards, escape, icons) + (s.night.queue.length ? '' : nextUp);
+      body = (s.night.queue.length ? nextUp : '') + body + (host ? awardView(s.awards, escape, icons) : '') + (s.night.queue.length ? '' : nextUp);
     }
-  } else if (['lobby', 'waiting'].includes(s.phase) && !s.picker) body += gameNightView(s, { canControl, escape, icons });
+  } else if (['lobby', 'waiting'].includes(s.phase) && !s.picker && host) body += gameNightView(s, { canControl, escape, icons });
   const phaseKey = `${s.code}/${s.game}/${s.index}/${s.phase}${replayPlaying(s) ? '/replay' + s.raceReplay.id : ''}${s.pausedAt ? '/paused' : ''}${s.party?.holding || s.party?.type === 'fork' ? '/' + s.party.step : ''}`;
   const enter = renderedPhase !== phaseKey;
   // TV broadcast stings: the show's title card at kick-off, a band before the last round.
@@ -1299,6 +1339,9 @@ function render(s) {
   const focused = document.activeElement;
   const guideWasOpen = !enter && !host && s.phase === 'lobby' && Boolean(app.querySelector('.player-game-guide')?.open);
   const guideHadFocus = guideWasOpen && Boolean(focused?.closest('.player-game-guide'));
+  // Bloodmoon: a role card the player has peeked at stays open while this phase lasts (others' taps
+  // redraw the screen); every new phase starts with it closed, so it looks the same on every phone.
+  const roleCardWasOpen = !enter && !host && Boolean(app.querySelector('.blood-role-card')?.open);
   // Re-rendering an unchanged live phase must not jump the player to the top
   // while they're reading a long ballot, writing an answer or drawing.
   const playerScroll = !enter && !host && !['lobby', 'waiting'].includes(s.phase) ? app.scrollTop : null;
@@ -1327,7 +1370,7 @@ function render(s) {
   const shownMode = s.phase === 'lobby' && s.picker ? s.picker.mode : s.mode;
   app.innerHTML = `<section class="game ${host ? 'host-screen' : 'player-only'} ${immersive ? 'immersive' : ''} ${host && tvFocus ? 'tv-focus' : ''} ${enter ? 'phase-enter' : ''}" data-deck-key="${phaseKey}" data-phase="${s.phase}" data-paused="${Boolean(s.pausedAt)}" data-mode="${shownMode}" data-result="${result}" style="${modeVariables(shownMode)}">${sceneBackdrop(shownMode, enter && (s.phase === 'finished' || result === 'win'))}<div class="game-top">
     <div class="screen-identity"><span class="screen-mode-icon" aria-hidden="true">${icons(mode[3])}</span>
-      <div><div class="screen-mode-title">${s.phase === 'lobby' && s.picker ? (s.gathering ? 'Join the party' : 'Pick a game') : escape(s.quizTitle || (s.mode === 'classic' ? categoryName(s.category) : modeName(s.mode)))}</div>
+      <div><div class="screen-mode-title">${s.phase === 'lobby' && s.picker ? (s.gathering ? 'Join the party' : 'Pick a game') : escape(s.quizTitle || (s.mode === 'classic' && host ? categoryName(s.category) : modeName(s.mode)))}</div>
       <div class="screen-status">${host && s.phase === 'lobby' && !s.picker && showIdentity(s.mode) ? `<span class="show-studio-label">${showIdentity(s.mode).studio}</span>` : ''}<span class="phase-caption">${caption}</span>${s.afterDark && s.phase !== 'lobby' ? '<span class="after-hours-tag">AFTER HOURS 18+</span>' : ''}
       ${s.isCaptain && s.phase !== 'lobby' ? '<span class="captain-tag">★ Captain</span>' : ''}${boost}
       ${host && ['lobby','finished'].includes(s.phase) ? '<span class="studio-publisher">A ROOKIE QUEST GAMES PRODUCTION</span>' : ''}
@@ -1351,6 +1394,7 @@ function render(s) {
       if (guideHadFocus) guide.querySelector('summary')?.focus({ preventScroll: true });
     }
   }
+  if (roleCardWasOpen) { const card = app.querySelector('.blood-role-card'); card?.classList.add('is-kept'); card?.setAttribute('open', ''); }
   if (playerScroll !== null) app.scrollTop = playerScroll;
   switchAvatarSession.refresh();
   if (backdrop) app.querySelector('.scene-backdrop').replaceWith(backdrop);
@@ -1974,9 +2018,9 @@ function showDemo(mode, step, feedback) {
   content.querySelector('h2').focus();
 }
 
-function showPractice(type) {
+function showPractice(type, types = practice?.types) {
   const sample = samples[type] ?? samples.choice;
-  practice = { sample, draft: createDraft(sample) };
+  practice = { sample, draft: createDraft(sample), types };
   content.innerHTML = practiceView(practice, escape);
   content.querySelector('h2').id = 'dialog-title';
 }
@@ -2329,13 +2373,8 @@ document.addEventListener('click', async event => {
         form.querySelector('.join-photo-option').open = true;
         updateJoinCard(form);
         stopScan = undefined;
-        // On a phone the join screen is paged: turn to the page with the name and selfie.
-        // (after the paged layout has re-measured the changed screen, or it would flip back)
-        setTimeout(() => {
-          if (!form.isConnected) return;
-          if (form.elements.name.closest('[data-deck-hidden]')) dialog.querySelector('[data-deck-next]')?.click();
-          form.elements.name.focus();
-        }, 450);
+        // Straight on to the name (the screen scrolls it into view on a phone).
+        setTimeout(() => { if (form.isConnected) form.elements.name.focus(); }, 300);
         return true;
       });
       if (!scanner.hidden) status.textContent = 'Point your camera at the QR code on the TV.';
@@ -2360,6 +2399,14 @@ document.addEventListener('click', async event => {
   }
   if (action === 'home-tab') {
     if (!session) showHomeTab(button.dataset.tab);
+    return;
+  }
+  // "See the games" on the phone home: the full launcher, as before.
+  if (action === 'phone-browse') {
+    if (session) return;
+    phoneBrowsing = true;
+    syncPhoneHome();
+    app.querySelector('#mode-heading')?.focus({ preventScroll: true });
     return;
   }
   if (action === 'filter-modes') {
@@ -2528,7 +2575,10 @@ document.addEventListener('click', async event => {
     if (mode === 'potato' && option !== 1) {
       return showDemo(mode, 0, option === 2 ? 'You still have the potato. In a game a skip deals a fresh question. Try this sample again.' : 'Keep the potato and try again. Beavers are known for building dams.');
     }
-    if (step === 1 && ['board', 'wheel', 'dice'].includes(mode)) return showPractice('choice');
+    if (step === 1 && ['board', 'wheel', 'dice'].includes(mode)) {
+      const types = practicePlan(state)?.types ?? [];
+      return showPractice(types[0] ?? 'choice', types);
+    }
     return showDemo(mode, step + 1);
   }
   if (action === 'practice-choice' && practice) return checkPractice(Number(button.dataset.option));
@@ -2549,6 +2599,11 @@ document.addEventListener('click', async event => {
     else openDialog('join', button.dataset.code);
     return;
   }
+  // The phone home's "Scan the QR code" opens the join pop-up with the camera already on.
+  if (action === 'join' && button.dataset.scan && canScan()) {
+    openDialog('join');
+    return content.querySelector('[data-action="scan-start"]')?.click();
+  }
   if (['help', 'host', 'join', 'themes', 'practice', 'library', 'recent-rooms', 'device'].includes(action)) return openDialog(action, button.dataset.category, button.dataset.mode);
   if (action === 'screen-choice') {
     rememberScreen(button.dataset.screen === 'auto' ? undefined : button.dataset.screen);
@@ -2561,7 +2616,12 @@ document.addEventListener('click', async event => {
   }
   if (action === 'close') return dialog.close();
   if (action === 'night' && session && state) return openDialog('night');
-  if (action === 'leave') return leave();
+  if (action === 'install-app') return promptInstall();
+  // A player leaving mid-game is asked first: the Home button sits beside the timer.
+  if (action === 'leave') {
+    if (session && !session.host && state && !['lobby', 'finished', 'waiting'].includes(state.phase) && !confirm('Leave this game? You can join again with the room code.')) return;
+    return leave();
+  }
   if (action === 'party-start' && session && state?.gathering) { button.disabled = true; return api('/' + session.code + '/welcome', { action: 'party', game: state.game }).catch(error => { button.disabled = false; showGameError(error); }); }
   if (action === 'party-skip' && session && state?.gathering) { button.disabled = true; return api('/' + session.code + '/browse', { open: true, skipIntro: true, game: state.game }).catch(error => { button.disabled = false; showGameError(error); }); }
   if (action === 'guide-play' && session && state?.phase === 'lobby' && !state.briefing) return briefingAction('play');
@@ -2605,7 +2665,8 @@ document.addEventListener('click', async event => {
     if (button.dataset.screen === 'tv') { rememberScreen('tv', { visitOnly: hasTouchscreen() }); prepareTvScreen(); window.dispatchEvent(new Event('jambaloop-screen')); }
     if (dialog.open) dialog.close();
     button.disabled = true;
-    const message = document.querySelector('#home-error');
+    // On the phone home the launcher (and its message line) is hidden, so a hosting error shows under the hosting line.
+    const message = document.querySelector('.phone-home-on [data-host-error]') ?? document.querySelector('#home-error');
     try {
       // Lobby first: everyone joins, then the captain picks the game on the
       // carousel. Hosting from a game's tile starts the carousel on that game.
@@ -2768,7 +2829,10 @@ matchMedia('(max-width: 760px)').addEventListener('change', () => {
   homePage = 0;
   homeSelected = undefined;
   renderModeCards(homeFilter);
+  syncPhoneHome();
 });
+// The phone layout comes and goes with rotation, resizing and "This screen is our TV": the phone home follows it.
+new MutationObserver(syncPhoneHome).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 
 // The landing shelf turns by itself while nobody is browsing it.
 let carouselTouchedAt = performance.now();
@@ -2840,10 +2904,26 @@ carouselScreen.addEventListener('change', () => {
 // ?tv, ?phone or ?auto in the address chooses this screen; ?device opens the screen check.
 const screenCheck = readScreenChoice();
 prepareTvScreen();
+if (isTvScreen()) recordPageLoad();
+// Installing Jambaloop on a phone from the browser (no app store): any [data-install-slot] on screen shows
+// the offer this device supports, and updates when the browser makes or withdraws its offer.
+const fillInstallSlots = () => {
+  const offer = installOfferView(installKind({ isTv: isTvScreen }), icons);
+  for (const slot of document.querySelectorAll('[data-install-slot]')) {
+    if (slot.innerHTML !== offer) slot.innerHTML = offer;
+    slot.hidden = !offer;
+    slot.dataset.filled = '';
+  }
+};
+setUpInstall({ isTv: isTvScreen });
+onInstallChange(fillInstallSlots);
+new MutationObserver(() => { if (document.querySelector('[data-install-slot]:not([data-filled])')) fillInstallSlots(); })
+  .observe(document.querySelector('#app'), { childList: true, subtree: true });
 // On the TV, the remote's arrows move between buttons and OK presses them.
 enableRemote(isTvScreen);
+// The phone layout is known first, so a phone opens straight on its own home screen.
+mobileDeck();
 renderHome();
-mobileDeck(app, dialog, content);
 const code = new URLSearchParams(location.search).get('join');
 const saved = restoreRoomSession();
 // The screen check is a deliberate visit: it is not replaced by a saved room or a join form. Choosing reloads the page.

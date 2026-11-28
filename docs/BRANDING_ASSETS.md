@@ -9,6 +9,7 @@ The site loads display-ready transparent WebP files:
 - `/branding/jambaloop-logo-navy.webp` on light backgrounds.
 - `/branding/jambaloop-logo-white.webp` on dark and Arcade backgrounds.
 - `/branding/jambaloop-icon.png` as the browser favicon / touch icon.
+- `/app-icons/` (28 November 2026): the home-screen icons for installing Jambaloop as an app on a phone (192 and 512 pixels, a 512-pixel maskable icon with extra margin, and a 180-pixel iPhone icon). They are the symbol from `jambaloop-logo-navy-original.png`, cut out at full resolution and centred on white, so the controller's dark half stays visible. No new artwork.
 
 The wordmarks are shown in the global header and footer. `branding.css` chooses the correct variant based on the existing `body.playing` and `data-theme` switches. Do not apply CSS colour inversion to the colourful artwork.
 

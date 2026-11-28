@@ -39,11 +39,9 @@ try {
   const errors = [];
   phone.on('pageerror', error => errors.push(error.message));
   await phone.goto(site + '/');
-  await phone.locator('.home-actions [data-action="join"]').tap();
-  const scan = phone.locator('[data-action="scan-start"]');
-  await scan.waitFor({ timeout: 10000 });
-  assert.equal(await phone.locator('#join-room-code').inputValue(), '', 'nothing filled in yet');
-  await scan.tap();
+  // The phone home's "Scan the QR code instead" opens the join screen with the camera already on (28 November 2026).
+  await phone.locator('.phone-home [data-action="join"][data-scan]').tap();
+  await phone.locator('#join-room-code').waitFor({ timeout: 10000 });
   await phone.waitForFunction(expected => document.querySelector('#join-room-code')?.value === expected, code, { timeout: 25000 });
   assert.match(await phone.locator('.join-scan-or').innerText(), new RegExp('Room ' + code + ' found'));
   assert.equal(await phone.evaluate(() => Boolean(document.querySelector('[data-scan-video]').srcObject)), false, 'the camera is switched off once the code is read');

@@ -106,7 +106,10 @@ export function spotlightView(state,{host,canControl,escape,icons}) {
       optionsPanel(party,phase,{host,escape})+roleMessage+
       (locked?'<p role="status" class="spotlight-locked">Your selection is locked in.</p>':'')+
       revealSummary+source+'</div>';
-    if(canControl){
+    // The captain's phone never offers to skip the captain's own turn: as the expert they advise, and as the
+    // contestant they answer. Skipping is for someone else's slow turn. The TV keeps every button.
+    const ownTurn=!host&&(phase==='spotlight-expert'&&party.expertTurn||phase==='spotlight-answer'&&party.contestantTurn);
+    if(canControl&&!ownTurn){
       controls=phase==='spotlight-expert'
         ?'<button class="button outline spotlight-primary" data-action="advance">Continue without advice '+icons('arrow-right')+'</button>'
         :phase==='spotlight-answer'

@@ -41,6 +41,20 @@ export function screenKind(env = globalThis) {
 }
 export const isTvScreen = (env = globalThis) => screenKind(env) === 'tv';
 
+const LOADS = 'jambaloop-page-loads';
+/** Note this page load (and why, when the TV app says so), keeping the last ten. */
+export function recordPageLoad(env = globalThis) {
+  try {
+    const kind = env.performance?.getEntriesByType?.('navigation')?.[0]?.type ?? 'navigate';
+    const reason = new URLSearchParams(env.location?.search ?? '').get('back') ?? '';
+    const loads = JSON.parse(env.localStorage.getItem(LOADS) ?? '[]').slice(-9);
+    loads.push({ at: new Date().toISOString(), kind, reason });
+    env.localStorage.setItem(LOADS, JSON.stringify(loads));
+    return loads;
+  } catch { return []; }
+}
+const recentLoads = env => { try { return JSON.parse(env.localStorage.getItem(LOADS) ?? '[]'); } catch { return []; } };
+
 /** Everything the device reports, for the screen check (?device) when a TV is not recognised. */
 export function screenReport(env = globalThis) {
   const media = query => Boolean(env.matchMedia?.(query).matches);
@@ -50,6 +64,9 @@ export function screenReport(env = globalThis) {
     pixelRatio: env.devicePixelRatio, touchPoints: env.navigator?.maxTouchPoints ?? 0,
     pointer: media('(pointer: fine)') ? 'fine' : media('(pointer: coarse)') ? 'coarse' : media('(pointer: none)') ? 'none' : 'unknown',
     hover: media('(hover: hover)'),
+    // When the page last loaded: a reload here means the page really restarted (the TV app's engine was
+    // stopped, or the app was reopened); none means a flash came from the screen redrawing, not a reload.
+    loads: recentLoads(env).map(load => `${load.at.slice(5, 16).replace('T', ' ')} ${load.kind}${load.reason ? ' (' + load.reason + ')' : ''}`).join(' · ') || 'none recorded',
   };
 }
 

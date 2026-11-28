@@ -1,4 +1,4 @@
-import { capacityError, defaultScoreInterval, fixedQuestionModes, maximumPlayers, minimumPlayers, modes, supportsScoreCheckpoints } from './game-config.js';
+import { capacityError, defaultScoreInterval, fixedQuestionModes, isEstimateShow, maximumPlayers, minimumPlayers, modes, questionCounts, supportsScoreCheckpoints } from './game-config.js';
 
 export const playlistLimit = 12;
 
@@ -8,13 +8,32 @@ export const gameNightPresets = {
   60: ['classic', 'rare', 'spotlight', 'board', 'samepage', 'brain', 'topanswers', 'punchline', 'tracks', 'potato', 'quizrace', 'showdown'],
 };
 
+// The length each game prefers when it is picked without the setup form.
+const preferredCount = mode => mode === 'board' ? 12 : mode === 'spotlight' ? 1 : ['topanswers', 'rare'].includes(mode) ? 3 : 5;
+
+// The preferred length if the server allows it, otherwise the first length it
+// does allow. questionCounts is the same rule the server checks, so a game
+// that plays a single match (Bloodmoon, Catch Up, Shade, Don't Look!) or a
+// fixed number of rounds is never sent a length it would refuse.
+const allowedCount = (mode, format, category, wanted) => {
+  const allowed = questionCounts(mode, format, category);
+  return allowed.includes(wanted) ? wanted : allowed[0];
+};
+
+/**
+ * Settings for a game picked without the setup form: the TV lobby's quick
+ * switch and the next game in a Game Night playlist. Closest-number shows
+ * (So Close, Way Off) only take estimate questions on the standard bank.
+ */
 export function queuedSettings(mode, theme) {
+  const format = isEstimateShow(mode) ? 'estimate' : 'choice';
+  const privateQuestions = mode === 'showdown';
   return {
-    mode, theme, count: mode === 'board' ? 12 : mode === 'spotlight' ? 1 : mode === 'topanswers' ? 3 : mode === 'rare' ? 3 : 5, category: 'mixed', seconds: 20,
-    format: mode === 'soclose' ? 'estimate' : 'choice', autoReveal: true,
+    mode, theme, count: allowedCount(mode, format, 'mixed', preferredCount(mode)), category: 'mixed', seconds: 20,
+    format, autoReveal: true,
     scoreInterval: supportsScoreCheckpoints(mode) ? defaultScoreInterval : undefined,
-    privateQuestions: mode === 'showdown',
-    difficulty: fixedQuestionModes.includes(mode) && !['showdown','soclose'].includes(mode) ? 'family' : 'standard',
+    privateQuestions,
+    difficulty: fixedQuestionModes.includes(mode) && !privateQuestions && !isEstimateShow(mode) ? 'family' : 'standard',
   };
 }
 
@@ -25,7 +44,8 @@ export function queuedSettings(mode, theme) {
 export function partySettings(mode, theme) {
   const quick = queuedSettings(mode, theme);
   if (!['classic', 'dice', 'knockout', 'wheel', 'board'].includes(mode)) return quick;
-  return { ...quick, format: 'mixed', difficulty: 'standard', ...(mode === 'board' ? {} : { count: 10 }) };
+  const format = 'mixed';
+  return { ...quick, format, difficulty: 'standard', count: mode === 'board' ? quick.count : allowedCount(mode, format, quick.category, 10) };
 }
 
 export function replayButtons(state, icons) {

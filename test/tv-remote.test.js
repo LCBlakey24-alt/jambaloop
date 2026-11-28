@@ -44,3 +44,13 @@ test('the Fire TV app opens the site as the TV, full screen, with sound, and sho
   assert.match(manifest, /android\.hardware\.touchscreen" android:required="false"/);
   assert.match(read('app/build.gradle'), /minSdk 22/);
 });
+
+test('the built app is served at /tv.apk, so a Fire TV can download it with Downloader', async () => {
+  const { readFileSync, statSync } = await import('node:fs');
+  const apk = new URL('../public/tv.apk', import.meta.url);
+  assert.ok(statSync(apk).size > 20000 && statSync(apk).size < 5_000_000);
+  const bytes = readFileSync(apk);
+  assert.equal(bytes.subarray(0, 2).toString(), 'PK', 'an APK is a zip archive');
+  assert.ok(bytes.includes(Buffer.from('AndroidManifest.xml')) && bytes.includes(Buffer.from('classes.dex')));
+  assert.match(readFileSync(new URL('../fire-tv-app/README.md', import.meta.url), 'utf8'), /jambaloop-family-test\.onrender\.com\/tv\.apk/);
+});

@@ -34,7 +34,7 @@ export const duoIntros = {
   ],
   board: [
     ['max', '[excited] Welcome to Board Race!'],
-    ['poppy', '[cheerfully] Roll the dice, land on a square, and answer its question to keep moving.'],
+    ['poppy', '[cheerfully] Roll the die and move your piece. Everyone answers the square’s question for points.'],
     ['max', '[mischievously] Choose your path wisely. Some shortcuts are worth it...'],
     ['poppy', '[laughs] ...and some really are not. First to the finish wins!'],
   ],
@@ -121,7 +121,8 @@ export const duoIntros = {
   moreless: [
     ['max', 'Welcome to More or Less. Two choices, one right answer.'],
     ['poppy', 'Pick the answer on your phone before everyone locks in.'],
-    ['max', 'Play for points or survive the elimination round. Good luck!'],
+    ['max', 'Play for points or survive elimination. I predict a comfortable win.'],
+    ['poppy', 'For everyone else, perhaps. Let us play!'],
   ],
   debate: [
     ['max','Welcome to Floor Time. Two speakers, one question.'],
@@ -130,9 +131,9 @@ export const duoIntros = {
   ],
   rare: [
     ['max', '[curious] Welcome to Rare Find.'],
-    ['poppy', '[cheerfully] Give a correct answer you think nobody else will think of.'],
+    ['poppy', '[cheerfully] Give a correct answer that others might not think of.'],
     ['max', '[playfully] Type one answer on your phone, in private.'],
-    ['poppy', '[warmly] So dig deep, and find a gem.'],
+    ['poppy', '[playfully] Dig deep, Max. Your last gem was a potato.'],
   ],
   bloodmoon: [
     ['poppy', '[nervous] This next one is not really our sort of game.'],

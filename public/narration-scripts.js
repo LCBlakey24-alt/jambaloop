@@ -5,7 +5,7 @@ export const narration = {
   soclose: "Welcome to So Close! Scroll to your best estimate, then lock it in. Above or below, it makes no difference. The nearest guess earns the points, and an exact answer earns double!",
   classic: "It's time for Classic Quiz! Choose your favourite topic, put those thinking caps on, and prove who knows their stuff. Every question counts. Are you ready?",
   wheel: "Step right up for Spin the Wheel! Give it a spin and find out what category comes next. One wheel, plenty of surprises, and a lot of points to win!",
-  board: "Welcome to Board Race! Roll the dice, face the trivia challenges, and move your team across the board. Take the right turns, and the finish line is yours!",
+  board: "Welcome to Board Race! Roll the die to move your piece, then everyone answers the square's question for points. Take the right turns and race to the finish!",
   dice: "Roll into Dice Rally! The dice decide your points multiplier, but your answers decide the score. A lucky roll helps — a clever answer makes it count!",
   knockout: "Here comes Knockout! Three lives each, and every wrong answer puts you under pressure. Hold your nerve, stay in the game, and be the last one standing!",
   punchline: "Welcome to Punchline Party! The sillier the prompt, the better. Write your funniest answer, read the room, and see whose punchline wins the biggest vote!",
@@ -28,7 +28,7 @@ export const narration = {
   dontlook: "Welcome to Don't Look! One player turns their back to the TV. A word appears on the screen, and their team describes it without saying it. The team taps Correct or Pass on their phones. There are three rounds: speaking only, actions only, then anything goes. The most correct answers across all three wins.",
   sketch: "Welcome to Sketch Sprint! One player becomes the artist, with a secret picture to draw on their phone. Everyone else races to guess what appears on the big screen. Fast fingers, sharp eyes, and plenty of laughs. Ready, set, sketch!",    
 };
-// Three professional ElevenLabs recordings were successfully generated on 22 November 2026.
-// Remaining modes use offline-capable, no-cost browser-native speech synthesis until recordings exist.
-export const recordedIntros = new Set(['classic','board','quizrace']);
+// Registered single-announcer recordings that still match the current rules.
+// Other modes use their recorded dialogue or the device's own speech synthesis.
+export const recordedIntros = new Set(['classic','quizrace']);
 export const narratorAsset = mode => recordedIntros.has(mode) ? '/audio/narrator/' + mode + '.mp3' : null;

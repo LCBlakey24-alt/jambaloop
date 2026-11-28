@@ -25,7 +25,7 @@ test('every game mode offers an original spoken introduction and a preview Liste
 });
 
 test('only committed recordings are advertised as recorded and credited', () => {
-  assert.deepEqual([...recordedIntros].sort(), ['board','classic','quizrace']);
+  assert.deepEqual([...recordedIntros].sort(), ['classic','quizrace']);
   for (const [id] of modes) {
     const html=launcherPreview(id);
     assert.equal(narratorAsset(id), recordedIntros.has(id) ? '/audio/narrator/'+id+'.mp3' : null);

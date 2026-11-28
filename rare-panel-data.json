@@ -290,5 +290,311 @@
       "tulip": 8
     },
     "aliases": {}
+  },
+  {
+    "id": "panel-musical-instrument",
+    "category": "Musical Instrument",
+    "prompt": "Name a musical instrument.",
+    "counts": {
+      "accordion": 1,
+      "acoustic guitar": 1,
+      "banjo": 1,
+      "bass guitar": 8,
+      "bassoon": 2,
+      "bongos": 2,
+      "castanets": 1,
+      "cello": 10,
+      "clarinet": 12,
+      "cornet": 4,
+      "cymbal": 1,
+      "didgeridoo": 1,
+      "double bass": 4,
+      "drums": 17,
+      "electric guitar": 5,
+      "flute": 15,
+      "french horn": 3,
+      "guitar": 18,
+      "harmonica": 5,
+      "harp": 6,
+      "keyboard": 9,
+      "lute": 1,
+      "maracas": 2,
+      "oboe": 8,
+      "ocarina": 1,
+      "organ": 3,
+      "piano": 16,
+      "recorder": 7,
+      "saxophone": 10,
+      "sousaphone": 1,
+      "timpani": 1,
+      "triangle": 9,
+      "trombone": 9,
+      "trumpet": 15,
+      "tuba": 2,
+      "ukulele": 1,
+      "viola": 5,
+      "violin": 19,
+      "xylophone": 5
+    },
+    "aliases": {
+      "saxophone": [
+        "sax"
+      ],
+      "ukulele": [
+        "uke"
+      ]
+    }
+  },
+  {
+    "id": "panel-fruit",
+    "category": "Fruit",
+    "prompt": "Name a fruit.",
+    "counts": {
+      "apple": 20,
+      "apricot": 3,
+      "avocado": 4,
+      "banana": 18,
+      "blackberries": 9,
+      "blackcurrants": 3,
+      "blueberries": 12,
+      "cherries": 5,
+      "clementine": 2,
+      "coconut": 2,
+      "damson": 1,
+      "dates": 3,
+      "dragon fruit": 3,
+      "durian": 1,
+      "elderberry": 1,
+      "fig": 1,
+      "goji berry": 1,
+      "gooseberry": 4,
+      "grape": 15,
+      "grapefruit": 9,
+      "greengage": 1,
+      "guava": 5,
+      "jack fruit": 1,
+      "kiwi": 11,
+      "lemon": 6,
+      "lime": 4,
+      "lychee": 1,
+      "mandarin": 1,
+      "mango": 13,
+      "melon": 11,
+      "nectarine": 2,
+      "orange": 15,
+      "papaya": 5,
+      "passion fruit": 7,
+      "peach": 9,
+      "pear": 14,
+      "pineapple": 11,
+      "plum": 8,
+      "pomegranate": 4,
+      "rambutan": 1,
+      "raspberries": 8,
+      "redcurrant": 2,
+      "satsuma": 2,
+      "sloe": 1,
+      "star fruit": 1,
+      "strawberry": 16,
+      "tangerine": 3,
+      "tomato": 10,
+      "watermelon": 7
+    },
+    "aliases": {
+      "blackberries": [
+        "blackberry"
+      ],
+      "blueberries": [
+        "blueberry"
+      ],
+      "blackcurrants": [
+        "blackcurrant"
+      ],
+      "cherries": [
+        "cherry"
+      ],
+      "dates": [
+        "date"
+      ],
+      "raspberries": [
+        "raspberry"
+      ],
+      "jack fruit": [
+        "jackfruit"
+      ],
+      "kiwi": [
+        "kiwifruit"
+      ]
+    }
+  },
+  {
+    "id": "panel-winter-sport",
+    "category": "Winter Sport",
+    "prompt": "Name a winter sport.",
+    "counts": {
+      "bobsleigh": 9,
+      "cross-country skiing": 3,
+      "curling": 5,
+      "downhill skiing": 1,
+      "figure skating": 2,
+      "ice climbing": 1,
+      "ice hockey": 10,
+      "ice skating": 12,
+      "luge": 2,
+      "skeleton": 1,
+      "ski jump": 4,
+      "skiing": 17,
+      "snowboarding": 15,
+      "speed skating": 2
+    },
+    "aliases": {
+      "bobsleigh": [
+        "bobsled",
+        "bobsledding"
+      ],
+      "ski jump": [
+        "ski jumping"
+      ]
+    }
+  },
+  {
+    "id": "panel-insect",
+    "category": "Insect",
+    "prompt": "Name an insect.",
+    "counts": {
+      "ant": 10,
+      "bee": 10,
+      "beetle": 8,
+      "bluebottle": 1,
+      "bumblebee": 3,
+      "butterfly": 8,
+      "cicada": 1,
+      "cockroach": 12,
+      "cricket": 5,
+      "damselfly": 1,
+      "dragonfly": 3,
+      "dung beetle": 2,
+      "earwig": 2,
+      "flea": 1,
+      "fly": 10,
+      "gnats": 1,
+      "grasshopper": 8,
+      "greenfly": 2,
+      "horsefly": 1,
+      "housefly": 2,
+      "ladybird": 9,
+      "louse": 1,
+      "midges": 1,
+      "mosquito": 4,
+      "moth": 5,
+      "praying mantis": 1,
+      "scarab beetle": 1,
+      "silverfish": 1,
+      "stag beetle": 1,
+      "stick insect": 3,
+      "termite": 1,
+      "wasp": 9,
+      "yellow jacket": 1
+    },
+    "aliases": {
+      "ladybird": [
+        "ladybug"
+      ],
+      "gnats": [
+        "gnat"
+      ],
+      "midges": [
+        "midge"
+      ],
+      "yellow jacket": [
+        "yellowjacket"
+      ]
+    }
+  },
+  {
+    "id": "panel-unit-of-time",
+    "category": "Unit Of Time",
+    "prompt": "Name a unit of time.",
+    "counts": {
+      "century": 11,
+      "days": 16,
+      "decades": 7,
+      "fortnight": 2,
+      "hours": 20,
+      "microsecond": 1,
+      "millennia": 8,
+      "milliseconds": 12,
+      "minutes": 19,
+      "months": 12,
+      "nanosecond": 2,
+      "seconds": 19,
+      "weeks": 12,
+      "years": 15
+    },
+    "aliases": {
+      "days": [
+        "day"
+      ],
+      "decades": [
+        "decade"
+      ],
+      "hours": [
+        "hour"
+      ],
+      "millennia": [
+        "millennium"
+      ],
+      "milliseconds": [
+        "millisecond"
+      ],
+      "minutes": [
+        "minute"
+      ],
+      "months": [
+        "month"
+      ],
+      "seconds": [
+        "second"
+      ],
+      "weeks": [
+        "week"
+      ],
+      "years": [
+        "year"
+      ]
+    }
+  },
+  {
+    "id": "panel-metal",
+    "category": "Metal",
+    "prompt": "Name a metal or metallic alloy.",
+    "counts": {
+      "aluminium": 13,
+      "brass": 3,
+      "bronze": 5,
+      "cadmium": 1,
+      "cast iron": 1,
+      "cobalt": 2,
+      "copper": 10,
+      "gold": 14,
+      "iron": 16,
+      "magnesium": 1,
+      "mercury": 1,
+      "nickel": 2,
+      "platinum": 5,
+      "potassium": 2,
+      "silver": 15,
+      "sodium": 2,
+      "steel": 7,
+      "tin": 7,
+      "titanium": 8,
+      "wrought iron": 1,
+      "zinc": 5
+    },
+    "aliases": {
+      "aluminium": [
+        "aluminum"
+      ]
+    }
   }
 ]

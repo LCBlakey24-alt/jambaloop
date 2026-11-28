@@ -37,14 +37,17 @@ export function startDebate(room,publish){
      [room.debateSeats[i],room.debateSeats[j]]=[room.debateSeats[j],room.debateSeats[i]];
    }
    room.count=room.debateSeats.length;
+   room.debateTopics=new Set();
    const offsets=room.debateSeats.map((_,i)=>i);
    room.debateOrder=offsets.filter(i=>i%2===0).concat(offsets.filter(i=>i%2===1));
  }
  const seats=room.debateSeats;
  const start=room.debateOrder[room.index];
- const fresh=topics.filter(([title])=>!room.seen.has('debate:'+title));
- const pool=fresh.length?fresh:topics;
+ const unused=topics.filter(([title])=>!room.debateTopics.has(title));
+ const fresh=unused.filter(([title])=>!room.seen.has('debate:'+title));
+ const pool=fresh.length?fresh:unused;
  const topic=pool[randomInt(pool.length)];
+ room.debateTopics.add(topic[0]);
  room.seen.add('debate:'+topic[0]);
  room.party={type:'debate',topic,speakers:[seats[start],seats[(start+1)%seats.length]],votes:new Map()};
  openPitch(room,'debate-first',publish);

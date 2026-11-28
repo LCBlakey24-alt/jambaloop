@@ -92,9 +92,11 @@ export const panelBank=panels.map(row=>({
  ...row,answers:Object.keys(row.counts),panelSize:20,source:'https://osf.io/jgcu6/',
  historyId:questionHistoryId(row.prompt)
 }));
-export function selectRarePrompt(seen=new Set(),scoring='room'){
+export function selectRarePrompt(seen=new Set(),scoring='room',played=new Set()){
  const bank=scoring==='panel'?panelBank:rareFindBank;
- const fresh=bank.filter(p=>!seen.has(p.historyId)&&!seen.has('rarefind:'+p.id));
- const choices=fresh.length?fresh:bank;
+ const unused=bank.filter(p=>!played.has(p.id));
+ const candidates=unused.length?unused:bank;
+ const fresh=candidates.filter(p=>!seen.has(p.historyId)&&!seen.has('rarefind:'+p.id));
+ const choices=fresh.length?fresh:candidates;
  return choices[randomInt(choices.length)];
 }

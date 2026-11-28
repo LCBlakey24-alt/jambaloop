@@ -77,7 +77,9 @@ function scoreRareRound(room){
 }
 
 export function startRareRound(room,publish){
- const prompt=selectRarePrompt(room.seen,room.rareScoring);
+ if(room.index===0)room.rarePlayed=new Set();
+ const prompt=selectRarePrompt(room.seen,room.rareScoring,room.rarePlayed);
+ room.rarePlayed.add(prompt.id);
  room.seen.add(prompt.historyId);
  room.seen.add('rarefind:'+prompt.id);
  room.party={type:'rare',prompt,entries:new Map(),decisions:new Map(),audit:[],results:undefined,earned:undefined};

@@ -347,3 +347,18 @@ test('Research panel awards different values for unseen-by-the-room answers and 
    assert.equal(matched.points,matched.basePoints-5);
  });
 });
+
+test('Panel pack has measured counts, unambiguous aliases and seven fresh rounds even after prior visits',async()=>{
+ const {panelBank}=await import('../rare-find-bank.js');
+ assert.equal(new Set(panelBank.map(p=>p.id)).size,panelBank.length);
+ for(const p of panelBank){
+   const names=answerMapFor(p);
+   for(const [label,n] of Object.entries(p.counts)){
+     assert.equal(names.get(normaliseRare(label)),label);
+     assert.ok(Number.isInteger(n)&&n>=1&&n<=p.panelSize);
+   }
+ }
+ const history=new Set(panelBank.map(p=>p.historyId)),played=new Set();
+ for(let i=0;i<7;i++)played.add(selectRarePrompt(history,'panel',played).id);
+ assert.equal(played.size,7);
+});

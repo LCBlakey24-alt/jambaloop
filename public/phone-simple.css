@@ -240,4 +240,4 @@ html.mobile-deck body.playing > .header { display: none; }
 html.mobile-deck #app .game .game-top .game-controls > [data-action="leave"] { min-height: 44px; min-width: 44px; }
 
 /* The phone home's install offer sits above the hosting line, full width like the Join card. */
-.phone-home-install { width: 100%; }
+html.mobile-deck .phone-home-install { width: 100%; }

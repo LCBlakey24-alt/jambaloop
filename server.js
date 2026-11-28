@@ -14,7 +14,8 @@ import QRCode from 'qrcode';
 import { randomBytes, randomInt } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
 import { difficultyQuestions } from './difficulty-questions.js';
-import { advanceQuizRace, createQuizRace, publicRaceState, useRacePower, raceDifficulties, raceLengths, racePlacings, raceTracks, raceStyles, leagueCircuits, leagueTrack, createLeague, scoreLeagueRace, leagueStandings, setRacePaused, submitRaceAnswer } from './quiz-race.js';
+import { replayTimeline } from './public/race-replay.js';
+import { advanceQuizRace, createQuizRace, publicRaceState, useRacePower, raceDifficulties, raceLengths, racePlacings, raceTracks, raceStyles, raceReplay, leagueCircuits, leagueTrack, createLeague, scoreLeagueRace, leagueStandings, setRacePaused, submitRaceAnswer } from './quiz-race.js';
 import { networkInterfaces } from 'node:os';
 import { inviteOriginOptions, qrJoinUrl } from './room-invite.js';
 import { isRoomMember, positiveSetting, readAvatar, requestBudget } from './room-http.js';
@@ -112,7 +113,7 @@ function resetGame(room, settings) {
   Object.assign(room, settings, {
     settings, lobbyVersion: (room.lobbyVersion ?? 0) + 1, clockVersion: 0, pausedAt: 0,
     scoreBreak: undefined, lastScoreBreak: new Map(), estimateReveal: undefined, estimateGuesses: undefined,
-    phase: 'lobby', index: 0, opened: 0, ends: 0, ceremony: undefined, awards: [], motion: null, predictions: new Map(), wheelRemaining: [], teams: [], roundReview: [], party: undefined, privateReview: new Map(), privateRound: undefined, remaining: room.players.size, race: undefined, league: undefined,
+    phase: 'lobby', index: 0, opened: 0, ends: 0, ceremony: undefined, awards: [], motion: null, predictions: new Map(), wheelRemaining: [], teams: [], roundReview: [], party: undefined, privateReview: new Map(), privateRound: undefined, remaining: room.players.size, race: undefined, league: undefined, replayShow: undefined,
     route: settings.mode === 'board' ? boardRoute(settings.boardLength, settings.includeChristmas) : undefined,
     quizTypes: settings.privateQuestions ? ['choice', 'boolean'] : settings.customQuiz ? [...new Set(settings.customQuiz.questions.map(item => item.type))] : undefined,
     questions: settings.customQuiz ? prepareCustomQuiz(settings.customQuiz) : fixedQuestionModes.includes(settings.mode) ? roundQuestions(settings, room.seen) : [],
@@ -282,7 +283,10 @@ function roomState(room, key, ranked = rankings(room), counts = liveCounts(room)
     } : undefined,
     ceremony: isHost && phase === 'finished' ? room.ceremony : undefined,
     awards: !waiting && phase === 'finished' ? room.awards : undefined,
-    mode: room.mode, playStyle: room.playStyle, privateQuestions: room.privateQuestions, party: waiting ? undefined : publicParty(room, key), whoIsIn: waiting ? undefined : partyWhoIsIn(room), race: room.mode === 'quizrace' && room.race ? publicRaceState(room.race, key, isHost) : undefined, raceLength: room.raceLength, raceTrack: room.raceTrack, raceDifficulty: room.raceDifficulty, raceLeague: room.raceLeague || undefined, raceStyle: room.mode === 'quizrace' ? room.raceStyle : undefined, league: room.mode === 'quizrace' ? publicLeague(room) : undefined, phoneView: room.phoneView, isCaptain: key === room.captain, captainId: captain?.id, captainName: captain?.name,
+    mode: room.mode, playStyle: room.playStyle, privateQuestions: room.privateQuestions, party: waiting ? undefined : publicParty(room, key), whoIsIn: waiting ? undefined : partyWhoIsIn(room), race: room.mode === 'quizrace' && room.race ? publicRaceState(room.race, key, isHost) : undefined, raceLength: room.raceLength, raceTrack: room.raceTrack, raceDifficulty: room.raceDifficulty, raceLeague: room.raceLeague || undefined,
+    // `playing` flips when the replay ends, so every screen's state changes and the results come up everywhere at once.
+    raceReplay: room.mode === 'quizrace' && room.replayShow && ['finished', 'race-standings'].includes(room.phase) ? { ...room.replayShow, playing: Date.now() < room.replayShow.until } : undefined,
+    raceStyle: room.mode === 'quizrace' ? room.raceStyle : undefined, league: room.mode === 'quizrace' ? publicLeague(room) : undefined, phoneView: room.phoneView, isCaptain: key === room.captain, captainId: captain?.id, captainName: captain?.name,
     quizTitle: room.customQuiz?.title, quizTypes: room.quizTypes,
     // Names and selfies of everyone playing, so each screen can show a face beside a name.
     // Already visible to the room in the lobby; left out of very large rooms to keep updates small.
@@ -925,7 +929,20 @@ function raceQuestionPool(category, difficulty, includeChristmas, history = new 
     Number(history.has(b.prompt) || history.has(questionHistoryId(b.prompt))));
 }
 
+// The action replay: when a race ends, the TV plays it back. The server owns when it starts and ends,
+// so the TV and every phone agree, and the captain or TV host can skip it or watch it again.
+function startReplay(room) {
+  const replay = raceReplay(room.race);
+  if (!replay?.frames.length) { room.replayShow = undefined; return; }
+  const { duration } = replayTimeline(replay);
+  const startedAt = Date.now();
+  const show = room.replayShow = { id: (room.replayShow?.id ?? 0) + 1, startedAt, until: startedAt + duration };
+  // Tell every screen when it ends, so the results appear without anyone pressing anything.
+  setTimeout(() => roomTask(room, 'replay end', () => { if (room.replayShow === show) publish(room); }), duration + 50).unref();
+}
+
 function startRace(room) {
+  room.replayShow = undefined;
   if (room.race?.issued) for (const prompt of room.race.issued) room.seen.add(prompt);
   // The symbol race deals its own grids and needs no questions.
   const pool = room.raceStyle === 'symbols' ? [] : raceQuestionPool(room.category, room.raceDifficulty, room.includeChristmas, room.seen);
@@ -1205,6 +1222,28 @@ app.post('/api/rooms/:code/race-answer', (req, res) => {
   advanceQuizRace(room.race, performance.now());
   const result = submitRaceAnswer(room.race, key, {questionId:req.body?.questionId, option:req.body?.option, pass:req.body?.pass}, room.race.time);
   if (result.status !== 204) return res.status(result.status).json({error: result.error});
+  publish(room);
+  res.sendStatus(204);
+});
+
+// The recorded race, for the TV's action replay. Public positions and power-ups only.
+app.get('/api/rooms/:code/race-replay', (_req, res) => {
+  const { room, member } = res.locals;
+  if (!member) return res.status(403).json({ error: 'Join the room to continue.' });
+  const replay = room.mode === 'quizrace' ? raceReplay(room.race) : undefined;
+  if (!replay) return res.status(404).json({ error: 'There is no race to replay yet.' });
+  res.json(replay);
+});
+
+app.post('/api/rooms/:code/race-replay', (req, res) => {
+  const { room, key } = res.locals;
+  if (!controlsRoom(room, key)) return res.status(403).json({ error: 'Only the captain or TV host can control the replay.' });
+  if (room.mode !== 'quizrace' || !raceReplay(room.race) || !['finished', 'race-standings'].includes(room.phase) || req.body?.game !== room.game)
+    return res.status(409).json({ error: 'There is no race to replay right now.' });
+  const action = req.body?.action;
+  if (action === 'skip') { if (room.replayShow && room.replayShow.until > Date.now()) room.replayShow = { ...room.replayShow, until: Date.now() }; }
+  else if (action === 'again') startReplay(room);
+  else return res.status(400).json({ error: 'Choose skip or again.' });
   publish(room);
   res.sendStatus(204);
 });
@@ -1521,6 +1560,7 @@ setInterval(() => {
       room.phase = room.league && !finishLeagueRace(room) ? 'race-standings' : 'finished';
       room.ceremony = undefined;
       room.awards = [];
+      startReplay(room);
     } else if (room.race.time >= 3000) room.phase = 'race';
     const now = Date.now();
     if (event || room.phase !== phaseWas || now - (room.race.lastBroadcast || 0) >= 250) {

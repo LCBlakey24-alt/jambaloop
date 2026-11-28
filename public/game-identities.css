@@ -287,3 +287,27 @@ body.playing .game.player-only :is([data-action="advance"], [data-action="clock"
   body.playing .game.player-only[data-phase="question"] .question-panel .answers { grid-auto-rows: minmax(36px, 1fr); gap: 4px; }
   body.playing .game.player-only[data-phase="question"] .question-panel .answers .answer { min-height: 36px; padding-block: 2px; }
 }
+
+/* Phone quality pass (28 November 2026). */
+/* The captain's controls are the same size in every game: full width and tall enough for a thumb.
+   (Short phones keep the two-in-a-row rule above, and the lobby keeps its own paged layout.) */
+@media (max-width: 760px) and (min-height: 721px) {
+  /* A hidden or paged-away button stays hidden (So Close keeps its Next button back until the winner is shown). */
+  body.playing .game.player-only:not([data-phase="lobby"], [data-phase="waiting"]) :is([data-action="advance"], [data-action="clock"]):not([hidden], [data-deck-hidden]) {
+    display: flex !important; width: 100% !important; max-width: none !important; min-height: 54px !important; justify-content: center !important; align-items: center !important;
+    gap: .4em; margin-inline: 0 !important; padding: 12px 14px !important; font-size: 16px !important; line-height: 1.2 !important; white-space: normal !important; text-align: center;
+  }
+  body.playing .game.player-only:not([data-phase="lobby"], [data-phase="waiting"]) :is(.actions, .bluff-show-actions, .sketch-actions):not([hidden], [data-deck-hidden]):has([data-action="advance"], [data-action="clock"]) { display: grid !important; grid-template-columns: 1fr; gap: 8px; width: 100%; justify-items: stretch; }
+}
+/* Replay, choose another game and change settings: one clear stack, never three squeezed side by side. */
+@media (max-width: 760px) {
+  .game.player-only :is(.actions, .sketch-actions):not([hidden], [data-deck-hidden]):has([data-action="quick-replay"], [data-action="choose-game"]) { display: grid !important; grid-template-columns: 1fr; gap: 8px; width: 100%; }
+  .game.player-only :is(.actions, .sketch-actions) :is([data-action="quick-replay"], [data-action="choose-game"], [data-action="again"]):not([hidden], [data-deck-hidden]) { width: 100%; min-height: 50px; justify-content: center; white-space: normal; }
+}
+/* Don't Look!: the round banner wraps on a phone instead of running off the edge. */
+.player-only .look-round { grid-template-columns: auto minmax(0, 1fr); }
+.player-only .look-round strong { white-space: normal; font-size: clamp(1.2rem, 6vw, 1.7rem); line-height: 1.05; overflow-wrap: anywhere; }
+.player-only .look-round span { min-width: 0; overflow-wrap: anywhere; }
+/* Sketch Sprint results: every row readable on the paper background. */
+.game[data-mode="sketch"] .sketch-end .ranking li { background: #fffdf6 !important; color: #1d1b17 !important; border: 1.5px solid #cfc7b4; }
+.game[data-mode="sketch"] .sketch-end .ranking li strong { color: #1d1b17 !important; }

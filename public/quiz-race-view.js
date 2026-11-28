@@ -1,13 +1,16 @@
 import {raceTrackMarkup} from './quiz-race-track.js';
 import { face } from './player-face.js';
-import { symbolMarkup, raceSymbol } from './race-symbols.js';
+import { tileMarkup, tileName, tileLabel, symbolGridSize } from './race-symbols.js';
 const name = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const percent = (distance, total) => Math.min(100, Math.round(100 * distance / Math.max(total,1)));
 
-export function quizRaceView(s, {host,canControl,icons,replayButtons,sending}) {
+export function quizRaceView(s, {host,canControl,icons,replayButtons,sending,replaying=false}) {
+  // During the action replay the standings start on the grid, in kart order, and move as they did in the race.
+  const onGrid = replaying && ['finished', 'race-standings'].includes(s.phase);
   const r = s.race;
   const intro = s.phase === 'race-countdown';
   const finished = s.phase === 'finished';
+  const raceName = r.style === 'symbols' ? 'Symbol Dash' : 'Quiz Race';
   const leader = r.racers[0];
   const teamRace = s.playStyle === 'teams' && s.raceTeams?.length;
   const raceTeams = teamRace ? `<div class="race-team-strip" aria-label="Team race standings">${s.raceTeams.map((team,index)=>
@@ -15,9 +18,27 @@ export function quizRaceView(s, {host,canControl,icons,replayButtons,sending}) {
   const winningTeam = teamRace && s.teamWinners?.length === 1
     ? s.teams.find(team=>team.id===s.teamWinners[0]) : undefined;
   const track = () => `<div class="race-track-wrap" data-track="${r.track}">${raceTrackMarkup()}
-    <div class="quiz-race-standings">${r.racers.map(p=>`<div class="race-rank-row" data-race-rank="${p.id}" style="--racer:${p.color}"><span class="race-position">${p.position}</span><span class="race-rank-name">${face(p)}${name(p.name)}<i class="race-rank-status" aria-hidden="true"></i></span><span class="race-rank-percent">${percent(p.distance,r.length)}%</span><span class="race-mini-track"><i style="width:${percent(p.distance,r.length)}%"></i></span></div>`).join('')}</div></div>`;
+    <div class="quiz-race-standings">${(onGrid ? [...r.racers].sort((a,b)=>a.marker-b.marker).map(p=>({...p,position:'·',distance:0})) : r.racers).map(p=>`<div class="race-rank-row" data-race-rank="${p.id}" style="--racer:${p.color}"><span class="race-position">${p.position}</span><span class="race-rank-name">${face(p)}${name(p.name)}<i class="race-rank-status" aria-hidden="true"></i></span><span class="race-rank-percent">${percent(p.distance,r.length)}%</span><span class="race-mini-track"><i style="width:${percent(p.distance,r.length)}%"></i></span></div>`).join('')}</div></div>`;
   // League: three races, points for every place. The table comes from the server.
   const league = s.league;
+  const styleName = r.style === 'symbols' ? 'SYMBOL DASH' : 'QUIZ RACE';
+  // The action replay: straight after the race the TV plays it back on the same track; phones point at the TV.
+  // `replaying` comes from the server's own start and end times for the replay.
+  const raceNumber = league ? ` · RACE ${league.round} OF ${league.races}` : '';
+  const skip = canControl ? `<button type="button" class="button outline small" data-action="replay-skip">Skip replay ${icons('arrow-right')}</button>` : '';
+  if (replaying && (finished || s.phase === 'race-standings')) {
+    const mine = r.racers.find(p => p.id === s.player?.id);
+    if (!host) return `<section class="game-panel race-phone race-phone-finish race-replay-phone" aria-label="Action replay">
+      <div class="eyebrow">${styleName}${raceNumber} · ACTION REPLAY</div>
+      <h1>Watch the TV</h1>
+      <p>The whole race is being replayed on the big screen. See how close it was!</p>
+      ${mine ? `<div class="race-personal-finish"><span>YOU FINISHED</span><strong>#${mine.position} <small>of ${s.playerCount}</small></strong><span>${mine.finishedAt === undefined ? percent(mine.distance, r.length) + '% of the way' : ((mine.finishedAt - 3000) / 1000).toFixed(2) + 's'}</span></div>` : ''}
+      <div class="actions">${skip}</div></section>`;
+    return `<section class="game-panel race-broadcast race-replay-panel" aria-label="Action replay"><div class="race-broadcast-head"><div><div class="eyebrow">${styleName}${raceNumber}</div><h1>Action replay</h1></div><div class="race-broadcast-time"><strong data-race-clock>0:00</strong><span>RACE TIME</span></div></div>
+      <div class="race-replay-bar"><span class="race-replay-badge"><i aria-hidden="true"></i>REPLAY</span><span class="race-replay-slow" data-replay-slow hidden>SLOW MOTION</span><span class="race-replay-progress" aria-hidden="true"><b data-replay-progress></b></span></div>
+      ${track()}<div class="race-broadcast-foot"><p>The whole race again, exactly as it happened. How close was it?</p>${skip}</div></section>`;
+  }
+  const again = canControl ? `<button type="button" class="button outline" data-action="replay-again">${icons('rotate-ccw')} Watch the replay</button>` : '';
   const circuitName = { short: 'short', medium: 'figure-of-eight', long: 'long' };
   const leagueRows = () => `<div class="race-results race-league" aria-label="League table">${league.table.map(row => {
     const racer = r.racers.find(p => p.id === row.id);
@@ -27,7 +48,7 @@ export function quizRaceView(s, {host,canControl,icons,replayButtons,sending}) {
     const over = finished;
     const champion = league.table[0];
     const mine = league.table.find(row => row.id === s.player?.id);
-    const nextButton = canControl && !over ? `<button class="button primary" data-action="advance">Start race ${league.round + 1} ${icons('play')}</button>` : '';
+    const nextButton = canControl && !over ? `<button class="button primary" data-action="advance">Start race ${league.round + 1} ${icons('play')}</button>${host ? again : ''}` : '';
     const heading = over ? `${name(champion?.name)} wins the league!` : `${name(leader?.name)} wins race ${league.round}!`;
     const eyebrow = over ? 'CHEQUERED FLAG · LEAGUE CHAMPION' : `LEAGUE · RACE ${league.round} OF ${league.races} DONE`;
     if (!host) return `<section class="game-panel race-phone race-phone-finish" aria-label="Your league position">
@@ -43,7 +64,7 @@ export function quizRaceView(s, {host,canControl,icons,replayButtons,sending}) {
     return `<section class="game-panel race-finish-panel race-league-panel"><div class="eyebrow">${eyebrow}</div><h1>${heading}</h1>
       <p>${over ? `Three races, one table. ${name(leader?.name)} took the last race.` : `Points for every place: 10, 8, 6, 5, 4, 3, 2, then 1. Next up: the ${circuitName[league.next]} circuit.`}</p>
       ${leagueRows()}
-      <div class="actions">${over ? (canControl ? replayButtons(s,icons) : '<button class="button outline" data-action="leave">Back to home</button>') : nextButton}</div></section>`;
+      <div class="actions">${over ? (canControl ? replayButtons(s,icons) + again : '<button class="button outline" data-action="leave">Back to home</button>') : nextButton}</div></section>`;
   }
   if (finished && !host) {
     const personal = r.racers.find(p => p.id === s.player?.id);
@@ -66,10 +87,10 @@ export function quizRaceView(s, {host,canControl,icons,replayButtons,sending}) {
       <div class="actions">${canControl ? replayButtons(s,icons) : '<button class="button outline" data-action="leave">Back to home</button>'}</div>
     </section>`;
   }
-  if(finished) return `<section class="game-panel race-finish-panel"><div class="eyebrow">CHEQUERED FLAG</div><h1>${winningTeam ? 'Team ' + name(winningTeam.name) + ' wins Quiz Race!' : name(leader?.name) + ' wins Quiz Race!'}</h1>
+  if(finished) return `<section class="game-panel race-finish-panel"><div class="eyebrow">CHEQUERED FLAG</div><h1>${winningTeam ? 'Team ' + name(winningTeam.name) + ' wins ' + raceName + '!' : name(leader?.name) + ' wins ' + raceName + '!'}</h1>
     <p>${winningTeam ? name(leader?.name) + ' crossed first to win it for their team.' : 'First across the finish line wins.'} Final order comes from the server, not the animation.</p>
     ${track()}${raceTeams}<div class="race-results">${r.racers.map(p=>`<div><strong>#${p.position} · ${face(p)}${name(p.name)}</strong><span>${p.finishedAt === undefined ? percent(p.distance,r.length)+'% completed' : ((p.finishedAt - 3000)/1000).toFixed(2)+'s'}</span></div>`).join('')}</div>
-    <div class="actions">${canControl? replayButtons(s,icons):'<button class="button outline" data-action="leave">Back to home</button>'}</div></section>`;
+    <div class="actions">${canControl? replayButtons(s,icons) + again:'<button class="button outline" data-action="leave">Back to home</button>'}</div></section>`;
   if (host) return `<section class="game-panel race-broadcast" aria-label="Quiz Race broadcast"><div class="race-broadcast-head"><div><div class="eyebrow">${r.style==='symbols'?'SYMBOL DASH':'QUIZ RACE'} · ${league ? `LEAGUE RACE ${league.round + 1} OF ${league.races}` : r.style==='symbols' ? 'TAP THE MATCHING SYMBOL' : name(s.categoryName||'GENERAL KNOWLEDGE')}</div><h1>${intro?'Get ready to race!':'Race to the finish!'}</h1></div><div class="race-broadcast-time"><strong data-race-clock>0:00</strong><span>RACE TIME</span></div></div>
     ${intro?'<div class="race-countdown" data-race-countdown aria-live="polite">3</div>':''}
     ${track()}${raceTeams}<div class="race-broadcast-foot"><p>${r.style==='symbols'?'Tap the matching symbol on your phone to accelerate. The wrong symbol slows you down.':'Answer questions on your phone to accelerate. Wrong answers slow you down.'}</p>
@@ -80,16 +101,14 @@ export function quizRaceView(s, {host,canControl,icons,replayButtons,sending}) {
   const feedback=own?.feedback;
   // Symbol Dash: find the target symbol on a grid that reshuffles after every tap.
   const symbols=r.style==='symbols';
-  const cockpit=symbols&&!intro?'<canvas class="race-cockpit" data-race-cockpit width="640" height="240" role="img" aria-label="The view from your kart"></canvas>':'';
   const symbolBoard=!symbols?'':q?.symbols?`<div class="race-question race-symbol-round" data-question-id="${q.id}">
-      <div class="race-symbol-target"><span>TAP THE</span>${symbolMarkup(q.symbols.target)}<strong>${name(raceSymbol(q.symbols.target)?.name??'')}</strong><em data-race-deadline></em></div>
-      <div class="race-symbol-grid" data-size="${q.symbols.tiles.length}">${q.symbols.tiles.map((id,index)=>`<button class="race-answer race-symbol-tile" data-action="race-answer" data-race-option="${index}" aria-label="${name(raceSymbol(id)?.name??'symbol')}" ${sending?'disabled':''}>${symbolMarkup(id)}</button>`).join('')}</div></div>`
-    :`<div class="race-symbol-round is-waiting" aria-live="polite"><div class="race-symbol-target"><span>${feedback?.outcome==='correct'?'YES!':feedback?.outcome==='wrong'?'WRONG ONE':feedback?.outcome==='timeout'?'TOO SLOW':'GET READY'}</span></div><div class="race-symbol-grid is-empty"></div></div>`;
+      <div class="race-symbol-target">${q.symbols.target.startsWith('shape:')?`<span>TAP THE</span>${tileMarkup(q.symbols.target)}<strong>${name(tileLabel(q.symbols.target))}</strong>`:`<span>TAP THE</span><strong>${name(tileLabel(q.symbols.target))}</strong>${tileMarkup(q.symbols.target)}<span class="sr-only">${name(tileName(q.symbols.target))}</span>`}<em data-race-deadline></em></div>
+      <div class="race-symbol-grid" data-size="${q.symbols.tiles.length}">${q.symbols.tiles.map((id,index)=>`<button class="race-answer race-symbol-tile" data-action="race-answer" data-race-option="${index}" aria-label="${name(tileName(id))}" ${sending?'disabled':''}>${tileMarkup(id)}</button>`).join('')}</div></div>`
+    :`<div class="race-symbol-round is-waiting" aria-live="polite"><div class="race-symbol-target"><span>${feedback?.outcome==='correct'?'YES!':feedback?.outcome==='wrong'?'WRONG ONE':feedback?.outcome==='timeout'?'TOO SLOW':'GET READY'}</span></div><div class="race-symbol-grid is-empty" data-size="${symbolGridSize(r.difficulty, (own?.distance ?? 0) / Math.max(1, r.length))}"></div></div>`;
   return `<section class="game-panel race-phone ${symbols?'is-symbols':''}"><div class="race-phone-head"><div><div class="eyebrow">${symbols?'SYMBOL DASH':'QUIZ RACE'}</div><strong data-race-position>${own?.position??'-'} / ${s.playerCount}</strong></div><div class="race-phone-speed" data-race-speed>READY</div></div>
     ${teamRace ? `<p class="race-team-label">Your team: ${name(s.teams.find(t=>t.id===s.player?.team)?.name || 'Unassigned')}</p>` : ''}
     <div class="race-phone-progress" aria-label="Race progress"><i data-race-progress style="width:${percent(own?.distance||0,r.length)}%;background:${player?.color||'#1dd9be'}"></i></div>
-    ${cockpit}
-    ${intro?`<div class="race-phone-intro"><h1>Ready, set…</h1><p>${symbols?'Tap the matching symbol as fast as you can. The wrong one slows you down.':'Quick, correct answers give you a bigger boost.'}</p><strong data-race-countdown>3</strong></div>`:s.pausedAt?'<div class="race-phone-intro"><h1>Race paused</h1><p>Waiting for the host or captain to resume.</p></div>':symbols?symbolBoard:q?`<div class="race-question" data-question-id="${q.id}"><div class="race-question-label"><span>QUESTION ${q.id}</span><span data-race-deadline>12s</span></div><h2>${name(q.prompt)}</h2><div class="race-options">${q.options.map((opt,index)=>`<button class="race-answer" data-action="race-answer" data-race-option="${index}" ${sending?'disabled':''}><span>${'ABCD'[index]}</span>${name(opt)}</button>`).join('')}</div><button class="button outline race-pass" data-action="race-pass" ${sending?'disabled':''}>Pass question · small slowdown</button></div>`:`<div class="race-phone-intro"><h2>${feedback?.outcome==='correct'?'Correct! Speed boost!':feedback?.outcome==='wrong'?'Not quite — slowing down':feedback?.outcome==='timeout'?'Time is up!':feedback?.outcome==='pass'?'Question passed':'Next question coming…'}</h2><p>${feedback?.answer?'Correct answer: '+name(feedback.answer):'Keep racing!'}</p></div>`}
+    ${intro?`<div class="race-phone-intro"><h1>Ready, set…</h1><p>${symbols?'Tap the match as fast as you can: shapes, numbers and letters. The wrong one slows you down. Watch the replay on the TV afterwards.':'Quick, correct answers give you a bigger boost.'}</p><strong data-race-countdown>3</strong></div>`:s.pausedAt?'<div class="race-phone-intro"><h1>Race paused</h1><p>Waiting for the host or captain to resume.</p></div>':symbols?symbolBoard:q?`<div class="race-question" data-question-id="${q.id}"><div class="race-question-label"><span>QUESTION ${q.id}</span><span data-race-deadline>12s</span></div><h2>${name(q.prompt)}</h2><div class="race-options">${q.options.map((opt,index)=>`<button class="race-answer" data-action="race-answer" data-race-option="${index}" ${sending?'disabled':''}><span>${'ABCD'[index]}</span>${name(opt)}</button>`).join('')}</div><button class="button outline race-pass" data-action="race-pass" ${sending?'disabled':''}>Pass question · small slowdown</button></div>`:`<div class="race-phone-intro"><h2>${feedback?.outcome==='correct'?'Correct! Speed boost!':feedback?.outcome==='wrong'?'Not quite — slowing down':feedback?.outcome==='timeout'?'Time is up!':feedback?.outcome==='pass'?'Question passed':'Next question coming…'}</h2><p>${feedback?.answer?'Correct answer: '+name(feedback.answer):'Keep racing!'}</p></div>`}
     ${intro?'':`<div class="race-powers" data-race-powers><button type="button" class="race-power is-boost" data-action="race-power" data-kind="boost"><b>🚀 Boost</b><small data-power-note></small></button>
       <button type="button" class="race-power is-ram" data-action="race-power" data-kind="ram"><b>💥 Nudge</b><small data-power-note></small></button>
       <button type="button" class="race-power is-shield" data-action="race-power" data-kind="shield"><b>🛡 Shield</b><small data-power-note></small></button></div>

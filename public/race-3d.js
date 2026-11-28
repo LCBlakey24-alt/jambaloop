@@ -767,6 +767,8 @@ export function mountRace3D({ key, track = 'neon', course = 'medium', reducedMot
       frame(players, trackLength, msAhead, sim);
       return true;
     },
+    /** Cut straight to the next shot instead of gliding there (used when an action replay starts or ends). */
+    snapCamera() { cameraReady = false; },
     dispose() {
       tornDown = true;
       observer?.disconnect();

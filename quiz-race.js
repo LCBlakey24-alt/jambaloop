@@ -41,16 +41,26 @@ export const symbolRace = Object.freeze({ window: 4000, wait: 180, turboStreak: 
   wrong: Object.freeze({ amount: -.5, duration: 1300 }), timeout: Object.freeze({ amount: -.35, duration: 1200 }) });
 const streaksFor = race => race.style === 'symbols' ? symbolRace : racePowers;
 
-/** One grid for the symbol race: a target and a shuffled set of different symbols, one of which is the target. */
-export function symbolRound(size, previous) {
-  const pool = [...raceSymbols.map(symbol => symbol.id)];
-  for (let i = pool.length - 1; i > 0; i--) { const j = randomInt(i + 1); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+/**
+ * One grid for the symbol race. Every grid is one of four kinds, picked at random: shapes, numbers, letters
+ * or a mix of all three. A tile is a token ('shape:star', 'num:42', 'let:K'); no token appears twice.
+ */
+export const symbolKinds = Object.freeze(['shapes', 'numbers', 'letters', 'mixed']);
+const symbolLetters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+const shuffled = list => { const copy = [...list]; for (let i = copy.length - 1; i > 0; i--) { const j = randomInt(i + 1); [copy[i], copy[j]] = [copy[j], copy[i]]; } return copy; };
+const tokenName = token => { const [kind, value] = token.split(':'); return kind === 'shape' ? raceSymbols.find(symbol => symbol.id === value).name : kind === 'num' ? 'number ' + value : 'letter ' + value; };
+export function symbolRound(size, previous, kind = symbolKinds[randomInt(symbolKinds.length)]) {
+  const shapes = () => shuffled(raceSymbols.map(symbol => 'shape:' + symbol.id));
+  const numbers = () => { const seen = new Set(); while (seen.size < size) seen.add(1 + randomInt(99)); return [...seen].map(value => 'num:' + value); };
+  const letters = () => shuffled([...symbolLetters].map(letter => 'let:' + letter));
+  const pool = kind === 'shapes' ? shapes() : kind === 'numbers' ? numbers() : kind === 'letters' ? letters()
+    : shuffled([...shapes().slice(0, Math.ceil(size / 3)), ...numbers().slice(0, Math.ceil(size / 3)), ...letters().slice(0, Math.ceil(size / 3))]);
   const tiles = pool.slice(0, size);
   // Never the same target twice running, so a tap is always a fresh search.
   let correct = randomInt(size);
   if (tiles[correct] === previous) correct = (correct + 1) % size;
-  const names = tiles.map(id => raceSymbols.find(symbol => symbol.id === id).name);
-  return { type: 'choice', category: 'Symbols', prompt: 'Tap the ' + names[correct], options: names, correct, tiles, target: tiles[correct] };
+  const names = tiles.map(tokenName);
+  return { type: 'choice', category: 'Symbols', kind, prompt: 'Tap the ' + names[correct], options: names, correct, tiles, target: tiles[correct] };
 }
 export const raceColors = ['#1dd9be', '#ffbd43', '#ff6b71', '#8954ff', '#65aaff', '#f998d2', '#bbef7d', '#ff9a4d', '#6fd3eb', '#f1a9ff', '#d4e87a', '#efb18c'];
 const wait = 700;
@@ -242,6 +252,36 @@ function timeoutQuestion(race, racer, at) {
   racer.nextAt = at + (race.style === 'symbols' ? symbolRace.wait : wait);
 }
 
+// The action replay. While the race runs the server notes, four times a second, how far every kart has gone
+// and what was happening to it (boosting, nudged, on fire, shielded). The TV plays that back afterwards.
+// It holds only what the TV showed live: no questions, grids or answers.
+export const replayStep = 250;
+function recordRace(race, last = false) {
+  if (race.time < 3000) return;
+  const replay = race.replay ??= { step: replayStep, from: 3000, frames: [] };
+  const due = replay.from + replay.frames.length * replay.step;
+  if (race.time < due && !last) return;
+  // The finishing tick may already have been sampled a moment ago: do not add the same moment twice.
+  if (last && replay.sampledAt === race.time) return;
+  replay.sampledAt = race.time;
+  // The flags as the TV showed them live: a kart that has finished is not on fire, shielded or armed any more.
+  replay.frames.push([...race.racers.values()].map(racer => {
+    const racing = racer.finishedAt === undefined;
+    return [
+      +racer.distance.toFixed(2),
+      (racer.power && race.time < racer.power.at + 1800 ? racer.power.kind : ''),
+      racing ? (racer.streak >= streaksFor(race).fireStreak ? 1 : 0) + (racer.shieldUntil > race.time ? 2 : 0) + (racer.armed ? 4 : 0) : 0,
+    ];
+  }));
+}
+/** The finished race as the TV saw it, for the action replay. Undefined until the race is over. */
+export function raceReplay(race) {
+  if (!race?.finished || !race.replay) return undefined;
+  return { step: race.replay.step, from: race.replay.from, length: race.length, course: race.course, track: race.track,
+    racers: [...race.racers.values()].map(racer => ({ id: racer.id, name: racer.name, color: racer.color, marker: racer.marker, finishedAt: racer.finishedAt })),
+    frames: race.replay.frames };
+}
+
 export function advanceQuizRace(race, wall = race.lastWall) {
   const elapsed = Math.max(0, wall - race.lastWall);
   race.lastWall = wall;
@@ -274,9 +314,11 @@ export function advanceQuizRace(race, wall = race.lastWall) {
       }
     }
     race.time = b;
+    recordRace(race);
     if (race.results.length) race.results.sort((left, right) => left.finishedAt - right.finishedAt);
     if (race.firstFinish !== undefined && (race.time >= race.graceEnd || race.results.length === race.racers.size)) {
       race.finished = true;
+      recordRace(race, true);
       race.results.sort((left, right) => left.finishedAt - right.finishedAt);
       changed = true;
       break;

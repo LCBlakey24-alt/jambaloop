@@ -1,5 +1,5 @@
-// Symbol Dash on a phone and a TV: tap the matching symbol, the grid reshuffles, the kart speeds up,
-// and the phone shows the view from your own kart.
+// Symbol Dash on a phone and a TV: tap the match (a shape, a number or a letter), the grid reshuffles,
+// the kart speeds up on the TV, and the phone is nothing but the grid.
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 const site=process.env.SITE||'http://127.0.0.1:32000';
@@ -21,20 +21,21 @@ try{
   assert.equal(await phone.locator('.race-symbol-grid [data-action="race-answer"]').count(),9,'a medium grid has nine squares');
   assert.equal(await phone.locator('[data-action="race-pass"]').count(),0);
   assert.match(await tv.locator('.race-broadcast .eyebrow').innerText(),/SYMBOL DASH/i);
-  // The driver's-eye window is drawn (not a blank canvas).
-  const painted=await phone.evaluate(()=>{const c=document.querySelector('[data-race-cockpit]');const d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;const seen=new Set();for(let i=0;i<d.length;i+=4*997)seen.add(d[i]+','+d[i+1]+','+d[i+2]);return seen.size;});
-  assert.ok(painted>4,'the cockpit shows a scene: '+painted+' colours');
+  assert.equal(await phone.locator('[data-race-cockpit], [data-race-chase], .race-3d-canvas').count(),0,'no driver\'s-eye window on the phone: just the grid');
   // Tap the right square, as the server deals it, eight times: every tap brings a new grid.
   let previous;
+  const kinds=new Set();
   for(let i=0;i<8;i++){
     const own=(await snap(players[0].key)).race.own;
     if(!own.question){await phone.waitForTimeout(120);i--;continue;}
     if(own.question.id===previous){await phone.waitForTimeout(80);i--;continue;}
     previous=own.question.id;
+    for(const tile of own.question.symbols.tiles)kinds.add(tile.split(':')[0]);
     const index=own.question.symbols.tiles.indexOf(own.question.symbols.target);
     await phone.locator(`.race-symbol-round[data-question-id="${own.question.id}"] [data-race-option="${index}"]`).tap({timeout:6000});
     if(i===2)await phone.screenshot({path:'browser-screenshots/symbol-race-phone.png'});
   }
+  assert.ok(kinds.size>=2,'grids change between shapes, numbers and letters: '+[...kinds]);
   const after=await snap(players[0].key);
   assert.ok(after.race.own.correct>=7,'right taps counted: '+after.race.own.correct);
   assert.ok(after.race.racers[0].name==='Ada','tapping correctly puts Ada in front');
@@ -54,5 +55,5 @@ try{
   await phone.screenshot({path:'browser-screenshots/symbol-race-phone-small.png'});
   assert.ok(fit.top>=0&&fit.bottom<=fit.height+1,'the whole grid is on screen at 360x640: '+JSON.stringify(fit));
   assert.deepEqual(errors,[],'no page errors');
-  console.log('PASS: Symbol Dash: nine-square grid, new grid on every tap, right taps lead, a wrong tap slows, cockpit drawn');
+  console.log('PASS: Symbol Dash: nine-tile grids of shapes, numbers and letters, a new grid on every tap, right taps lead, a wrong tap slows, no 3D on the phone');
 }finally{await browser.close();}

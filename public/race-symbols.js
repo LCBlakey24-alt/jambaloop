@@ -32,3 +32,23 @@ export function symbolMarkup(id, label = false) {
   if (!symbol) return '';
   return `<svg class="race-symbol" viewBox="0 0 100 100" ${label ? `role="img" aria-label="${symbol.name}"` : 'aria-hidden="true"'} fill="${symbol.colour}">${symbol.path}</svg>`;
 }
+
+const glyphColours = ['#ff5d6c', '#4aa8ff', '#ffd34d', '#ff9a3d', '#ff7ad9', '#3ee0c5', '#9bea5c', '#c9b8ff', '#fff06a', '#8f6bff', '#6fe3ff', '#f4f1ea'];
+/** What a tile token is called: 'shape:star' is "star", 'num:42' is "number 42", 'let:K' is "letter K". */
+export function tileName(token) {
+  const [kind, value] = String(token).split(':');
+  return kind === 'shape' ? byId.get(value)?.name ?? 'symbol' : kind === 'num' ? 'number ' + value : 'letter ' + value;
+}
+/** Short label for the target banner. */
+export function tileLabel(token) {
+  const [kind, value] = String(token).split(':');
+  return kind === 'shape' ? byId.get(value)?.name ?? '' : kind === 'num' ? 'number' : 'letter';
+}
+/** The drawing of one tile: a shape, or a big number or letter in a colour of its own. */
+export function tileMarkup(token) {
+  const [kind, value] = String(token).split(':');
+  if (kind === 'shape') return symbolMarkup(value);
+  const text = String(value).replace(/[^0-9A-Z]/g, '');
+  const colour = glyphColours[[...text].reduce((sum, char) => sum * 7 + char.charCodeAt(0), kind === 'num' ? 3 : 5) % glyphColours.length];
+  return `<svg class="race-symbol race-glyph" viewBox="0 0 100 100" aria-hidden="true"><text x="50" y="54" text-anchor="middle" dominant-baseline="middle" font-size="${text.length > 1 ? 62 : 80}" font-weight="900" font-family="system-ui, sans-serif" fill="${colour}">${text}</text></svg>`;
+}

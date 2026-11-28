@@ -81,3 +81,13 @@ html.mobile-deck #dialog-content #join-form .join-room-submit {
 /* "Scroll to see every choice" is only true when the list really runs past one screen. */
 .mobile-deck .game.player-only .party-ballot-note { display: none; }
 .mobile-deck .game.player-only:has(.party-vote-list > :nth-child(10)) .party-ballot-note { display: block; }
+/* A player's own status, on their phone: Brain Ladder hearts and verdict, Catch Up's labelled count. */
+.brain-own-lives b { letter-spacing: .08em; color: #ff6b8a; font-size: 1.15em; }
+.brain-own-lives.is-out { opacity: .8; }
+.brain-verdict { display: grid; gap: 3px; margin-block: 10px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--edge, #3a3f66); border-left-width: 5px; }
+.brain-verdict strong { font-size: 1.15rem; line-height: 1.25; }
+.brain-verdict span { font-size: .9rem; opacity: .85; }
+.brain-verdict.is-right { border-left-color: #47e6a4; background: #47e6a41a; }
+.brain-verdict:is(.is-wrong, .is-out) { border-left-color: #ff6b8a; background: #ff6b8a1a; }
+.brain-verdict.is-watching { border-left-color: #9aa3d6; }
+.catch-watch-count strong { font-size: 1.6rem; }

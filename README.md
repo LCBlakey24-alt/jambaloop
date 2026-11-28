@@ -195,6 +195,15 @@ Set base points, a maximum time bonus, and a double-points schedule for Classic 
 
 Run `npm test` to verify room sizes, reconnect behavior, protected avatars and live streams, playlists and normalized standings, scoring, awards, readiness, pause and replay, newer game-show rules, Board Race difficulty, and dice-tower clearances. The reconnect test waits for the server’s actual grace period. Automated passes are not a substitute for a real multi-phone group playtest; see `docs/RELEASE_READINESS_2026-11-23.md` for the current evidence and blockers.
 
+### Playing on a TV stick (28 November 2026)
+
+- A Fire TV Stick's browser (Silk) reports a small 960×540 page and a remote instead of a mouse, so the site used to take it for a phone. It is now recognised as the TV: by name (Fire TV models report an `AFT…` code, and common smart-TV browsers are recognised too), by having no touchscreen, or by choice.
+- On a recognised TV the page is laid out at 1280 wide, the size every TV screen is designed and tested at, and the browser scales it to the screen. Hosting goes straight to the TV lobby, with no "made for a TV" prompt.
+- If a TV is not recognised, open `jambaloop-family-test.onrender.com/?tv` once on it (or press **On a TV?** in the footer and choose **This is our TV**). The choice is remembered on that device; `?auto` clears it. The same page shows what the device reports.
+- Phones that try to host still see the prompt, now with **This screen is our TV: host here**.
+- Not yet tested on a real Fire TV Stick: the exact browser identity Silk sends there is not documented by Amazon.
+- Home tiles: the game type and player count are on a solid strip under the artwork, no longer printed over it; on narrow tiles "1+ players" shortens to "1+".
+
 ### Quiz Race additions (27 November 2026)
 
 - **Three circuits**, one per race length: a short oval, the medium figure of eight with its bridge, and a long circuit with four ramps, two hairpins and a chicane. A crowd of little people bobs along both sides of the road, with trees, rocks, tyre stacks, floodlights and trackside boards that change with the track theme.

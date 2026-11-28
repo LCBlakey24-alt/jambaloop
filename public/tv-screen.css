@@ -7,6 +7,9 @@
 html.tv-screen .small-host-note { display: none !important; }
 
 /* The screen check (?device, or "On a TV?" in the footer). */
+.screen-choices { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 760px) { .screen-choices { grid-template-columns: 1fr; } }
+.screen-details { margin-top: .8rem; } .screen-details summary { cursor: pointer; font-weight: 700; }
 .screen-report { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: .35rem .9rem; margin: .8rem 0 1rem; font-size: .9rem; }
 .screen-report dt { font-weight: 800; color: var(--muted, #a8b8d1); }
 .screen-report dd { margin: 0; overflow-wrap: anywhere; }
@@ -33,4 +36,11 @@ html body .game-tile .tile-info .tile-minimum { font-weight: 700 !important; col
 html body .game-tile .tile-info .tile-kind::before {
   content: ""; display: inline-block; width: .6em; height: .6em; margin-right: .4em; border-radius: 50%;
   background: var(--game-accent, var(--id-accent, #1dd9be)); vertical-align: .05em;
+}
+/* On narrow tiles the type comes first: "1+ players" shortens to "1+" rather than cutting the type off. */
+html body .game-tile .tile-info .tile-kind { flex: 1 1 auto; }
+@container (max-width: 175px) {
+  html body .game-tile .tile-info { gap: 4px; padding-inline: clamp(5px, 4cqw, 9px) !important; }
+  html body .game-tile .tile-info .tile-players-word { display: none; }
+  html body .game-tile .tile-info .tile-kind { letter-spacing: .01em; }
 }

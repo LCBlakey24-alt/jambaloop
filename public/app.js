@@ -771,12 +771,12 @@ function openDialog(mode, value, gameMode, quizId) {
       ['Page size', report.page], ['Screen size', report.screen], ['Pixel ratio', report.pixelRatio], ['Touch points', report.touchPoints], ['Pointer', report.pointer], ['Browser', report.agent]];
     content.innerHTML = `<div class="eyebrow">SCREEN CHECK</div><h2>Is this the TV?</h2>
     <p>Jambaloop works out whether this screen is the TV everyone watches or a phone. If it gets it wrong (some TV sticks look like phones), choose here. The choice is remembered on this device.</p>
-    <dl class="screen-report">${rows.map(([label, value]) => `<dt>${escape(label)}</dt><dd>${escape(String(value))}</dd>`).join('')}</dl>
-    <div class="actions bigscreen-actions">
+    <div class="actions bigscreen-actions screen-choices">
       <button class="button primary" data-action="screen-choice" data-screen="tv">This is our TV</button>
       <button class="button outline" data-action="screen-choice" data-screen="phone">This is a phone</button>
       <button class="button outline" data-action="screen-choice" data-screen="auto">Work it out automatically</button>
-    </div>`;
+    </div>
+    <details class="screen-details"><summary>What this screen reports</summary><dl class="screen-report">${rows.map(([label, value]) => `<dt>${escape(label)}</dt><dd>${escape(String(value))}</dd>`).join('')}</dl></details>`;
   } else {
     content.innerHTML = `<div class="eyebrow">QUIZ NIGHT</div><h2>How to play</h2><ol>
     <li>Host a game in the TV browser or connect a laptop to the TV. Choose a game mode and create a room.</li>

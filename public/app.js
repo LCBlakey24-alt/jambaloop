@@ -43,7 +43,7 @@ import { bumpCount, clockTension, lockRail, reactionFor, stageReveal, stageable,
 import {connectSketchPainter,paintSketchBoard,clearSketch} from './sketch-canvas.js';
 import { openLibrary, savedQuizzes } from './quiz-editor.js';
 import { answerGuide, helpTypes, closestStep, RULER_PITCH, createDraft, formatNumber, orderedItems, setEstimatePrecision, specialAnswer } from './answer-controls.js';
-import { demoView, explainer, hasDemo, practiceView, samples } from './learning.js';
+import { demoView, explainer, practicePlan, practiceView, samples } from './learning.js';
 import { hasTouchscreen, isTvScreen, prepareTvScreen, readScreenChoice, rememberScreen, screenReport } from './device.js';
 import { enableRemote } from './tv-remote.js';
 import { isEstimateShow, maximumTeams, BOARD_PIECES, afterHoursModes, categories, categoryGroups, categoryName, modes, themes, questionTypes, formatTypes, formatId, difficulties, defaultTheme, partyModes, fixedQuestionModes, minimumPlayers, questionCounts, scoreIntervals, defaultScoreInterval, supportsScoreCheckpoints } from './game-config.js';
@@ -704,8 +704,11 @@ function openDialog(mode, value, gameMode, quizId) {
       openDialog(state?.phase === 'lobby' && session ? 'configure' : state?.phase === 'finished' && session ? 'rematch' : 'host', 'mixed', undefined, id);
     });
   } else if (mode === 'practice') {
-    if (!value && hasDemo(state?.mode)) showDemo(state.mode, 0);
-    else showPractice(value ?? (samples[formatTypes(state?.format)[0]] ? formatTypes(state?.format)[0] : 'choice'));
+    // Only practice that fits this game: its own walk-through, or the answer types this room really asks.
+    const plan = practicePlan(session ? state : undefined);
+    if (!value && plan?.demo) showDemo(state.mode, 0);
+    else if (plan?.types.length) showPractice(plan.types.includes(value) ? value : plan.types[0], plan.types);
+    else content.innerHTML = '<div class="eyebrow">PRACTICE</div><h2>Nothing to practise</h2><p>This game has no practice round. Watch the TV: it shows how to play.</p>';
   } else if (mode === 'themes') {
     content.innerHTML = `<div class="eyebrow">VISUAL STYLE</div><h2>Set the mood</h2><div class="theme-options">
       ${themes.map(([id, name, color, panel]) => `<button class="button outline" data-action="theme" data-theme="${id}" aria-pressed="${previewTheme === id}">
@@ -1990,9 +1993,9 @@ function showDemo(mode, step, feedback) {
   content.querySelector('h2').focus();
 }
 
-function showPractice(type) {
+function showPractice(type, types = practice?.types) {
   const sample = samples[type] ?? samples.choice;
-  practice = { sample, draft: createDraft(sample) };
+  practice = { sample, draft: createDraft(sample), types };
   content.innerHTML = practiceView(practice, escape);
   content.querySelector('h2').id = 'dialog-title';
 }
@@ -2539,7 +2542,10 @@ document.addEventListener('click', async event => {
     if (mode === 'potato' && option !== 1) {
       return showDemo(mode, 0, option === 2 ? 'You still have the potato. In a game a skip deals a fresh question. Try this sample again.' : 'Keep the potato and try again. Beavers are known for building dams.');
     }
-    if (step === 1 && ['board', 'wheel', 'dice'].includes(mode)) return showPractice('choice');
+    if (step === 1 && ['board', 'wheel', 'dice'].includes(mode)) {
+      const types = practicePlan(state)?.types ?? [];
+      return showPractice(types[0] ?? 'choice', types);
+    }
     return showDemo(mode, step + 1);
   }
   if (action === 'practice-choice' && practice) return checkPractice(Number(button.dataset.option));

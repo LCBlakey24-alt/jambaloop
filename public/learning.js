@@ -1,5 +1,6 @@
 import { modes } from './game-config.js';
 import { answerGuide, helpTypes, specialAnswer } from './answer-controls.js';
+import { launcherCopy } from './home-launcher.js';
 
 const summaries = {
   soclose: 'Scroll or enter a number privately. The closest estimate earns 100 points; an exact answer earns 200. Ties share the same award.',
@@ -9,11 +10,11 @@ const summaries = {
   dice: 'A pair of dice sets the multiplier for the whole room. Totals of 2–6 score ×1, 7–10 score ×2, and 11–12 score ×3.',
   punchline: 'Choose 3, 5 or 7 rounds. Write a short funny reply, then vote for anonymous entries. Each vote earns its writer 100 points.' ,
   cards: 'Choose 3, 5 or 7 rounds. Pick a phrase from your private hand, then vote on anonymous entries to award points.',
-  tracks: 'Read a silly dilemma, then choose between two tracks. The TV reveals the group’s vote.',
+  tracks: 'A different Trolley Driver takes the lever each round. The other players split into two teams and choose good, sabotage and final defence cards. The Driver chooses which track is hit, and the spared team scores.',
   bluff: 'Play 3, 5 or 7 rounds. One player per round gets no prompt and must fake a believable reply. Vote for the bluff: a correct vote earns 100 points, while an uncaught bluff earns 100 escape points. Roles rotate and scores carry into the finale.',
   potato: 'One phone at a time has the potato. Get a question right to pass it. Whoever holds it when the shared two-minute timer ends loses.',
   showdown: 'Join a balanced team and answer on your own phone. Each team scores the average of its players’ points. The highest team score wins.',
-  knockout: 'Start with three lives. Wrong or missed answers cost a life. For number questions, the closest guesses keep their lives.',
+  knockout: 'Start with three lives. Wrong or missed answers cost a life. The last player standing wins. If several players survive all six levels, a closest-number question decides it.',
   quizrace: 'Everyone races on a curving track. Correct answers boost your speed; quick answers boost more. Wrong answers and Pass slow you down. First to finish wins.',
   brain: 'Start with two lives, solve fresh logic puzzles, and climb five, seven or ten increasingly difficult levels. Every wrong or missed answer costs a life. Correct answers are worth more points on higher levels.',
   samepage: 'Everyone privately types an answer to a prompt. Matching answers earn points when revealed together.',
@@ -21,17 +22,24 @@ const summaries = {
   topanswers: 'No talking until the reveal. Choose the option you truly prefer. Your room anonymously votes to create real popularity data. Then secretly predict the top choice. Earn 20 points per real vote for that answer, plus 100 for choosing an option tied for most votes.',
   rare: 'Type one answer privately. In panel play, fewer mentions in the UK study earn more points. In room play, fewer matches earn more points. The host reviews unlisted answers.',
   debate: 'Two speakers take a minute each. The audience votes privately on their phones. The winner scores the difference in votes. Everyone speaks twice.',
+  moreless: 'Choose which of two answers has more or less. Play for 100 points per correct answer or use elimination, across 3, 5, 7 or 10 rounds.',
   sketch: 'Choose three, five or seven rounds. One artist receives a secret word or silly scene and draws on a phone while the sketch appears live on TV. Everyone else guesses privately. The first correct guess earns 150 points, then 100 and 75; the artist earns 50 if somebody recognises the drawing.',
 };
 
+const videoModes = new Set(['classic', 'wheel', 'board', 'dice', 'knockout', 'punchline', 'cards', 'tracks', 'bluff', 'potato', 'showdown']);
+
 export function explainer(mode, play) {
-  const title = modes.find(([id]) => id === mode)[1];
-  if(['debate','soclose','quizrace','brain','samepage','spotlight','topanswers','rare','sketch'].includes(mode))return `<details class="mode-explainer" ${play?'open':''}><summary>How to play ${title}</summary><p>${summaries[mode]}</p></details>`;
-  return `<details class="mode-explainer" ${play ? 'open' : ''}><summary>Watch how to play ${title}</summary>
-    <video aria-label="How to play ${title}" controls playsinline muted preload="none" poster="/videos/${mode}.jpg"
-      ${play && !matchMedia('(prefers-reduced-motion: reduce)').matches ? 'autoplay' : ''}>
+  const game = modes.find(([id]) => id === mode);
+  if (!game) return '';
+  const title = game[1];
+  const steps = launcherCopy(mode).steps;
+  const summary = summaries[mode] || steps.join(' ');
+  const video = videoModes.has(mode) ? `
+    <video aria-label="How to play ${title}. The video has music and the steps are written below." controls playsinline preload="none" poster="/videos/${mode}.jpg">
       <source src="/videos/${mode}.mp4" type="video/mp4">
-    </video><p>${summaries[mode]}</p></details>`;
+    </video><p class="explainer-video-note">Video contains music. Instructions are below.</p>` : '';
+  return `<details class="mode-explainer" ${play ? 'open' : ''}><summary>How to play ${title}</summary>
+    ${video}<p>${summary}</p>${video ? `<ol>${steps.map(step => `<li>${step}</li>`).join('')}</ol>` : ''}</details>`;
 }
 
 export const samples = {
@@ -81,8 +89,8 @@ const demonstrations = {
     ['Vote locked in', 'Each vote earns the player who submitted that entry 100 points.', []],
   ],
   tracks: [
-    ['Choose a track', 'What should the town’s new festival be?', ['A parade with floats made of cake', 'A silent disco in the supermarket']],
-    ['Vote locked in', 'The TV reveals how many people chose each track after voting ends.', []],
+    ['Defend your track', 'Your team picks a good card for its own track.', ['A parade with floats made of cake', 'A silent disco in the supermarket']],
+    ['The Driver decides', 'In a real round, each team also plays one sabotage card and one final defence card. The Trolley Driver chooses which track gets hit. The spared team scores.', []],
   ],
   debate: [
     ['Take the floor','Choose a side for a practice debate.', ['A beach holiday','A city break']],

@@ -409,7 +409,8 @@ function openDialog(mode, value, gameMode, quizId) {
     <fieldset id="race-setup" class="race-setup"><legend>Quiz Race</legend><div class="form-row">
       <label>Race length<select name="raceLength">${selected([['short','Short · ~1 min'],['medium','Medium · ~2 min'],['long','Long · ~3 min']],raceSetup.raceLength ?? 'medium')}</select></label>
       <label>Track theme<select name="raceTrack">${selected([['neon','Neon Circuit'],['desert','Desert Run'],['snow','Snow Circuit'],['jungle','Jungle Trail'],['space','Space Route']],raceSetup.raceTrack ?? 'neon')}</select></label>
-      <label>Difficulty<select name="raceDifficulty">${selected([['easy','Easy'],['medium','Medium'],['hard','Hard'],['mixed','Mixed']],raceSetup.raceDifficulty ?? 'mixed')}</select></label></div>
+      <label>Difficulty<select name="raceDifficulty">${selected([['easy','Easy'],['medium','Medium'],['hard','Hard'],['mixed','Mixed']],raceSetup.raceDifficulty ?? 'mixed')}</select></label>
+      <label>Format<select name="raceLeague">${selected([['off','Single race'],['on','League · 3 races, points for every place']],raceSetup.raceLeague ? 'on' : 'off')}</select></label></div>
       <small>2–12 racers. Multiple-choice questions appear privately on phones. Fast correct answers boost speed. Easy/Hard use curated questions where available, supplemented by standard questions.</small></fieldset>
     <label id="score-interval-field">Leaderboard reveal<select name="scoreInterval" aria-label="Leaderboard reveal" aria-describedby="score-interval-help">${selected(scoreIntervals.map(value => [value, intervalLabels[value]]), interval)}</select>
       <small id="score-interval-help">Correct answers are still revealed after each question.</small></label>
@@ -855,12 +856,12 @@ document.addEventListener('submit', async event => {
   event.preventDefault();
   const button = form.querySelector('button:not([type="button"])');
   button.disabled = true;
-  const { mode, theme, format, category, count, seconds, code, name, autoReveal, includeChristmas, afterDark, phoneView, quiz, teamCount, boardLength, playStyle, privateQuestions, difficulty, basePoints, speedPoints, doublePoints, boardSpeed, scoreInterval, raceLength, raceTrack, raceDifficulty } = Object.fromEntries(new FormData(form));
+  const { mode, theme, format, category, count, seconds, code, name, autoReveal, includeChristmas, afterDark, phoneView, quiz, teamCount, boardLength, playStyle, privateQuestions, difficulty, basePoints, speedPoints, doublePoints, boardSpeed, scoreInterval, raceLength, raceTrack, raceDifficulty, raceLeague } = Object.fromEntries(new FormData(form));
   try {
     const customQuiz = quiz && quiz !== 'current' ? savedQuizzes().find(entry => entry.id === quiz) : undefined;
     const curated = difficulty && difficulty !== 'standard';
     const scoring = basePoints ? { base: Number(basePoints), bonus: Number(speedPoints), doubles: doublePoints } : undefined;
-    const settings = { mode, playStyle, theme, difficulty, raceLength, raceTrack, raceDifficulty, scoring, scoreInterval: scoreInterval === undefined ? undefined : Number(scoreInterval), boardSpeed: boardSpeed === undefined ? undefined : Number(boardSpeed), format: curated ? 'choice' : format, category: curated ? 'mixed' : category, phoneView, teamCount: Number(teamCount), boardLength: Number(boardLength), customQuiz, useRoomQuiz: quiz === 'current', count: Number(count), privateQuestions: privateQuestions === 'on', seconds: Number(seconds), autoReveal: autoReveal === 'on', includeChristmas: includeChristmas === 'on', afterDark: afterHoursModes.includes(mode) && afterDark === 'on' };
+    const settings = { mode, playStyle, theme, difficulty, raceLength, raceTrack, raceDifficulty, raceLeague: raceLeague === 'on', scoring, scoreInterval: scoreInterval === undefined ? undefined : Number(scoreInterval), boardSpeed: boardSpeed === undefined ? undefined : Number(boardSpeed), format: curated ? 'choice' : format, category: curated ? 'mixed' : category, phoneView, teamCount: Number(teamCount), boardLength: Number(boardLength), customQuiz, useRoomQuiz: quiz === 'current', count: Number(count), privateQuestions: privateQuestions === 'on', seconds: Number(seconds), autoReveal: autoReveal === 'on', includeChristmas: includeChristmas === 'on', afterDark: afterHoursModes.includes(mode) && afterDark === 'on' };
     if (form.id === 'rematch-form' || form.id === 'configure-form') {
       const action = form.id === 'rematch-form' ? 'rematch' : 'configure';
       await api('/' + session.code + '/' + action, { ...settings, game: Number(form.dataset.game), lobbyVersion: Number(form.dataset.lobbyVersion) });
@@ -998,6 +999,7 @@ function phaseCaption(s) {
     'sketch-draw': 'Artist drawing',
     'sketch-reveal': 'Drawing revealed',
     'race-countdown': 'Race about to start',
+    'race-standings': 'League standings',
     race: 'Quiz Race in progress',
     finished: 'Final results',
   }[s.phase];
@@ -1044,7 +1046,7 @@ function render(s) {
       <h1>You’re on the list, ${escape(s.player.name)}<span class="brand-dot">.</span></h1>
       <p>The current game is underway. Keep this open and you’ll join the next lobby automatically.</p>
     </section>`;
-  } else if (s.mode === 'quizrace' && s.race && ['race-countdown', 'race', 'finished'].includes(s.phase)) {
+  } else if (s.mode === 'quizrace' && s.race && ['race-countdown', 'race', 'race-standings', 'finished'].includes(s.phase)) {
     body = quizRaceView({...s, categoryName: categoryName(s.category)}, {host,canControl,icons,replayButtons,sending:raceSending});
   } else if (s.pausedAt) {
     body = `<section class="game-panel round-break">
@@ -1303,14 +1305,15 @@ function render(s) {
   if(s.mode==='quizrace' && s.race){
     raceTrackView?.dispose();
     const svgTrack=mountQuizRaceTrack(app);
-    const raceKey=s.code+'/'+s.game;
+    // Each league race is on its own circuit, so the 3D scene is rebuilt for it.
+    const raceKey=s.code+'/'+s.game+'/'+(s.race.course??s.raceLength)+'/'+s.race.track;
     const stage=host?app.querySelector('.race-track-wrap'):null;
     if(!stage||race3d?.key!==raceKey&&race3dLoading!==raceKey) disposeRace3d();
     if(stage&&!race3d&&race3dLoading!==raceKey){
       race3dLoading=raceKey;
       import('./race-3d.js').then(({mountRace3D})=>{
         if(race3dLoading!==raceKey||race3d)return;
-        race3d=mountRace3D({key:raceKey,track:s.raceTrack,reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches});
+        race3d=mountRace3D({key:raceKey,track:s.race.track,course:s.race.course??s.raceLength,reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches});
         race3d.attach(app.querySelector('.race-track-wrap'));
       }).catch(()=>{ race3dLoading=undefined; /* No WebGL: the SVG track remains. */ });
     }
@@ -1629,13 +1632,16 @@ function raceCommentary(before, next) {
     sayReaction(`react-race-${kind}`, raceCalls[kind]);
   };
   if (before.phase === 'race-countdown' && next.phase === 'race') return call('start');
-  if (next.phase === 'finished' && before.phase !== 'finished') return setTimeout(() => call('finish'), 900);
+  if (['finished', 'race-standings'].includes(next.phase) && before.phase === 'race') return setTimeout(() => call('finish'), 900);
   if (next.phase !== 'race' || before.phase !== 'race') return;
   // Power-ups: a new ram or boost anywhere on the track gets a call.
   const fresh = kind => next.race.racers.some(racer => racer.power === kind && before.race?.racers?.find(old => old.id === racer.id)?.power !== kind);
   if (fresh('rammed')) { if (soundEnabled) playSfx(sound, 'wrong', { volume: 0.4 }); return call('ram', 5000); }
   if (fresh('boost')) { if (soundEnabled) playSfx(sound, 'whoosh', { volume: 0.5 }); return call('boost', 5000); }
   if (fresh('blocked')) return call('blocked', 5000);
+  if (fresh('miss')) return call('miss', 6000);
+  // Five right in a row: flames on the TV, and Vince notices.
+  if (next.race.racers.some(racer => racer.fire && !before.race?.racers?.find(old => old.id === racer.id)?.fire)) return call('fire', 8000);
   if (next.race.finalSprint && !before.race?.finalSprint) return call('sprint');
   if (next.race.racers.some(racer => racer.turbo && !before.race?.racers?.find(old => old.id === racer.id)?.turbo)) return call('turbo', 8000);
   const [first, second] = next.race.racers;

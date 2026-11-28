@@ -1,4 +1,5 @@
 // Keep the same DOM and form controls on every page. Only their visibility changes.
+import { isTvScreen } from './device.js';
 const mobileQuery = '(max-width: 680px), (pointer: coarse) and (max-width: 950px)';
 const groups = [
   '.game', '.game-panel', '.hero', '.hero-inner', '.hero-copy', '.modes', '.categories', '.lobby',
@@ -161,6 +162,8 @@ function track(element, nav, getKey) {
 
 export function mobileDeck(app, dialog, content) {
   const media = matchMedia(mobileQuery);
+  // A TV is never laid out as a phone, even when its browser reports a small, coarse-pointer screen.
+  const phoneLayout = () => media.matches && !isTvScreen();
   const root = document.documentElement;
   const appPager = pager('Screen pages');
   const dialogPager = pager('Dialog pages');
@@ -175,7 +178,7 @@ export function mobileDeck(app, dialog, content) {
 
   function refresh() {
     frame = undefined;
-    if (!media.matches) return;
+    if (!phoneLayout()) return;
     const height = window.visualViewport?.height ?? innerHeight;
     const top = window.visualViewport?.offsetTop ?? 0;
     root.style.setProperty('--phone-height', `${Math.round(height)}px`);
@@ -202,22 +205,24 @@ export function mobileDeck(app, dialog, content) {
   }
 
   function schedule(layout = active(), node) {
-    if (!media.matches) return;
+    if (!phoneLayout()) return;
     layout.invalidate();
     keep = node ?? keep;
     if (!frame) frame = requestAnimationFrame(refresh);
   }
 
+  // Choosing "This screen is our TV" switches the phone layout off at once.
+  globalThis.addEventListener?.('jambaloop-screen', () => toggle());
   function toggle() {
-    root.classList.toggle('mobile-deck', media.matches);
-    if (!media.matches) { root.classList.remove('mobile-keyboard'); appLayout.clear(); dialogLayout.clear(); return; }
+    root.classList.toggle('mobile-deck', phoneLayout());
+    if (!phoneLayout()) { root.classList.remove('mobile-keyboard'); appLayout.clear(); dialogLayout.clear(); return; }
     schedule(appLayout);
     if (dialog.open) schedule(dialogLayout);
   }
 
   for (const [element, layout] of [[app, appLayout], [content, dialogLayout]]) {
     new MutationObserver(mutations => {
-      if (!media.matches) return;
+      if (!phoneLayout()) return;
       if (mutations.some(mutation => {
         const target = mutation.target;
         if (target.closest('#timer, [role="progressbar"], .time-track, #response-progress')) return false;
@@ -239,7 +244,7 @@ export function mobileDeck(app, dialog, content) {
 
   let invalidField;
   document.addEventListener('invalid', event => {
-    if (!media.matches) return;
+    if (!phoneLayout()) return;
     if (invalidField) {
       event.preventDefault();
       return;
@@ -257,7 +262,7 @@ export function mobileDeck(app, dialog, content) {
   }, true);
   document.addEventListener('click', event => {
     const href = event.target.closest('a[href="#mode-heading"],a[href="#category-heading"]')?.getAttribute('href');
-    if (!href || !media.matches) return;
+    if (!href || !phoneLayout()) return;
     event.preventDefault();
     const heading = app.querySelector(href);
     if (heading) appLayout.jump(heading, true);

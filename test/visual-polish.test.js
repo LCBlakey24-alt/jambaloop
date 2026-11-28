@@ -11,7 +11,7 @@ const board = read('public/board.js');
 
 test('visual polish loads after every game stylesheet; only the identity, TV, answer-colour and show-moment layers follow it', () => {
   const sheets = [...html.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)].map(match => match[1]);
-  assert.deepEqual(sheets.slice(sheets.indexOf('/visual-polish.css') + 1), ['/game-identities.css', '/tv-immersive.css', '/answer-colours.css', '/show-moments.css']);
+  assert.deepEqual(sheets.slice(sheets.indexOf('/visual-polish.css') + 1), ['/game-identities.css', '/tv-immersive.css', '/answer-colours.css', '/show-moments.css', '/tv-screen.css']);
 });
 
 test('every decorative animation has a reduced-motion opt-out', () => {

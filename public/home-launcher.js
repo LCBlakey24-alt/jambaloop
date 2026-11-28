@@ -62,7 +62,7 @@ export function launcherTile(mode) {
   return `<button type="button" class="game-tile" data-action="preview-mode" data-mode="${id}"
       style="${modeVariables(id)}" aria-label="${name}. ${description}. Preview game details.">
     ${tileArt(id)}
-    <span class="tile-info"><span class="tile-kind">${kind}</span><span class="tile-minimum">${players}+ players</span></span>
+    <span class="tile-info"><span class="tile-kind">${kind}</span><span class="tile-minimum">${players}+<span class="tile-players-word"> players</span></span></span>
   </button>`;
 }
 

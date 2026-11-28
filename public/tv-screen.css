@@ -1,0 +1,56 @@
+/*
+ * TV screens and the home tiles (28 November 2026, after a first test on a Fire TV Stick).
+ * Loaded last so these rules win.
+ */
+
+/* A TV is never told it is "acting as the TV" like a phone would be. */
+html.tv-screen .small-host-note { display: none !important; }
+
+/* The screen check (?device, or "On a TV?" in the footer). */
+.screen-choices { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 760px) { .screen-choices { grid-template-columns: 1fr; } }
+.screen-details { margin-top: .8rem; } .screen-details summary { cursor: pointer; font-weight: 700; }
+.screen-report { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: .35rem .9rem; margin: .8rem 0 1rem; font-size: .9rem; }
+.screen-report dt { font-weight: 800; color: var(--muted, #a8b8d1); }
+.screen-report dd { margin: 0; overflow-wrap: anywhere; }
+
+/*
+ * Home tiles: the game type and the player count sit on their own solid strip under the artwork,
+ * instead of on top of it where some tiles' art and colours made them unreadable.
+ */
+.game-tile { display: grid !important; grid-template-rows: minmax(0, 1fr) auto; }
+.game-tile > .tile-art { height: auto !important; min-height: 0; }
+html body .game-tile .tile-info {
+  position: static !important; inset: auto !important; z-index: 3;
+  display: flex; justify-content: space-between; align-items: center; gap: 6px; min-width: 0;
+  padding: clamp(4px, 3.2cqw, 9px) clamp(6px, 5cqw, 12px) !important;
+  background: #0b1020 !important; border-top: 1px solid #ffffff22; text-shadow: none !important;
+}
+html body .game-tile .tile-info :is(.tile-kind, .tile-minimum) {
+  font: 800 clamp(9px, 6.4cqw, 15px)/1.15 'House Sans', system-ui, sans-serif !important;
+  letter-spacing: .04em; color: #f4f7ff !important; opacity: 1 !important;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
+html body .game-tile .tile-info .tile-minimum { font-weight: 700 !important; color: #c9d6ee !important; flex: none; }
+/* The game's own colour stays, as a dot beside its type. */
+html body .game-tile .tile-info .tile-kind::before {
+  content: ""; display: inline-block; width: .6em; height: .6em; margin-right: .4em; border-radius: 50%;
+  background: var(--game-accent, var(--id-accent, #1dd9be)); vertical-align: .05em;
+}
+/* On all but the largest tiles the type comes first: "1+ players" shortens to "1+" rather than cutting the type off. */
+html body .game-tile .tile-info .tile-kind { flex: 1 1 auto; }
+@container (max-width: 250px) {
+  html body .game-tile .tile-info { gap: 4px; padding-inline: clamp(5px, 4cqw, 9px) !important; }
+  html body .game-tile .tile-info .tile-players-word { display: none; }
+  html body .game-tile .tile-info .tile-kind { letter-spacing: .01em; }
+}
+
+/* The screen check link in the home page's note line. */
+.home-tv-link { padding: 0; border: 0; background: none; color: inherit; font: inherit; text-decoration: underline; cursor: pointer; }
+
+/* Twenty-two games and up on a wide screen: eight columns sized to the 1400px shell, so the eighth is not cut off. */
+@media (min-width:1100px) and (min-height:700px) {
+  html body .home-shell .mode-list:has(.game-tile:nth-child(22)) {
+    --tile-edge:min(calc((100dvh - 270px)/3),calc((min(1400px, 100vw - 40px) - 7 * var(--tile-gap, 10px) - 8px)/8),192px) !important;
+  }
+}

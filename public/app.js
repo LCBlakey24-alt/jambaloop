@@ -43,6 +43,7 @@ import {connectSketchPainter,paintSketchBoard,clearSketch} from './sketch-canvas
 import { openLibrary, savedQuizzes } from './quiz-editor.js';
 import { answerGuide, helpTypes, closestStep, RULER_PITCH, createDraft, formatNumber, orderedItems, setEstimatePrecision, specialAnswer } from './answer-controls.js';
 import { demoView, explainer, hasDemo, practiceView, samples } from './learning.js';
+import { hasTouchscreen, isTvScreen, prepareTvScreen, readScreenChoice, rememberScreen, screenReport } from './device.js';
 import { isEstimateShow, maximumTeams, BOARD_PIECES, afterHoursModes, categories, categoryGroups, categoryName, modes, themes, questionTypes, formatTypes, formatId, difficulties, defaultTheme, partyModes, fixedQuestionModes, minimumPlayers, questionCounts, scoreIntervals, defaultScoreInterval, supportsScoreCheckpoints } from './game-config.js';
 import { boardView, diceView, lobbyView, powerBar, reviewView, rollRecap, teamList, teamScoreboard, wheelView } from './game-views.js';
 
@@ -67,7 +68,9 @@ function bindImmersiveChrome() {
 const home = app.innerHTML;
 const dialog = document.querySelector('#dialog');
 /** A phone or small tablet: fine as a controller, too small to be the room's main screen. */
-const smallScreen = () => matchMedia('(max-width: 760px)').matches || (matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) < 700);
+// A phone or small tablet: never the TV. A Fire TV Stick reports a small, coarse-pointer screen too, but it has no
+// touchscreen and is recognised as a TV (see device.js), so it hosts like any other big screen.
+const smallScreen = () => !isTvScreen() && (matchMedia('(max-width: 760px)').matches || (hasTouchscreen() && matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) < 700));
 const content = document.querySelector('#dialog-content');
 const footer = document.querySelector('footer');
 const announcement = document.querySelector('#phase-announcement');
@@ -758,8 +761,22 @@ function openDialog(mode, value, gameMode, quizId) {
     </ol>
     <div class="actions bigscreen-actions">
       <button class="button primary" data-action="join">Join a game on this phone</button>
+      <button class="button outline" data-action="party" data-anyway="1" data-screen="tv"${gameMode ? ` data-mode="${escape(gameMode)}"` : ''}>This screen is our TV: host here</button>
       <button class="button outline" data-action="party" data-anyway="1"${gameMode ? ` data-mode="${escape(gameMode)}"` : ''}>Host on this phone anyway</button>
     </div>`;
+  } else if (mode === 'device') {
+    // The screen check: what this device reports, and a way to tell the site it is the TV (or a phone).
+    const report = screenReport();
+    const rows = [['Treated as', report.detected === 'tv' ? 'The TV' : report.detected === 'phone' ? 'A phone' : 'A computer'], ['Chosen on this device', report.remembered],
+      ['Page size', report.page], ['Screen size', report.screen], ['Pixel ratio', report.pixelRatio], ['Touch points', report.touchPoints], ['Pointer', report.pointer], ['Browser', report.agent]];
+    content.innerHTML = `<div class="eyebrow">SCREEN CHECK</div><h2>Is this the TV?</h2>
+    <p>Jambaloop works out whether this screen is the TV everyone watches or a phone. If it gets it wrong (some TV sticks look like phones), choose here. The choice is remembered on this device.</p>
+    <div class="actions bigscreen-actions screen-choices">
+      <button class="button primary" data-action="screen-choice" data-screen="tv">This is our TV</button>
+      <button class="button outline" data-action="screen-choice" data-screen="phone">This is a phone</button>
+      <button class="button outline" data-action="screen-choice" data-screen="auto">Work it out automatically</button>
+    </div>
+    <details class="screen-details"><summary>What this screen reports</summary><dl class="screen-report">${rows.map(([label, value]) => `<dt>${escape(label)}</dt><dd>${escape(String(value))}</dd>`).join('')}</dl></details>`;
   } else {
     content.innerHTML = `<div class="eyebrow">QUIZ NIGHT</div><h2>How to play</h2><ol>
     <li>Host a game in the TV browser or connect a laptop to the TV. Choose a game mode and create a room.</li>
@@ -2531,7 +2548,12 @@ document.addEventListener('click', async event => {
     else openDialog('join', button.dataset.code);
     return;
   }
-  if (['help', 'host', 'join', 'themes', 'practice', 'library', 'recent-rooms'].includes(action)) return openDialog(action, button.dataset.category, button.dataset.mode);
+  if (['help', 'host', 'join', 'themes', 'practice', 'library', 'recent-rooms', 'device'].includes(action)) return openDialog(action, button.dataset.category, button.dataset.mode);
+  if (action === 'screen-choice') {
+    rememberScreen(button.dataset.screen === 'auto' ? undefined : button.dataset.screen);
+    location.replace(location.pathname);
+    return;
+  }
   if (action === 'theme') {
     previewStyle(button.dataset.theme);
     return openDialog('themes');
@@ -2577,6 +2599,9 @@ document.addEventListener('click', async event => {
   if (action === 'party') {
     // Phones and small tablets are controllers: recommend a TV before turning one into the main screen.
     if (smallScreen() && !button.dataset.anyway) return openDialog('bigscreen', undefined, button.dataset.mode);
+    // "This screen is our TV": remember it, and lay the page out like a TV from now on.
+    // A touchscreen (a phone or tablet) is the TV for this visit only, so it is a phone again when it next joins a game.
+    if (button.dataset.screen === 'tv') { rememberScreen('tv', { visitOnly: hasTouchscreen() }); prepareTvScreen(); window.dispatchEvent(new Event('jambaloop-screen')); }
     if (dialog.open) dialog.close();
     button.disabled = true;
     const message = document.querySelector('#home-error');
@@ -2811,11 +2836,16 @@ carouselScreen.addEventListener('change', () => {
   if (!session && app.querySelector('[data-home-shell]')) renderModeCards(homeFilter);
 });
 
+// ?tv, ?phone or ?auto in the address chooses this screen; ?device opens the screen check.
+const screenCheck = readScreenChoice();
+prepareTvScreen();
 renderHome();
 mobileDeck(app, dialog, content);
 const code = new URLSearchParams(location.search).get('join');
 const saved = restoreRoomSession();
-if (saved && (!code || saved.code === code && !saved.host)) startSession(saved);
+// The screen check is a deliberate visit: it is not replaced by a saved room or a join form. Choosing reloads the page.
+if (screenCheck) openDialog('device');
+else if (saved && (!code || saved.code === code && !saved.host)) startSession(saved);
 else if (code) {
   const remembered = rememberedPlayer(code);
   if (remembered) startSession(remembered);

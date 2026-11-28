@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { CAROUSEL_REACH, carouselInfo, carouselOffsets, carouselView, wrapIndex } from '../public/game-carousel.js';
-import { modes } from '../public/game-config.js';
+import { modes, BOARD_PIECES } from '../public/game-config.js';
 import { lobbyView } from '../public/game-views.js';
 
 test('the shelf is circular: every card takes its shortest signed distance from the centre', () => {
@@ -46,4 +46,13 @@ test('the captain can flick between games from the lobby; saved quizzes are left
   assert.match(app, /api\('\/' \+ session\.code \+ '\/configure', \{ \.\.\.queuedSettings\(button\.dataset\.mode, state\.theme\), game: state\.game, lobbyVersion: state\.lobbyVersion \}\)/);
   // Voice is opt-in and waits for the shelf to settle.
   assert.match(app, /if \(carouselVoice\) carouselTimer = setTimeout/);
+});
+
+test('Board Race lobby shows the supported individual limit and team assignment', () => {
+  const base = { mode: 'board', isCaptain: true, players: [], playerCount: 1, connected: 1, code: '123456', game: 1,
+    player: { name: 'Ada', ready: false }, scoring: { base: 500 }, total: 12, boardLength: 24, teamCount: 2,
+    seconds: 20, phoneView: 'answers', playStyle: 'individual' };
+  const helpers = { host: false, escape: String, icons: () => '', modeName: () => 'Board Race' };
+  assert.match(lobbyView(base, helpers), new RegExp(`Individual racers · up to ${BOARD_PIECES} pieces`));
+  assert.match(lobbyView({ ...base, playStyle: 'teams' }, helpers), /2 balanced teams · players automatically allocated/);
 });

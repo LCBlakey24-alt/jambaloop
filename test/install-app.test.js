@@ -110,3 +110,36 @@ test('the app wires the install offer in, on the phone home', () => {
   assert.match(app, /if \(action === 'install-app'\) return promptInstall\(\);/);
   assert.match(app, /installOfferView\(installKind\(\{ isTv: isTvScreen \}\), icons\)/);
 });
+
+test('with no internet, a page load gets the offline page; nothing else goes through the service worker', async () => {
+  const { runInNewContext } = await import('node:vm');
+  const listeners = {};
+  const store = new Map();
+  const offline = { text: 'offline page' };
+  const sandbox = {
+    self: { addEventListener: (type, fn) => { listeners[type] = fn; }, skipWaiting: () => Promise.resolve(), clients: { claim: () => Promise.resolve() } },
+    caches: {
+      open: async () => ({ addAll: async paths => paths.forEach(path => store.set(path, path === '/offline.html' ? offline : {})) }),
+      keys: async () => ['jambaloop-offline-v0', 'jambaloop-offline-v1', 'someone-else'],
+      delete: async key => { sandbox.deleted.push(key); return true; },
+      match: async path => store.get(path),
+    },
+    fetch: async () => { throw new TypeError('Failed to fetch'); },
+    Response: { error: () => ({ error: true }) },
+    deleted: [],
+  };
+  runInNewContext(readFileSync(new URL('../public/sw.js', import.meta.url), 'utf8'), sandbox);
+  const wait = [];
+  listeners.install({ waitUntil: p => wait.push(p) });
+  listeners.activate({ waitUntil: p => wait.push(p) });
+  await Promise.all(wait);
+  assert.deepEqual([...store.keys()].sort(), ['/app-icons/icon-192.png', '/offline.html']);
+  assert.deepEqual(sandbox.deleted, ['jambaloop-offline-v0'], 'old Jambaloop stores go, nobody else\'s');
+  const event = request => { let answer; listeners.fetch({ request, respondWith: p => { answer = p; } }); return answer; };
+  assert.equal(await event({ mode: 'navigate', method: 'GET', url: '/?join=123456' }), offline, 'a page load with no internet shows the offline page');
+  assert.equal(event({ mode: 'cors', method: 'GET', url: '/api/rooms/123456/live' }), undefined, 'the room API is left alone');
+  assert.equal(event({ mode: 'no-cors', method: 'GET', url: '/audio/duo/welcome.mp3' }), undefined, 'files are left alone');
+  assert.equal(event({ mode: 'navigate', method: 'POST', url: '/' }), undefined);
+  sandbox.fetch = async () => ({ ok: true, page: 'live' });
+  assert.deepEqual(await event({ mode: 'navigate', method: 'GET', url: '/' }), { ok: true, page: 'live' }, 'online, the page comes from the server');
+});

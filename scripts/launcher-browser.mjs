@@ -26,13 +26,19 @@ async function checkCarousel(page,width,height){
   assert.equal(await cards.count(),modes.length,'Every game sits on the shelf');
   const centre=()=>page.locator('.carousel-card[aria-current="true"]').getAttribute('data-mode');
   assert.equal(await centre(),modes[0][0]);
+  if(width===1280){
+    await page.clock.fastForward(26000);
+    assert.equal(await centre(),modes[0][0],'The shelf stays on the chosen game while idle');
+  }
   const fit=await page.evaluate(()=>({info:document.querySelector('.carousel-info').getBoundingClientRect().bottom,
     track:document.querySelector('.carousel-track').getBoundingClientRect().bottom,doc:document.scrollingElement.scrollHeight,
     shell:document.querySelector('[data-home-shell]').dataset.homeView}));
   assert.ok(fit.info<=height+1&&fit.doc<=height+1&&fit.shell==='carousel','Shelf fits at '+width+'×'+height+': '+JSON.stringify(fit));
   await page.keyboard.press('ArrowRight');
   assert.equal(await centre(),modes[1][0],'Remote right arrow turns the shelf');
-  assert.match(await page.locator('.carousel-theme.is-active').getAttribute('style'),new RegExp("--id-display:'"+'Show Wheel'),'Page takes the centred game\'s identity');
+  assert.equal(await page.locator('.carousel-theme').evaluate(el=>getComputedStyle(el).getPropertyValue('--id-display').trim()),"'Show Wheel'",'Backdrop inherits the centred game identity');
+  assert.equal(await page.locator('.stage-3d').count(),0);
+  assert.equal(await page.evaluate(()=>performance.getEntriesByType('resource').some(r=>r.name.includes('/vendor/three'))),false,'Browsing games never requests Three.js');
   await page.keyboard.press('ArrowLeft');
   assert.equal(await centre(),modes[0][0]);
   if(width===1920){
@@ -78,6 +84,7 @@ async function checkCarousel(page,width,height){
 try {
   for(const [width,height,count] of sizes) {
     const page=await browser.newPage({viewport:{width,height},deviceScaleFactor:1});
+    if(width===1280) await page.clock.install();
     await page.goto(base,{waitUntil:'networkidle',timeout:30000});
     if(width>=1000&&height>=600) await checkCarousel(page,width,height);
     await page.locator('.game-tile').first().waitFor({timeout:15000});

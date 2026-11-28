@@ -82,17 +82,8 @@ export function moveCarousel(root, list, index, voiceOn) {
   return true;
 }
 
-/** Cross-fade the page behind the home screen to the centred game's look. */
+/** The static backdrop inherits the selected show's palette from the shelf. */
 export function themeHome(shell, mode) {
-  const layers = shell.querySelectorAll('.carousel-theme');
-  if (layers.length < 2) return;
-  const [a, b] = layers;
-  const next = a.classList.contains('is-active') ? b : a;
-  const current = next === a ? b : a;
-  next.setAttribute('style', identityVariables(mode));
-  next.dataset.mode = mode;
-  next.classList.add('is-active');
-  current.classList.remove('is-active');
   shell.dataset.carouselScheme = identityOf(mode).scheme;
   shell.setAttribute('style', identityVariables(mode));
 }

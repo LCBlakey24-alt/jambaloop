@@ -19,7 +19,7 @@ await mkdir('browser-screenshots',{recursive:true});
 // Big screens open on the game shelf: a 3D carousel whose centred game themes
 // the page. It must fit, respond to a remote's arrow keys, swipes and clicks,
 // keep the voice guide opt-in, then hand over to the tile grid on request.
-async function checkCarousel(page,width,height){
+async function checkCarousel(page,width,height,posters){
   const cards=page.locator('#game-carousel .carousel-card');
   await cards.first().waitFor({timeout:15000});
   await page.evaluate(()=>document.fonts.ready);
@@ -27,8 +27,6 @@ async function checkCarousel(page,width,height){
   const centre=()=>page.locator('.carousel-card[aria-current="true"]').getAttribute('data-mode');
   assert.equal(await centre(),modes[0][0]);
   if(width===1280){
-    const posters=await page.evaluate(()=>performance.getEntriesByType('resource')
-      .filter(entry=>entry.name.includes('/covers/')).map(entry=>new URL(entry.name).pathname));
     assert.ok(posters.includes('/covers/classic.webp'),'The selected game loads its full poster');
     assert.equal(posters.length,await page.locator('.carousel-card:not([aria-hidden="true"])').count(), 'Only the cards in reach request illustrations');
     await page.clock.fastForward(26000);
@@ -88,9 +86,14 @@ async function checkCarousel(page,width,height){
 try {
   for(const [width,height,count] of sizes) {
     const page=await browser.newPage({viewport:{width,height},deviceScaleFactor:1});
+    const posters=[];
+    page.on('request',request=>{
+      const path=new URL(request.url()).pathname;
+      if(path.startsWith('/covers/')) posters.push(path);
+    });
     if(width===1280) await page.clock.install();
     await page.goto(base,{waitUntil:'networkidle',timeout:30000});
-    if(width>=1000&&height>=600) await checkCarousel(page,width,height);
+    if(width>=1000&&height>=600) await checkCarousel(page,width,height,posters);
     await page.locator('.game-tile').first().waitFor({timeout:15000});
     await page.evaluate(()=>document.fonts.ready);
     assert.match(await page.title(),/Jambaloop.*Rookie Quest Games/);

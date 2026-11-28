@@ -78,10 +78,21 @@ test('room creation and repeated joins have independent bounded budgets', async 
 });
 
 test('anonymous requests cannot extend an idle room and expiry frees capacity', async t => {
-  const {origin, post, room} = await start(t, {ROOM_IDLE_MS: '250', MAX_ROOMS: '1'});
+  // Start the idle interval after the capacity assertion. A busy browser run can
+  // otherwise legitimately expire this room between creation and the second POST.
+  const idleMs = 1000;
+  const {origin, post, room} = await start(t, {ROOM_IDLE_MS: String(idleMs), MAX_ROOMS: '1'});
   const {path, host} = await room();
-  assert.equal((await post('/api/rooms', settings)).status, 503);
-  for (let attempt = 0; attempt < 12; attempt++) {
+  const connection = new AbortController();
+  try {
+    const stream = await fetch(origin + path + '/live', {headers: {'x-game-key': host}, signal: connection.signal});
+    assert.equal(stream.status, 200);
+    assert.equal((await post('/api/rooms', settings)).status, 503);
+  } finally {
+    connection.abort();
+  }
+  const deadline = Date.now() + idleMs * 4;
+  while (Date.now() < deadline) {
     const status = (await fetch(origin + path)).status;
     if (status === 404) break;
     assert.equal(status, 403);

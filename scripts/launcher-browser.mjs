@@ -234,7 +234,7 @@ try {
   assert.equal(await page.locator('.carousel-card').first().evaluate(el=>getComputedStyle(el).transitionDuration),'0s','Reduce motion stops the shelf gliding');
   await page.locator('[data-action="carousel-view"]').click();
   await page.locator('.game-tile').first().waitFor();
-  const animation=await page.locator('.game-tile .tile-motion i').first().evaluate(el=>getComputedStyle(el).animationName);
+  const animation=await page.locator('.game-tile .tile-art').first().evaluate(el=>getComputedStyle(el).animationName);
   assert.equal(animation,'none','Reduce motion must disable card animations');
   console.log('PASS: reduced-motion disables decorative card animation');
   await page.close();

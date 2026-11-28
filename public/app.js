@@ -36,8 +36,7 @@ import { knockoutLadder, phoneHearts, playKnockout, rememberLadder, shatterPhone
 import { boardLengths, boardRoute, boardDuration, durationLabel, suggestedTurnCap, boardRequiresChoice, boardPathChoices } from './board-route.js';
 import {teamPlayModes, defaultPlayStyle} from './team-play.js';
 import { avatarView, partyView } from './party-views.js';
-import { identityOf, identityVariables } from './game-identities.js';
-import { hideStage, showStage } from './stage-3d.js';
+import { identityVariables } from './game-identities.js';
 import { bumpCount, clockTension, lockRail, reactionFor, stageReveal, stageable, updateLockRail } from './show-moments.js';
 import {connectSketchPainter,paintSketchBoard,clearSketch} from './sketch-canvas.js';
 import { openLibrary, savedQuizzes } from './quiz-editor.js';
@@ -386,7 +385,6 @@ function renderModeCards(group = homeFilter) {
     app.querySelector('#mode-pager').hidden = true;
     shell.dataset.homeView = 'carousel';
     themeHome(shell, matches[carouselIndex][0]);
-    stageFor(shell, matches[carouselIndex][0]);
     const count = app.querySelector('#mode-count');
     if (count) count.textContent = 'Every game, one party · ← → to browse';
     return;
@@ -1389,7 +1387,6 @@ function render(s) {
   if (welcome && s.phase !== 'lobby') closeWelcome();
   if (guide && (s.phase !== 'lobby' || !s.briefing)) closeGuide();
   if (s.phase === 'lobby' && s.picker) bindPickerSwipe(app, direction => stepPicker(direction));
-  if (host && s.phase === 'lobby') stageFor(app.querySelector('.game'), shownMode); else hideStage();
   // Hot Potato: the potato arcs from the old holder's seat to the new one.
   animatePotato(host?app:null, s.code+'/'+s.game, matchMedia('(prefers-reduced-motion: reduce)').matches);
   if(s.mode!=='quizrace'&&race3d) disposeRace3d();
@@ -1635,7 +1632,6 @@ function receive(next, current) {
     // The TV ticks softly as the captain browses the games (sound on only).
     if (current.host && soundEnabled && browsed) playSfx(sound, 'ui-tap', { volume: 0.5 });
     if (Date.now() - lastLocalPick > 700) movePicker(app, picker.mode, escape);
-    if (current.host) stageFor(app.querySelector('.game'), picker.mode);
   }
   const responseProgress = document.querySelector('#response-progress');
   if (responseProgress) {
@@ -1857,12 +1853,6 @@ function closeWelcome() {
   if (isWelcomeNarration()) stopNarration();
   welcome?.close();
   welcome = undefined;
-}
-
-/** The live 3D backdrop, tinted for a game. */
-function stageFor(element, mode) {
-  const { accent, accent2, ink } = identityOf(mode);
-  showStage(element, { accent, accent2, ink });
 }
 
 // The game in front of the shelf on this screen (it can be a step ahead of the room).
@@ -2770,25 +2760,15 @@ matchMedia('(max-width: 760px)').addEventListener('change', () => {
   renderModeCards(homeFilter);
 });
 
-// The landing shelf turns by itself while nobody is browsing it.
-let carouselTouchedAt = performance.now();
-setInterval(() => {
-  if (session || document.hidden || prefersReducedMotion() || performance.now() - carouselTouchedAt < 15000) return;
-  if (dialog.open || carouselVoice || homeSelected) return;
-  stepCarousel(1, { auto: true });
-}, 6500);
-
 /** Turn the shelf by `delta` games; the page and voice guide follow. */
-function stepCarousel(delta, { auto = false } = {}) {
+function stepCarousel(delta) {
   const carousel = app.querySelector('#game-carousel');
   if (!carousel || carousel.hidden || !delta) return;
-  if (!auto) carouselTouchedAt = performance.now();
   const list = launcherModes(homeFilter);
   carouselIndex = wrapIndex(carouselIndex + delta, list.length);
   if (!moveCarousel(carousel, list, carouselIndex, carouselVoice)) carousel.innerHTML = carouselView(list, carouselIndex, carouselVoice);
   const mode = list[carouselIndex][0];
   themeHome(app.querySelector('[data-home-shell]'), mode);
-  stageFor(app.querySelector('[data-home-shell]'), mode);
   stopNarration();
   clearTimeout(carouselTimer);
   // Speak only once the shelf settles, so quick browsing stays quiet.

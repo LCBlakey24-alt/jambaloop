@@ -7,8 +7,8 @@ import {
 
 const people=n=>Array.from({length:n},(_,i)=>['key'+i,{id:'id'+i,name:'Player '+i,score:0}]);
 
-test('solo/teams are supported in nine score/finish games; three vote/holder games stay solo',()=>{
-  const playable=['classic','wheel','board','dice','knockout','punchline','cards','quizrace','showdown','tracks'];
+test('team support follows the game rules',()=>{
+  const playable=['classic','wheel','board','dice','knockout','punchline','cards','quizrace','showdown','tracks','rare'];
   assert.deepEqual([...teamPlayModes],playable);
   for(const mode of playable){
     assert.equal(validPlayStyle(mode,'teams'),true,mode);

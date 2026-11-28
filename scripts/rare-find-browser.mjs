@@ -36,15 +36,19 @@ try{
   assert.equal(await page.locator('#configure-form input[name="mode"]:checked').inputValue(),'rare');
   assert.deepEqual(await page.locator('#configure-form select[name="count"] option')
     .evaluateAll(options=>options.map(option=>option.value)),['3','5','7']);
-  assert.equal(await page.locator('#configure-form input[name="playStyle"][value="teams"]').isDisabled(),true);
+  await page.locator('#configure-form input[name="playStyle"][value="teams"]').check();
+  assert.equal(await page.locator('#team-count-field').isVisible(),true);
   await menuContext.close();
   console.log('PASS: Rare Find discoverable, original preview and 3/5/7 rounds');
 
   for(const [width,height] of [[1280,720],[1920,1080],[1024,768]]){
     const ctx=await browser.newContext({viewport:{width,height}});
     const errors=[];
+    const teams=width===1280;
+    const phoneWidth=width===1024?360:390;
+    const phoneHeight=width===1024?640:844;
     const created=await ctx.request.post(site+'/api/rooms',{data:{
-      mode:'rare',category:'mixed',format:'choice',count:3,seconds:0,playStyle:'individual',
+      mode:'rare',category:'mixed',format:'choice',count:3,seconds:0,playStyle:teams?'teams':'individual',teamCount:2,
     }});
     assert.equal(created.status(),201,await created.text());
     const {code,host:hostKey}=await created.json();
@@ -55,6 +59,12 @@ try{
       });
       assert.equal(joined.status(),201,await joined.text());
       keys.push((await joined.json()).key);
+    }
+    // The two API contestants stay present just like phones with an open room stream.
+    const presence=new AbortController();
+    for(const key of keys.slice(1)){
+      const stream=await fetch(site+'/api/rooms/'+code+'/live',{headers:{'x-game-key':key},signal:presence.signal});
+      assert.equal(stream.status,200);
     }
     const state=async(key=hostKey)=>{
       const response=await ctx.request.get(site+'/api/rooms/'+code,{headers:{'x-game-key':key}});
@@ -74,9 +84,10 @@ try{
     host.on('pageerror',error=>errors.push('TV: '+error.message));
     await host.goto(site,{waitUntil:'domcontentloaded',timeout:30000});
     await host.locator('.roster-panel').waitFor({timeout:15000});
-    const mobile=await browser.newContext({viewport:{width:390,height:844},isMobile:true});
+    const mobile=await browser.newContext({viewport:{width:phoneWidth,height:phoneHeight},isMobile:true});
     await mobile.addInitScript(({code,key})=>{
       sessionStorage.setItem('quizmas-session',JSON.stringify({code,key,host:false}));
+      sessionStorage.setItem('jambaloop-welcomed',code);
     },{code,key:keys[0]});
     const phone=await mobile.newPage();
     phone.on('pageerror',error=>errors.push('Phone: '+error.message));
@@ -95,6 +106,7 @@ try{
       assert.ok(prompt,'Challenge must originate in the curated catalogue');
       assert.equal(snapshot.party.results,undefined,'TV must not see submissions during writing');
       await fit(host,width,height,'Rare Find entry '+round);
+      await fit(phone,phoneWidth,phoneHeight,'Rare Find phone entry '+round);
       if(round===0){
         await host.screenshot({path:'browser-screenshots/rare-entry-tv-'+width+'x'+height+'.png'});
         if(width===1280)await phone.screenshot({path:'browser-screenshots/rare-entry-phone.png'});
@@ -120,6 +132,9 @@ try{
       assert.ok((await state()).party.results);
       assert.equal((await state()).party.results.responded,3);
       await fit(host,width,height,'Rare Find reveal '+round);
+      await phone.locator('.rare-game[data-rare-phase="rare-reveal"] .rare-locked').waitFor();
+      assert.equal(await phone.locator('.rare-reveal-rows').count(),0);
+      await fit(phone,phoneWidth,phoneHeight,'Rare Find phone result');
       if(round===0){
         const reveal=(await state()).party.results;
         assert.equal(reveal.groups.find(g=>g.answer==='Mercury').count,2);
@@ -130,11 +145,15 @@ try{
       await host.locator('.rare-footer [data-action="advance"]').click();
     }
     await host.locator('.rare-game[data-rare-phase="finished"]').waitFor({timeout:15000});
-    assert.equal(await host.locator('.rare-final-leaders li').count(),3);
+    if(teams){
+      assert.equal(await host.locator('.team-scoreboard li').count(),2);
+      await phone.getByText(/pts per player/).waitFor();
+    }else assert.equal(await host.locator('.rare-final-leaders li').count(),3);
     await fit(host,width,height,'Rare Find final podium');
     await host.screenshot({path:'browser-screenshots/rare-finale-tv-'+width+'x'+height+'.png'});
     assert.deepEqual(errors,[],'No TV or phone JavaScript errors');
     console.log('PASS: Rare Find complete 3-round verified, rejected-review TV and phone session '+width+'x'+height);
+    presence.abort();
     await mobile.close();
     await ctx.close();
   }

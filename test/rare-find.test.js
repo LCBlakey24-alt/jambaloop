@@ -35,8 +35,8 @@ async function withServer(run){
   }finally{child.kill();}
 }
 const desiredHistory=id=>rareFindBank.filter(p=>p.id!==id).map(p=>p.historyId);
-async function makeGame(request,{promptId='solar-planets',count=3,names=['Alex','Bailey','Charlie']}={}){
-  const room=await request('',null,{mode:'rare',category:'mixed',format:'choice',count,seconds:0},201);
+async function makeGame(request,{promptId='solar-planets',count=3,names=['Alex','Bailey','Charlie'],settings={}}={}){
+  const room=await request('',null,{mode:'rare',category:'mixed',format:'choice',count,seconds:0,...settings},201);
   const base='/'+room.code;
   const keys=[];
   for(const name of names)keys.push((await request(base+'/join',null,{
@@ -55,6 +55,20 @@ async function makeGame(request,{promptId='solar-planets',count=3,names=['Alex',
   assert.equal((await state()).phase,'rare-write');
   return {room,base,keys,state,advance,submit,review};
 }
+
+test('Rare Find teams compete on average points across unequal teams and share tied victories',async()=>{
+ await withServer(async request=>{
+   const game=await makeGame(request,{settings:{playStyle:'teams',teamCount:2}});
+   for(let round=0;round<3;round++){
+     const state=await game.state();
+     const prompt=rareFindBank.find(entry=>entry.prompt===state.party.prompt);
+     for(let i=0;i<game.keys.length;i++)await game.submit(game.keys[i],prompt.answers[i],round);
+     assert.deepEqual((await game.state()).teams.map(t=>[t.size,t.score]),[[2,200*(round+1)],[1,200*(round+1)]]);
+     await game.advance();
+   }
+   assert.deepEqual((await game.state()).teamWinners.sort(),[0,1]);
+ });
+});
 
 test('Rare Find bank has 30+ distinct inspectable finite answer sets, aliases and stable history IDs',()=>{
   assert.ok(rareFindBank.length>=30);

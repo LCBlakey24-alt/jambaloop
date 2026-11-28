@@ -11,6 +11,7 @@ Each player tries to name a correct answer that nobody else in the **current roo
 ## Rules
 
 - **3–30 contestants**, **3, 5 or 7 rounds**. Everyone answers individually from their phone.
+- Choose individual play or two to four balanced teams. Each player submits privately. Matches count across the whole room, including teammates. Team standings use the average cumulative score per member. Teams tied for the highest average share the win.
 - The round begins with an original question/category. Players enter one answer of up to 60 characters, once per round.
 - Normalisation is case-insensitive, Unicode normalised and punctuation-insensitive. Explicit aliases, such as **Aluminium / Aluminum**, count as one canonical answer.
 - Once everyone has answered, or the TV host closes the entry stage, the server checks replies against the catalogue.

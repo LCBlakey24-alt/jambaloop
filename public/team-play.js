@@ -4,7 +4,7 @@ import { teams, modes, maximumTeams } from './game-config.js';
 // Fork in the Tracks has a dedicated two-team host-judge rules engine.
 // Bluff and Hot Potato remain individual-only until redesigned.
 export const teamPlayModes = Object.freeze([
-  'classic','wheel','board','dice','knockout','punchline','cards','quizrace','showdown','tracks',
+  'classic','wheel','board','dice','knockout','punchline','cards','quizrace','showdown','tracks','rare',
 ]);
 export const defaultPlayStyle = mode => ['board','showdown','tracks'].includes(mode) ? 'teams' : 'individual';
 export function validPlayStyle(mode,style) {

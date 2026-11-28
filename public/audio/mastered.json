@@ -1183,11 +1183,6 @@
   "loudness": -15.8,
   "seconds": 69.59
  },
- "duo/guide-bluff.mp3": {
-  "tempo": 1.08,
-  "loudness": -15.4,
-  "seconds": 48.14
- },
  "duo/guide-board.mp3": {
   "tempo": 1.08,
   "loudness": -15.4,
@@ -1852,5 +1847,10 @@
   "tempo": 1.08,
   "loudness": -15.4,
   "seconds": 55.43
+ },
+ "duo/guide-bluff.mp3": {
+  "tempo": 1.08,
+  "loudness": -15.4,
+  "seconds": 48.48
  }
 }

@@ -38,7 +38,7 @@ function scores(state, escape) {
     `<div style="--fork-team:${team.color}"><span>TEAM ${escape(team.name)}</span><strong>${state.phase==='party-reveal'?team.roundPoints+' POINT THIS ROUND':team.size+' '+(team.size===1?'PLAYER':'PLAYERS')}</strong></div>`).join('')}</div>`;
 }
 
-export function forkView(state, {host,escape,icons,replayButtons}) {
+export function forkView(state, {host,canControl=host,escape,icons,replayButtons}) {
   const party=state.party;
   if(!party || party.type!=='fork')return '';
   const phase=state.phase;
@@ -85,7 +85,7 @@ export function forkView(state, {host,escape,icons,replayButtons}) {
       : 'The trolley showdown is complete!'}</h2>
       <div class="fork-individual-results" aria-label="Individual player points">${(state.players??[]).map((player,index)=>
         `<div><span>#${index+1} ${face(player)}${escape(player.name)}</span><strong>${Math.round(player.score/100)} points</strong></div>`).join('')}</div>
-      ${host?replayButtons(state,icons):'<p>Stay here for a rematch or return to the homepage.</p>'}</div>`:'';
+      ${host?replayButtons(state,icons):canControl?`<div class="actions">${replayButtons(state,icons)}</div>`:'<p>Stay here for a rematch or return to the homepage.</p>'}</div>`:'';
   return `<section class="game-panel fork-game ${host?'fork-host':'fork-phone'}" data-fork-phase="${phase}">
     <div class="fork-intro"><div><div class="eyebrow">FORK IN THE TRACKS${party.afterDark ? ' · <b class="fork-after-dark">AFTER HOURS 18+</b>' : ''} · ROUND ${state.index+1} OF ${state.total} ${building||placed?'· PLACEMENT '+(step+1)+'/3':''}</div>
       <h1>${title}</h1><p>${scene}</p>${prompt?`<strong class="fork-your-role">${prompt}</strong>`:''}</div>

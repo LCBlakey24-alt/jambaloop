@@ -10,6 +10,7 @@ import { animatePotato, potatoHeat } from './potato-stage.js';
 import { quizRaceView, updateRacePowers } from './quiz-race-view.js';
 import { mountQuizRaceTrack } from './quiz-race-track.js';
 import { mobileDeck } from './mobile-deck.js';
+import { phoneHomeView } from './phone-home.js';
 import { installKind, installOfferView, onInstallChange, promptInstall, setUpInstall } from './install-app.js';
 import { awardView, currentFrame, frameView, revealFrames, scoreReveal } from './ceremony.js';
 import { boardSpeedValues, bonusValues, canSetScore, defaultScoring, doubleSchedules, pointValues } from './scoring.js';
@@ -73,6 +74,21 @@ const dialog = document.querySelector('#dialog');
 // A phone or small tablet: never the TV. A Fire TV Stick reports a small, coarse-pointer screen too, but it has no
 // touchscreen and is recognised as a TV (see device.js), so it hosts like any other big screen.
 const smallScreen = () => !isTvScreen() && (matchMedia('(max-width: 760px)').matches || (hasTouchscreen() && matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) < 700));
+// The phone's home (owner direction, 28 November 2026): one simple screen to join from (phone-home.js). It is used
+// on a phone (the same test as the phone layout, so never on a screen recognised as the TV); "See the games" shows
+// the full launcher instead until the home is opened again.
+let phoneBrowsing = false;
+const phoneHomeWanted = () => !session && !phoneBrowsing && smallScreen() && document.documentElement.classList.contains('mobile-deck');
+function syncPhoneHome() {
+  const shell = app.querySelector('[data-home-shell]');
+  if (!shell) return;
+  const wanted = phoneHomeWanted();
+  // Only a change of screen rebuilds it, so a rotation never clears what is being typed.
+  if (wanted === shell.classList.contains('phone-home-on')) return;
+  shell.querySelector(':scope > .phone-home')?.remove();
+  shell.classList.toggle('phone-home-on', wanted);
+  if (wanted) shell.insertAdjacentHTML('afterbegin', phoneHomeView({ rooms: recentRooms(), scan: canScan() }, { escape, icons, modeName }));
+}
 const content = document.querySelector('#dialog-content');
 const footer = document.querySelector('footer');
 const announcement = document.querySelector('#phase-announcement');
@@ -333,6 +349,8 @@ function renderHome() {
   document.querySelector('#category-filters').innerHTML = categoryGroups.map(([name], index) => `
     <button class="topic-filter" type="button" data-action="filter-topics" data-group="${index}" aria-pressed="${index === 0}">${name}</button>`).join('');
   renderCategories();
+  phoneBrowsing = false;
+  syncPhoneHome();
   const topicCount=app.querySelector('[data-action="home-tab"][data-tab="topics"] span');
   if(topicCount)topicCount.textContent=String(categories.length-1);
   const gameCount=app.querySelector('[data-action="home-tab"][data-tab="games"] span');
@@ -894,14 +912,14 @@ function leave() {
 
 // A pasted invite URL (or a six-digit number) becomes a plain, validated room code.
 document.addEventListener('input', event => {
-  if (!event.target.matches('#join-form input[name="code"]')) return;
+  if (!event.target.matches(':is(#join-form, #home-join-form) input[name="code"]')) return;
   const value = event.target.value;
   const compact = value.replace(/[^0-9]/g, '').slice(0, 6);
   if (value !== compact) event.target.value = compact;
 });
 
 document.addEventListener('paste', event => {
-  if (!event.target.matches('#join-form input[name="code"]')) return;
+  if (!event.target.matches(':is(#join-form, #home-join-form) input[name="code"]')) return;
   const code = parseRoomCode(event.clipboardData?.getData('text'));
   if (!code) return;
   event.preventDefault();
@@ -951,7 +969,7 @@ document.addEventListener('submit', async event => {
     }
     return;
   }
-  if (!['host-form', 'join-form', 'configure-form', 'rematch-form'].includes(form.id)) return;
+  if (!['host-form', 'join-form', 'home-join-form', 'configure-form', 'rematch-form'].includes(form.id)) return;
   event.preventDefault();
   const button = form.querySelector('button:not([type="button"])');
   button.disabled = true;
@@ -975,8 +993,10 @@ document.addEventListener('submit', async event => {
         startSession(known);
         return;
       }
-      const player = await api('/' + code + '/join', { name, avatar: joinAvatar, seenQuestions: readQuestionHistory(), returning: isReturning() });
-      pendingJoin = { name, avatar: joinAvatar };
+      // The home screen's Join card has no photo picker: a photo chosen earlier in the join pop-up stays there.
+      const avatar = form.id === 'join-form' ? joinAvatar : undefined;
+      const player = await api('/' + code + '/join', { name, avatar, seenQuestions: readQuestionHistory(), returning: isReturning() });
+      pendingJoin = { name, avatar };
       startSession({ code, key: player.key, host: false });
     }
   } catch (error) {
@@ -1216,7 +1236,7 @@ function render(s) {
       ${host ? `<div class="podium">${standings(s.players)}</div>` : ''}
       ${!host ? `<dl class="personal-scorecard"><div><dt>Rounds won</dt><dd>${s.player.wins} / ${s.index + 1}</dd></div><div><dt>Best streak</dt><dd>${s.player.bestStreak}</dd></div><div><dt>Final rank</dt><dd>#${s.rank}</dd></div></dl>` : ''}
       ${!host && s.playerCount > s.players.length ? '<h2>Top 10</h2>' : ''}${fullLeaderboard(s.players, 'Full standings')}${s.review.length ? reviewView(s.review, escape, formatNumber) : ''}<div class="actions">${canControl ? replayButtons(s, icons) : `<button class="button outline" data-action="leave">Back to home ${icons('arrow-right')}</button>`}</div>
-      ${host ? '' : '<p class="status">Stay here if the captain or host starts a rematch.</p>'}</div>`;
+      ${canControl ? '' : '<p class="status">Stay here if the captain or host starts a rematch.</p>'}</div>`;
   } else if(isEstimateShow(s.mode) && s.phase==='reveal' && s.estimateReveal){
     body=`<div class="game-panel so-close-broadcast"><div class="eyebrow">ROUND ${s.index+1}${s.mode==='wayoff'?` · ${s.stillIn} STILL IN`:` OF ${s.total}`}</div><p class="so-close-reveal-prompt">${controllerOnly?'Round results':escape(s.question.prompt)}</p>${s.wayOut?`<div class="way-out" role="status">${s.wayOut.length?`<strong>WAY OFF!</strong> ${s.wayOut.map(row=>`<span class="way-out-player">${avatarView(row,escape)}${escape(row.name)}</span>`).join('')} ${s.wayOut.length===1?'is':'are'} out.${!host&&s.out?' That includes you.':''}`:'<strong>NOBODY IS OUT</strong> Not enough guesses to cut anyone.'}</div>`:''}<div id="so-close-frame" aria-live="polite"></div>${canControl?`<div class="actions so-close-reveal-actions"><button class="button outline" data-action="estimate-reveal-skip">Skip to results</button><button class="button primary" data-action="advance" hidden>${nextQuestionLabel(s)} ${icons('arrow-right')}</button></div>`:''}</div>`;
   } else if (host && s.privateQuestions) {
@@ -2373,6 +2393,14 @@ document.addEventListener('click', async event => {
     if (!session) showHomeTab(button.dataset.tab);
     return;
   }
+  // "See the games" on the phone home: the full launcher, as before.
+  if (action === 'phone-browse') {
+    if (session) return;
+    phoneBrowsing = true;
+    syncPhoneHome();
+    app.querySelector('#mode-heading')?.focus({ preventScroll: true });
+    return;
+  }
   if (action === 'filter-modes') {
     document.querySelectorAll('.mode-filters button').forEach(filter =>
       filter.setAttribute('aria-pressed', String(filter === button)));
@@ -2560,6 +2588,11 @@ document.addEventListener('click', async event => {
     else openDialog('join', button.dataset.code);
     return;
   }
+  // The phone home's "Scan the QR code" opens the join pop-up with the camera already on.
+  if (action === 'join' && button.dataset.scan && canScan()) {
+    openDialog('join');
+    return content.querySelector('[data-action="scan-start"]')?.click();
+  }
   if (['help', 'host', 'join', 'themes', 'practice', 'library', 'recent-rooms', 'device'].includes(action)) return openDialog(action, button.dataset.category, button.dataset.mode);
   if (action === 'screen-choice') {
     rememberScreen(button.dataset.screen === 'auto' ? undefined : button.dataset.screen);
@@ -2621,7 +2654,8 @@ document.addEventListener('click', async event => {
     if (button.dataset.screen === 'tv') { rememberScreen('tv', { visitOnly: hasTouchscreen() }); prepareTvScreen(); window.dispatchEvent(new Event('jambaloop-screen')); }
     if (dialog.open) dialog.close();
     button.disabled = true;
-    const message = document.querySelector('#home-error');
+    // On the phone home the launcher (and its message line) is hidden, so a hosting error shows under the hosting line.
+    const message = document.querySelector('.phone-home-on [data-host-error]') ?? document.querySelector('#home-error');
     try {
       // Lobby first: everyone joins, then the captain picks the game on the
       // carousel. Hosting from a game's tile starts the carousel on that game.
@@ -2784,7 +2818,10 @@ matchMedia('(max-width: 760px)').addEventListener('change', () => {
   homePage = 0;
   homeSelected = undefined;
   renderModeCards(homeFilter);
+  syncPhoneHome();
 });
+// The phone layout comes and goes with rotation, resizing and "This screen is our TV": the phone home follows it.
+new MutationObserver(syncPhoneHome).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 
 // The landing shelf turns by itself while nobody is browsing it.
 let carouselTouchedAt = performance.now();
@@ -2872,8 +2909,9 @@ new MutationObserver(() => { if (document.querySelector('[data-install-slot]:not
   .observe(document.querySelector('#app'), { childList: true, subtree: true });
 // On the TV, the remote's arrows move between buttons and OK presses them.
 enableRemote(isTvScreen);
-renderHome();
+// The phone layout is known first, so a phone opens straight on its own home screen.
 mobileDeck();
+renderHome();
 const code = new URLSearchParams(location.search).get('join');
 const saved = restoreRoomSession();
 // The screen check is a deliberate visit: it is not replaced by a saved room or a join form. Choosing reloads the page.

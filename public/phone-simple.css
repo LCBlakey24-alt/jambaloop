@@ -91,3 +91,57 @@ html.mobile-deck #dialog-content #join-form .join-room-submit {
 .brain-verdict:is(.is-wrong, .is-out) { border-left-color: #ff6b8a; background: #ff6b8a1a; }
 .brain-verdict.is-watching { border-left-color: #9aa3d6; }
 .catch-watch-count strong { font-size: 1.6rem; }
+
+/* ===== Phone home and less chrome in the room (fix/phone-home, 28 November 2026) =====
+   Before joining, a phone shows one simple screen: the logo, Resume, a big Join card and one line for whoever is
+   hosting (phone-home.js). "See the games" brings back the full launcher. In a room the game's own bar is the only
+   bar at the top: the site header (and its link that reloads the page) steps aside. */
+.phone-home { display: none; }
+html.mobile-deck [data-home-shell].phone-home-on {
+  display: flex; flex-direction: column; width: 100%; height: auto; min-height: 100%; padding: 0; margin: 0; gap: 0;
+}
+html.mobile-deck [data-home-shell].phone-home-on > :not(.phone-home) { display: none !important; }
+html.mobile-deck body:has([data-home-shell].phone-home-on) > .header { display: none; }
+html.mobile-deck body:not(.playing) #app:has(> [data-home-shell].phone-home-on) { height: auto; max-height: none; overflow-y: auto; }
+html.mobile-deck [data-home-shell].phone-home-on > .phone-home {
+  display: flex; flex-direction: column; gap: 14px; flex: 1 0 auto; width: min(460px, 100%); margin-inline: auto;
+  padding: max(14px, env(safe-area-inset-top)) 16px max(10px, env(safe-area-inset-bottom));
+}
+html.mobile-deck .phone-home-logo { margin: 4px 0 0; display: flex; justify-content: center; }
+html.mobile-deck .phone-home-logo img { width: min(60vw, 220px); height: auto; }
+html.mobile-deck .phone-resume-wrap { display: grid; gap: 2px; }
+html.mobile-deck .phone-resume {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%; min-height: 68px;
+  padding: 10px 14px; text-align: left; color: var(--home-ink, #fff); font: inherit;
+  background: color-mix(in srgb, var(--home-accent, #26dfb8) 14%, var(--sheet, #19243d));
+  border: 1px solid color-mix(in srgb, var(--home-accent, #26dfb8) 55%, transparent); border-radius: 16px;
+}
+html.mobile-deck .phone-resume-icon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; background: var(--home-accent, #26dfb8); }
+html.mobile-deck .phone-resume-icon img { width: 20px; height: 20px; filter: none; }
+html.mobile-deck .phone-resume-copy { display: grid; gap: 1px; min-width: 0; }
+html.mobile-deck .phone-resume-copy strong { font-size: 18px; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html.mobile-deck .phone-resume-copy small { font-size: 13px; color: var(--home-muted, #b4c4de); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html.mobile-deck .phone-resume-copy small:first-child { font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--home-accent, #26dfb8); }
+html.mobile-deck .phone-resume-arrow img { width: 20px; height: 20px; }
+html.mobile-deck .phone-home .phone-home-link { justify-self: center; min-height: 44px; padding: 0 12px; font-size: 15px; font-weight: 750; color: var(--home-muted, #b4c4de); }
+html.mobile-deck .phone-join {
+  display: grid; gap: 10px; margin: 0; padding: 16px; border-radius: 20px;
+  background: var(--sheet, #19243d); border: 1px solid var(--paper-line, #34435f); box-shadow: 0 14px 34px #04071a66;
+}
+html.mobile-deck .phone-join h2 { margin: 0; font-size: 26px; line-height: 1.1; letter-spacing: -.02em; }
+html.mobile-deck .phone-join .phone-join-help { margin: -4px 0 2px; font-size: 15px; line-height: 1.35; color: var(--home-muted, #b4c4de); }
+html.mobile-deck .phone-join label { gap: 6px; font-size: 15px; }
+html.mobile-deck .phone-join #home-room-code { min-height: 60px; font-size: clamp(26px, 8vw, 32px); }
+html.mobile-deck .phone-join #home-player-name { min-height: 52px; font-size: 18px; }
+html.mobile-deck .phone-join .phone-join-submit { width: 100%; min-height: 58px; font-size: 19px; background: linear-gradient(90deg, #3fe4c4, #7cf0a8); }
+html.mobile-deck .phone-join .phone-join-scan { width: 100%; min-height: 48px; font-size: 16px; }
+html.mobile-deck .phone-home-foot { display: grid; justify-items: center; gap: 0; margin-top: auto; }
+html.mobile-deck .phone-home-host { margin: 0; text-align: center; font-size: 15px; color: var(--home-muted, #b4c4de); }
+html.mobile-deck .phone-home-foot .error { margin: 0 0 4px; text-align: center; }
+html.mobile-deck .phone-home-host .text-button { min-height: 44px; padding: 0 4px; font-size: 15px; font-weight: 800; color: var(--home-accent, #26dfb8); text-decoration: underline; text-underline-offset: 3px; }
+
+/* In a room the game's bar is the only bar at the top of the phone: no site header above it in the lobby, while
+   waiting or at the finish. */
+html.mobile-deck body.playing > .header { display: none; }
+/* The bar's Home button is a full-size thumb target (#app outranks the phone-wide 42px button rule). */
+html.mobile-deck #app .game .game-top .game-controls > [data-action="leave"] { min-height: 44px; min-width: 44px; }

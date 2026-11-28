@@ -27,17 +27,23 @@ test('scenes are plain vector artwork: no scripts, text, images, links or handle
   }
 });
 
-test('a game and its tile share one scene', () => {
+test('every show has a panel scene and two sizes of illustrated cover', () => {
   for (const mode of modes) {
     const [id] = mode;
     assert.ok(identityVariables(id).includes(`--id-scene:url('/scenes/${id}.svg')`), id);
+    for (const suffix of ['', '-small']) {
+      const path = `/covers/${id}${suffix}.webp`;
+      const image = readFileSync(new URL('../public' + path, import.meta.url));
+      assert.equal(image.toString('ascii', 8, 12), 'WEBP', path);
+      assert.ok(identityVariables(id).includes(`url('${path}')`));
+    }
     assert.ok(launcherTile(mode).includes(`data-show="${id}"`));
   }
   assert.ok(identityVariables('__proto__').includes("--id-scene:url('/scenes/classic.svg')"), 'unknown modes fall back safely');
   const css = readFileSync(new URL('../public/game-identities.css', import.meta.url), 'utf8');
-  assert.match(css, /\.tile-art\[data-show\] \{[^}]*background:var\(--id-scene\)/, 'tiles paint the scene');
+  assert.match(css, /\.tile-art\[data-show\]::before \{[^}]*background:var\(--id-cover-small\)/, 'compact tiles paint their small illustration');
   assert.match(css, /\.game-panel:not\(\.game-panel \.game-panel\) \{[^}]*var\(--id-scene\)/, 'game panels paint the same scene');
-  assert.match(css, /\.lobby-tile \{[^}]*var\(--id-scene\)/, 'the lobby card shows the tile');
+  assert.match(css, /\.lobby-tile \{[^}]*var\(--id-cover-small\)/, 'the lobby card shows the tile');
 });
 
 test('tiles show only the game logo, with no tagline', () => {

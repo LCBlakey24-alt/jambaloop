@@ -27,6 +27,10 @@ async function checkCarousel(page,width,height){
   const centre=()=>page.locator('.carousel-card[aria-current="true"]').getAttribute('data-mode');
   assert.equal(await centre(),modes[0][0]);
   if(width===1280){
+    const posters=await page.evaluate(()=>performance.getEntriesByType('resource')
+      .filter(entry=>entry.name.includes('/covers/')).map(entry=>new URL(entry.name).pathname));
+    assert.ok(posters.includes('/covers/classic.webp'),'The selected game loads its full poster');
+    assert.equal(posters.length,await page.locator('.carousel-card:not([aria-hidden="true"])').count(), 'Only the cards in reach request illustrations');
     await page.clock.fastForward(26000);
     assert.equal(await centre(),modes[0][0],'The shelf stays on the chosen game while idle');
   }
@@ -108,6 +112,15 @@ try {
         viewportWidth:innerWidth,
         cards:tiles.length,
         visibleCards:visible.length,
+        badCovers:visible.filter(tile=>{
+          const art=tile.querySelector('.tile-art');
+          const wordmark=art.querySelector('.tile-wordmark');
+          const poster=getComputedStyle(art,'::before').backgroundImage;
+          const caption=getComputedStyle(wordmark);
+          return !poster.includes('/covers/'+tile.dataset.mode) ||
+            Number(caption.zIndex)<=Number(getComputedStyle(art,'::after').zIndex) ||
+            !caption.fontFamily.includes(caption.getPropertyValue('--id-display').trim().replaceAll("'",''));
+        }).map(tile=>tile.dataset.mode),
         logoWhite:getComputedStyle(document.querySelector('.site-logo-white')).display!=='none',
         accent:getComputedStyle(document.body).getPropertyValue('--home-accent').trim(),
         background:getComputedStyle(document.body).backgroundColor,
@@ -119,6 +132,7 @@ try {
     assert.ok(layout.documentWidth<=width+1,`Unexpected horizontal page scroll at ${width}×${height}`);
     assert.equal(layout.cards,count,`Wrong page size for ${width}×${height}`);
     assert.equal(layout.visibleCards,count,`Game tiles clipped at ${width}×${height}: ${JSON.stringify(layout)}`);
+    assert.deepEqual(layout.badCovers,[],'Each cover has its matching art and show type above the shading');
     assert.equal(layout.logoWhite,true,'Light-on-dark Jambaloop logo should be used');
     assert.match(layout.background,/rgb\(16, 18, 38\)|rgb\(16, 18, 38\)/);
     await page.screenshot({path:`browser-screenshots/home-${width}x${height}.png`,fullPage:false});

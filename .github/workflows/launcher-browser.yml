@@ -9,6 +9,10 @@ on:
       - 'public/room-avatars.js'
       - 'server.js'
       - 'public/mobile-deck.js'
+      - 'public/party-views.js'
+      - 'public/bluff-view.js'
+      - 'public/phone-simple.css'
+      - 'scripts/phone-ballot-browser.mjs'
       - 'scripts/launcher-browser.mjs'
       - 'scripts/board-team-browser.mjs'
       - 'scripts/fork-browser.mjs'
@@ -133,6 +137,7 @@ jobs:
           node scripts/legacy-party-browser.mjs
           node scripts/party-cards-browser.mjs
           node scripts/bluff-browser.mjs
+          node scripts/phone-ballot-browser.mjs
           node scripts/sketch-browser.mjs
           node scripts/so-close-browser.mjs
           node scripts/question-types-browser.mjs

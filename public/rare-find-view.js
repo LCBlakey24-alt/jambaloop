@@ -3,6 +3,7 @@ import { partyFinale } from './party-finale.js';
 import {replayButtons} from './game-night.js';
 import { answerWall } from './party-views.js';
 import { face } from './player-face.js';
+import { teamScoreboard } from './game-views.js';
 function revealRows(p,escape){
  const groups=p.results?.groups||[];
  const invalid=p.results?.invalid||[];
@@ -35,6 +36,13 @@ function reviewQueue(p,escape){
   </section>`;
 }
 function finalRows(s,escape,host){
+ if(s.playStyle==='teams'){
+   const own=s.teams.find(team=>team.id===s.player?.team);
+   return `<div class="rare-finale"><h1>Final team scores</h1>${host
+     ? partyFinale(s,{host,escape})+'<p>Average points per player</p>'+teamScoreboard(s.teams)
+     : own ? `<p>Team ${escape(own.name)} · ${own.score.toLocaleString()} pts per player</p>` : ''}</div>`;
+ }
+ if(!host)return partyFinale(s,{host,escape});
  const rankings=s.players||[];
  const highest=rankings[0]?.score??0;
  const top=rankings.filter(entry=>entry.score===highest);
@@ -51,12 +59,13 @@ export function rareFindView(s,{host,canControl,escape,icons,reply}){
  const p=s.party;
  if(!p||p.type!=='rare')return '';
  const phase=s.phase,write=phase==='rare-write',review=phase==='rare-review',reveal=phase==='rare-reveal',finished=phase==='finished';
- const header=`<header class="rare-head"><span class="rare-wordmark">RARE<span>FIND</span></span>
+ const header=host?`<header class="rare-head"><span class="rare-wordmark">RARE<span>FIND</span></span>
    <span class="rare-round">ROUND ${s.index+1} / ${s.total}</span>
-   <span class="rare-status">${write?'SEEK AN ANSWER':review?'HOST REVIEW':reveal?'RARITY REVEAL':'GAME COMPLETE'}</span></header>`;
+   <span class="rare-status">${write?'SEEK AN ANSWER':review?'HOST REVIEW':reveal?'RARITY REVEAL':'GAME COMPLETE'}</span></header>`
+   : finished?'':`<span class="rare-round">Round ${s.index+1} of ${s.total}</span>`;
  let stage='',footer='';
  if(finished){
-  stage=finalRows(s,escape,host)+(!host?`<p class="rare-personal-total">Your final total: <strong>${s.player?.score?.toLocaleString()??0} pts</strong></p>`:'');
+  stage=finalRows(s,escape,host);
   if(canControl)footer=`<div class="rare-footer">${replayButtons(s,icons)}</div>`;
  }else{
   const prompt=`<div class="rare-prompt"><span class="rare-eyebrow">${escape(p.category)} · ORIGINAL CHALLENGE</span>
@@ -71,7 +80,7 @@ export function rareFindView(s,{host,canControl,escape,icons,reply}){
     else body=`<form id="bluff-form" class="rare-entry-form"><label for="rare-answer">Your answer</label>
       <textarea id="rare-answer" name="reply" maxlength="60" rows="2" required placeholder="Type something correct but unexpected">${escape(reply??'')}</textarea>
       <button class="button primary" type="submit">Lock in my answer ${icons('check')}</button>
-      <small>One submission only. Accepted aliases and spelling variations count as the same answer.</small></form>`;
+      </form>`;
     if(host)footer='<div class="rare-footer"><button type="button" class="button outline" data-action="advance">Close answers / review</button></div>';
   }else if(review){
     body=host?reviewQueue(p,escape):`<div class="rare-wait"><div class="rare-gem" aria-hidden="true">◆</div>
@@ -79,13 +88,15 @@ export function rareFindView(s,{host,canControl,escape,icons,reply}){
     if(host)footer=`<div class="rare-footer"><button type="button" class="button primary" data-action="advance" ${p.remaining?'disabled':''}>
       ${p.remaining?'Review all answers to continue':'Reveal real answers and points'} ${icons('arrow-right')}</button></div>`;
   }else if(reveal){
-    body=`<div class="rare-reveal-head"><strong>${p.results.valid} valid responses</strong><span>${p.results.responded} submitted · ${p.results.invalidCount} unaccepted</span></div>`+revealRows(p,escape)+
-      (!host?`<p class="rare-own-score">You earned <strong>+${p.earned} pts</strong> this round.</p>`:'')+
+    if(host) body=`<div class="rare-reveal-head"><strong>${p.results.valid} valid responses</strong><span>${p.results.responded} submitted · ${p.results.invalidCount} unaccepted</span></div>`+revealRows(p,escape)+
       (p.source?`<p class="rare-source"><a href="${escape(p.source)}" target="_blank" rel="noopener noreferrer">Review reference source</a></p>`:'');
+    else body=`<div class="rare-locked" role="status"><span>${escape(p.ownAnswer||'No answer submitted')}</span><strong>+${p.earned} pts</strong><p>${p.earned===200?'Only you chose this answer.':p.earned===100?'Two players chose this answer.':p.earned===50?'At least three players chose this answer.':p.answered?'Answer not accepted.':'Round closed.'}</p></div>`;
     if(host)footer=`<div class="rare-footer"><button type="button" class="button primary" data-action="advance">
       ${s.index+1<s.total?'Next rarity round':'Show final standings'} ${icons('arrow-right')}</button></div>`;
   }
-  stage=prompt+body;
+  const team=s.teams?.find(entry=>entry.id===s.player?.team);
+  const phonePrompt=write&&!p.answered?`<div class="rare-prompt">${team?`<span class="rare-eyebrow">Team ${escape(team.name)}</span>`:''}<h1>${escape(p.prompt)}</h1></div>`:'';
+  stage=(host?prompt:phonePrompt)+body;
  }
  return `<section class="game-panel rare-game" data-rare-phase="${phase}">${header}<div class="rare-stage">${stage}</div>${footer}</section>`;
 }

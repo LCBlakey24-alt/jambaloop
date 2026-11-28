@@ -1,4 +1,5 @@
 import {isConnected} from './room-presence.js';
+import {refreshGroupScores} from './public/team-play.js';
 import {normaliseRare,answerMapFor,selectRarePrompt} from './rare-find-bank.js';
 
 function eligibleCount(room,map){
@@ -65,6 +66,7 @@ function scoreRareRound(room){
    const found=scored.find(g=>g.members.some(m=>m.id===player.id));
    party.earned.set(key,found?.points??0);
  }
+ refreshGroupScores(room);
  room.phase='rare-reveal';
 }
 

@@ -52,7 +52,7 @@ export const modes = [
   ['spotlight', 'Spotlight Wheel', 'Take turns as contestant with an expert chosen by the wheel.', 'aperture', '#ffc88d'],
   ['brain', 'Brain Ladder', 'Solve fresh original logic puzzles, protect your two lives and climb ten levels.', 'brain-circuit', '#86e7fa'],
   ['topanswers', 'Top Answers', 'Vote for your favourite, predict the room’s most popular choice, and reveal the real results.', 'chart-no-axes-column-increasing', '#ffca83'],
-  ['rare', 'Rare Find', 'Find the correct answer nobody else picks. Unusual valid answers earn the most.', 'gem', '#a2f4cd'],
+  ['rare', 'Rare Find', 'Play solo or in teams. Give a correct answer nobody else picks.', 'gem', '#a2f4cd'],
   ['soclose', 'So Close', 'Scroll to your best numerical estimate; the closest guess wins.', 'ruler', '#ffbf68'],
   ['wayoff', 'Way Off', 'Guess the number. Each round the guess furthest from the answer is out, until one player is left.', 'target', '#ffd23f'],
   ['catchup', 'Catch Up', 'One side sets a target against the clock. The other side gets the same time to beat it. Then they swap.', 'timer', '#4cc9f0'],
